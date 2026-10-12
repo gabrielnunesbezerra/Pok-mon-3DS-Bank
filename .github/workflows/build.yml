@@ -80,14 +80,18 @@ jobs:
         run: |
           # Release, never Debug: a Debug APK expects an IDE to deploy its assemblies and
           # closes at once when installed by hand.
-          signing_args=(-p:AndroidKeyStore=false)
+          # Sideloaded APK only; no Play Store bundle.
+          signing_args=(-p:AndroidPackageFormats=apk -p:AndroidKeyStore=false)
           if [[ -n "$ANDROID_KEYSTORE_PATH" ]]; then
+            # The 3DS Bank key is EC (P-256): jarsigner must be told, it assumes RSA.
             signing_args=(
+              -p:AndroidPackageFormats=apk
               -p:AndroidKeyStore=true
               -p:AndroidSigningKeyStore="$ANDROID_KEYSTORE_PATH"
               -p:AndroidSigningStorePass="$ANDROID_KEYSTORE_PASSWORD"
               -p:AndroidSigningKeyAlias="$ANDROID_KEY_ALIAS"
               -p:AndroidSigningKeyPass="$ANDROID_KEYSTORE_PASSWORD"
+              -p:AndroidApkSigningAlgorithm=SHA256withECDSA
             )
           fi
           set -o pipefail
