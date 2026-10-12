@@ -1519,6 +1519,11 @@ public sealed class SaveEngineSession : ISaveEngineSession
         }
         var conversion = CrossFormatConverter.Convert(imported, _save, out refusal);
         if (conversion is null) return null;
+        if (ThreeDsBankPolicy.EditingLocked && HeavyChange(imported, conversion, fileBytes, format) is { } heavy)
+        {
+            refusal = heavy;
+            return null;
+        }
         if (conversion.Backwards && !allowBackwards)
         {
             refusal = "Only the transfer flow can take a Pokémon back to an older game, because it shows what the downgrade changes.";
@@ -1537,6 +1542,28 @@ public sealed class SaveEngineSession : ISaveEngineSession
         // Received, so the save's dex registers it the way the game would.
         _save.SetBoxSlotAtIndex(conversion.Entity, box, slot, ImportReceived);
         return conversion;
+    }
+
+    /// <summary>
+    /// 3DS Bank only lets a Pokémon travel the way the official games allow, arriving as it
+    /// left: never back to an older generation, never between the Let's Go games and the
+    /// others, never as an egg across generations, never changing species or form, and never
+    /// out of a ROM hack when the trip would rewrite it. Null when the transfer is fine.
+    /// </summary>
+    private string? HeavyChange(PKM before, TransferConversion conversion, byte[] fileBytes, string? format)
+    {
+        var after = conversion.Entity;
+        if (conversion.Backwards || after.Format < before.Format)
+            return "3DS Bank only moves Pokémon forward, like the official games: it cannot go back to an older generation.";
+        if ((before is PB7) != (_save is SAV7b))
+            return "Let's Go Pikachu and Eevee only exchange Pokémon with each other.";
+        if (before.IsEgg && before.Format != after.Format)
+            return "Eggs cannot travel to another generation. Hatch it first.";
+        if (before.Species != after.Species || before.Form != after.Form)
+            return "This game cannot keep it as it is (its species or form would change), so it stays where it is.";
+        if (RadicalRed.CfruEntity.Recognize(format) is { } hack && RadicalRed.CfruEntity.Pk3Adjustments(fileBytes, hack).Count > 0)
+            return "Moving it out of its ROM hack would rewrite parts of it, so it stays in its own game.";
+        return null;
     }
 
     public TrainerInfo GetTrainer()

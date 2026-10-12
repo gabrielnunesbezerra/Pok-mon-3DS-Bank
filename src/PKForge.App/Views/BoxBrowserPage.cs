@@ -628,7 +628,6 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         options.AddRange(Menu(
             Allowed(SaveAction.CreateMon, new("Import .pk files", IconPath: "import", Detail: "Pick Pokémon files to fill this box's empty slots.")),
             Allowed(SaveAction.CreateMon, new("Import Showdown team", IconPath: "script", Detail: "Paste Showdown sets, see their legality, then place them in empty slots.")),
-            new("Export box to Showdown", IconPath: "script", Detail: "This box as Showdown text to copy or share."),
             Allowed(SaveAction.CreateMon, new("Generate Living Dex", IconPath: "create", Detail: "Replaces every box with one legal Pokémon of each species.")),
             new("How to get a Pokémon…", IconPath: "map", Detail: "How to obtain a species in the game you are editing."),
             new("Find held item…", IconPath: "item", Detail: "See which Pokémon hold an item and go to one."),
@@ -3810,9 +3809,6 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             new PadOption("Send to another game…", IconPath: "send", Detail: "It leaves this save and joins another linked game."),
             Allowed(SaveAction.Duplicate, new("Copy to another game…", IconPath: "copy", Detail: "A copy joins another linked game; the original stays here.")),
             new PadOption("Export .pk file", IconPath: "export", Detail: "Share this Pokémon as a file."),
-            new PadOption("Show as Showdown set", IconPath: "script", Detail: "Its set as Showdown text you can copy."),
-            new PadOption("Show as QR code", IconPath: "qr", Detail: "Its Showdown set as a QR code."),
-            new PadOption("Show as .pk QR", IconPath: "qr", Detail: "The whole Pokémon as a QR code that 3DS Bank can scan into the Bank."),
             new PadOption("RNG / IVs", IconPath: "dice", Detail: Guard.CanEditMon ? "See its PID and IVs, and change its nature without losing shininess." : "See its PID, nature and IVs."),
             new PadOption("Lock / Unlock release", IconPath: "padlock", Detail: "A locked Pokémon cannot be released."),
             new PadOption("Release", IconPath: "release")));
@@ -4567,7 +4563,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         // 3DS Bank: the panel shows the Pokémon; only the tools that read it stay.
         var readOnly = !Guard.CanEditMon;
         var actionButtons = readOnly
-            ? new[] { showdown, exportPk, qr }
+            ? new[] { exportPk }
             : new[] { legalize, makeMine, showdown, exportPk, qr, met, moveDetails, moveShop, potential, cosmetics, awards, ribbonAlbum, formShiny, trainers, techRecords };
         if (readOnly)
         {

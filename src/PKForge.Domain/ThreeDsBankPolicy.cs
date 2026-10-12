@@ -33,8 +33,34 @@ public static class ThreeDsBankPolicy
     private static readonly bool TestMode =
         AppContext.TryGetSwitch(TestModeSwitch, out var enabled) && enabled;
 
-    /// <summary>True in the app: every editing entry point refuses to run.</summary>
-    public static bool EditingLocked => !TestMode;
+    private static readonly AsyncLocal<int> ParkCareDepth = new();
+
+    /// <summary>True in the app: every editing entry point refuses to run (except inside
+    /// <see cref="AllowParkCare"/>, the Poképark's own earned friendship and nature changes).</summary>
+    public static bool EditingLocked => !TestMode && ParkCareDepth.Value == 0;
+
+    /// <summary>
+    /// Opens the one door the Poképark needs: while the returned scope is alive, the Bank may
+    /// store a Pokémon that was cared for (more friendship, the once-only nature change).
+    /// Nothing else uses it.
+    /// </summary>
+    public static IDisposable AllowParkCare()
+    {
+        ParkCareDepth.Value++;
+        return new ParkCareScope();
+    }
+
+    private sealed class ParkCareScope : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            ParkCareDepth.Value--;
+        }
+    }
 
     /// <summary>Whether a save or Pokémon format of this generation may be opened.</summary>
     public static bool SupportsGeneration(int generation) => TestMode || generation <= MaxGeneration;

@@ -60,8 +60,15 @@ public sealed class TransferPreviewService
     /// </summary>
     /// <remarks><paramref name="format"/>: the bytes' recorded entity format (bank entries,
     /// exports); null reads them by heuristics with the scratch save's context preferred.</remarks>
-    public TransferPreview? Preview(ISaveEngineSession scratch, int box, int slot, byte[] entityBytes, string? format = null)
+    public TransferPreview? Preview(ISaveEngineSession scratch, int box, int slot, byte[] entityBytes, string? format = null) =>
+        Preview(scratch, box, slot, entityBytes, format, out _);
+
+    /// <inheritdoc cref="Preview(ISaveEngineSession, int, int, byte[], string?)"/>
+    /// <param name="refusal">Why the transfer cannot happen, when the engine knows (3DS Bank's
+    /// forward-only rule, a full party, an unreadable file).</param>
+    public TransferPreview? Preview(ISaveEngineSession scratch, int box, int slot, byte[] entityBytes, string? format, out string? refusal)
     {
+        refusal = null;
         ArgumentNullException.ThrowIfNull(scratch);
         ArgumentNullException.ThrowIfNull(entityBytes);
 
@@ -86,7 +93,7 @@ public sealed class TransferPreviewService
         var before = EntityBytes.Parse(entityBytes, format, session.GetEntity(box, slot).Context);
         if (before is null || before.Species == 0)
             return null;
-        var conversion = session.ImportSlotWithReport(box, slot, entityBytes, out _, format);
+        var conversion = session.ImportSlotWithReport(box, slot, entityBytes, out refusal, format);
         if (conversion is null)
             return null;
         var after = session.GetEntity(box, slot);

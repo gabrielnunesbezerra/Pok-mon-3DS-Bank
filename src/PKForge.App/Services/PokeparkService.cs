@@ -16,7 +16,7 @@ public sealed record PokeparkSettings
     public string[] SelectedIds { get; init; } = [];
 }
 
-public sealed class PokeparkService(IBankService bank, ISaveSessionService saves, IGameDataService data)
+public sealed class PokeparkService(IBankService bank, ISaveSessionService saves, IGameDataService data, PokeparkCareService care)
 {
     private readonly object _initializationGate = new();
     private const string SettingsKey = "pkforge.pokepark.settings.v1";
@@ -213,13 +213,18 @@ public sealed class PokeparkService(IBankService bank, ISaveSessionService saves
             return $"Poképark has {MaximumResidents} residents. Open the park and remove a resident before adding another.";
         Write(AutoFillSuppressedKey, false);
         SaveRoster(roster.Append(pokemon).ToArray());
-        return $"{pokemon.Name} now lives in Poképark! Your original Pokémon stays in its save or bank.";
+        return pokemon.Id.StartsWith("bank:", StringComparison.Ordinal)
+            ? $"{pokemon.Name} now lives in Poképark! Visit it to give it treats and play."
+            : $"{pokemon.Name} now visits Poképark! Your original Pokémon stays in its save.";
     }
 
-    private static void SaveRoster(IReadOnlyList<ParkPokemon> roster)
+    private void SaveRoster(IReadOnlyList<ParkPokemon> roster)
     {
         Write(RosterKey, roster);
         Write(InitializedKey, true);
+        // 3DS Bank: the nature change waits three hours from when a Bank resident moved in.
+        try { care.SyncResidents(roster); }
+        catch (IOException error) { AppLog.Warn("park", $"Care records: {error.Message}"); }
     }
 
     private string Name(string name, int species) => string.IsNullOrWhiteSpace(name) ? SpeciesName(species) : name;

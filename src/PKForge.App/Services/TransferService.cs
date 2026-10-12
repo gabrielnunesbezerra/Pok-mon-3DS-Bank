@@ -43,9 +43,11 @@ public sealed class TransferService(
         if (Landing(snapshot, startAt) is not { } landing)
             return new TransferPreviewOutcome(false, NoRoom(target, startAt));
 
-        var preview = new TransferPreviewService(legality).Preview(session, landing.Box, landing.Slot, entityBytes.ToArray(), format);
+        var preview = new TransferPreviewService(legality).Preview(session, landing.Box, landing.Slot, entityBytes.ToArray(), format, out var why);
         if (preview is null)
-            return new TransferPreviewOutcome(false, Refusal(entityBytes, nickname, snapshot, target.GameLabel, format));
+            return new TransferPreviewOutcome(false, why is null
+                ? Refusal(entityBytes, nickname, snapshot, target.GameLabel, format)
+                : $"{nickname} cannot go to {target.GameLabel}. {why}");
         return new TransferPreviewOutcome(true, $"{nickname} → {target.GameLabel} (box {landing.Box + 1}).",
             landing.Box, landing.Slot, preview);
     }
@@ -87,9 +89,11 @@ public sealed class TransferService(
             return new TransferPreviewOutcome(false, "No game is connected.");
         const string label = "the connected game";
         using var scratch = engine.OpenSession(live.Serialize().ToArray(), sessions.Current?.Document.DisplayName);
-        var preview = new TransferPreviewService(legality).Preview(scratch, box, slot, entityBytes.ToArray(), format);
+        var preview = new TransferPreviewService(legality).Preview(scratch, box, slot, entityBytes.ToArray(), format, out var why);
         if (preview is null)
-            return new TransferPreviewOutcome(false, Refusal(entityBytes, nickname, scratch.Snapshot, label, format));
+            return new TransferPreviewOutcome(false, why is null
+                ? Refusal(entityBytes, nickname, scratch.Snapshot, label, format)
+                : $"{nickname} cannot go to {label}. {why}");
         return new TransferPreviewOutcome(true, $"{nickname} → {label} (box {box + 1}).", box, slot, preview);
     }
 

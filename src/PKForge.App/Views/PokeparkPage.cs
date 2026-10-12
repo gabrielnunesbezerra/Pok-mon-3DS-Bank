@@ -11,6 +11,7 @@ namespace PKForge.App.Views;
 public sealed class PokeparkPage : ContentPage, IPadHandler
 {
     private readonly PokeparkService _park;
+    private readonly PokeparkCareService _care;
     private readonly ISpriteService _sprites;
     private readonly PokeparkSpriteService _walking;
     private readonly PokeparkNarrativeMemory _narrativeMemory;
@@ -35,9 +36,9 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
 
     public PokeparkPage(PokeparkService park, ISpriteService sprites, PokeparkSpriteService walking,
         PokeparkNarrativeMemory narrativeMemory, PokeparkSocialService social,
-        ParkOfflineJournalService offlineJournal)
+        ParkOfflineJournalService offlineJournal, PokeparkCareService care)
     {
-        _park = park; _sprites = sprites; _walking = walking;
+        _park = park; _care = care; _sprites = sprites; _walking = walking;
         _narrativeMemory = narrativeMemory; _social = social; _offlineJournal = offlineJournal;
         _scene = new(sprites, walking);
         Title = "Poképark";
@@ -354,9 +355,17 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             var mon = _scene.Residents[_selected];
             var state = _scene.GetResidentState(_selected, _clock.ElapsedMilliseconds);
             var personality = Personality(mon);
+            var care = _care.Describe(mon);
             var action = await PokeparkResidentCard.ShowAsync(_host, mon, _sprites, _walking,
-                state.Mood, state.Activity, personality.Trait, personality.Likes, personality.Story);
+                state.Mood, state.Activity, personality.Trait, personality.Likes, personality.Story, care);
             if (action is null) return;
+            if (action == "nature")
+            {
+                await ChangeNatureAsync(mon, care);
+                return;
+            }
+            // 3DS Bank: a berry or a game grants (or misses) a Bank resident's wish.
+            var careMessage = action is "snack" or "play" ? _care.Care(mon, action) : "";
             if (action == "leave")
             {
                 if (await PadMenu.ConfirmAsync(_host, "Leave the park?", $"Remove {mon.Name} from this meadow? Its original stays in its box. You can invite it again anytime.", "Leave park"))
@@ -372,9 +381,24 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 _narrativeMemory.Recent(mon.Id));
             _narrativeMemory.Remember(mon.Id, dialogue.Id);
             _scene.Interact(_selected, _clock.ElapsedMilliseconds, action);
-            await PokeparkSpeechBubble.ShowAsync(_host, mon.Name, dialogue.Text, mon, _sprites, _walking);
+            await PokeparkSpeechBubble.ShowAsync(_host, mon.Name,
+                careMessage.Length > 0 ? $"{dialogue.Text}\n\n{careMessage}" : dialogue.Text, mon, _sprites, _walking);
         }
         finally { _menuOpen = false; }
+    }
+
+    /// <summary>The once-only nature change of a resident that has lived here three hours.</summary>
+    private async Task ChangeNatureAsync(ParkPokemon mon, ParkCareInfo care)
+    {
+        var data = IPlatformApplication.Current?.Services.GetService<IGameDataService>();
+        if (data is null) return;
+        var picked = await NaturePicker.ShowAsync(_host, data.NatureNames, care.Nature >= 0 ? care.Nature : (int?)null, null, "A new nature, once");
+        if (picked is null || (uint)picked.Id >= (uint)data.NatureNames.Count) return;
+        if (!await PadMenu.ConfirmAsync(_host, "Change nature?",
+                $"{mon.Name} can change its nature only once in its life. Make it {data.NatureNames[picked.Id]}?", "Change"))
+            return;
+        var message = _care.ChangeNature(mon, picked.Id);
+        await PokeparkSpeechBubble.ShowAsync(_host, mon.Name, message, mon, _sprites, _walking);
     }
 
     private void SwitchEnvironment(int delta)

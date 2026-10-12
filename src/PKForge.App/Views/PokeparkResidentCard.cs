@@ -15,16 +15,18 @@ public sealed class PokeparkResidentCard : IPadHandler
     private readonly Border _window;
     private readonly GamepadRouter? _router;
     private readonly List<Border> _actions = [];
-    private static readonly string[] Keys = ["talk", "snack", "play", "relax", "leave"];
+    private readonly List<string> _keys = ["talk", "snack", "play", "relax", "leave"];
     private int _selected;
     private bool _closed;
 
     public static Task<string?> ShowAsync(Grid host, ParkPokemon mon, ISpriteService sprites,
-        PokeparkSpriteService walking, string mood, string activity, string trait, string likes, string story) =>
-        new PokeparkResidentCard(host, mon, sprites, walking, mood, activity, trait, likes, story)._result.Task;
+        PokeparkSpriteService walking, string mood, string activity, string trait, string likes, string story,
+        ParkCareInfo? care = null) =>
+        new PokeparkResidentCard(host, mon, sprites, walking, mood, activity, trait, likes, story, care)._result.Task;
 
     private PokeparkResidentCard(Grid host, ParkPokemon mon, ISpriteService sprites,
-        PokeparkSpriteService walking, string mood, string activity, string trait, string likes, string story)
+        PokeparkSpriteService walking, string mood, string activity, string trait, string likes, string story,
+        ParkCareInfo? care)
     {
         _host = host;
         _router = IPlatformApplication.Current?.Services.GetService<GamepadRouter>();
@@ -64,13 +66,30 @@ public sealed class PokeparkResidentCard : IPadHandler
             Children = { portrait, name, moodLabel } };
         Grid.SetRow(name, 1); Grid.SetRow(moodLabel, 2);
         var notes = new VerticalStackLayout { Spacing = 8 };
+        if (care is { CanCare: true })
+        {
+            // 3DS Bank: what it wants (berry or game) raises its friendship when granted.
+            notes.Add(Section("It wants", care.Summary));
+            notes.Add(Section("Friendship", $"{care.Friendship}/255"));
+            if (care.NatureLine.Length > 0) notes.Add(Section("Nature", care.NatureLine));
+        }
+        else if (care is not null && care.Summary.Length > 0)
+        {
+            notes.Add(Section("Friendship", care.Summary));
+        }
         notes.Add(Section("Right now", activity));
         notes.Add(Section("Personality", trait));
         notes.Add(Section("Favorite little things", likes));
         notes.Add(Section("Meadow memory", story));
         var origin = OriginText(mon);
         if (origin.Length > 0) notes.Add(Section("Origin", origin));
-        notes.Add(new Label { Text = "Park personality is just for fun. Your Pokémon's game data stays unchanged.", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft });
+        notes.Add(new Label
+        {
+            Text = care is { CanCare: true }
+                ? "Snack and Play grant its wish; the friendship it gains is saved to the Pokémon and goes with it to its game."
+                : "Park personality is just for fun. Your Pokémon's game data stays unchanged.",
+            FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft,
+        });
         var journal = new ScrollView { Content = notes };
         var body = new Grid { ColumnSpacing = 14, ColumnDefinitions = [new(new GridLength(0.36, GridUnitType.Star)), new(new GridLength(0.64, GridUnitType.Star))], Children = { left, journal } };
         Grid.SetColumn(journal, 1);
@@ -82,13 +101,19 @@ public sealed class PokeparkResidentCard : IPadHandler
             var tile = new Border { StrokeShape = new RoundRectangle { CornerRadius = 8 }, Padding = new Thickness(3, 5),
                 Content = new Label { Text = captions[i].Item1 + "  " + captions[i].Item2, FontFamily = "Rounded", FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold,
                     TextColor = UiTokens.Ink0, HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center }, HeightRequest = 38 };
-            Tap(tile, () => Close(Keys[index])); _actions.Add(tile); actions.Add(tile); Grid.SetColumn(tile, i);
+            Tap(tile, () => Close(_keys[index])); _actions.Add(tile); actions.Add(tile); Grid.SetColumn(tile, i);
         }
-        var bottom = new Grid { ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)] };
+        var bottom = new Grid { ColumnSpacing = 6, ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)] };
         bottom.Add(new Label { Text = "A  Choose    B  Back", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft, VerticalTextAlignment = TextAlignment.Center });
         var leave = new Border { StrokeShape = new RoundRectangle { CornerRadius = 5 }, Padding = new Thickness(7, 4),
             Content = new Label { Text = "↗  Leave park", FontFamily = "Rounded", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft } };
         Tap(leave, () => Close("leave")); _actions.Add(leave); bottom.Add(leave); Grid.SetColumn(leave, 1);
+        if (care is { NatureReady: true })
+        {
+            var nature = new Border { StrokeShape = new RoundRectangle { CornerRadius = 5 }, Padding = new Thickness(7, 4),
+                Content = new Label { Text = "✧  Change nature", FontFamily = "Rounded", FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink0 } };
+            Tap(nature, () => Close("nature")); _actions.Add(nature); _keys.Add("nature"); bottom.Add(nature); Grid.SetColumn(nature, 2);
+        }
         var content = new Grid { RowSpacing = 8, RowDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)],
             Children = { heading, body, actions, bottom } };
         Grid.SetRow(body, 1); Grid.SetRow(actions, 2); Grid.SetRow(bottom, 3);
@@ -141,11 +166,11 @@ public sealed class PokeparkResidentCard : IPadHandler
     {
         switch (button)
         {
-            case PadButton.Left: Highlight(_selected == 4 ? 3 : Math.Max(0, _selected - 1)); break;
-            case PadButton.Right: Highlight(Math.Min(4, _selected + 1)); break;
-            case PadButton.Down: Highlight(4); break;
-            case PadButton.Up: Highlight(_selected == 4 ? 0 : _selected); break;
-            case PadButton.A: Close(Keys[_selected]); break;
+            case PadButton.Left: Highlight(_selected == 5 ? 4 : _selected == 4 ? 3 : Math.Max(0, _selected - 1)); break;
+            case PadButton.Right: Highlight(Math.Min(_actions.Count - 1, _selected + 1)); break;
+            case PadButton.Down: Highlight(_selected >= 4 ? _selected : 4); break;
+            case PadButton.Up: Highlight(_selected >= 4 ? 0 : _selected); break;
+            case PadButton.A: Close(_keys[_selected]); break;
             case PadButton.B: Close(null); break;
         }
         return true;
