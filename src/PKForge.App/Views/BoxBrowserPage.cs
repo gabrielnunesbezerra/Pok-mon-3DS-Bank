@@ -367,31 +367,18 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         options.Where(option => option is not null).Select(option => option!).ToArray();
 
     /// <summary>Menu copy: what the surface wanted to say, plus the Hardcore line while it is on.</summary>
-    private static string? Note(string? message) =>
-        HardcoreMode.IsOn
-            ? string.IsNullOrEmpty(message) ? HardcoreMode.StatusLine : $"{message}\n{HardcoreMode.StatusLine}"
-            : message;
+    // 3DS Bank: blocked features are simply absent, so menus carry no warning line.
+    private static string? Note(string? message) => message;
 
     /// <summary>True when Hardcore mode refuses <paramref name="action"/>; the reason lands in the status strip.</summary>
-    private bool Denied(SaveAction action)
-    {
-        if (!HardcoreMode.Blocks(action, out var status)) return false;
-        _viewModel.Status = status;
-        return true;
-    }
+    // 3DS Bank: a blocked flow just does nothing; its entry points are hidden.
+    private static bool Denied(SaveAction action) => Guard.Blocks(action);
 
     /// <summary>The same refusal for a flow with no menu to filter; the reason is shown, never swallowed.</summary>
-    private async Task<bool> DeniedAsync(SaveAction action)
-    {
-        if (!Denied(action)) return false;
-        await PadMenu.ShowAsync(_hostGrid, "3DS Bank", _viewModel.Status, "OK");
-        return true;
-    }
+    private static Task<bool> DeniedAsync(SaveAction action) => Task.FromResult(Denied(action));
 
     /// <summary>The idle status line, carrying the marker so the mode is visible on the screen it gates.</summary>
-    private void ShowReady() => _viewModel.Status = HardcoreMode.IsOn
-        ? $"Ready · {HardcoreMode.StatusLine}"
-        : LayoutMarker ?? "Ready";
+    private void ShowReady() => _viewModel.Status = LayoutMarker ?? "Ready";
 
     // ── Layout risk (ROM hacks on a retail layout) ────────────────────────────
     // A suspected hack warns once per save and stays read-only unless the player picks
@@ -427,7 +414,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             await ExplainLayoutRiskAsync(documentId, risk);
             if (DocumentId != documentId) return;
         }
-        if (LayoutMarker is { } marker && !HardcoreMode.IsOn) _viewModel.Status = marker;
+        if (LayoutMarker is { } marker) _viewModel.Status = marker;
     }
 
     private async Task ExplainLayoutRiskAsync(string documentId, LayoutRisk? risk)
@@ -635,8 +622,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         var boxTools = _sessionsFor()?.SupportsBoxTools == true;
         var options = new List<PadOption>
         {
-            new("Multi-select (- button)", IconPath: "select", Detail: "Mark several Pokémon to move, copy or edit them together."),
-            new("Box manager…", IconPath: "box", Detail: "Reorder, copy, lock or empty whole boxes."),
+            new("Multi-select (- button)", IconPath: "select", Detail: "Mark several Pokémon to move them together."),
+            new("Box manager…", IconPath: "box", Detail: "Reorder, lock or empty whole boxes."),
         };
         options.AddRange(Menu(
             Allowed(SaveAction.CreateMon, new("Import .pk files", IconPath: "import", Detail: "Pick Pokémon files to fill this box's empty slots.")),
@@ -647,8 +634,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             new("Find held item…", IconPath: "item", Detail: "See which Pokémon hold an item and go to one."),
             new("IV ranking…", IconPath: "stats", Detail: "Every Pokémon sorted by its IVs; pick one to go to it."),
             Allowed(SaveAction.CreateMon, new("Egg factory…", IconPath: "egg", Detail: "Fill empty PC slots with eggs: one of each species, or one species.")),
-            new("Day Care / Nursery", IconPath: "daycare", Detail: "See who is at the Day Care and withdraw them to the PC.")));
-        if (_sessionsFor() is { } honeySession && PKForge.Engine.HoneyTreeService.IsSupported(honeySession))
+            Allowed(SaveAction.EditMon, new("Day Care / Nursery", IconPath: "daycare", Detail: "See who is at the Day Care and withdraw them to the PC."))));
+        if (Guard.Allows(SaveAction.EditWorld) && _sessionsFor() is { } honeySession && PKForge.Engine.HoneyTreeService.IsSupported(honeySession))
             options.Add(new("Honey trees", IconPath: "tree", Detail: "See and change the honey trees, including your Munchlax trees."));
         if (boxTools)
         {
@@ -660,8 +647,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         }
         options.AddRange(Menu(
             Allowed(SaveAction.BatchEdit, new("Presets…", IconPath: "preset", Detail: "One change, like Level 100 or perfect IVs, on a box or all boxes.")),
-            new("Trainer profiles…", IconPath: "profile", Detail: "Save trainer details and give them to Pokémon as their original trainer."),
-            new("Legality check", IconPath: "check", Detail: "Check every Pokémon in the save and repair the illegal ones."),
+            Allowed(SaveAction.EditMon, new("Trainer profiles…", IconPath: "profile", Detail: "Save trainer details and give them to Pokémon as their original trainer.")),
+            new("Legality check", IconPath: "check", Detail: Guard.CanEditMon ? "Check every Pokémon in the save and repair the illegal ones." : "Check every Pokémon in the save."),
             new("Audit report", IconPath: "report", Detail: "Find cloned Pokémon and impossible values across the save."),
             new("Nuzlocke report", IconPath: "skull", Detail: "The first catch on each route, from where each Pokémon was met."),
             new("Collection dex…", IconPath: "pokedex", Detail: "Living dex tracker for the Bank and this save, normal and shiny.")));
@@ -894,9 +881,9 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                 new PadOption(emptyLabel, IconPath: "clear", Detail: "Releases every Pokémon in the boxes. The party is not touched."),
                 new PadOption("Clear box marks", IconPath: "deselect"),
                 // Name/wallpaper act on the box under the cursor (PKHeX SAV_BoxLayout edits one box at a time).
-                _sessionsFor() is { } layoutSession && Engine.BoxLayoutService.SupportsNames(layoutSession)
+                Guard.Allows(SaveAction.EditTrainer) && _sessionsFor() is { } layoutSession && Engine.BoxLayoutService.SupportsNames(layoutSession)
                     ? new PadOption(BoxLayoutEditor.RenameLabel, IconPath: "rename") : null,
-                _sessionsFor() is { } wallSession && Engine.BoxLayoutService.SupportsWallpapers(wallSession)
+                Guard.Allows(SaveAction.EditTrainer) && _sessionsFor() is { } wallSession && Engine.BoxLayoutService.SupportsWallpapers(wallSession)
                     ? new PadOption(BoxLayoutEditor.WallpaperLabel, IconPath: "box") : null));
         if ((choice == BoxLayoutEditor.RenameLabel || choice == BoxLayoutEditor.WallpaperLabel) && _sessionsFor() is { } boxSession)
         {
@@ -1189,7 +1176,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             options.AddRange(BulkOptions());
         }
         options.Add(new("Mark Pokémon holding…", IconPath: "item", Detail: "Find Pokémon holding an item, then mark them or go to one."));
-        options.Add(new("Box manager…", IconPath: "box", Detail: "Reorder, copy, lock or empty whole boxes."));
+        options.Add(new("Box manager…", IconPath: "box", Detail: "Reorder, lock or empty whole boxes."));
         options.Add(new("Back to move mode", IconPath: "confirm", Detail: "Leave multi-select."));
 
         var choice = await PadMenu.ShowAsync(_hostGrid, $"Multi-select · {count} marked",
@@ -1729,14 +1716,6 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         // the read-out (PID, EC, IVs) alone - viewing stays, editing does not.
         reroll.IsVisible = Guard.CanEditMon;
         var close = Kit.Capsule("Close", UiTokens.Ink1);
-        if (HardcoreMode.IsOn)
-            stack.Children.Add(new Label
-            {
-                Text = HardcoreMode.StatusLine,
-                FontFamily = DsChrome.PixelFont,
-                FontSize = UiTokens.TextSmall,
-                TextColor = UiTokens.Bad,
-            });
         stack.Children.Add(reroll);
         stack.Children.Add(close);
 
@@ -2388,16 +2367,16 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         var options = Menu(
             new PadOption("Trainer card", IconPath: "trainer"),
             new PadOption("Bag & items", IconPath: "bag"),
-            new PadOption("Pokédex", IconPath: "pokedex"),
+            Allowed(SaveAction.EditDex, new PadOption("Pokédex", IconPath: "pokedex")),
             Allowed(SaveAction.EditTrainer, new("Fashion", IconPath: "box", Detail: "Unlock every outfit this save can legally own (X, Y, Sword and Shield).")),
             new PadOption("Trainer records", IconPath: "records", Detail: "The game's own trainer records, view only."),
             Allowed(SaveAction.WriteRawBytes, new("Byte manipulation", IconPath: "hex", Detail: "Edit the save file's raw bytes. Written once, when you close.")),
             // Viewable in Hardcore mode; the editor itself refuses writes (EditWorld).
-            Engine.EventFlagService.IsSupported(session) ? new PadOption("Event flags", IconPath: "check", Detail: "Turn story and event flags on or off, and edit event values.") : null,
+            Guard.Allows(SaveAction.EditWorld) && Engine.EventFlagService.IsSupported(session) ? new PadOption("Event flags", IconPath: "check", Detail: "Turn story and event flags on or off, and edit event values.") : null,
             new PadOption("Wonder cards", IconPath: "events", Detail: "Mystery Gift events and the gift cards stored in this save."),
             // Viewable in Hardcore mode; each world editor refuses writes itself.
-            WorldEventsMenu.HasAny(session) ? new PadOption("World & events", IconPath: "map", Detail: "Clocks, roaming Pokémon, one-time encounters and other world data.") : null,
-            new PadOption("Export modified save", IconPath: "export", Detail: "Share a copy of the edited save file."),
+            Guard.Allows(SaveAction.EditWorld) && WorldEventsMenu.HasAny(session) ? new PadOption("World & events", IconPath: "map", Detail: "Clocks, roaming Pokémon, one-time encounters and other world data.") : null,
+            new PadOption("Export save copy", IconPath: "export", Detail: "Share a copy of this save file."),
             new PadOption("Restore points", IconPath: "history", Detail: "Backups made before each change; go back to one."),
             new PadOption("Close save", IconPath: "quit")).ToList();
         if (session.GetGrandUndergroundItems().Count != 0 && Guard.Allows(SaveAction.EditInventory))
@@ -2408,7 +2387,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         switch (choice)
         {
             case "Trainer card": await ShowTrainerCardAsync(); return;
-            case "Export modified save": await ExportModifiedSaveAsync(session); return;
+            case "Export save copy": await ExportModifiedSaveAsync(session); return;
             case "Close save": await Navigation.PopAsync(); return;
             case "Bag & items": await ShowBagAsync(); return;
             case "Grand Underground": await GrandUndergroundEditor.ShowAsync(_hostGrid, session, _viewModel); return;
@@ -2424,8 +2403,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                 var wonderChoice = await PadMenu.ShowAsync(_hostGrid, "Wonder cards", Note(null),
                     Menu(Allowed(SaveAction.InjectEvent, new PadOption("Event gallery", IconPath: "events", Detail: "Every Mystery Gift this save can receive.")),
                         new PadOption("In-save inbox", IconPath: "inbox", Detail: "The Mystery Gift cards stored in this save, view only."),
-                        Engine.KeyItemEventService.IsSupported(session) ? new PadOption("Key item events", IconPath: "key", Detail: "Ticket events such as the Eon Ticket, Old Sea Map or Member Card.") : null,
-                        Engine.SaveBlockEditorService.IsSupported(session) ? new PadOption("Save blocks", IconPath: "blocks", Detail: "Browse save blocks and edit simple on/off and number values.") : null));
+                        Guard.Allows(SaveAction.InjectEvent) && Engine.KeyItemEventService.IsSupported(session) ? new PadOption("Key item events", IconPath: "key", Detail: "Ticket events such as the Eon Ticket, Old Sea Map or Member Card.") : null,
+                        Guard.Allows(SaveAction.EditWorld) && Engine.SaveBlockEditorService.IsSupported(session) ? new PadOption("Save blocks", IconPath: "blocks", Detail: "Browse save blocks and edit simple on/off and number values.") : null));
                 if (wonderChoice == "In-save inbox")
                 {
                     await MysteryGiftInboxEditor.ShowAsync(_hostGrid, session);
@@ -2893,12 +2872,17 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                 var shownCount = _pendingCounts.GetValueOrDefault((pouch.Name, item.Id), item.Count);
                 var icon = new Image { WidthRequest = 24, HeightRequest = 24, VerticalOptions = LayoutOptions.Center, InputTransparent = true };
                 icons.Add(icon);
-                var row = new BagRow(icon, ItemName(item.Id), shownCount)
+                var row = new BagRow(icon, ItemName(item.Id), shownCount);
+                if (canEdit)
                 {
-                    Tapped = canEdit ? () => _ = EditCountAsync(captured) : () => Refuse(),
-                    Minus = canEdit ? () => QueueNudge(captured, -1) : () => Refuse(),
-                    Plus = canEdit ? () => QueueNudge(captured, +1) : () => Refuse(),
-                };
+                    row.Tapped = () => _ = EditCountAsync(captured);
+                    row.Minus = () => QueueNudge(captured, -1);
+                    row.Plus = () => QueueNudge(captured, +1);
+                }
+                else
+                {
+                    row.HideCountButtons();
+                }
                 _itemRows.Add(row);
                 _rows.Children.Add(row);
             }
@@ -2907,6 +2891,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             add.FontSize = 14;
             add.Margin = new Thickness(4, 6, 4, 2);
             add.IsEnabled = canEdit;
+            add.IsVisible = canEdit;
             add.Clicked += (_, _) => _ = AddItemAsync();
             _addRow = add;
             _rows.Children.Add(_addRow);
@@ -2915,6 +2900,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             presets.FontSize = 14;
             presets.Margin = new Thickness(4, 2, 4, 2);
             presets.IsEnabled = canEdit;
+            presets.IsVisible = canEdit;
             presets.Clicked += (_, _) => _ = ShowPresetsAsync();
             _presetRow = presets;
             _rows.Children.Add(_presetRow);
@@ -2923,7 +2909,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             _ = LoadIconsAsync(pouch.Items, icons);
             Report(canEdit
                 ? $"{pouch.Name} - {pouch.Items.Count} kinds - name table {_itemNames.Count}"
-                : HardcoreMode.StatusLine);
+                : $"{pouch.Name} - {pouch.Items.Count} kinds");
         }
 
         private async Task LoadIconsAsync(IReadOnlyList<BagItem> items, IReadOnlyList<Image> targets)
@@ -3438,6 +3424,13 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             }
 
             public void SetCount(int count) => _counter.Text = $"×{count}";
+
+            /// <summary>3DS Bank: the bag is only shown, so the count buttons are not drawn.</summary>
+            public void HideCountButtons()
+            {
+                ((View)Children[4]).IsVisible = false;
+                ((View)Children[5]).IsVisible = false;
+            }
         }
 
         /// <summary>The add-item row: a plus disc and the cyan invitation.</summary>
@@ -3775,7 +3768,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             slot,
             (i, legality) => SummaryLoaders.FromSlot(session, summaries, box, i, legality),
             box == -1 ? "Party" : $"Box {box + 1:00}",
-            CanEdit: true,
+            CanEdit: Guard.CanEditMon,
             Icon: i => i < slots.Count && slots[i].Species is int species ? new SlotIcon(species, slots[i].Form, slots[i].IsShiny, slots[i].HasItem, slots[i].Traits) : null,
             Moved: i =>
             {
@@ -3807,7 +3800,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         }
         options.AddRange(Menu(
             new PadOption("Summary", IconPath: "info"),
-            new PadOption("Edit", IconPath: "editor"),
+            Allowed(SaveAction.EditMon, new("Edit", IconPath: "editor")),
             Allowed(SaveAction.EditMon, new("Evolve…", IconPath: "evolve")),
             new PadOption("Send to Poképark", IconPath: "park", Detail: "Adds it to the Poképark visitors. The save is not changed."),
             new PadOption("Move", IconPath: "move", Detail: "Pick it up and carry it to another slot."),
@@ -3820,7 +3813,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             new PadOption("Show as Showdown set", IconPath: "script", Detail: "Its set as Showdown text you can copy."),
             new PadOption("Show as QR code", IconPath: "qr", Detail: "Its Showdown set as a QR code."),
             new PadOption("Show as .pk QR", IconPath: "qr", Detail: "The whole Pokémon as a QR code that 3DS Bank can scan into the Bank."),
-            new PadOption("RNG / IVs", IconPath: "dice", Detail: "See its PID and IVs, and change its nature without losing shininess."),
+            new PadOption("RNG / IVs", IconPath: "dice", Detail: Guard.CanEditMon ? "See its PID and IVs, and change its nature without losing shininess." : "See its PID, nature and IVs."),
             new PadOption("Lock / Unlock release", IconPath: "padlock", Detail: "A locked Pokémon cannot be released."),
             new PadOption("Release", IconPath: "release")));
         var choice = await PadMenu.ShowAsync(_hostGrid, nickname,
@@ -4320,8 +4313,6 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
     {
         base.OnAppearing();
         IPlatformApplication.Current?.Services.GetService<GamepadRouter>()?.Push(this);
-        // The mode gates this whole screen, so the strip says so the moment it opens.
-        if (HardcoreMode.IsOn) _viewModel.Status = HardcoreMode.StatusLine;
         _ = CheckLayoutRiskAsync();
         // The lower screen's inspector follows this box's cursor while the page is in front.
         _secondClaim ??= IPlatformApplication.Current?.Services.GetService<SecondScreenState>()?.Routes.CreateClaim(SecondScreenOwner.Box);
@@ -4573,7 +4564,19 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             RowSpacing = Design(16),
             Margin = new Thickness(Design(28), Design(4), Design(28), 0),
         };
-        var actionButtons = new[] { legalize, makeMine, showdown, exportPk, qr, met, moveDetails, moveShop, potential, cosmetics, awards, ribbonAlbum, formShiny, trainers, techRecords };
+        // 3DS Bank: the panel shows the Pokémon; only the tools that read it stay.
+        var readOnly = !Guard.CanEditMon;
+        var actionButtons = readOnly
+            ? new[] { showdown, exportPk, qr }
+            : new[] { legalize, makeMine, showdown, exportPk, qr, met, moveDetails, moveShop, potential, cosmetics, awards, ribbonAlbum, formShiny, trainers, techRecords };
+        if (readOnly)
+        {
+            save.IsVisible = false;
+            foreach (var infoRow in new View[] { species, nickname, genderShiny, level, nature, ability, item, friendship, ball, ot, move1, move2, move3, move4 })
+                ShowOnly(infoRow);
+            foreach (var statLine in statLines)
+                ShowOnly(statLine);
+        }
         for (var i = 0; i < actionButtons.Length; i++)
         {
             var button = actionButtons[i];
@@ -4590,7 +4593,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             FontSize = UiTokens.TextSmall,
             TextColor = UiTokens.Bad,
             HorizontalTextAlignment = TextAlignment.Center,
-            IsVisible = HardcoreMode.IsOn,
+            IsVisible = false,
         };
 
         var panel = new VerticalStackLayout
@@ -4613,6 +4616,33 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         panel.Children.Add(save);
         panel.Children.Add(monActions);
         return panel;
+    }
+
+    /// <summary>3DS Bank: a panel row that only shows its value - no taps, no typing.</summary>
+    private static void ShowOnly(View row)
+    {
+        row.InputTransparent = true;
+        foreach (var view in DescendantsAndSelf(row))
+        {
+            view.GestureRecognizers.Clear();
+            if (view is InputView input) input.IsReadOnly = true;
+        }
+    }
+
+    private static IEnumerable<View> DescendantsAndSelf(View view)
+    {
+        yield return view;
+        IEnumerable<View> children = view switch
+        {
+            Layout layout => layout.Children.OfType<View>(),
+            Border { Content: { } content } => [content],
+            ContentView { Content: { } content } => [content],
+            ScrollView { Content: { } content } => [content],
+            _ => [],
+        };
+        foreach (var child in children)
+            foreach (var descendant in DescendantsAndSelf(child))
+                yield return descendant;
     }
 
     private Task ShowLegalityReportAsync(string detail)
@@ -5228,7 +5258,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             Children = { EditorCaption(caption), content },
         };
         Grid.SetColumn(content, 1);
-        if (trailing is not null)
+        // 3DS Bank: no "tap to change" chevron on rows that only show their value.
+        if (trailing is not null && Guard.CanEditMon)
         {
             grid.Children.Add(trailing);
             Grid.SetColumn(trailing, 2);

@@ -116,8 +116,10 @@ public sealed class MainActivity : MauiAppCompatActivity
             var secondary = SecondaryDisplayHost();
             if (secondary is not null)
                 await secondary.DismissAsync();
-            var navigation = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page?.Navigation;
-            if (navigation is null || navigation.NavigationStack.LastOrDefault() is Views.PokeparkPage) return;
+            // The sign-in screen has no page stack: the park opens once someone is signed in.
+            if (Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault()?.Page is not NavigationPage root) return;
+            var navigation = root.Navigation;
+            if (navigation.NavigationStack.LastOrDefault() is Views.PokeparkPage) return;
             var page = IPlatformApplication.Current?.Services.GetRequiredService<Views.PokeparkPage>();
             if (page is not null) await navigation.PushAsync(page);
         });

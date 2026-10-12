@@ -94,8 +94,9 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
         tools.Add(Tool("Boxes", () => _ = OpenBoxOverviewAsync()), 0, 0);
         tools.Add(Tool("Search", () => _ = OpenSearchAsync()), 1, 0);
         tools.Add(Tool("Living dex", () => _ = OpenLivingDexAsync()), 2, 0);
-        tools.Add(Tool("Import", () => _ = ImportArchiveAsync()), 3, 0);
-        tools.Add(Tool("Export", () => _ = ExportArchiveAsync()), 4, 0);
+        // 3DS Bank: Export moves Pokémon out into .pk files; Import brings exactly those back.
+        tools.Add(Tool("Import", () => _ = ImportBackAsync()), 3, 0);
+        tools.Add(Tool("Export", () => _ = ExportOutAsync(null)), 4, 0);
 
         var left = new Grid
         {
@@ -238,19 +239,11 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
 
     /// <summary>True when Hardcore mode refuses <paramref name="action"/>; the reason lands in
     /// the status strip and a dialog, never swallowed - the same shape as the boxes.</summary>
-    private async Task<bool> DeniedAsync(SaveAction action)
-    {
-        if (!HardcoreMode.Blocks(action, out var status)) return false;
-        _boxViewModel.Status = status;
-        await PadMenu.ShowAsync(_hostGrid, "3DS Bank", status, "OK");
-        return true;
-    }
+    // 3DS Bank: a blocked flow just does nothing; its entry points are hidden.
+    private static Task<bool> DeniedAsync(SaveAction action) => Task.FromResult(HardcoreMode.Guard.Blocks(action));
 
     /// <summary>Menu copy plus the Hardcore line while it is on.</summary>
-    private static string? Note(string? message) =>
-        HardcoreMode.IsOn
-            ? string.IsNullOrEmpty(message) ? HardcoreMode.StatusLine : $"{message}\n{HardcoreMode.StatusLine}"
-            : message;
+    private static string? Note(string? message) => message;
 
     private static bool Allowed(SaveAction action) => HardcoreMode.Guard.Allows(action);
 
@@ -403,6 +396,109 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
         }
     }
 
+
+    private static string BankRoot => System.IO.Path.Combine(FileSystem.AppDataDirectory, "bank");
+
+    /// <summary>
+    /// 3DS Bank's export: the Pokémon LEAVE the Bank and are saved as .pk files, and only those
+    /// files can bring them back (once each), so exporting can never make a copy.
+    /// </summary>
+    private async Task ExportOutAsync(IReadOnlyList<BankEntry>? selection)
+    {
+        IReadOnlyList<BankEntry> entries;
+        string label;
+        if (selection is { Count: > 0 })
+        {
+            entries = selection;
+            label = selection.Count == 1 ? selection[0].Info.Nickname : $"{selection.Count} Pokémon";
+        }
+        else
+        {
+            var thisBox = $"Box {_boxIndex + 1:00} only";
+            var scope = await PadMenu.ShowAsync(_hostGrid, "Export",
+                "Exported Pokémon leave the Bank and are saved as .pk files. Import brings them back.",
+                new PadOption(thisBox, IconPath: "box"),
+                new PadOption("Whole bank", IconPath: "bank"));
+            if (scope is null) return;
+            var whole = scope == "Whole bank";
+            entries = whole ? _bank.GetAll() : _bank.GetAll().Where(e => e.Box == _boxIndex).ToArray();
+            label = whole ? "the whole Bank" : $"box {_boxIndex + 1:00}";
+        }
+        if (entries.Count == 0)
+        {
+            _boxViewModel.Status = "Nothing to export here.";
+            return;
+        }
+        var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Export and remove?",
+            $"{entries.Count} Pokémon from {label} will leave the Bank and be saved as .pk files in a folder you pick. " +
+            "Only those files can bring them back, once each, with Import.", "Export");
+        if (!confirmed) return;
+
+        var services = IPlatformApplication.Current?.Services;
+        var picker = services?.GetService<IFolderPicker>();
+        var files = services?.GetService<IFolderFileAccess>();
+        if (picker is null || files is null) return;
+        var folder = await picker.PickFolderAsync();
+        if (folder is null) return;
+        var overlay = LoadingOverlay.Show(_hostGrid, "Exporting…", $"Writing .pk files to {folder.DisplayName}.");
+        try
+        {
+            var moved = await Task.Run(() => BankCheckout.CheckOutAsync(_bank, new BankOutbox(BankRoot), files, folder.TreeId, entries));
+            _marked.Clear();
+            FinishOrganizer($"{moved} Pokémon exported to {folder.DisplayName} and removed from the Bank.");
+        }
+        catch (Exception error)
+        {
+            FinishOrganizer($"Export failed: {error.Message}");
+        }
+        finally
+        {
+            overlay.Close();
+        }
+    }
+
+    /// <summary>Brings back Pokémon exported from this Bank, from the folder their files are in.</summary>
+    private async Task ImportBackAsync()
+    {
+        var services = IPlatformApplication.Current?.Services;
+        var picker = services?.GetService<IFolderPicker>();
+        var files = services?.GetService<IFolderFileAccess>();
+        var engine = services?.GetService<ISaveEngine>();
+        if (picker is null || files is null || engine is null) return;
+        var outbox = new BankOutbox(BankRoot);
+        if (outbox.Count == 0)
+        {
+            await PadMenu.ShowAsync(_hostGrid, "Import",
+                "No Pokémon exported from this Bank are waiting to come back.", "OK");
+            return;
+        }
+        var folder = await picker.PickFolderAsync();
+        if (folder is null) return;
+        var overlay = LoadingOverlay.Show(_hostGrid, "Importing…", $"Reading {folder.DisplayName}.");
+        try
+        {
+            var result = await Task.Run(() => BankCheckout.CheckInAsync(_bank, outbox,
+                (bytes, name) => engine.TryDescribeEntity(bytes, name, name), // the extension names the format
+                files, folder.TreeId, (done, total) => overlay.Report(done, total), overlay.Cancellation.Token));
+            var parts = new List<string> { $"{result.Imported} back in the Bank" };
+            if (result.AlreadyInBank > 0) parts.Add($"{result.AlreadyInBank} already here");
+            if (result.NotFromThisBank > 0) parts.Add($"{result.NotFromThisBank} not exported from this Bank");
+            if (result.Unreadable > 0) parts.Add($"{result.Unreadable} unreadable");
+            FinishOrganizer(string.Join(" · ", parts) + ".");
+        }
+        catch (OperationCanceledException)
+        {
+            FinishOrganizer("Import cancelled.");
+        }
+        catch (Exception error)
+        {
+            FinishOrganizer($"Import failed: {error.Message}");
+        }
+        finally
+        {
+            overlay.Close();
+        }
+    }
 
     private void UpdatePageLabel()
     {
@@ -558,7 +654,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
         }
         var entry = EntryAt(_selectedSlot);
         _boxViewModel.Status = entry is null
-            ? $"Box {_boxIndex + 1:00} slot {_selectedSlot + 1:00} empty" + (HardcoreMode.IsOn ? $" · {HardcoreMode.Marker}" : " · A adds")
+            ? $"Box {_boxIndex + 1:00} slot {_selectedSlot + 1:00} empty" + (Allowed(SaveAction.CreateMon) ? " · A adds" : "")
             : $"{Describe(entry)} · Y mark · X actions";
     }
 
@@ -720,7 +816,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
         options.Add(new PadOption("Send to game…", IconPath: "send", Detail: "Moves it into a game's boxes and out of the bank."));
         if (Allowed(SaveAction.Duplicate)) options.Add(new PadOption("Copy to game…", IconPath: "copy", Detail: "Puts a copy in a game's boxes; this one stays in the bank."));
         options.Add(new PadOption("Move (carry)", IconPath: "move", Detail: "Pick it up and drop it in another slot."));
-        options.Add(new PadOption("Export .pk file", IconPath: "export", Detail: "Saves this Pokémon as a single .pk file."));
+        options.Add(new PadOption("Export .pk file", IconPath: "export", Detail: "It leaves the Bank as a .pk file; Import brings it back."));
         options.Add(new PadOption("Release from bank", IconPath: "release", Detail: "Removes it from the bank for good; there is no undo."));
         var choice = await PadMenu.ShowAsync(_hostGrid, entry.Info.Nickname,
             Note($"From {entry.Info.SourceName} · Gen {entry.Info.Generation} · deposited {entry.AddedUtc:yyyy-MM-dd}"),
@@ -763,7 +859,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
                 _canvas.InvalidateSurface();
                 return;
             case "Export .pk file":
-                await ExportAsync(entry);
+                await ExportOutAsync(new[] { entry });
                 return;
             case "Release from bank":
                 var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Release from bank?",
@@ -800,8 +896,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             options.Add(new PadOption("Move to a position…", IconPath: "move", Detail: "They land from a slot you pick; what is there slides back."));
             if (Allowed(SaveAction.Duplicate))
                 options.Add(new PadOption(selection.Count == 1 ? "Duplicate" : "Duplicate all", IconPath: "copy", Detail: "Each copy goes into the first free bank slot."));
-            options.Add(new PadOption(selection.Count == 1 ? "Export .pk file" : "Export .pk files", IconPath: "export", Detail: "Writes one .pk file each into a folder you pick."));
-            options.Add(new PadOption("Export as a PKSM bank", IconPath: "export", Detail: "Packs them into one bank file for PKSM on the 3DS."));
+            options.Add(new PadOption(selection.Count == 1 ? "Export .pk file" : "Export .pk files", IconPath: "export", Detail: "They leave the Bank as .pk files in a folder you pick; Import brings them back."));
             if (targets.ConnectedLabel is not null || targets.Detected.Length > 0)
                 options.Add(new PadOption("Send to a game…", IconPath: "send", Detail: "Moves them into a game; only those that arrive leave the bank."));
             options.Add(new PadOption("Release from bank…", IconPath: "release", Detail: "Removes them from the bank for good; there is no undo."));
@@ -842,7 +937,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
                 DuplicateSelection(selection);
                 return;
             case "Export .pk file" or "Export .pk files":
-                await ExportToFolderAsync(selection, $"{selection.Count} selected");
+                await ExportOutAsync(selection);
                 return;
             case "Export as a PKSM bank":
                 await ExportPksmAsync(selection);

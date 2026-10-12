@@ -68,7 +68,7 @@ public static class TrainerCardPopup
             Spacing = 8,
             Children =
             {
-                Kit.HeaderBar(readOnly ? $"Trainer card · {HardcoreMode.Marker}" : "Trainer card"),
+                Kit.HeaderBar("Trainer card"),
                 Row("Name", name),
                 Row("TID", tid),
                 Row("SID", sid),
@@ -76,12 +76,6 @@ public static class TrainerCardPopup
                 Row("Female", genderIsFemale),
             },
         };
-        if (readOnly)
-            content.Children.Add(new Label
-            {
-                Text = HardcoreMode.StatusFor(SaveAction.EditTrainer),
-                FontSize = UiTokens.TextSmall, FontFamily = DsChrome.PixelFont, TextColor = UiTokens.TextTone(UiTokens.GiftRed),
-            });
         content.Children.Add(buttons);
 
         var window = Kit.OverlayWindow(host, content, preferredMaxWidth: 420);

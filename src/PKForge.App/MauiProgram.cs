@@ -40,9 +40,16 @@ public static class MauiProgram
         builder.Services.AddSingleton<IEncounterLookup, EncounterLookupService>();
         builder.Services.AddSingleton<IBackupService>(_ =>
             new FileBackupService(Path.Combine(FileSystem.AppDataDirectory, "backups")));
+        // 3DS Bank: the Bank sits behind a reloadable service, so the account sync can swap
+        // in the account's Bank while every screen keeps the same instance.
+        builder.Services.AddSingleton(sp => new ReloadableBankService(Path.Combine(FileSystem.AppDataDirectory, "bank")));
+        builder.Services.AddSingleton(_ => new CloudAccountClient(CloudSettings.Config, new HttpClient { Timeout = TimeSpan.FromSeconds(60) }));
+        builder.Services.AddSingleton<AccountService>();
+        builder.Services.AddSingleton<CloudBankSync>();
+        builder.Services.AddTransient<LoginPage>();
         builder.Services.AddSingleton<IBankService>(sp =>
         {
-            var bank = new FileBankService(Path.Combine(FileSystem.AppDataDirectory, "bank"));
+            var bank = sp.GetRequiredService<ReloadableBankService>();
             // One-time index migration, off the UI thread: legacy entries get their exact format
             // (only when provable) and sprite traits recorded, then the index is marked so no
             // entry is read again on later launches. Concurrent bank edits are never undone.

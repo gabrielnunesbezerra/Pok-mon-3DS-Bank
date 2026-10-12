@@ -83,23 +83,21 @@ public sealed class HomePage : ContentPage, IPadHandler
         BlockNativeFocus(_shelf);
 
         // The three destinations as PKSM tiles with bundled pixel icons.
+        // 3DS Bank: the Dex Autopilot (it evolves Pokémon) and the event database (it hands
+        // out Pokémon) are not part of this app, so only these three destinations remain.
         var bank = new DsCard("bank", "Bank") { Tapped = () => _ = PushAsync<BankPage>() };
-        var autopilot = new DsCard("pokedex", "Dex Autopilot") { Tapped = () => _ = OpenAutopilotAsync() };
         var park = new DsCard("park", "Poképark") { Tapped = () => _ = PushParkAsync() };
-        var events = new DsCard("events", "Events") { Tapped = () => _ = ShowEventsMenuAsync() };
         var settings = new DsCard("settings", "Settings") { Tapped = () => _ = ShowSettingsAsync() };
-        _cards = [bank, autopilot, park, events, settings];
+        _cards = [bank, park, settings];
         foreach (var card in _cards) BlockNativeFocus(card);
         var cards = new Grid
         {
             ColumnSpacing = 10,
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
-            Children = { bank, autopilot, park, events, settings },
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
+            Children = { bank, park, settings },
         };
-        Grid.SetColumn(autopilot, 1);
-        Grid.SetColumn(park, 2);
-        Grid.SetColumn(events, 3);
-        Grid.SetColumn(settings, 4);
+        Grid.SetColumn(park, 1);
+        Grid.SetColumn(settings, 2);
 
         var body = new Grid
         {
@@ -591,8 +589,11 @@ public sealed class HomePage : ContentPage, IPadHandler
     {
         var hiddenCount = _viewModel.HiddenSaves.Count;
         var hiddenOption = $"Show hidden saves ({hiddenCount})";
+        var signedInAs = IPlatformApplication.Current?.Services.GetService<AccountService>()?.Username;
+        var accountOption = string.IsNullOrEmpty(signedInAs) ? "Account" : $"Account: {signedInAs}";
         var options = new List<PadOption>
         {
+            new(accountOption, IconPath: "profile", Detail: "Your Bank is saved to this account. Save now, get support or sign out."),
             new("Link an emulator", IconPath: "link", Detail: "Pick the emulator folder where your games keep their saves."),
             new("Manage linked storage", IconPath: "sdcard", Detail: "Unlink emulator folders. Your files stay on the device."),
             new("Open a save file", IconPath: "file", Detail: "Pick one save file instead of a whole emulator folder."),
@@ -612,6 +613,7 @@ public sealed class HomePage : ContentPage, IPadHandler
             new PadOption("Quit 3DS Bank", IconPath: "quit"),
         ]);
         var choice = await PadMenu.ShowAsync(_hostGrid, "Settings", null, [.. options]);
+        if (choice == accountOption) { await ShowAccountMenuAsync(); return; }
         if (choice == hiddenOption) { await ShowHiddenSavesAsync(); return; }
         if (choice == scheme) { await ShowColorSchemeAsync(); return; }
         if (choice == background) { await ShowBoxBackgroundAsync(); return; }
@@ -628,6 +630,43 @@ public sealed class HomePage : ContentPage, IPadHandler
             case "Quit 3DS Bank":
                 if (await PadMenu.ConfirmAsync(_hostGrid, "Quit 3DS Bank?", "Unsaved edits in open menus are already backed up per write.", "Quit"))
                     Microsoft.Maui.Controls.Application.Current?.Quit();
+                break;
+        }
+    }
+
+    /// <summary>The account the Bank is saved to: save now, support, sign out.</summary>
+    private async Task ShowAccountMenuAsync()
+    {
+        var services = IPlatformApplication.Current?.Services;
+        var account = services?.GetService<AccountService>();
+        var sync = services?.GetService<CloudBankSync>();
+        if (account is null || sync is null) return;
+        var state = sync.LastError
+            ?? (sync.LastSyncUtc is { } at ? $"Last saved at {at.ToLocalTime():HH:mm}." : "Your Bank is saved a few seconds after every change.");
+        var choice = await PadMenu.ShowAsync(_hostGrid, $"Account: {account.Username}", state,
+            new PadOption("Save Bank now", IconPath: "update", Detail: "Sends this phone's Bank to your account right away."),
+            new PadOption("Talk to support", IconPath: "info", Detail: "Opens a WhatsApp chat with support."),
+            new PadOption("Sign out", IconPath: "quit", Detail: "Your Bank stays in your account; this phone's copy is removed."));
+        switch (choice)
+        {
+            case "Save Bank now":
+                _viewModel.Status = await sync.SyncNowAsync() ? "Bank saved to your account." : sync.LastError ?? "The Bank could not be saved.";
+                break;
+            case "Talk to support":
+                if (!await CloudSettings.OpenSupportChatAsync())
+                    _viewModel.Status = $"Could not open WhatsApp. Support: +{CloudSettings.SupportWhatsApp}";
+                break;
+            case "Sign out":
+                if (!await PadMenu.ConfirmAsync(_hostGrid, "Sign out?",
+                    "Your Bank stays saved in your account. Signing in again brings it back.", "Sign out")) return;
+                if (!await sync.SignOutAsync(force: false))
+                {
+                    if (!await PadMenu.ConfirmAsync(_hostGrid, "Not saved yet",
+                        $"The newest changes to your Bank could not be sent ({sync.LastError}). Signing out now loses them. Sign out anyway?",
+                        "Sign out anyway")) return;
+                    await sync.SignOutAsync(force: true);
+                }
+                App.ShowLoginPage();
                 break;
         }
     }

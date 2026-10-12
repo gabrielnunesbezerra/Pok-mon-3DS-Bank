@@ -58,6 +58,22 @@ public sealed class App : Application
 #endif
     }
 
+    /// <summary>After signing in: Home replaces the sign-in screen.</summary>
+    internal static void ShowMainPage()
+    {
+        var services = IPlatformApplication.Current?.Services;
+        if (services is null || Current is null || Current.Windows.Count == 0) return;
+        Current.Windows[0].Page = CreateRoot(services);
+    }
+
+    /// <summary>After signing out: the sign-in screen replaces everything.</summary>
+    internal static void ShowLoginPage()
+    {
+        var services = IPlatformApplication.Current?.Services;
+        if (services is null || Current is null || Current.Windows.Count == 0) return;
+        Current.Windows[0].Page = services.GetRequiredService<Views.LoginPage>();
+    }
+
     private static NavigationPage CreateRoot(IServiceProvider services)
     {
         Trace("resolving HomePage");
@@ -100,6 +116,12 @@ public sealed class App : Application
         {
             var services = IPlatformApplication.Current?.Services
                 ?? throw new InvalidOperationException("MAUI services are unavailable.");
+            // 3DS Bank: the Bank belongs to an account, so the first screen is the sign-in
+            // until someone signs in on this phone; after that the app opens straight to Home.
+            var account = services.GetRequiredService<Services.AccountService>();
+            if (!account.IsSignedIn)
+                return new Window(services.GetRequiredService<Views.LoginPage>());
+            services.GetRequiredService<Services.CloudBankSync>().Start();
             return new Window(CreateRoot(services));
         }
         catch (Exception error)
