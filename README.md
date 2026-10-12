@@ -52,8 +52,10 @@ O 3DS Bank usa um nome de pacote próprio, então pode ficar instalado junto com
 
 ## Compilação
 
-O GitHub Actions compila e testa a cada envio (`.github/workflows/build.yml`). Uma tag
-`vX.Y.Z` publica uma Release com o APK assinado. A chave de assinatura fica no secret
+O GitHub Actions compila e testa a cada envio (`.github/workflows/build.yml`). Quando a
+versão em `ApplicationDisplayVersion` (`src/PKForge.App/PKForge.App.csproj`) ainda não tem
+Release, o envio para `main` publica uma com o APK assinado. Para lançar uma atualização,
+aumente essa versão e também `ApplicationVersion`. A chave de assinatura fica no secret
 `BANK_ANDROID_KEYSTORE_BASE64` (Settings > Secrets and variables > Actions); todo APK
 precisa da mesma chave para atualizar por cima do anterior.
 
