@@ -73,10 +73,18 @@ public sealed class App : Application
     /// <summary>3DS Bank 2.0: friends, trade invitations and the Shooting Star achievement, for a signed-in player.</summary>
     private static void StartOnline(IServiceProvider services)
     {
-        Views.GlobalPrompts.Install(services);
-        services.GetService<Services.SocialService>()?.Start();
-        var storage = services.GetService<Services.StorageService>();
-        if (storage is not null) _ = Task.Run(storage.CheckAchievement);
+        // Never let the online extras keep the Bank from opening.
+        try
+        {
+            Views.GlobalPrompts.Install(services);
+            services.GetService<Services.SocialService>()?.Start();
+            var storage = services.GetService<Services.StorageService>();
+            if (storage is not null) _ = Task.Run(storage.CheckAchievement);
+        }
+        catch (Exception error)
+        {
+            Services.AppLog.Warn("online", $"Starting friends and the Storage: {error}");
+        }
     }
 
     /// <summary>After signing out: the sign-in screen replaces everything.</summary>
