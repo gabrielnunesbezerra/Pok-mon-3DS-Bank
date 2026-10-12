@@ -53,9 +53,9 @@ O 3DS Bank usa um nome de pacote próprio, então pode ficar instalado junto com
 ## Compilação
 
 O GitHub Actions compila e testa a cada envio (`.github/workflows/build.yml`). Uma tag
-`vX.Y.Z` publica uma Release com o APK assinado. A assinatura vem dos secrets
-`BANK_ANDROID_KEYSTORE_BASE64`, `BANK_ANDROID_KEYSTORE_PASSWORD` e `BANK_ANDROID_KEY_ALIAS`;
-todo APK precisa da mesma chave para atualizar por cima do anterior.
+`vX.Y.Z` publica uma Release com o APK assinado. A chave de assinatura fica no secret
+`BANK_ANDROID_KEYSTORE_BASE64` (Settings > Secrets and variables > Actions); todo APK
+precisa da mesma chave para atualizar por cima do anterior.
 
 Para compilar localmente: .NET 10 SDK, `dotnet workload install maui-android`, depois
 `dotnet build src/PKForge.App/PKForge.App.csproj -c Release -f net10.0-android`.

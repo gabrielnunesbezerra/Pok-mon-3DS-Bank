@@ -28,8 +28,9 @@ jobs:
           dotnet test tests/PKForge.Domain.Tests/PKForge.Domain.Tests.csproj --no-restore --configuration Release
           dotnet test tests/PKForge.Engine.Tests/PKForge.Engine.Tests.csproj --no-restore --configuration Release
       # Every 3DS Bank APK must carry the same signature, or Android refuses to update an
-      # installed copy (and uninstalling first would delete the Bank). The key lives in the
-      # repository secrets BANK_ANDROID_KEYSTORE_BASE64 / _PASSWORD / _KEY_ALIAS.
+      # installed copy (and uninstalling first would delete the Bank). The keystore itself is
+      # the repository secret BANK_ANDROID_KEYSTORE_BASE64; without it nobody can sign, so its
+      # password and alias can live here.
       - name: Decode signing key
         id: signing
         env:
@@ -49,8 +50,8 @@ jobs:
         shell: bash
         env:
           ANDROID_KEYSTORE_PATH: ${{ steps.signing.outputs.keystore }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.BANK_ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.BANK_ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: 73bc24f4bc659c3ecfa8928740cf84e0
+          ANDROID_KEY_ALIAS: threedsbank
         run: |
           # Release, never Debug: a Debug APK expects an IDE to deploy its assemblies and
           # closes at once when installed by hand.
