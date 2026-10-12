@@ -27,6 +27,10 @@ public static class PksmIconCatalog
         new("palette", "px_palette.png", "Color scheme"),
         new("folder", "icon_folder.png", "Pick a folder / files on device"),
         new("park", "px_park.png", "Poképark"),
+        new("storagebox", "px_storagebox.png", "3DS Bank Storage (items and Shooting Stars)"),
+        new("friends", "px_friends.png", "Friends"),
+        new("trade", "px_trade.png", "Online trade"),
+        new("star", "px_star.png", "Shooting Star"),
         // Pokémon actions
         new("editor", "icon_script.png", "Edit / view a Pokémon"),
         new("evolve", "px_evolve.png", "Evolve"),

@@ -21,8 +21,11 @@ namespace PKForge.App.Views;
 /// actions (bulk moves, releases, sorting), and the readout under the grid carries the
 /// mark count. Every write is an index write: the bank never touches a save itself.
 /// </summary>
-public sealed class BankPage : ContentPage, IPadPagingHandler
+public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
 {
+    /// <summary>Invitations and new stars show over the Bank too.</summary>
+    public Grid OverlayHost => _hostGrid;
+
     private const int Columns = 6;
     private const int Rows = 5;
 
@@ -164,6 +167,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
     {
         base.OnAppearing();
         IPlatformApplication.Current?.Services.GetService<GamepadRouter>()?.Push(this);
+        GlobalPrompts.Flush(this);
         // The lower screen belongs to the Bank's inspector while this page is in front.
         _secondClaim ??= IPlatformApplication.Current?.Services.GetService<SecondScreenState>()?.Routes.CreateClaim(SecondScreenOwner.Bank);
         _secondClaim?.Activate();
@@ -812,6 +816,14 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             options.Add(new PadOption("Evolve…", IconPath: "evolve", Detail: "Evolves it right here in the bank."));
         }
         options.Add(new PadOption("Send to Poképark", IconPath: "park", Detail: "It joins the Poképark visitors. The bank is not changed."));
+        // 3DS Bank 2.0: held items through the Storage, and the Shooting Star.
+        var storage = IPlatformApplication.Current?.Services.GetService<StorageService>();
+        if (storage is not null && entry.Info.Generation >= 2 && entry.Info.Format is not "PB7"
+            && PKForge.Engine.EntityBytes.RomHackGame(entry.Info.Format) is null)
+            options.Add(new PadOption("Held item…", IconPath: "item", Detail: "Give it an item from the Storage, or keep its item in the Storage."));
+        if (storage is not null && !entry.Info.Shiny && storage.Read().Stars > 0
+            && PKForge.Engine.EntityBytes.RomHackGame(entry.Info.Format) is null)
+            options.Add(new PadOption("Use a Shooting Star", IconPath: "shiny", Detail: "It becomes shiny for good. One Shooting Star is used up."));
         if (Allowed(SaveAction.Duplicate)) options.Add(new PadOption("Duplicate", IconPath: "copy", Detail: "An exact copy goes into the first free bank slot."));
         options.Add(new PadOption("Send to game…", IconPath: "send", Detail: "Moves it into a game's boxes and out of the bank."));
         if (Allowed(SaveAction.Duplicate)) options.Add(new PadOption("Copy to game…", IconPath: "copy", Detail: "Puts a copy in a game's boxes; this one stays in the bank."));
@@ -823,6 +835,13 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             options.ToArray());
         switch (choice)
         {
+            case "Held item…" when storage is not null:
+                await HeldItemMenuAsync(storage, entry);
+                return;
+            case "Use a Shooting Star" when storage is not null:
+                if (await StoragePage.UseStarOnAsync(_hostGrid, storage, _bank, entry))
+                    AfterEntryChanged();
+                return;
             case "Send to Poképark":
                 _boxViewModel.Status = IPlatformApplication.Current!.Services.GetRequiredService<PokeparkService>().AddBankVisitor(entry.Id);
                 await PadMenu.ShowAsync(_hostGrid, "Poképark", _boxViewModel.Status, new PadOption("OK"));
@@ -872,6 +891,62 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
                 _canvas.InvalidateSurface();
                 return;
         }
+    }
+
+    /// <summary>The same slot holds a changed Pokémon (an item, the Shooting Star): every view reads it again.</summary>
+    private void AfterEntryChanged()
+    {
+        RefreshBoxEntries();
+        ForgetPanelSummary();
+        UpdatePreview();
+        UpdateStatus();
+        _canvas.InvalidateSurface();
+    }
+
+    /// <summary>3DS Bank 2.0: give a Bank Pokémon an item from the Storage, or keep its item there.</summary>
+    private async Task HeldItemMenuAsync(StorageService storage, BankEntry entry)
+    {
+        var held = storage.HeldItemOf(entry);
+        var keep = held > 0 ? $"Keep {storage.ItemName(held)} in the Storage" : null;
+        var options = new List<PadOption> { new("Give an item from the Storage", IconPath: "bag", Detail: "What it holds now goes to the Storage.") };
+        if (keep is not null) options.Add(new PadOption(keep, IconPath: "item", Detail: "It stops holding it; the Storage keeps it."));
+        options.Add(new PadOption("Close", IconPath: "close"));
+        var choice = await PadMenu.ShowAsync(_hostGrid, entry.Info.Nickname,
+            held > 0 ? $"Holding {storage.ItemName(held)}." : "Not holding anything.", [.. options]);
+        StorageOutcome? outcome = null;
+        if (choice == keep && keep is not null)
+        {
+            outcome = storage.TakeItem(entry.Id);
+        }
+        else if (choice == "Give an item from the Storage")
+        {
+            var state = storage.Read();
+            if (state.Items.Count == 0)
+            {
+                await PadMenu.ShowAsync(_hostGrid, "Storage", "Your Storage is empty. Bring items from a game's bag on the Storage screen.", "OK");
+                return;
+            }
+            var directory = System.IO.Path.Combine(FileSystem.AppDataDirectory, "items");
+            var placeholder = ItemArt.PlaceholderPath();
+            var items = state.Items
+                .OrderBy(pair => storage.ItemName(pair.Key), StringComparer.OrdinalIgnoreCase)
+                .Select(pair =>
+                {
+                    var name = storage.ItemName(pair.Key);
+                    var cached = System.IO.Path.Combine(directory, ItemArt.Slug(name) + ".png");
+                    var why = storage.WhyCannotHold(entry, pair.Key);
+                    return new PickItem(pair.Key, name, File.Exists(cached) ? cached : placeholder,
+                        why is null ? $"×{pair.Value}" : $"×{pair.Value} · {why}") { Muted = why is not null };
+                })
+                .ToList();
+            var pick = await PickerMenu.ShowAsync(_hostGrid, $"Give {entry.Info.Nickname} an item", items);
+            if (pick is null) return;
+            outcome = storage.GiveItem(entry.Id, pick.Id);
+        }
+        if (outcome is null) return;
+        if (outcome.Success) AfterEntryChanged();
+        _boxViewModel.Status = outcome.Message;
+        await PadMenu.ShowAsync(_hostGrid, outcome.Success ? "Storage" : "Not possible", outcome.Message, "OK");
     }
 
     // ── The organizer's actions: bulk moves, keepsakes, releases, sorting ─────
@@ -1088,6 +1163,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
 
         var items = selection.Select(e => new PKForge.Engine.TransferItem(_bank.GetData(e.Id), e.Info.Format, e.Info.Nickname)).ToArray();
         var ids = selection.Select(e => e.Id).ToArray();
+        // 3DS Bank 2.0: held items the game cannot have come off on the way in, for the Storage.
+        var returned = new List<int>();
         var subject = selection.Count == 1 ? selection[0].Info.Nickname : $"{selection.Count} Pokémon";
         PKForge.Engine.BatchTransferOutcome outcome;
         if (destinationPick.Other is null)
@@ -1107,7 +1184,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             var rooms = open.Take(items.Length).ToArray();
             outcome = await PKForge.Engine.BankTransfers.WithdrawAsync(_bank, ids, destination,
                 async () => await _boxViewModel.RunMutationAsync(session =>
-                    PKForge.Engine.BankTransfers.ImportAll(session, items, rooms, out var refusal) is var failed and >= 0
+                    PKForge.Engine.BankTransfers.ImportAll(session, items, rooms, out var refusal, Fresh(returned)) is var failed and >= 0
                         ? new GenerationOutcome(false, failed >= items.Length
                             ? $"the connected game has room for {rooms.Length} of {items.Length} Pokémon."
                             : refusal is null
@@ -1131,7 +1208,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             outcome = await PKForge.Engine.BankTransfers.WithdrawAsync(_bank, ids, target.GameLabel,
                 async () =>
                 {
-                    (var refusal, landed) = await transfer.SendManyToGameAsync(items, target, $"{subject} arrived from the bank");
+                    (var refusal, landed) = await transfer.SendManyToGameAsync(items, target, $"{subject} arrived from the bank",
+                        returnedItems: Fresh(returned));
                     return refusal;
                 },
                 async () =>
@@ -1141,8 +1219,29 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
                 });
         }
 
-        if (outcome.Success || outcome.Duplicated) FinishOrganizer(outcome.Message);
+        if (outcome.Success || outcome.Duplicated)
+        {
+            FinishOrganizer(outcome.Message);
+            await KeepReturnedItemsAsync(returned);
+        }
         else _boxViewModel.Status = outcome.Message;
+    }
+
+    /// <summary>The list emptied for a fresh attempt (a retried step must not count items twice).</summary>
+    private static List<int> Fresh(List<int> list)
+    {
+        list.Clear();
+        return list;
+    }
+
+    /// <summary>3DS Bank 2.0: held items the game could not take go to the Storage, and the player is told.</summary>
+    private async Task KeepReturnedItemsAsync(IReadOnlyCollection<int> items)
+    {
+        if (items.Count == 0) return;
+        var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
+        if (note is null) return;
+        _boxViewModel.Status = $"{_boxViewModel.Status} {note}";
+        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
     }
 
     /// <summary>
@@ -1619,6 +1718,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
         var bytes = _bank.GetData(entry.Id);
         var nickname = entry.Info.Nickname;
         var format = entry.Info.Format;
+        var returnedItems = new List<int>();
 
         if (destination.Other is null)
         {
@@ -1631,12 +1731,14 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             }
             var connectedPreview = transfer.PreviewIntoConnected(bytes, nickname, landing.Box, landing.Slot, format);
             if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, connectedPreview, nickname, "the connected game")) return;
+            var returnedItem = 0;
             var ok = await _boxViewModel.RunMutationAsync(session =>
-                Services.TransferService.TryImport(session, landing.Box, landing.Slot, bytes, out var refusal, format)
+                PKForge.Engine.BankTransfers.TryImport(session, landing.Box, landing.Slot, bytes, out var refusal, out returnedItem, format)
                     ? new GenerationOutcome(true, $"{nickname} joined the game (box {landing.Box + 1}).")
                     : new GenerationOutcome(false, refusal ?? Services.TransferService.Refusal(bytes, nickname, session.Snapshot, "this game", format)), landing.Slot,
                 action: keepOriginal ? SaveAction.Duplicate : SaveAction.Move);
             if (!ok) return;
+            returnedItems.Add(returnedItem);
         }
         else
         {
@@ -1646,6 +1748,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             var outcome = await transfer.SendToGameAsync(bytes, nickname, target, format: format);
             _boxViewModel.Status = outcome.Message;
             if (!outcome.Success) return;
+            returnedItems.Add(outcome.ReturnedItem);
         }
 
         if (!keepOriginal)
@@ -1655,6 +1758,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             UpdatePreview();
         }
         _canvas.InvalidateSurface();
+        await KeepReturnedItemsAsync(returnedItems.Where(item => item > 0).ToList());
     }
 
     private async Task ExportAsync(BankEntry entry)

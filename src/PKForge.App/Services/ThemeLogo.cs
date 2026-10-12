@@ -3,8 +3,8 @@ using PKForge.Chrome;
 namespace PKForge.App.Services;
 
 /// <summary>
-/// The PKForge logo in the current color scheme's colors (Resources/UI/logo/&lt;scheme id&gt;.png),
-/// falling back to the app icon when a scheme has none.
+/// The app's logo: a scheme's own (ui/logo/&lt;scheme id&gt;.png) when one ships, else the one
+/// logo (Resources/UI/logo.png). Since 2.0 every scheme shows the same Bank-as-a-Poké-Ball logo.
 /// </summary>
 public static class ThemeLogo
 {

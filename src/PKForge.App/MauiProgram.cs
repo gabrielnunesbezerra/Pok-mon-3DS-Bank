@@ -47,6 +47,13 @@ public static class MauiProgram
         builder.Services.AddSingleton<AccountService>();
         builder.Services.AddSingleton<CloudBankSync>();
         builder.Services.AddTransient<LoginPage>();
+        // 3DS Bank 2.0: the Storage (items and Shooting Stars), friends and online trades.
+        builder.Services.AddSingleton(sp => new StorageService(sp.GetRequiredService<ReloadableBankService>(),
+            sp.GetRequiredService<ISaveEngine>(), sp.GetRequiredService<IGameDataService>(), sp));
+        builder.Services.AddSingleton(sp => new CloudSocialClient(sp.GetRequiredService<CloudAccountClient>()));
+        builder.Services.AddSingleton<SocialService>();
+        builder.Services.AddTransient<StoragePage>();
+        builder.Services.AddTransient<FriendsPage>();
         builder.Services.AddSingleton<IBankService>(sp =>
         {
             var bank = sp.GetRequiredService<ReloadableBankService>();

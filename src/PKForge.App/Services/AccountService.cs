@@ -62,13 +62,49 @@ public sealed class AccountService
 
     public string? UserId => _session?.UserId;
 
-    /// <summary>Signs in (or creates the account first) and remembers the session.</summary>
-    public async Task SignInAsync(string username, string password, bool createAccount, CancellationToken cancellationToken = default)
+    private const string KeyLastLogin = "account_last_login";
+
+    /// <summary>What was last typed to sign in on this phone (username or e-mail), to fill the field again.</summary>
+    public static string LastLogin
     {
-        var session = createAccount
-            ? await Client.SignUpAsync(username, password, cancellationToken)
-            : await Client.SignInAsync(username, password, cancellationToken);
+        get => Preferences.Default.Get(KeyLastLogin, "");
+        private set => Preferences.Default.Set(KeyLastLogin, value);
+    }
+
+    /// <summary>Signs in with a username (accounts without an e-mail) or an e-mail, and remembers the session.</summary>
+    public async Task SignInAsync(string identifier, string password, CancellationToken cancellationToken = default)
+    {
+        var session = await Client.SignInAsync(identifier, password, cancellationToken);
         Store(session);
+        LastLogin = identifier.Trim();
+    }
+
+    /// <summary>Creates an account (username, e-mail and password) and remembers the session.</summary>
+    public async Task SignUpAsync(string username, string email, string password, CancellationToken cancellationToken = default)
+    {
+        var session = await Client.SignUpAsync(username, email, password, cancellationToken);
+        Store(session);
+        LastLogin = email.Trim();
+    }
+
+    /// <summary>The account's e-mail, or null while it has none (accounts made before 2.0).</summary>
+    public async Task<string?> GetEmailAsync(CancellationToken cancellationToken = default) =>
+        await Client.GetEmailAsync(await GetFreshSessionAsync(cancellationToken), cancellationToken);
+
+    /// <summary>Sends the confirmation link that adds (or changes) the account's e-mail.</summary>
+    public async Task SendEmailChangeAsync(string email, CancellationToken cancellationToken = default) =>
+        await Client.SendEmailChangeAsync(await GetFreshSessionAsync(cancellationToken), email, cancellationToken);
+
+    /// <summary>The result of claiming the username on this launch (null until checked).</summary>
+    public UsernameClaim? Claim { get; private set; }
+
+    /// <summary>Makes sure friends can find this account by its username (accounts made before 2.0 claim it here).</summary>
+    public async Task<UsernameClaim> EnsureUsernameAsync(CancellationToken cancellationToken = default)
+    {
+        if (Claim is { } known && known != UsernameClaim.Taken) return known;
+        var claim = await Client.ClaimUsernameAsync(await GetFreshSessionAsync(cancellationToken), cancellationToken);
+        Claim = claim;
+        return claim;
     }
 
     /// <summary>The session with an ID token valid for at least a few more minutes.</summary>
@@ -95,6 +131,7 @@ public sealed class AccountService
     public void SignOut()
     {
         _session = null;
+        Claim = null;
         foreach (var key in new[] { KeyUser, KeyName, KeyRefresh, KeyToken, KeyExpiry })
             Preferences.Default.Remove(key);
     }

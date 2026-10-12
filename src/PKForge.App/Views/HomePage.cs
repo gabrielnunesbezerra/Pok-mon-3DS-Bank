@@ -10,7 +10,7 @@ namespace PKForge.App.Views;
 /// The console home: a horizontal shelf of game cartridges, a first-run wizard when
 /// nothing is linked, and a bottom hint bar. Landscape composition for the AYN Thor.
 /// </summary>
-public sealed class HomePage : ContentPage, IPadHandler
+public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
 {
     private readonly SavePickerViewModel _viewModel;
     private ScrollView _shelf = null!;
@@ -82,22 +82,23 @@ public sealed class HomePage : ContentPage, IPadHandler
         Grid.SetRow(_shelf, 1);
         BlockNativeFocus(_shelf);
 
-        // The three destinations as PKSM tiles with bundled pixel icons.
+        // The destinations as PKSM tiles with bundled pixel icons.
         // 3DS Bank: the Dex Autopilot (it evolves Pokémon) and the event database (it hands
-        // out Pokémon) are not part of this app, so only these three destinations remain.
+        // out Pokémon) are not part of this app. 2.0 adds the Storage and Friends.
         var bank = new DsCard("bank", "Bank") { Tapped = () => _ = PushAsync<BankPage>() };
+        var storage = new DsCard("storagebox", "Storage") { Tapped = () => _ = PushAsync<StoragePage>() };
+        var friends = new DsCard("friends", "Friends") { Tapped = () => _ = OpenFriendsAsync() };
         var park = new DsCard("park", "Poképark") { Tapped = () => _ = PushParkAsync() };
         var settings = new DsCard("settings", "Settings") { Tapped = () => _ = ShowSettingsAsync() };
-        _cards = [bank, park, settings];
+        _cards = [bank, storage, friends, park, settings];
         foreach (var card in _cards) BlockNativeFocus(card);
         var cards = new Grid
         {
-            ColumnSpacing = 10,
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
-            Children = { bank, park, settings },
+            ColumnSpacing = 8,
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
+            Children = { bank, storage, friends, park, settings },
         };
-        Grid.SetColumn(park, 1);
-        Grid.SetColumn(settings, 2);
+        for (var i = 0; i < _cards.Length; i++) Grid.SetColumn(_cards[i], i);
 
         var body = new Grid
         {
@@ -135,6 +136,21 @@ public sealed class HomePage : ContentPage, IPadHandler
     }
 
     private Grid _hostGrid = null!;
+
+    /// <summary>Invitations and new stars show over Home.</summary>
+    public Grid OverlayHost => _hostGrid;
+
+    /// <summary>Friends need an account that is online; offline players are told why.</summary>
+    private async Task OpenFriendsAsync()
+    {
+        var account = IPlatformApplication.Current?.Services.GetService<AccountService>();
+        if (account?.IsSignedIn != true)
+        {
+            await PadMenu.ShowAsync(_hostGrid, "Friends", "Sign in to add friends and trade.", "OK");
+            return;
+        }
+        await PushAsync<FriendsPage>();
+    }
 
     /// <summary>The account this phone's Bank is saved to, shown in the status strip.</summary>
     private static string? SignedInName() =>
@@ -226,6 +242,7 @@ public sealed class HomePage : ContentPage, IPadHandler
     {
         base.OnAppearing();
         _isAppearing = true;
+        GlobalPrompts.Flush(this);
         if (!_crashOffered)
         {
             _crashOffered = true;
@@ -650,10 +667,22 @@ public sealed class HomePage : ContentPage, IPadHandler
         if (account is null || sync is null) return;
         var state = sync.LastError
             ?? (sync.LastSyncUtc is { } at ? $"Last saved at {at.ToLocalTime():HH:mm}." : "Your Bank is saved a few seconds after every change.");
+        string? email = null;
+        try { email = await account.GetEmailAsync(); }
+        catch (PKForge.Infrastructure.CloudAccountException) { /* offline: the option still lets them add one */ }
+        var emailOption = email is null ? "Add an e-mail (password recovery)" : $"E-mail: {email}";
         var choice = await PadMenu.ShowAsync(_hostGrid, $"Account: {account.Username}", state,
+            new PadOption(emailOption, IconPath: "inbox", Detail: email is null
+                ? "With an e-mail you can make a new password if you forget it. You then sign in with the e-mail."
+                : "Forgot the password? “Forgot password” on the sign-in screen sends a link here. Pick this to change it."),
             new PadOption("Save Bank now", IconPath: "update", Detail: "Sends this phone's Bank to your account right away."),
             new PadOption("Talk to support", IconPath: "info", Detail: "Opens a WhatsApp chat with support."),
             new PadOption("Sign out", IconPath: "quit", Detail: "Your Bank stays in your account; this phone's copy is removed."));
+        if (choice == emailOption)
+        {
+            await ChangeEmailAsync(account, email);
+            return;
+        }
         switch (choice)
         {
             case "Save Bank now":
@@ -673,8 +702,27 @@ public sealed class HomePage : ContentPage, IPadHandler
                         "Sign out anyway")) return;
                     await sync.SignOutAsync(force: true);
                 }
+                if (IPlatformApplication.Current?.Services.GetService<SocialService>() is { } social) await social.StopAsync();
                 App.ShowLoginPage();
                 break;
+        }
+    }
+
+    /// <summary>3DS Bank 2.0: adds (or changes) the account's e-mail through Firebase's confirmation link.</summary>
+    private async Task ChangeEmailAsync(AccountService account, string? current)
+    {
+        var typed = await TextPopup.ShowLineAsync(_hostGrid, current is null ? "Add an e-mail" : "Change the e-mail",
+            "A link goes to this address; the e-mail changes when you open it. From then on you sign in with the e-mail.", current ?? "");
+        if (string.IsNullOrWhiteSpace(typed) || string.Equals(typed.Trim(), current, StringComparison.OrdinalIgnoreCase)) return;
+        try
+        {
+            await account.SendEmailChangeAsync(typed);
+            await PadMenu.ShowAsync(_hostGrid, "Check your e-mail",
+                $"A confirmation link went to {typed.Trim()}. Open it to finish (look in spam too). After that, sign in with this e-mail; your username stays the same for your friends.", "OK");
+        }
+        catch (PKForge.Infrastructure.CloudAccountException error)
+        {
+            await PadMenu.ShowAsync(_hostGrid, "E-mail", error.Message, "OK");
         }
     }
 

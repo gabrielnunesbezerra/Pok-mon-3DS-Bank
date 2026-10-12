@@ -136,6 +136,29 @@ public sealed class ReloadableBankService : IBankService
         Mutate(bank => bank.CompleteMigration(version, updates));
     public int Place(IReadOnlyList<(Guid Id, int Box, int Slot)> placements) => Mutate(bank => bank.Place(placements));
 
+    /// <summary>
+    /// Reads the Bank together with its side files (<see cref="BankSideFiles"/>) while no change
+    /// can run, so what is read belongs together.
+    /// </summary>
+    public T Read<T>(Func<IBankService, string, T> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        lock (_sync) return read(_inner, Root);
+    }
+
+    /// <summary>
+    /// Changes the Bank and its side files as one step (no other change runs in between), then
+    /// raises <see cref="Changed"/> so the account sync sends it.
+    /// </summary>
+    public T Change<T>(Func<IBankService, string, T> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        T result;
+        lock (_sync) result = change(_inner, Root);
+        Changed?.Invoke();
+        return result;
+    }
+
     /// <summary>The Bank folder packed while no change can run.</summary>
     public byte[] Snapshot()
     {

@@ -67,6 +67,16 @@ public sealed class App : Application
         var services = IPlatformApplication.Current?.Services;
         if (services is null || Current is null || Current.Windows.Count == 0) return;
         Current.Windows[0].Page = CreateRoot(services);
+        StartOnline(services);
+    }
+
+    /// <summary>3DS Bank 2.0: friends, trade invitations and the Shooting Star achievement, for a signed-in player.</summary>
+    private static void StartOnline(IServiceProvider services)
+    {
+        Views.GlobalPrompts.Install(services);
+        services.GetService<Services.SocialService>()?.Start();
+        var storage = services.GetService<Services.StorageService>();
+        if (storage is not null) _ = Task.Run(storage.CheckAchievement);
     }
 
     /// <summary>After signing out: the sign-in screen replaces everything.</summary>
@@ -125,7 +135,9 @@ public sealed class App : Application
             if (!account.IsSignedIn)
                 return new Window(services.GetRequiredService<Views.LoginPage>());
             services.GetRequiredService<Services.CloudBankSync>().Start();
-            return new Window(CreateRoot(services));
+            var window = new Window(CreateRoot(services));
+            StartOnline(services);
+            return window;
         }
         catch (Exception error)
         {

@@ -1517,6 +1517,8 @@ public sealed class SaveEngineSession : ISaveEngineSession
             refusal = "This is not a readable Pokémon file.";
             return null;
         }
+        // The national id of what it holds, read before the conversion can drop it.
+        var held = HeldItemRules.National(imported);
         var conversion = CrossFormatConverter.Convert(imported, _save, out refusal);
         if (conversion is null) return null;
         if (ThreeDsBankPolicy.EditingLocked && HeavyChange(imported, conversion, fileBytes, format) is { } heavy)
@@ -1529,6 +1531,14 @@ public sealed class SaveEngineSession : ISaveEngineSession
             refusal = "Only the transfer flow can take a Pokémon back to an older game, because it shows what the downgrade changes.";
             return null;
         }
+        // 3DS Bank: an item the game cannot have comes off and goes back to the Storage.
+        if (held > 0 && HeldItemRules.TakeUnusable(imported, conversion.Entity, _save) is var returned and > 0)
+            conversion = conversion with
+            {
+                ReturnedItem = returned,
+                Warnings = [.. conversion.Warnings.Where(w => !w.StartsWith("Held item ", StringComparison.Ordinal)),
+                    $"Held item {ItemLabel(returned)} does not exist in {VersionLabel(_save.Version)}: it goes back to your Storage."],
+            };
         if (box == -1)
         {
             if (_save.PartyCount >= 6)
@@ -1545,18 +1555,17 @@ public sealed class SaveEngineSession : ISaveEngineSession
     }
 
     /// <summary>
-    /// 3DS Bank only lets a Pokémon travel the way the official games allow, arriving as it
-    /// left: never back to an older generation, never between the Let's Go games and the
-    /// others, never as an egg across generations, never changing species or form, and never
-    /// out of a ROM hack when the trip would rewrite it. Null when the transfer is fine.
+    /// 3DS Bank keeps a Pokémon recognizably itself on every trip: never between the Let's Go
+    /// games and the others, never as an egg across generations, never changing species or
+    /// form, and never out of a ROM hack when the trip would rewrite it. Null when the transfer
+    /// is fine. Going back to an older generation is allowed (with the downgrade's changes shown first).
     /// </summary>
     private string? HeavyChange(PKM before, TransferConversion conversion, byte[] fileBytes, string? format)
     {
         var after = conversion.Entity;
-        if (after.Format < before.Format)
-            return "3DS Bank only moves Pokémon forward, like the official games: it cannot go back to an older generation.";
-        if (conversion.Backwards)
-            return "The official games have no way to bring it into this game, so 3DS Bank does not either.";
+        // 3DS Bank 2.0: a Pokémon may go back to an older generation again. The converter keeps
+        // it loadable (moves the old game lacks are swapped for ones it learns there, the origin
+        // game and met place become ones that game knows), and the transfer preview lists each change.
         if ((before is PB7) != (_save is SAV7b))
             return "Let's Go Pikachu and Eevee only exchange Pokémon with each other.";
         if (before.IsEgg && before.Format != after.Format)
@@ -1567,6 +1576,16 @@ public sealed class SaveEngineSession : ISaveEngineSession
             return "Moving it out of its ROM hack would rewrite parts of it, so it stays in its own game.";
         return null;
     }
+
+    /// <summary>An item's English name by national id, for transfer notes.</summary>
+    private static string ItemLabel(int national)
+    {
+        var items = GameInfo.Strings.itemlist;
+        return national > 0 && national < items.Length && items[national].Length > 0 ? items[national] : $"#{national}";
+    }
+
+    private static string VersionLabel(GameVersion version) =>
+        GameInfo.GetVersionName(version) is { Length: > 0 } name ? name : version.ToString();
 
     public TrainerInfo GetTrainer()
     {

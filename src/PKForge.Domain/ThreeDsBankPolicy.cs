@@ -7,6 +7,10 @@ namespace PKForge.Domain;
 /// Moving, sending, depositing, withdrawing, sorting, releasing, exporting and restore points stay.</item>
 /// <item>Only saves from Generation 1 to 7 are opened.</item>
 /// </list>
+/// Since 2.0 a few Bank features open a door for the length of one operation
+/// (<see cref="Allow"/>): the Poképark's care, moving items between a game's bag and the
+/// Storage, giving or taking a held item, the Shooting Star and an online trade (with its
+/// trade evolution). Nothing else gets through.
 /// The unit test projects lift both rules through the <see cref="TestModeSwitch"/> runtime
 /// switch (set in their .csproj files) so the original engine tests keep exercising the code;
 /// the Android app never sets it.
@@ -33,24 +37,27 @@ public static class ThreeDsBankPolicy
     private static readonly bool TestMode =
         AppContext.TryGetSwitch(TestModeSwitch, out var enabled) && enabled;
 
-    private static readonly AsyncLocal<int> ParkCareDepth = new();
+    private static readonly AsyncLocal<int> FeatureDepth = new();
 
     /// <summary>True in the app: every editing entry point refuses to run (except inside
-    /// <see cref="AllowParkCare"/>, the Poképark's own earned friendship and nature changes).</summary>
-    public static bool EditingLocked => !TestMode && ParkCareDepth.Value == 0;
+    /// <see cref="Allow"/>, one of the Bank's own features).</summary>
+    public static bool EditingLocked => !TestMode && FeatureDepth.Value == 0;
 
     /// <summary>
-    /// Opens the one door the Poképark needs: while the returned scope is alive, the Bank may
-    /// store a Pokémon that was cared for (more friendship, the once-only nature change).
-    /// Nothing else uses it.
+    /// Opens the door one Bank feature needs: while the returned scope is alive, the engine and
+    /// the Bank accept the change that feature makes (see <see cref="BankFeature"/>).
     /// </summary>
-    public static IDisposable AllowParkCare()
+    public static IDisposable Allow(BankFeature feature)
     {
-        ParkCareDepth.Value++;
-        return new ParkCareScope();
+        _ = feature; // the feature names the reason at the call site; the door is the same
+        FeatureDepth.Value++;
+        return new FeatureScope();
     }
 
-    private sealed class ParkCareScope : IDisposable
+    /// <summary>The Poképark's door: a cared-for Pokémon (more friendship, the once-only nature change).</summary>
+    public static IDisposable AllowParkCare() => Allow(BankFeature.ParkCare);
+
+    private sealed class FeatureScope : IDisposable
     {
         private bool _disposed;
 
@@ -58,7 +65,7 @@ public static class ThreeDsBankPolicy
         {
             if (_disposed) return;
             _disposed = true;
-            ParkCareDepth.Value--;
+            FeatureDepth.Value--;
         }
     }
 
@@ -81,6 +88,21 @@ public static class ThreeDsBankPolicy
         if (!SupportsGeneration(generation))
             throw new InvalidDataException(GenerationRefusedMessage);
     }
+}
+
+/// <summary>The Bank features allowed to change a Pokémon or a save (<see cref="ThreeDsBankPolicy.Allow"/>).</summary>
+public enum BankFeature
+{
+    /// <summary>Poképark care: friendship and the once-only nature change.</summary>
+    ParkCare,
+    /// <summary>Items moved between a game's bag and the Storage.</summary>
+    BagItems,
+    /// <summary>A held item given to or taken from a Bank Pokémon, or returned to the Storage on a transfer.</summary>
+    HeldItem,
+    /// <summary>The Shooting Star turning a Bank Pokémon shiny.</summary>
+    ShootingStar,
+    /// <summary>An online trade and the trade evolution it causes.</summary>
+    Trade,
 }
 
 /// <summary>An editing call refused by <see cref="ThreeDsBankPolicy"/>; nothing was changed.</summary>

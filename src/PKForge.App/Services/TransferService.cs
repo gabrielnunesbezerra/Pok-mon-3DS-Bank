@@ -3,8 +3,9 @@ using PKForge.Engine;
 
 namespace PKForge.App.Services;
 
-/// <summary>Outcome of a bank-to-game or game-to-game transfer.</summary>
-public sealed record TransferOutcome(bool Success, string Message, int Box = -1, int Slot = -1, string? BackupId = null);
+/// <summary>Outcome of a bank-to-game or game-to-game transfer. <paramref name="ReturnedItem"/> is the
+/// national id of a held item the game could not take (0 for none): the caller gives it to the Storage.</summary>
+public sealed record TransferOutcome(bool Success, string Message, int Box = -1, int Slot = -1, string? BackupId = null, int ReturnedItem = 0);
 
 /// <summary>
 /// Pre-flight answer for a transfer: what the conversion will change and a legality
@@ -68,13 +69,14 @@ public sealed class TransferService(
         if (Landing(snapshot, startAt) is not { } landing)
             return new TransferOutcome(false, NoRoom(target, startAt));
 
-        if (!TryImport(session, landing.Box, landing.Slot, entityBytes.ToArray(), out var refusal, format))
+        if (!BankTransfers.TryImport(session, landing.Box, landing.Slot, entityBytes.ToArray(), out var refusal, out var returned, format))
             return new TransferOutcome(false, refusal is null
                 ? Refusal(entityBytes, nickname, snapshot, target.GameLabel, format)
                 : $"{nickname} cannot go to {target.GameLabel}. {refusal}");
 
         var receipt = await WriteTargetAsync(target, snapshot, session, $"{nickname} arrived from a transfer", cancellationToken).ConfigureAwait(false);
-        return new TransferOutcome(true, $"{nickname} joined {target.GameLabel} (box {landing.Box + 1}).", landing.Box, landing.Slot, receipt.BackupId);
+        return new TransferOutcome(true, $"{nickname} joined {target.GameLabel} (box {landing.Box + 1}).", landing.Box, landing.Slot, receipt.BackupId,
+            returned);
     }
 
     /// <summary>
@@ -111,13 +113,14 @@ public sealed class TransferService(
     /// </summary>
     public async Task<(string? Refusal, IReadOnlyList<SlotRef> Landed)> SendManyToGameAsync(
         IReadOnlyList<TransferItem> items, DetectedSave target, string changeDescription,
-        CancellationToken cancellationToken = default, SlotRef? startAt = null)
+        CancellationToken cancellationToken = default, SlotRef? startAt = null, List<int>? returnedItems = null)
     {
         ArgumentNullException.ThrowIfNull(target);
         using var session = await OpenTargetAsync(target, cancellationToken).ConfigureAwait(false);
         var snapshot = session.Snapshot;
         var rooms = SlotPlanning.FreeSlotsFrom(snapshot.Slots, startAt).Take(items.Count).ToList();
-        var failed = BankTransfers.ImportAll(session, items, rooms, out var refusal);
+        var returned = new List<int>();
+        var failed = BankTransfers.ImportAll(session, items, rooms, out var refusal, returned);
         if (failed >= 0)
         {
             if (failed >= items.Count) return ($"{target.GameLabel} has room for {rooms.Count} of {items.Count} Pokémon.", []);
@@ -127,6 +130,7 @@ public sealed class TransferService(
                 : $"{item.Nickname} cannot go to {target.GameLabel}. {refusal}", []);
         }
         await WriteTargetAsync(target, snapshot, session, changeDescription, cancellationToken).ConfigureAwait(false);
+        returnedItems?.AddRange(returned);
         return (null, rooms);
     }
 
@@ -158,6 +162,31 @@ public sealed class TransferService(
     internal static string Refusal(ReadOnlyMemory<byte> entityBytes, string nickname, SaveSnapshot snapshot, string targetLabel, string? format = null) =>
         TransferCompatibility.ExplainRefusal(entityBytes.ToArray(), nickname, snapshot.Format, snapshot.Generation, targetLabel, format)
             ?? $"{nickname} cannot enter {targetLabel}.";
+
+    /// <summary>The stacks of a game's bag that can move to the Storage, read fresh.</summary>
+    public async Task<IReadOnlyList<BagStack>> ReadBagAsync(DetectedSave target, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        using var session = await OpenTargetAsync(target, cancellationToken).ConfigureAwait(false);
+        return StorageBag.Movable(session);
+    }
+
+    /// <summary>
+    /// Runs <paramref name="change"/> on a game that is not the connected one and writes it
+    /// through the safe path (validate, restore point, atomic write). The change returns null
+    /// when it went through, else why not (then nothing is written).
+    /// </summary>
+    public async Task<string?> ChangeGameAsync(DetectedSave target, Func<ISaveEngineSession, string?> change, string changeDescription,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(change);
+        using var session = await OpenTargetAsync(target, cancellationToken).ConfigureAwait(false);
+        var snapshot = session.Snapshot;
+        if (change(session) is { } refusal) return refusal;
+        await WriteTargetAsync(target, snapshot, session, changeDescription, cancellationToken).ConfigureAwait(false);
+        return null;
+    }
 
     /// <summary>The target save's slots, read fresh, so the player can choose where a batch starts.</summary>
     public async Task<IReadOnlyList<SlotSummary>> ReadSlotsAsync(DetectedSave target, CancellationToken cancellationToken = default)

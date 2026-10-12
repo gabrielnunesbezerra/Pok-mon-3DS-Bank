@@ -10,8 +10,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ApplicationId>io.github.gabrielnunesbezerra.threedsbank</ApplicationId>
     <ApplicationTitle>3DS Bank</ApplicationTitle>
-    <ApplicationVersion>120</ApplicationVersion>
-    <ApplicationDisplayVersion>1.2.0</ApplicationDisplayVersion>
+    <ApplicationVersion>200</ApplicationVersion>
+    <ApplicationDisplayVersion>2.0.0</ApplicationDisplayVersion>
     <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DiagnosticBuild)' == 'true'">
@@ -35,7 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidLinkDescription Include="Platforms/Android/linker.xml" />
-    <MauiIcon Include="Resources/AppIcon/pkforge.png" Color="#0E2233" />
+    <MauiIcon Include="Resources/AppIcon/pkforge.png" Color="#E9E9E9" />
     <MauiSplashScreen Include="Resources/Splash/splash.png" Color="#0E2233" BaseSize="180,180" />
     <MauiFont Include="Resources/Fonts/*.ttf" />
     <EmbeddedResource Include="Resources/I18n/pt-BR.tsv" LogicalName="i18n.pt-BR.tsv" />
@@ -43,9 +43,8 @@
   <ItemGroup>
     <!-- Bundled fallback sprites from pristine PKHeX submodule (always offline-available). -->
     <MauiAsset Include="Resources/UI/dex/*.bin.gz" LogicalName="dex/%(Filename)%(Extension)" />
-    <MauiAsset Include="Resources/AppIcon/pkforge.png" LogicalName="ui/logo.png" />
-    <!-- The logo in each color scheme's colors, named by scheme id. -->
-    <MauiAsset Include="Resources/UI/logo/*.png" LogicalName="ui/logo/%(Filename)%(Extension)" />
+    <!-- 3DS Bank 2.0: one logo (the Bank as a Poké Ball) for every color scheme. -->
+    <MauiAsset Include="Resources/UI/logo.png" LogicalName="ui/logo.png" />
     <!-- The About screen's easter egg. -->
     <MauiAsset Include="Resources/BadApple/*" LogicalName="badapple/%(Filename)%(Extension)" />
     <MauiAsset Include="Resources/Events/*.bin.gz" LogicalName="events/%(Filename)%(Extension)" />

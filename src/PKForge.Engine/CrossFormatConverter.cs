@@ -7,8 +7,10 @@ namespace PKForge.Engine;
 /// The result of moving one entity into a save's format. <see cref="Backwards"/> is true
 /// when no official route exists (a newer structure written into an older game), in which
 /// case <see cref="Warnings"/> says, in plain language, every compromise the downgrade made.
+/// <see cref="ReturnedItem"/> is the national id of a held item the game cannot have, taken
+/// off on the way in for the Storage to keep (0 when none).
 /// </summary>
-public sealed record TransferConversion(PKM Entity, bool Backwards, IReadOnlyList<string> Warnings);
+public sealed record TransferConversion(PKM Entity, bool Backwards, IReadOnlyList<string> Warnings, int ReturnedItem = 0);
 
 /// <summary>
 /// Converts an entity into any save's format, either direction. Forward moves use PKHeX's

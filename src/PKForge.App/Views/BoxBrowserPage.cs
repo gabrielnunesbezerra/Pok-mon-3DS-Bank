@@ -1319,11 +1319,13 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         var items = marked.Select(m => session.ExportSlot(m.Box, m.Slot))
             .Select(export => new PKForge.Engine.TransferItem(export.Data, export.Format, export.FileName)).ToArray();
         IReadOnlyList<SlotRef> landed = [];
+        var returned = new List<int>();
         var outcome = await PKForge.Engine.BankTransfers.MoveAsync(items.Length, target.GameLabel,
             async () =>
             {
+                returned.Clear();
                 (var refusal, landed) = await transfer.SendManyToGameAsync(items, target,
-                    $"{items.Length} Pokémon arrived from a transfer", startAt: startAt);
+                    $"{items.Length} Pokémon arrived from a transfer", startAt: startAt, returnedItems: returned);
                 return refusal;
             },
             copy ? null : async () => await _viewModel.BulkReleaseAsync(marked) ? null : _viewModel.Status,
@@ -1334,6 +1336,17 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             });
         if (outcome.Success && copy) _viewModel.ClearMarksQuietly();
         _viewModel.Status = outcome.Message;
+        if (outcome.Success || outcome.Duplicated) await KeepReturnedItemsAsync(returned);
+    }
+
+    /// <summary>3DS Bank 2.0: held items the other game could not take go to the Storage, and the player is told.</summary>
+    private async Task KeepReturnedItemsAsync(IReadOnlyCollection<int> items)
+    {
+        if (items.Count == 0) return;
+        var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
+        if (note is null) return;
+        _viewModel.Status = $"{_viewModel.Status} {note}";
+        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
     }
 
     /// <summary>Clones every marked mon into the first free box slots. One write.</summary>
@@ -1397,6 +1410,17 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             copy ? null : async () => await _viewModel.BulkReleaseAsync(marked) ? null : _viewModel.Status);
         if (outcome.Success && copy) _viewModel.ClearMarksQuietly();
         _viewModel.Status = outcome.Message;
+        if (outcome.Success || outcome.Duplicated) await KeepReturnedItemsAsync(returned);
+    }
+
+    /// <summary>3DS Bank 2.0: held items the other game could not take go to the Storage, and the player is told.</summary>
+    private async Task KeepReturnedItemsAsync(IReadOnlyCollection<int> items)
+    {
+        if (items.Count == 0) return;
+        var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
+        if (note is null) return;
+        _viewModel.Status = $"{_viewModel.Status} {note}";
+        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
     }
 
     private async Task ReleaseSelectionAsync()
@@ -4183,7 +4207,9 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, preview, nickname, target.GameLabel)) return;
         var outcome = await transfer.SendToGameAsync(export.Data, nickname, target);
         _viewModel.Status = outcome.Message;
-        if (!outcome.Success || copyInsteadOfMove) return;
+        if (!outcome.Success) return;
+        if (outcome.ReturnedItem > 0) await KeepReturnedItemsAsync([outcome.ReturnedItem]);
+        if (copyInsteadOfMove) return;
 
         await _viewModel.RunMutationAsync(s =>
         {

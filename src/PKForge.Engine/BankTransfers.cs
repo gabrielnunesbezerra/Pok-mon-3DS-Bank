@@ -26,7 +26,17 @@ public static class BankTransfers
     /// A refusal leaves the session partly written: the caller discards it rather than saving.
     /// Downgrades are allowed, so only call this after the user confirmed the transfer preview.
     /// </summary>
-    public static int ImportAll(ISaveEngineSession session, IReadOnlyList<TransferItem> items, IReadOnlyList<SlotRef> rooms, out string? refusal)
+    public static int ImportAll(ISaveEngineSession session, IReadOnlyList<TransferItem> items, IReadOnlyList<SlotRef> rooms, out string? refusal) =>
+        ImportAll(session, items, rooms, out refusal, returnedItems: null);
+
+    /// <summary>
+    /// <see cref="ImportAll(ISaveEngineSession, IReadOnlyList{TransferItem}, IReadOnlyList{SlotRef}, out string?)"/>
+    /// that also collects, in <paramref name="returnedItems"/>, the national id of every held item
+    /// the game could not take (they come off on the way in; the caller gives them to the Storage
+    /// once the batch is written).
+    /// </summary>
+    public static int ImportAll(ISaveEngineSession session, IReadOnlyList<TransferItem> items, IReadOnlyList<SlotRef> rooms, out string? refusal,
+        List<int>? returnedItems)
     {
         refusal = null;
         if (rooms.Count < items.Count)
@@ -36,8 +46,9 @@ public static class BankTransfers
         }
         for (var i = 0; i < items.Count; i++)
         {
-            if (!TryImport(session, rooms[i].Box, rooms[i].Slot, items[i].Data, out refusal, items[i].Format))
+            if (!TryImport(session, rooms[i].Box, rooms[i].Slot, items[i].Data, out refusal, out var returned, items[i].Format))
                 return i;
+            if (returned > 0) returnedItems?.Add(returned);
         }
         return -1;
     }
@@ -46,11 +57,24 @@ public static class BankTransfers
     /// Imports through the engine's reporting path when available, so a refusal says why.
     /// Downgrades are allowed: only call this after the user confirmed the transfer preview.
     /// </summary>
-    public static bool TryImport(ISaveEngineSession session, int box, int slot, byte[] bytes, out string? refusal, string? format = null)
+    public static bool TryImport(ISaveEngineSession session, int box, int slot, byte[] bytes, out string? refusal, string? format = null) =>
+        TryImport(session, box, slot, bytes, out refusal, out _, format);
+
+    /// <summary>
+    /// <see cref="TryImport(ISaveEngineSession, int, int, byte[], out string?, string?)"/> that also
+    /// says which held item (national id, 0 for none) came off because the game cannot have it.
+    /// </summary>
+    public static bool TryImport(ISaveEngineSession session, int box, int slot, byte[] bytes, out string? refusal, out int returnedItem,
+        string? format = null)
     {
         refusal = null;
+        returnedItem = 0;
         if (session is SaveEngineSession engineSession)
-            return engineSession.ImportSlotWithReport(box, slot, bytes, out refusal, format) is not null;
+        {
+            var conversion = engineSession.ImportSlotWithReport(box, slot, bytes, out refusal, format);
+            returnedItem = conversion?.ReturnedItem ?? 0;
+            return conversion is not null;
+        }
         return session.ImportSlot(box, slot, bytes, format);
     }
 
