@@ -1955,3 +1955,8 @@ Give {0} an item	Dar um item para {0}
 Your Item Storage is empty. Bring items from a game's bag on the Item Storage screen.	Seu Armazém está vazio. Traga itens da mochila de um jogo na tela do Armazém.
 {0} {1} moved to the 3DS Bank Storage	{0} {1} foram para o Armazém do 3DS Bank
 {0} {1} arrived from the 3DS Bank Storage	{0} {1} chegaram do Armazém do 3DS Bank
+The Bank server sent an answer the app could not read. Try again.	O servidor do Banco mandou uma resposta que o app não entendeu. Tente de novo.
+The account server sent an answer the app could not read. Try again.	O servidor de contas mandou uma resposta que o app não entendeu. Tente de novo.
+Another account already took your username, so friends cannot find you by it. Talk to support.	Outra conta já pegou o seu nome de usuário, então os amigos não te acham por ele. Fale com o suporte.
+{0} changed the Pokémon. Look again before confirming.	{0} trocou o Pokémon. Olhe de novo antes de confirmar.
+A Pokémon changed at the last moment, so this trade cannot go through. Cancel it and start again.	Um Pokémon mudou no último instante, então esta troca não pode acontecer. Cancele e comece de novo.

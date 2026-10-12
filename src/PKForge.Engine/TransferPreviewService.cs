@@ -65,7 +65,7 @@ public sealed class TransferPreviewService
 
     /// <inheritdoc cref="Preview(ISaveEngineSession, int, int, byte[], string?)"/>
     /// <param name="refusal">Why the transfer cannot happen, when the engine knows (3DS Bank's
-    /// forward-only rule, a full party, an unreadable file).</param>
+    /// rules, a full party, an unreadable file).</param>
     public TransferPreview? Preview(ISaveEngineSession scratch, int box, int slot, byte[] entityBytes, string? format, out string? refusal)
     {
         refusal = null;

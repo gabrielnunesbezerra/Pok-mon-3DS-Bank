@@ -206,6 +206,8 @@ public sealed class FriendsPage : ContentPage, IPadHandler, IOverlayHost
         _status.Text = _pending.Count > 0
             ? $"{_pending.Count} friend request(s) waiting for you."
             : _friends.Count == 0 ? "Add your friends by their username to trade with them." : "";
+        if (IPlatformApplication.Current?.Services.GetService<AccountService>()?.Claim == UsernameClaim.Taken)
+            _status.Text = "Another account already took your username, so friends cannot find you by it. Talk to support.";
         _ = _social.PublishNumbersAsync();
     }
 

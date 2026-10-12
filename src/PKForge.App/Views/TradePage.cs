@@ -227,6 +227,11 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
         {
             _status.Text = $"{error.Message} Trying again…";
         }
+        catch (Exception error) when (error is IOException or InvalidOperationException or FormatException)
+        {
+            AppLog.Warn("trade", error.ToString());
+            _status.Text = $"{error.Message} Trying again…";
+        }
         finally
         {
             _polling = false;
@@ -297,6 +302,7 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
         TradeStage.WaitingForPartner => $"You confirmed. Waiting for {_partnerName} to confirm…",
         TradeStage.PartnerConfirmed => $"{_partnerName} confirmed. Confirm to trade, or cancel.",
         TradeStage.Sealing => "Both confirmed. Trading…",
+        TradeStage.Mismatch => "A Pokémon changed at the last moment, so this trade cannot go through. Cancel it and start again.",
         TradeStage.Committed => "Trade complete!",
         TradeStage.Cancelled => "The trade was called off.",
         _ => "",
@@ -348,7 +354,7 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
                 $"Trade your {view.Mine?.Nickname} for {_partnerName}'s {view.Theirs.Nickname}? After both of you confirm, it cannot be undone.",
                 "Trade"))
             return;
-        await _social.ConfirmAsync(_tradeId);
+        await _social.ConfirmAsync(_tradeId, view.Theirs);
     }
 
     private async Task CancelAsync()

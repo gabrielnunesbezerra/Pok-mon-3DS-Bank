@@ -668,8 +668,15 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         var state = sync.LastError
             ?? (sync.LastSyncUtc is { } at ? $"Last saved at {at.ToLocalTime():HH:mm}." : "Your Bank is saved a few seconds after every change.");
         string? email = null;
-        try { email = await account.GetEmailAsync(); }
-        catch (PKForge.Infrastructure.CloudAccountException) { /* offline: the option still lets them add one */ }
+        try
+        {
+            using var quick = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+            email = await account.GetEmailAsync(quick.Token);
+        }
+        catch (Exception error) when (error is PKForge.Infrastructure.CloudAccountException or OperationCanceledException)
+        {
+            // Offline or slow: the option still lets them add one.
+        }
         var emailOption = email is null ? "Add an e-mail (password recovery)" : $"E-mail: {email}";
         var choice = await PadMenu.ShowAsync(_hostGrid, $"Account: {account.Username}", state,
             new PadOption(emailOption, IconPath: "inbox", Detail: email is null

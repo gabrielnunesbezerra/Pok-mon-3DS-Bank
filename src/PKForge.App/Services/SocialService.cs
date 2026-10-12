@@ -306,8 +306,9 @@ public sealed class SocialService
     /// The player's final yes: their Pokémon is held aside (it leaves the Bank's boxes) and the
     /// confirmation goes to the server. It comes back if the trade is called off.
     /// </summary>
-    public async Task ConfirmAsync(string tradeId, CancellationToken token = default)
+    public async Task ConfirmAsync(string tradeId, TradeOffer expectedTheirs, CancellationToken token = default)
     {
+        ArgumentNullException.ThrowIfNull(expectedTheirs);
         await _tradeGate.WaitAsync(token);
         try
         {
@@ -318,6 +319,8 @@ public sealed class SocialService
             var view = TradeRules.View(trade, me);
             if (!view.CanConfirm || view.Mine is null || view.Theirs is null)
                 throw new CloudAccountException("Both players need to pick a Pokémon first.");
+            if (view.Theirs.Data != expectedTheirs.Data)
+                throw new CloudAccountException($"{trade.NameOf(trade.PartnerOf(me))} changed the Pokémon. Look again before confirming.");
             if (Describe(view.Theirs, trade.NameOf(trade.PartnerOf(me))) is null)
                 throw new CloudAccountException($"{view.Theirs.Nickname} cannot be kept in your Bank, so this trade cannot happen.");
 
@@ -351,13 +354,13 @@ public sealed class SocialService
 
             try
             {
-                await _cloud.ConfirmAsync(session, tradeId, token);
+                await _cloud.ConfirmAsync(session, tradeId, view.Theirs, token);
             }
             catch (CloudAccountException)
             {
                 // Only give it back when the server surely has no "yes" from us.
                 var now = await TryGetTradeAsync(session, tradeId, token);
-                if (now is not null && !now.Confirmed.Contains(me)) RestoreEscrow(tradeId);
+                if (now is not null && !now.HasConfirmed(me)) RestoreEscrow(tradeId);
                 throw;
             }
         }
@@ -421,7 +424,7 @@ public sealed class SocialService
                     : "The trade was called off.";
                 await Safely(async () => await _cloud.ForgetTradeAsync(session, tradeId, token));
             }
-            else if (ledger.Escrow.ContainsKey(tradeId) && !trade.Confirmed.Contains(me))
+            else if (ledger.Escrow.ContainsKey(tradeId) && !trade.HasConfirmed(me))
             {
                 // Our "yes" never reached the server: the Pokémon goes back to the boxes.
                 RestoreEscrow(tradeId);

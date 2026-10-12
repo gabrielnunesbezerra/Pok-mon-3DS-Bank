@@ -243,9 +243,12 @@ public sealed class CloudSocialClient(CloudAccountClient account)
         }, cancellationToken);
     }
 
-    /// <summary>The player's final yes. It cannot be taken back; the trade can still be called off until both said yes.</summary>
-    public Task ConfirmAsync(CloudSession session, string tradeId, CancellationToken cancellationToken = default) =>
-        Db.PutAsync(session, $"trades/{tradeId}/confirm/{session.UserId}", true, cancellationToken);
+    /// <summary>
+    /// The player's final yes, for the other player's offer as <paramref name="theirs"/> shows it.
+    /// It cannot be taken back; the trade can still be called off until both said yes.
+    /// </summary>
+    public Task ConfirmAsync(CloudSession session, string tradeId, TradeOffer theirs, CancellationToken cancellationToken = default) =>
+        Db.PutAsync(session, $"trades/{tradeId}/confirm/{session.UserId}", TradeRules.Fingerprint(theirs), cancellationToken);
 
     /// <summary>
     /// Moves an open trade to <paramref name="state"/> (sealed or called off) by compare-and-set,
@@ -306,8 +309,12 @@ public sealed class CloudSocialClient(CloudAccountClient account)
         if (trade.TryGetProperty("offers", out var offerList) && offerList.ValueKind == JsonValueKind.Object)
             foreach (var p in offerList.EnumerateObject())
                 if (ReadOffer(p.Value) is { } offer) offers[p.Name] = offer;
+        var confirmations = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (trade.TryGetProperty("confirm", out var confirmList) && confirmList.ValueKind == JsonValueKind.Object)
+            foreach (var p in confirmList.EnumerateObject())
+                confirmations[p.Name] = p.Value.ValueKind == JsonValueKind.String ? p.Value.GetString() ?? "" : "";
         return new TradeRecord(id, Text(trade, "a"), Text(trade, "b"), names, Text(trade, "state"), Long(trade, "created"),
-            offers, Flags(trade, "confirm"), Flags(trade, "done"));
+            offers, confirmations, Flags(trade, "done"));
     }
 
     private static TradeOffer? ReadOffer(JsonElement offer)

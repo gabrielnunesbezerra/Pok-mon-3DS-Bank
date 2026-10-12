@@ -71,7 +71,8 @@ public sealed class BankSocialTests
 
     private static TradeRecord Trade(string state, string[] offers, string[] confirmed, string[]? done = null) => new(
         "t1", "a", "b", new Dictionary<string, string> { ["a"] = "ash", ["b"] = "misty" }, state, 0,
-        offers.ToDictionary(uid => uid, _ => Offer), confirmed.ToHashSet(), (done ?? []).ToHashSet());
+        offers.ToDictionary(uid => uid, _ => Offer), confirmed.ToDictionary(uid => uid, _ => TradeRules.Fingerprint(Offer)),
+        (done ?? []).ToHashSet());
 
     [Fact]
     public void BothPlayersChooseBeforeAnyoneCanConfirm()
@@ -118,6 +119,21 @@ public sealed class BankSocialTests
     }
 
     [Fact]
+    public void AYesForADifferentPokemonNeverSealsTheTrade()
+    {
+        var other = Offer with { Data = "BBBB" };
+        var trade = new TradeRecord("t1", "a", "b", new Dictionary<string, string>(), TradeRecord.Open, 0,
+            new Dictionary<string, TradeOffer> { ["a"] = Offer, ["b"] = other },
+            new Dictionary<string, string> { ["a"] = TradeRules.Fingerprint(Offer), ["b"] = TradeRules.Fingerprint(Offer) },
+            new HashSet<string>());
+        Assert.False(TradeRules.ReadyToSeal(trade));
+        var view = TradeRules.View(trade, "a");
+        Assert.Equal(TradeStage.Mismatch, view.Stage);
+        Assert.True(view.CanCancel);
+        Assert.NotEqual(TradeRules.Fingerprint(Offer), TradeRules.Fingerprint(other));
+    }
+
+    [Fact]
     public void ACalledOffTradeIsOverForBoth()
     {
         var view = TradeRules.View(Trade(TradeRecord.Cancelled, ["a", "b"], ["a"]), "b");
@@ -156,7 +172,7 @@ public sealed class BankSocialTests
           "names": { "uidA": "ash", "uidB": "misty" },
           "offers": { "uidA": { "data": "AQID", "format": "PK3", "species": 64, "form": 0, "shiny": true,
                                 "nickname": "Kadabra", "level": 30, "item": 233, "generation": 3 } },
-          "confirm": { "uidA": true },
+          "confirm": { "uidA": "0123456789abcdef" },
           "done": { }
         }
         """;
@@ -170,7 +186,8 @@ public sealed class BankSocialTests
         Assert.True(offer.Shiny);
         Assert.Equal(233, offer.HeldItem);
         Assert.Equal("PK3", offer.Format);
-        Assert.Contains("uidA", trade.Confirmed);
+        Assert.True(trade.HasConfirmed("uidA"));
+        Assert.Equal("0123456789abcdef", trade.Confirmations["uidA"]);
         Assert.Empty(trade.Done);
     }
 

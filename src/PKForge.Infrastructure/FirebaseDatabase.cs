@@ -101,8 +101,15 @@ public sealed class FirebaseDatabase(CloudConfig config, HttpClient http)
     private static JsonElement? Parse(string json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
-        using var document = JsonDocument.Parse(json);
-        return document.RootElement.ValueKind == JsonValueKind.Null ? null : document.RootElement.Clone();
+        try
+        {
+            using var document = JsonDocument.Parse(json);
+            return document.RootElement.ValueKind == JsonValueKind.Null ? null : document.RootElement.Clone();
+        }
+        catch (JsonException error)
+        {
+            throw new CloudAccountException("The Bank server sent an answer the app could not read. Try again.", error);
+        }
     }
 
     private static string ETagOf(HttpResponseMessage response) =>

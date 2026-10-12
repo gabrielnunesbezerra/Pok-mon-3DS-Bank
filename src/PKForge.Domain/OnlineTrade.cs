@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+
 namespace PKForge.Domain;
 
 /// <summary>
@@ -11,7 +14,9 @@ public sealed record TradeOffer(
 /// An online trade between two friends as the server holds it. <see cref="State"/> is
 /// <see cref="Open"/> while they choose, <see cref="Committed"/> once both confirmed (the trade
 /// will happen), or <see cref="Cancelled"/>. Each player only ever writes their own offer,
-/// confirmation and "done" mark; the state moves once, by compare-and-set.
+/// confirmation and "done" mark; the state moves once, by compare-and-set. A confirmation
+/// records the fingerprint of the other player's offer it said yes to
+/// (<see cref="TradeRules.Fingerprint"/>), so a trade is only sealed for the Pokémon both saw.
 /// </summary>
 public sealed record TradeRecord(
     string Id,
@@ -21,9 +26,12 @@ public sealed record TradeRecord(
     string State,
     long CreatedUnixMs,
     IReadOnlyDictionary<string, TradeOffer> Offers,
-    IReadOnlySet<string> Confirmed,
+    IReadOnlyDictionary<string, string> Confirmations,
     IReadOnlySet<string> Done)
 {
+    /// <summary>Whether <paramref name="uid"/> said yes.</summary>
+    public bool HasConfirmed(string uid) => Confirmations.ContainsKey(uid);
+
     public const string Open = "open";
     public const string Committed = "committed";
     public const string Cancelled = "cancelled";
@@ -49,6 +57,8 @@ public enum TradeStage
     PartnerConfirmed,
     /// <summary>Both confirmed: the trade is about to be sealed.</summary>
     Sealing,
+    /// <summary>Both confirmed, but not the same Pokémon (one changed at the last moment): it can only be called off.</summary>
+    Mismatch,
     /// <summary>Sealed: each side takes the other's Pokémon.</summary>
     Committed,
     /// <summary>Called off: each side keeps its own Pokémon.</summary>
@@ -79,8 +89,8 @@ public static class TradeRules
         var partner = trade.PartnerOf(me);
         var mine = trade.Offers.GetValueOrDefault(me);
         var theirs = trade.Offers.GetValueOrDefault(partner);
-        var iConfirmed = trade.Confirmed.Contains(me);
-        var theyConfirmed = trade.Confirmed.Contains(partner);
+        var iConfirmed = trade.HasConfirmed(me);
+        var theyConfirmed = trade.HasConfirmed(partner);
 
         if (trade.State == TradeRecord.Cancelled)
             return new TradeView(TradeStage.Cancelled, mine, theirs, false, false, false, true);
@@ -89,21 +99,33 @@ public static class TradeRules
 
         var stage = (iConfirmed, theyConfirmed) switch
         {
-            (true, true) => TradeStage.Sealing,
+            (true, true) => ReadyToSeal(trade) ? TradeStage.Sealing : TradeStage.Mismatch,
             (true, false) => TradeStage.WaitingForPartner,
             (false, true) => TradeStage.PartnerConfirmed,
             _ => TradeStage.Choosing,
         };
         // Once anyone confirmed, both offers are frozen: what was confirmed is what is traded.
-        var canChoose = trade.Confirmed.Count == 0;
+        var canChoose = trade.Confirmations.Count == 0;
         var canConfirm = !iConfirmed && mine is not null && theirs is not null;
         return new TradeView(stage, mine, theirs, canChoose, canConfirm, stage != TradeStage.Sealing, false);
     }
 
-    /// <summary>Whether both players confirmed an open trade, so it can be sealed.</summary>
+    /// <summary>
+    /// Whether both players confirmed an open trade, each for the Pokémon the other offers now,
+    /// so it can be sealed.
+    /// </summary>
     public static bool ReadyToSeal(TradeRecord trade) =>
-        trade.State == TradeRecord.Open && trade.Confirmed.Contains(trade.A) && trade.Confirmed.Contains(trade.B)
-        && trade.Offers.ContainsKey(trade.A) && trade.Offers.ContainsKey(trade.B);
+        trade.State == TradeRecord.Open
+        && trade.Offers.TryGetValue(trade.A, out var fromA) && trade.Offers.TryGetValue(trade.B, out var fromB)
+        && trade.Confirmations.TryGetValue(trade.A, out var aSawB) && aSawB == Fingerprint(fromB)
+        && trade.Confirmations.TryGetValue(trade.B, out var bSawA) && bSawA == Fingerprint(fromA);
+
+    /// <summary>A short fingerprint of an offer, recorded with a confirmation.</summary>
+    public static string Fingerprint(TradeOffer offer)
+    {
+        ArgumentNullException.ThrowIfNull(offer);
+        return Convert.ToHexString(SHA256.HashData(Encoding.ASCII.GetBytes(offer.Data)))[..16].ToLowerInvariant();
+    }
 }
 
 /// <summary>

@@ -71,7 +71,8 @@
         },
         "confirm": {
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid && !data.exists() && newData.val() === true && data.parent().parent().child('state').val() === 'open' && data.parent().parent().child('offers').child($uid).exists()"
+            ".write": "auth != null && auth.uid === $uid && !data.exists() && data.parent().parent().child('state').val() === 'open' && data.parent().parent().child('offers').child($uid).exists()",
+            ".validate": "newData.isString() && newData.val().length <= 64"
           }
         },
         "done": {

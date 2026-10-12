@@ -315,8 +315,15 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             throw new CloudAuthException(ErrorCode(json), Explain(json));
-        using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
-        return document.RootElement.Clone();
+        try
+        {
+            using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "{}" : json);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException error)
+        {
+            throw new CloudAccountException("The account server sent an answer the app could not read. Try again.", error);
+        }
     }
 
     /// <summary>A fresh ID token for a session whose token expired (they last an hour).</summary>
