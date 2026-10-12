@@ -26,6 +26,20 @@ public static class BankMonEdits
     private const ushort Karrablast = 588;
     private const ushort Shelmet = 616;
 
+    /// <summary>
+    /// Generation 2's trade evolutions that need a held item. PKHeX's Generation 2 table records
+    /// them as plain trades, so the item (and its use) is checked here: species → national item.
+    /// </summary>
+    private static readonly Dictionary<ushort, int> Gen2TradeItems = new()
+    {
+        [95] = 233,  // Onix + Metal Coat → Steelix
+        [123] = 233, // Scyther + Metal Coat → Scizor
+        [79] = 221,  // Slowpoke + King's Rock → Slowking
+        [61] = 221,  // Poliwhirl + King's Rock → Politoed
+        [117] = 235, // Seadra + Dragon Scale → Kingdra
+        [137] = 252, // Porygon + Up-Grade → Porygon2
+    };
+
     /// <summary>The national id of the item a stored Pokémon holds (0 for none).</summary>
     public static int HeldItemOf(byte[] bytes, string? format) =>
         EntityBytes.RomHackGame(format) is null && Read(bytes, format) is { } pk ? HeldItemRules.National(pk) : 0;
@@ -125,13 +139,18 @@ public static class BankMonEdits
     {
         ArgumentNullException.ThrowIfNull(engine);
         if (EntityBytes.RomHackGame(format) is not null) return null;
+        var before = Read(bytes, format);
+        if (before is null || before.IsEgg) return null;
+        // Generation 2: the item a trade evolution needs is checked (and used up) here.
+        var gen2Item = before.Format == 2 && Gen2TradeItems.TryGetValue(before.Species, out var need) ? need : 0;
         using var session = engine.OpenEntitySession(bytes, null, format);
         if (session is null) return null;
         var service = new EvolutionService();
         var plan = service.Plan(session, 0, 0, hax: false);
         var option = plan.Options.FirstOrDefault(o => o.Available && o.Trigger switch
         {
-            EvolutionTrigger.Trade or EvolutionTrigger.TradeHoldingItem => true,
+            EvolutionTrigger.Trade => gen2Item == 0 || HeldItemRules.National(before) == gen2Item,
+            EvolutionTrigger.TradeHoldingItem => true,
             EvolutionTrigger.TradeForPartner =>
                 (plan.Species == Karrablast && partnerSpecies == Shelmet) || (plan.Species == Shelmet && partnerSpecies == Karrablast),
             _ => false,
@@ -143,8 +162,18 @@ public static class BankMonEdits
             outcome = service.Evolve(session, 0, 0, new EvolutionRequest(option.Id, TradePartnerName: receiverName, LearnIntoFreeSlots: true));
         if (!outcome.Success) return null;
         var export = session.ExportSlot(0, 0);
-        return new TradeEvolution(export.Data, export.Format ?? EntityBytes.Normalize(format) ?? string.Empty,
-            option.Species, option.Form, outcome.Message);
+        var data = export.Data;
+        var stored = export.Format ?? EntityBytes.Normalize(format) ?? string.Empty;
+        var message = outcome.Message;
+        if (gen2Item > 0 && option.Trigger == EvolutionTrigger.Trade && Read(data, stored) is { HeldItem: not 0 } evolved)
+        {
+            evolved.HeldItem = 0;
+            var used = Write(evolved);
+            data = used.Data;
+            var names = GameInfo.GetStrings("en").itemlist;
+            if (gen2Item < names.Length) message += $" {names[gen2Item]} was used up.";
+        }
+        return new TradeEvolution(data, stored, option.Species, option.Form, message);
     }
 
     private static PKM? Read(byte[] bytes, string? format)

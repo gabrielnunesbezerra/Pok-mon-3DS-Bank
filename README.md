@@ -1,28 +1,56 @@
 # 3DS Bank
 
-Banco de Pokémon para Android, da Geração 1 à 7, sem edição. Feito para eu e meus amigos
-guardarmos e trocarmos Pokémon entre os nossos jogos de emulador.
+Banco de Pokémon para Android, da Geração 1 à 7. Feito para eu e meus amigos guardarmos e
+trocarmos Pokémon entre os nossos jogos de emulador, e desde a versão 2.0 trocarmos também
+entre nós, pelo app.
 
 O 3DS Bank é uma versão modificada do [PKForge](https://github.com/sofianeelhor/PKForge)
 de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
 
 ## O que mudou em relação ao PKForge
 
-- **Nada é editado.** O app não altera Pokémon nem dados do save: sem editar status, IVs,
-  EVs, golpes, natureza, shiny, itens, dinheiro, Pokédex, eventos, legalização, evolução
-  dentro do app, criação de Pokémon, Mystery Gift, editor hexadecimal ou editores de save.
-  O modo Hardcore do PKForge fica ligado para sempre e não aparece nas configurações, e o
-  próprio motor do app recusa essas operações mesmo que alguma tela tente fazer. A única
-  exceção é o cuidado no Poképark, explicado abaixo.
+- **Quase nada é editado.** O app não altera status, IVs, EVs, golpes, natureza, dinheiro,
+  Pokédex nem eventos, não cria Pokémon e não tem Mystery Gift, editor hexadecimal ou editores
+  de save. O modo Hardcore do PKForge fica ligado para sempre e o próprio motor do app recusa
+  essas operações mesmo que alguma tela tente fazer. As exceções são as da versão 2.0 (abaixo)
+  e o cuidado no Poképark: cada uma abre a porta só durante a própria operação.
 - **Poképark.** Cada Pokémon do Bank que mora no parque pede uma fruta ou uma brincadeira, e
   o pedido muda a cada 30 minutos. Atender o pedido dá +10 de amizade uma vez por pedido, e
   a amizade fica salva no Pokémon e vai junto para o jogo. Depois de 3 horas no parque ele
   pode mudar de natureza uma única vez na vida. Se a nova natureza deixaria o Pokémon ilegal
   (na Geração 3 e 4 a natureza depende de como ele foi encontrado), a troca é recusada.
-- **Transferências pesadas são recusadas.** O Pokémon só vai para frente, como nos jogos
-  oficiais: não volta para uma geração mais antiga, não troca de espécie ou forma (um Rattata
-  de Alola não vai para Pokémon X), Let's Go só troca com Let's Go e uma ROM hack só recebe
-  de volta os próprios Pokémon. O app mostra o motivo da recusa.
+- **Voltar para gerações antigas (2.0).** Um Pokémon pode ir da Geração 7 para trás, até a
+  Geração 1. No caminho ele é ajustado só no que o jogo antigo não tem: golpes que ainda não
+  existiam saem (e no lugar entram golpes que ele aprende por nível nesse jogo), o jogo e o
+  local de origem passam a ser um que o jogo antigo conhece, a bola, a habilidade e o idioma
+  viram equivalentes que existem lá. A tela de transferência mostra cada mudança antes de
+  confirmar. Verificadores de legalidade podem apontar esses Pokémon, mas o jogo carrega
+  normalmente.
+- **Transferências que mudariam o Pokémon são recusadas.** Ele não troca de espécie ou forma (um
+  Rattata de Alola não vai para Pokémon X), ovos não mudam de geração, Let's Go só troca com
+  Let's Go e uma ROM hack só recebe de volta os próprios Pokémon. O app mostra o motivo da recusa.
+- **Armazém (2.0).** Itens ficam guardados junto com o Bank, cada um com a imagem e a quantidade
+  (até 999 de cada). Eles entram vindos da mochila de um jogo ou tirados de um Pokémon do Bank,
+  e saem para um Pokémon do Bank segurar ou para a mochila de um jogo. Itens-chave e TMs ficam
+  no jogo, e itens da Geração 1 não viajam. Quando um Pokémon vai para um jogo que não tem o
+  item que ele segura (Steelixite indo para Pokémon X, por exemplo), o item sai dele e volta
+  para o Armazém.
+- **Estrela Cadente (2.0).** Toda vez que o Bank chega a mais 60 Pokémon (60, 120, 180...) uma
+  conquista é completada e uma Estrela Cadente cai no Armazém. Tirar Pokémon e colocar de novo
+  não conta duas vezes. Usar a estrela num Pokémon do Bank deixa ele shiny para sempre,
+  mantendo espécie, natureza, gênero e habilidade. Se o jogo dele não teria como gerar aquele
+  shiny (Pokémon com shiny travado, ou das Gerações 3 e 4, cuja aparência depende dos IVs), o
+  app avisa antes que verificadores de legalidade vão apontar.
+- **Amigos e trocas (2.0).** Cada conta tem um perfil (nome, recado, Pokémon favorito, jogo
+  favorito e os números do Bank). Dá para procurar um jogador pelo nome de usuário, mandar
+  pedido de amizade, aceitar e ver o perfil dos amigos. Com os dois no app ao mesmo tempo,
+  um amigo convida o outro para trocar: cada um escolhe um Pokémon do próprio Bank, vê os
+  detalhes do Pokémon do outro e confirma. Só quando os dois confirmam a troca acontece; até
+  lá qualquer um cancela e nada muda. O Pokémon confirmado fica separado (fora das caixas) até
+  a troca terminar, então ele nunca fica nos dois Banks e nunca se perde, mesmo se o app fechar
+  no meio: a troca termina na próxima vez que o app abrir. Quem evolui por troca evolui ao
+  chegar (Kadabra, Machoke, Onix segurando Metal Coat, Karrablast trocado por Shelmet...), e o
+  item usado na evolução é gasto, como nos jogos. Um Everstone impede a evolução.
 - **Sem Pokémon Showdown.** Exportar e importar times do Showdown e o QR de .pk saíram.
 - **Português.** O app fica em português (Brasil) ou inglês, em Configurações > Idioma ou
   no botão da tela de login. Sem escolha, segue o idioma do celular. Golpes, itens e
@@ -33,8 +61,12 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   saiu do save também é bloqueado.
 - **O que não dá para usar não aparece.** Dex Autopilot, eventos, editores do save e a edição
   do painel do Pokémon foram tirados da tela; o painel só mostra as informações.
-- **Conta.** O app abre numa tela de login (criar conta, entrar, falar com o suporte pelo
-  WhatsApp). O Bank fica salvo na conta e volta ao entrar de novo, mesmo depois de desinstalar.
+- **Conta.** O app abre numa tela de login (criar conta, entrar, esqueci a senha, falar com o
+  suporte pelo WhatsApp). O Bank, o Armazém e as estrelas ficam salvos na conta e voltam ao
+  entrar de novo, mesmo depois de desinstalar. Desde a 2.0 a conta tem nome de usuário (como
+  os amigos te acham) e e-mail (como você entra e recupera a senha: o link para criar uma
+  senha nova chega no e-mail). Contas criadas antes da 2.0 continuam entrando com o nome de
+  usuário e podem adicionar um e-mail em Configurações > Conta; depois disso entram com o e-mail.
 - **Exportar e importar.** Exportar tira o Pokémon do Bank e salva um arquivo .pk; importar
   devolve só arquivos que saíram deste Bank, uma vez cada. Assim um arquivo nunca duplica um
   Pokémon.
@@ -85,21 +117,22 @@ Para compilar localmente: .NET 10 SDK, `dotnet workload install maui-android`, d
 
 As regras do 3DS Bank ficam em `src/PKForge.Domain/ThreeDsBankPolicy.cs`. As contas usam um
 projeto Firebase (Authentication por e-mail/senha e Realtime Database); a chave e o endereço
-ficam em `src/PKForge.App/Services/AccountService.cs` (`CloudSettings`). Regras do banco:
+ficam em `src/PKForge.App/Services/AccountService.cs` (`CloudSettings`).
 
-```json
-{
-  "rules": {
-    "banks": {
-      "$uid": {
-        ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    }
-  }
-}
-```
+### Firebase para a versão 2.0
 
+1. **Regras do banco.** Em Realtime Database > Regras, cole o conteúdo de
+   [`firebase/database.rules.json`](firebase/database.rules.json) e publique. Elas deixam cada
+   jogador mexer só nas próprias partes: o próprio Bank, o perfil, a presença, os pedidos de
+   amizade que mandou, a própria oferta e confirmação numa troca. Sem essas regras, criar conta
+   nova, amigos e trocas não funcionam (o app avisa).
+2. **E-mail de senha nova em português.** Em Authentication > Templates, mude o idioma para
+   Português (Brasil). Os e-mails de "redefinir senha" e de "verificar e trocar e-mail" usam
+   esse modelo.
+3. **Domínio autorizado.** Os links dos e-mails abrem a página do próprio Firebase
+   (`<projeto>.firebaseapp.com`), que já vem autorizada. Nada a configurar.
+
+## Créditos
 ## Créditos
 
 - [PKForge](https://github.com/sofianeelhor/PKForge) de sofianeelhor (@22sh), o app
