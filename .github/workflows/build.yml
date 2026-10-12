@@ -61,7 +61,15 @@ jobs:
             echo "::warning::No signing secret: this test APK uses a throwaway key and cannot update an installed 3DS Bank."
             exit 0
           fi
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/3dsbank.p12"
+          if ! printf '%s' "$KEYSTORE_BASE64" | tr -d ' \r\n' | base64 --decode > "${RUNNER_TEMP}/3dsbank.p12"; then
+            echo "::error::BANK_ANDROID_KEYSTORE_BASE64 is not valid base64; paste the whole file again."
+            exit 1
+          fi
+          if ! keytool -list -v -keystore "${RUNNER_TEMP}/3dsbank.p12" -storetype PKCS12 -storepass 73bc24f4bc659c3ecfa8928740cf84e0 > "${RUNNER_TEMP}/key.txt" 2>&1; then
+            echo "::error::The signing key in BANK_ANDROID_KEYSTORE_BASE64 cannot be opened: $(tail -1 "${RUNNER_TEMP}/key.txt")"
+            exit 1
+          fi
+          echo "::notice::Signing with $(grep -m1 'SHA256:' "${RUNNER_TEMP}/key.txt" | xargs)"
           echo "keystore=${RUNNER_TEMP}/3dsbank.p12" >> "$GITHUB_OUTPUT"
       - name: Build Android APK
         shell: bash
@@ -82,8 +90,15 @@ jobs:
               -p:AndroidSigningKeyPass="$ANDROID_KEYSTORE_PASSWORD"
             )
           fi
-          dotnet build src/PKForge.App/PKForge.App.csproj --no-restore \
-            --configuration Release -f net10.0-android "${signing_args[@]}"
+          set -o pipefail
+          if ! dotnet build src/PKForge.App/PKForge.App.csproj --no-restore \
+            --configuration Release -f net10.0-android "${signing_args[@]}" 2>&1 | tee build.log; then
+            # Annotations are readable without the raw log: surface the first errors there.
+            grep -E ': error |error [A-Z]+[0-9]+|Exception|apksigner' build.log | sort -u | head -15 | while IFS= read -r line; do
+              echo "::error::${line:0:900}"
+            done
+            exit 1
+          fi
       - name: Locate APK
         id: apk
         run: |
