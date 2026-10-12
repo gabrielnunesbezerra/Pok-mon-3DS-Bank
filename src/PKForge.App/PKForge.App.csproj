@@ -1,0 +1,94 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>PKForge.App</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ApplicationId>org.pkforge.app</ApplicationId>
+    <ApplicationTitle>PKForge</ApplicationTitle>
+    <ApplicationVersion>310</ApplicationVersion>
+    <ApplicationDisplayVersion>3.1.0</ApplicationDisplayVersion>
+    <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(DiagnosticBuild)' == 'true'">
+    <!-- Diagnostic builds install beside production and cannot overwrite its app-private data. -->
+    <ApplicationId>org.pkforge.app.debug</ApplicationId>
+    <ApplicationTitle>PKForge Diagnostics</ApplicationTitle>
+    <DefineConstants>$(DefineConstants);DIAGNOSTIC</DefineConstants>
+    <!-- Diagnostic APKs are sideloaded, not deployed by an IDE. Fast Deployment
+         otherwise expects assemblies in an app-private override directory and
+         aborts before MAUI can start. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <!-- Android's Mono loader can mmap these embedded assembly DSOs only when
+         APK entries are stored, never ZIP-compressed. -->
+    <AndroidStoreUncompressedFileExtensions>.so;$(AndroidStoreUncompressedFileExtensions)</AndroidStoreUncompressedFileExtensions>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.20" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.116.1" />
+    <PackageReference Include="ZXing.Net" Version="0.16.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidLinkDescription Include="Platforms/Android/linker.xml" />
+    <MauiIcon Include="Resources/AppIcon/pkforge.png" Color="#14121D" />
+    <MauiSplashScreen Include="Resources/Splash/splash.png" Color="#14121D" BaseSize="180,180" />
+    <MauiFont Include="Resources/Fonts/*.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Bundled fallback sprites from pristine PKHeX submodule (always offline-available). -->
+    <MauiAsset Include="Resources/UI/dex/*.bin.gz" LogicalName="dex/%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources/AppIcon/pkforge.png" LogicalName="ui/logo.png" />
+    <!-- The logo in each color scheme's colors, named by scheme id. -->
+    <MauiAsset Include="Resources/UI/logo/*.png" LogicalName="ui/logo/%(Filename)%(Extension)" />
+    <!-- The About screen's easter egg. -->
+    <MauiAsset Include="Resources/BadApple/*" LogicalName="badapple/%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources/Events/*.bin.gz" LogicalName="events/%(Filename)%(Extension)" />
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Big Pokemon Sprites/*.png" LogicalName="sprites/%(Filename)%(Extension)" />
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Big Shiny Sprites/*.png" LogicalName="sprites/%(Filename)%(Extension)" />
+    <!-- Luminescent Platinum's custom form icons (Team Lumi; see Resources/UI/ATTRIBUTION.md). -->
+    <MauiAsset Include="Resources/UI/lumi/*.png" LogicalName="sprites/lumi/%(Filename)%(Extension)" />
+    <!-- Pokémon Showdown sprites (Smogon). -->
+    <MauiAsset Include="Resources/Showdown/icons.png" LogicalName="showdown/icons.png" />
+    <MauiAsset Include="Resources/Showdown/front/*.png" LogicalName="showdown/front/%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources/Showdown/front-shiny/*.png" LogicalName="showdown/front-shiny/%(Filename)%(Extension)" />
+    <!-- PKHeX ships no pixel sprites past species 905 (Legends: Arceus); for Gen 9 it
+         displays official artwork. Bundle that artwork block (base + forms, ~1MB) as
+         the offline Gen 9 fallback, exactly what PKHeX itself shows. -->
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Artwork Pokemon Sprites/a_9*.png" LogicalName="artwork/%(Filename)%(Extension)" />
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Artwork Pokemon Sprites/a_10*.png" LogicalName="artwork/%(Filename)%(Extension)" />
+    <!-- Form artwork for every generation (~2MB): PKHeX has no pixel sprite for Paldean
+         Tauros, the Legends: Z-A megas, Urshifu Rapid Strike, ... and the sprite resolver
+         (SpriteCatalog) shows the exact form's artwork before ever falling back to the
+         base form. Overlaps with a_9*/a_10* are the same files under the same name. -->
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Artwork Pokemon Sprites/a_*-*.png"
+               Exclude="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Artwork Pokemon Sprites/a_9*.png;../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/Artwork Pokemon Sprites/a_10*.png"
+               LogicalName="artwork/%(Filename)%(Extension)" />
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.PokeSprite/Resources/img/ball/*.png" LogicalName="balls/%(Filename)%(Extension)" />
+    <!-- PKHeX's complete, format-accurate ribbon/mark artwork (GPL-3). -->
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.Misc/Resources/img/ribbons/*.png" LogicalName="ribbons/%(Filename)%(Extension)" />
+    <!-- In-game box wallpapers (PKHeX WallpaperUtil resource names) for the box manager's wallpaper picker. -->
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.Misc/Resources/img/box/**/*.png" LogicalName="wallpapers/%(Filename)%(Extension)" />
+    <MauiAsset Include="../../external/PKHeX/PKHeX.Drawing.Misc/Resources/img/ribbons/ribbonchampionkalos.png" LogicalName="ui/pksm/ribbon_award.png" />
+    <!-- Game icons + hero art fetched once at build time from SteamGridDB (no key ships in the app). -->
+    <MauiAsset Include="Resources/GameArt/*.png" LogicalName="gameart/%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources/GameHero/*.png" LogicalName="gamehero/%(Filename)%(Extension)" />
+    <MauiAsset Include="Resources/GameLogo/*.png" LogicalName="gamelogo/%(Filename)%(Extension)" />
+    <!-- PKSM-derived pixel chrome (GPL-3, see Resources/UI/ATTRIBUTION.md). -->
+    <MauiAsset Include="Resources/UI/pksm/*.png" LogicalName="ui/pksm/%(Filename)%(Extension)" />
+    <!-- The designer's icons for the new art direction (summary tabs, footer buttons). -->
+    <MauiAsset Include="Resources/UI/design/*.png" LogicalName="ui/design/%(Filename)%(Extension)" />
+    <!-- MPWSP01 environment art by Scarloxy; attribution in docs/POKEPARK_MPWSP01.md. -->
+    <MauiAsset Include="Resources/Pokepark/Maps/*.png" LogicalName="pokepark/maps/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../PKForge.Domain/PKForge.Domain.csproj" />
+    <ProjectReference Include="../PKForge.Chrome/PKForge.Chrome.csproj" />
+    <ProjectReference Include="../PKForge.Engine/PKForge.Engine.csproj" />
+    <ProjectReference Include="../PKForge.Infrastructure/PKForge.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

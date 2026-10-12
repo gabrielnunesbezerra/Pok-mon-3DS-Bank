@@ -1,0 +1,635 @@
+using Microsoft.Maui.Controls.Shapes;
+using PKForge.App.Services;
+using PKForge.App.Theme;
+using PKForge.Domain;
+using SkiaSharp;
+
+namespace PKForge.App.Views;
+
+/// <summary>
+/// The floating Pokédex: every species as a sprite tile on a cozy box-style grid,
+/// with live search, type filter gems and generation chips. This is how a Pokémon
+/// is picked anywhere in the app - never a plain list.
+/// </summary>
+public sealed class PokedexPicker : IPadHandler
+{
+    private static readonly string[] TypeNames =
+    [
+        "Normal", "Fighting", "Flying", "Poison", "Ground", "Rock", "Bug", "Ghost", "Steel",
+        "Fire", "Water", "Grass", "Electric", "Psychic", "Ice", "Dragon", "Dark", "Fairy",
+    ];
+
+    private static readonly (int Gen, int First, int Last)[] GenRanges =
+        [(1, 1, 151), (2, 152, 251), (3, 252, 386), (4, 387, 493), (5, 494, 649), (6, 650, 721), (7, 722, 809), (8, 810, 905), (9, 906, 1025)];
+
+    private sealed record DexEntry(int Id, string Name, string? IconPath, IReadOnlyList<int> Types, int Gen,
+        BaseStats Stats, SpeciesFormFlags Forms);
+
+    private readonly TaskCompletionSource<PickItem?> _result = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly List<DexEntry> _all;
+    private readonly Grid _host;
+    private readonly Grid _overlay;
+    private readonly GamepadRouter? _router;
+    private readonly DexGridView _grid;
+    private List<DexEntry> _filtered;
+    private string _query = "";
+    private readonly HashSet<int> _typeFilters = [];
+    private int? _genFilter;
+    private int _index;
+    private readonly SecondScreenState? _state;
+    private readonly SecondScreenClaim? _claim;
+    private readonly List<Border> _typeChips = [];
+    private readonly List<Border> _genChips = [];
+    private string _category = "Any";
+    private string _power = "Any";
+    private string _theme = "Any";
+    private Label _categoryLabel = null!;
+    private Label _powerLabel = null!;
+    private Label _themeLabel = null!;
+
+    public static async Task<PickItem?> ShowAsync(Grid host, IGameDataService data, ISaveEngineSession session)
+    {
+        // Icon preparation and per-species engine metadata are intentionally
+        // decoupled from opening the picker. The first visit must show the UI
+        // immediately even when the bundled icon cache is cold.
+        _ = EnsureIconsAsync(data);
+        var picker = new PokedexPicker(host);
+        _ = picker.InitializeAsync(data, session);
+        return await picker._result.Task;
+    }
+
+    /// <summary>Set once the cold-cache sweep has run in this process: later picker
+    /// opens must not even rescan the cache directory.</summary>
+    private static bool _iconSweepDone;
+
+    /// <summary>First run copies bundled mini sprites to cache without blocking the
+    /// picker. The sweep is deliberately paced (small chunks with pauses): a cold
+    /// install has ~1000 sprites to decode, pixel-scan, and re-encode, and running
+    /// that at full parallelism starves the UI thread and the offline legalizer -
+    /// the fan-screaming first Create flow. Gentle background work instead.</summary>
+    private static async Task EnsureIconsAsync(IGameDataService data)
+    {
+        if (_iconSweepDone) return;
+        var missing = new List<int>();
+        for (var id = 1; id < data.SpeciesNames.Count; id++)
+        {
+            if (data.SpeciesNames[id].Length > 0 && !File.Exists(IconCachePath(id)))
+                missing.Add(id);
+        }
+        if (missing.Count < 30)
+        {
+            _iconSweepDone = true; // negligible: let them fill lazily
+            return;
+        }
+
+        try
+        {
+            foreach (var chunk in missing.Chunk(8))
+            {
+                await Task.WhenAll(chunk.Select(NormalizeIconAsync)).ConfigureAwait(false);
+                await Task.Delay(60).ConfigureAwait(false); // let the UI and the fan breathe
+            }
+        }
+        catch { /* icon preparation is optional; the picker remains usable without it */ }
+        finally
+        {
+            _iconSweepDone = true;
+        }
+    }
+
+    private static async Task NormalizeIconAsync(int id)
+    {
+        try
+        {
+            var target = IconCachePath(id);
+            Stream asset;
+            try
+            {
+                asset = await FileSystem.OpenAppPackageFileAsync($"sprites/b_{id}.png");
+            }
+            catch (FileNotFoundException)
+            {
+                // Gen 9 has no pixel sprites; PKHeX shows official artwork.
+                asset = await FileSystem.OpenAppPackageFileAsync($"artwork/a_{id}.png");
+            }
+            await using (asset)
+            using (var buffer = new MemoryStream())
+            {
+                await asset.CopyToAsync(buffer).ConfigureAwait(false);
+                var bytes = buffer.ToArray();
+                await Task.Run(() => NormalizeIcon(bytes, target)).ConfigureAwait(false);
+            }
+        }
+        catch { /* no bundled sprite for this id */ }
+    }
+
+    private static string IconCachePath(int species) =>
+        System.IO.Path.Combine(FileSystem.CacheDirectory, $"mini-v2-{species}.png");
+
+    /// <summary>
+    /// Crops transparent padding, scales every species to one visual footprint, then
+    /// anchors it to a shared baseline. Evolution families no longer jump in apparent size.
+    /// </summary>
+    private static void NormalizeIcon(byte[] sourceBytes, string target)
+    {
+        using var bitmap = SKBitmap.Decode(sourceBytes);
+        if (bitmap is null) return;
+
+        var left = bitmap.Width;
+        var top = bitmap.Height;
+        var right = -1;
+        var bottom = -1;
+        var pixels = bitmap.GetPixelSpan();
+        var bpp = bitmap.BytesPerPixel;
+        if (pixels.IsEmpty || bpp < 4)
+            return;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            var rowStart = y * bitmap.RowBytes;
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                if (pixels[rowStart + x * bpp + 3] <= 8) continue;
+                left = Math.Min(left, x);
+                top = Math.Min(top, y);
+                right = Math.Max(right, x);
+                bottom = Math.Max(bottom, y);
+            }
+        }
+        if (right < left || bottom < top) return;
+
+        const int canvasWidth = 72;
+        const int canvasHeight = 58;
+        const float visualWidth = 54;
+        const float visualHeight = 44;
+        var sourceRect = new SKRect(left, top, right + 1, bottom + 1);
+        var scale = Math.Min(visualWidth / sourceRect.Width, visualHeight / sourceRect.Height);
+        var width = MathF.Max(1, MathF.Round(sourceRect.Width * scale));
+        var height = MathF.Max(1, MathF.Round(sourceRect.Height * scale));
+        var xOffset = MathF.Round((canvasWidth - width) / 2f);
+        var baseline = canvasHeight - 5f;
+        var destination = new SKRect(xOffset, baseline - height, xOffset + width, baseline);
+
+        using var normalized = new SKBitmap(canvasWidth, canvasHeight, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(normalized))
+        {
+            canvas.Clear(SKColors.Transparent);
+            using var sourceImage = SKImage.FromBitmap(bitmap);
+            canvas.DrawImage(sourceImage, sourceRect, destination,
+                new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None));
+        }
+        using var image = SKImage.FromBitmap(normalized);
+        using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+        using var output = File.Create(target);
+        encoded.SaveTo(output);
+    }
+
+    private static List<DexEntry> BuildEntries(IGameDataService data, ISaveEngineSession session)
+    {
+        var entries = new List<DexEntry>(data.SpeciesNames.Count);
+        for (var id = 1; id < data.SpeciesNames.Count; id++)
+        {
+            if (!Services.HaXMode.IsOn && id > session.MaxSpeciesId) break;
+            if (data.SpeciesNames[id].Length == 0) continue;
+            var icon = IconCachePath(id);
+            var genIndex = Array.FindIndex(GenRanges, r => id >= r.First && id <= r.Last);
+            var forms = id < data.FormFlags.Count
+                ? data.FormFlags[id]
+                : new SpeciesFormFlags(false, false, false, false);
+            entries.Add(new DexEntry(id, data.SpeciesNames[id], File.Exists(icon) ? icon : null,
+                session.GetSpeciesTypes(id), genIndex >= 0 ? GenRanges[genIndex].Gen : 9,
+                session.GetBaseStats(id), forms));
+        }
+        return entries;
+    }
+
+    private PokedexPicker(Grid host)
+    {
+        _host = host;
+        _router = IPlatformApplication.Current?.Services.GetService<GamepadRouter>();
+        _state = IPlatformApplication.Current?.Services.GetService<SecondScreenState>();
+        // The lower screen previews the highlighted species until the picker closes.
+        _claim = _state?.Routes.OpenOverlay(SecondScreenOwner.Pokedex);
+
+        _all = [];
+        _filtered = [];
+
+        var search = new Entry
+        {
+            Placeholder = "Search a Pokémon…",
+            FontSize = 14,
+            TextColor = UiTokens.Ink0,
+            PlaceholderColor = UiTokens.Ink1,
+            BackgroundColor = UiTokens.ShellPress,
+            IsSpellCheckEnabled = false,
+            IsTextPredictionEnabled = false,
+        };
+        search.TextChanged += (_, args) => { _query = args.NewTextValue ?? ""; DebounceRefilter(); };
+
+        // The species scroll like the Pokédex screens; a tap picks, the pad aims.
+        var sprites = IPlatformApplication.Current!.Services.GetRequiredService<ISpriteService>();
+        _grid = new DexGridView(sprites);
+        _grid.CursorChanged += index =>
+        {
+            _index = index;
+            if (_state is not null && index < _filtered.Count) _state.PreviewSpecies = _filtered[index].Id;
+        };
+        _grid.Tapped += index =>
+        {
+            if (index < _filtered.Count) Close(new PickItem(_filtered[index].Id, _filtered[index].Name, _filtered[index].IconPath));
+        };
+        var content = new Grid
+        {
+            RowSpacing = 8,
+            RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
+        };
+        var title = new Label { Text = "Pokédex", TextColor = UiTokens.Ink0, FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextHeading };
+        content.Add(title);
+        content.Add(search); Grid.SetRow(search, 1);
+        var filters = BuildFilterRows();
+        content.Add(filters); Grid.SetRow(filters, 2);
+        content.Add(_grid); Grid.SetRow(_grid, 3);
+        var hints = Kit.WindowHints(
+            ("A", "Choose", () => OnPadButton(PadButton.A)),
+            ("B", "Cancel", () => Close(null)),
+            ("LR", "Gen", () => OnPadButton(PadButton.R)),
+            ("X", "Types", () => _ = ShowTypeFilterMenuAsync()),
+            ("+", "Filters", () => _ = ShowFilterAxisMenuAsync()),
+            ("Y", "Clear", ClearFilters));
+        content.Add(hints); Grid.SetRow(hints, 4);
+
+        var window = Kit.DevicePanel(content, padding: 12);
+        window.Margin = new Thickness(30, 16);
+        var scrim = new BoxView { Color = UiTokens.Scrim };
+        var scrimTap = new TapGestureRecognizer();
+        scrimTap.Tapped += (_, _) => Close(null);
+        scrim.GestureRecognizers.Add(scrimTap);
+
+        _overlay = new Grid { Children = { scrim, window } };
+        host.Add(_overlay);
+        Grid.SetRowSpan(_overlay, Math.Max(1, host.RowDefinitions.Count));
+        Grid.SetColumnSpan(_overlay, Math.Max(1, host.ColumnDefinitions.Count));
+        Kit.AnimateIn(window);
+
+        Highlight(0);
+        _router?.Push(this);
+    }
+
+    private async Task InitializeAsync(IGameDataService data, ISaveEngineSession session)
+    {
+        try
+        {
+            var entries = await Task.Run(() => BuildEntries(data, session));
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                _all.AddRange(entries);
+                Refilter();
+            });
+        }
+        catch (Exception error)
+        {
+            System.Diagnostics.Debug.WriteLine($"Pokédex initialization: {error}");
+        }
+    }
+
+    /// <summary>Toggles one type in the multi-type filter (a mon must match ALL selected types).</summary>
+    private void ToggleType(int type)
+    {
+        if (!_typeFilters.Remove(type))
+            _typeFilters.Add(type);
+        RefreshChipStates();
+        Refilter();
+    }
+
+    private void CycleGen(int direction)
+    {
+        var current = _genFilter ?? 0; // 0 = ALL
+        current = (current + direction + 10) % 10;
+        _genFilter = current == 0 ? null : current;
+        RefreshChipStates();
+        Refilter();
+    }
+
+    private void ClearFilters()
+    {
+        _typeFilters.Clear();
+        _genFilter = null;
+        _category = "Any";
+        _power = "Any";
+        _theme = "Any";
+        RefreshCapsules();
+        RefreshChipStates();
+        Refilter();
+    }
+
+    private void RefreshCapsules()
+    {
+        if (_categoryLabel is null) return;
+        _categoryLabel.Text = $"Category: {_category}";
+        _powerLabel.Text = $"Power: {_power}";
+        _themeLabel.Text = $"Theme: {_theme}";
+    }
+
+    private void RefreshChipStates()
+    {
+        for (var i = 0; i < _typeChips.Count; i++)
+            _typeChips[i].Opacity = _typeFilters.Count == 0 ? 0.55 : (_typeFilters.Contains(i) ? 1.0 : 0.3);
+        for (var i = 0; i < _genChips.Count; i++)
+            _genChips[i].Opacity = _genFilter is null ? 0.55 : (_genFilter == GenRanges[i].Gen ? 1.0 : 0.3);
+    }
+
+    /// <summary>Type gems (multi-select) + roman generation chips + CLEAR; all also pad-reachable.</summary>
+    private View BuildFilterRows()
+    {
+        var typeRow = new HorizontalStackLayout { Spacing = 5 };
+        for (var type = 0; type < TypeNames.Length; type++)
+        {
+            var captured = type;
+            // The type plate, dimmed until the filter is on.
+            var chip = InfoKit.TypeBadge(type, 62);
+            chip.Opacity = 0.55;
+            chip.InputTransparent = false;
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) => ToggleType(captured);
+            chip.GestureRecognizers.Add(tap);
+            _typeChips.Add(chip);
+            typeRow.Children.Add(chip);
+        }
+
+        var genRow = new HorizontalStackLayout { Spacing = 5 };
+        foreach (var (gen, _, _) in GenRanges)
+        {
+            var captured = gen;
+            var chip = new Border
+            {
+                BackgroundColor = Kit.EraColor(gen),
+                StrokeThickness = 0,
+                Opacity = 0.55,
+                StrokeShape = new RoundRectangle { CornerRadius = 6 },
+                Padding = new Thickness(10, 3),
+                Content = new Label { Text = $"Gen {DexRegions.All[gen - 1].Roman}", TextColor = Colors.White, FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold },
+            };
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += (_, _) =>
+            {
+                _genFilter = _genFilter == captured ? null : captured;
+                RefreshChipStates();
+                Refilter();
+            };
+            chip.GestureRecognizers.Add(tap);
+            _genChips.Add(chip);
+            genRow.Children.Add(chip);
+        }
+
+        var clear = new Border
+        {
+            BackgroundColor = UiTokens.MenuBlue,
+            StrokeThickness = 0,
+            StrokeShape = new RoundRectangle { CornerRadius = 6 },
+            Padding = new Thickness(10, 3),
+            Content = new Label { Text = "Clear", TextColor = Colors.White, FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold },
+        };
+        var clearTap = new TapGestureRecognizer();
+        clearTap.Tapped += (_, _) => ClearFilters();
+        clear.GestureRecognizers.Add(clearTap);
+        genRow.Children.Add(clear);
+
+        var extras = new HorizontalStackLayout { Spacing = 5 };
+        extras.Children.Add(FilterCapsule("Category", () => _ = ShowCategoryMenuAsync(), ref _categoryLabel));
+        extras.Children.Add(FilterCapsule("Power", () => _ = ShowPowerMenuAsync(), ref _powerLabel));
+        extras.Children.Add(FilterCapsule("Theme", () => _ = ShowThemeMenuAsync(), ref _themeLabel));
+
+        return new VerticalStackLayout
+        {
+            Spacing = 5,
+            Children =
+            {
+                new ScrollView { Orientation = ScrollOrientation.Horizontal, HorizontalScrollBarVisibility = ScrollBarVisibility.Never, Content = typeRow },
+                genRow,
+                extras,
+            },
+        };
+    }
+
+    /// <summary>A live capsule showing the current selection of one filter axis.</summary>
+    private Border FilterCapsule(string caption, Action open, ref Label valueLabel)
+    {
+        valueLabel = new Label { Text = $"{caption}: Any", TextColor = Colors.White, FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold };
+        var capsule = new Border
+        {
+            BackgroundColor = UiTokens.MenuBlue,
+            StrokeThickness = 0,
+            StrokeShape = new RoundRectangle { CornerRadius = 6 },
+            Padding = new Thickness(10, 3),
+            Content = valueLabel,
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => open();
+        capsule.GestureRecognizers.Add(tap);
+        return capsule;
+    }
+
+    /// <summary>A compact logo-deck tile: normalized sprite, strong name plate, cyan focus.</summary>
+    private List<DexEntry> ApplyFilters()
+    {
+        IEnumerable<DexEntry> source = _all;
+        if (_genFilter is { } gen)
+        {
+            var (_, first, last) = GenRanges.First(r => r.Gen == gen);
+            source = source.Where(e => e.Id >= first && e.Id <= last);
+        }
+        if (_typeFilters.Count > 0)
+            source = source.Where(e => _typeFilters.All(t => e.Types.Contains(t)));
+        if (!string.IsNullOrWhiteSpace(_query))
+            source = source.Where(e => e.Name.Contains(_query, StringComparison.OrdinalIgnoreCase));
+        if (_category != "Any")
+            source = source.Where(e => MatchesCategory(e, _category));
+        if (_power != "Any")
+            source = source.Where(e => MatchesPower(e, _power));
+        if (_theme != "Any")
+            source = source.Where(e => MatchesTheme(e, _theme));
+        return source.ToList();
+    }
+
+    private static bool MatchesCategory(DexEntry e, string category) => category switch
+    {
+        "Legendary" => SpeciesCategories.Legendary.Contains(e.Id),
+        "Mythical" => SpeciesCategories.Mythical.Contains(e.Id),
+        "Ultra Beast" => SpeciesCategories.UltraBeast.Contains(e.Id),
+        "Paradox" => SpeciesCategories.Paradox.Contains(e.Id),
+        "Pseudo-Legendary" => SpeciesCategories.PseudoLegendary.Contains(e.Id),
+        "Starter" => SpeciesCategories.Starter.Contains(e.Id),
+        "Fossil" => SpeciesCategories.Fossil.Contains(e.Id),
+        "Baby" => SpeciesCategories.Baby.Contains(e.Id),
+        "Regional Form" => e.Forms.Regional,
+        "Mega-capable" => e.Forms.Mega,
+        "Gigantamax-capable" => SpeciesCategories.GigantamaxCapable.Contains(e.Id),
+        "Has Alternate Forms" => e.Forms.HasForms,
+        _ => true,
+    };
+
+    private static bool MatchesPower(DexEntry e, string power)
+    {
+        var total = e.Stats.Hp + e.Stats.Atk + e.Stats.Def + e.Stats.SpA + e.Stats.SpD + e.Stats.Spe;
+        return power switch
+        {
+            "400+ BST" => total >= 400,
+            "500+ BST" => total >= 500,
+            "600+ BST" => total >= 600,
+            "Physical Attacker" => e.Stats.Atk >= 100 && e.Stats.Atk >= e.Stats.SpA + 15,
+            "Special Attacker" => e.Stats.SpA >= 100 && e.Stats.SpA >= e.Stats.Atk + 15,
+            "Fast" => e.Stats.Spe >= 100,
+            "Sturdy" => e.Stats.Hp + e.Stats.Def + e.Stats.SpD >= 280,
+            _ => true,
+        };
+    }
+
+    private static bool MatchesTheme(DexEntry e, string theme) => theme switch
+    {
+        "Dragons" => e.Types.Contains(15) || SpeciesCategories.Themes.DragonExtras.Contains(e.Id),
+        "Aquatic" => e.Types.Contains(10) || SpeciesCategories.Themes.AquaticExtras.Contains(e.Id),
+        "Felines" => SpeciesCategories.Themes.Felines.Contains(e.Id),
+        "Canines" => SpeciesCategories.Themes.Canines.Contains(e.Id),
+        "Birds" => SpeciesCategories.Themes.Birds.Contains(e.Id),
+        "Dinosaurs" => SpeciesCategories.Themes.Dinosaurs.Contains(e.Id),
+        _ => true,
+    };
+
+    private CancellationTokenSource? _searchDebounce;
+
+    /// <summary>
+    /// Coalesce rapid keystrokes: rebuilding the 1025-cell grid on every character was the
+    /// "typing in the dex feels laggy" cost. Refilter once typing settles (~180 ms).
+    /// </summary>
+    private void DebounceRefilter()
+    {
+        _searchDebounce?.Cancel();
+        var cts = new CancellationTokenSource();
+        _searchDebounce = cts;
+        Task.Delay(180, cts.Token).ContinueWith(task =>
+        {
+            if (task.IsCanceled) return;
+            MainThread.BeginInvokeOnMainThread(() => { if (!cts.IsCancellationRequested) Refilter(); });
+        }, TaskScheduler.Default);
+    }
+
+    private void Refilter()
+    {
+        _filtered = ApplyFilters();
+        _index = 0;
+        _grid.Show(_filtered.Select(e => e.Id).ToList(), _ => new DexGridView.Look(Seen: true, Caught: false));
+        Highlight(0);
+    }
+
+    public bool OnPadButton(PadButton button)
+    {
+        switch (button)
+        {
+            case PadButton.Left: _grid.Move(-1, 0); return true;
+            case PadButton.Right: _grid.Move(1, 0); return true;
+            case PadButton.Up: _grid.Move(0, -1); return true;
+            case PadButton.Down: _grid.Move(0, 1); return true;
+            case PadButton.A:
+                if (_index >= 0 && _index < _filtered.Count)
+                {
+                    var entry = _filtered[_index];
+                    Close(new PickItem(entry.Id, entry.Name, entry.IconPath));
+                }
+                return true;
+            case PadButton.B: Close(null); return true;
+            case PadButton.L: CycleGen(-1); return true;
+            case PadButton.R: CycleGen(1); return true;
+            case PadButton.X: _ = ShowTypeFilterMenuAsync(); return true;
+            case PadButton.Y: ClearFilters(); return true;
+            case PadButton.Start: _ = ShowFilterAxisMenuAsync(); return true;
+            default: return true; // the dex owns the pad while open
+        }
+    }
+
+    private void Highlight(int index)
+    {
+        if (_filtered.Count == 0)
+        {
+            if (_state is not null) _state.PreviewSpecies = null;
+            return;
+        }
+        _index = Math.Clamp(index, 0, _filtered.Count - 1);
+        _grid.SetCursor(_index);
+        if (_state is not null) _state.PreviewSpecies = _filtered[_index].Id;
+    }
+
+    /// <summary>Pad path for the multi-type filter: a menu of types with check marks; pick to toggle.</summary>
+    private async Task ShowTypeFilterMenuAsync()
+    {
+        var options = Enumerable.Range(0, TypeNames.Length)
+            .Select(t => (_typeFilters.Contains(t) ? "✓ " : "") + TypeNames[t])
+            .Append("Clear all filters")
+            .ToArray();
+        var choice = await PadMenu.ShowAsync(_host, "FILTER BY TYPE (toggle)", "A Pokémon must match every checked type.", options);
+        if (choice is null) return;
+        if (choice == "Clear all filters") { ClearFilters(); return; }
+        var name = choice.StartsWith("✓ ", StringComparison.Ordinal) ? choice[2..] : choice;
+        var type = Array.IndexOf(TypeNames, name);
+        if (type >= 0) ToggleType(type);
+    }
+
+    /// <summary>Pad path into the three deep-filter axes (the capsules are the touch path).</summary>
+    private async Task ShowFilterAxisMenuAsync()
+    {
+        var choice = await PadMenu.ShowAsync(_host, "Filters",
+            "Categories, power, and themes combine with the type gems and generation chips.",
+            new PadOption($"Category: {_category}", IconPath: "type", Detail: "Legendary, starter, fossil, baby and other groups."),
+            new PadOption($"Power: {_power}", IconPath: "battle", Detail: "Base stat total or battle style, such as fast."),
+            new PadOption($"Theme: {_theme}", IconPath: "filter", Detail: "Fun groups like dragons, birds or dinosaurs."),
+            new PadOption("Clear all filters", IconPath: "clear", Detail: "Also clears the type and generation picks."));
+        switch (choice)
+        {
+            case "Clear all filters": ClearFilters(); return;
+            case { } picked when picked.StartsWith("Category", StringComparison.Ordinal): await ShowCategoryMenuAsync(); return;
+            case { } picked when picked.StartsWith("Power", StringComparison.Ordinal): await ShowPowerMenuAsync(); return;
+            case { } picked when picked.StartsWith("Theme", StringComparison.Ordinal): await ShowThemeMenuAsync(); return;
+        }
+    }
+
+    private async Task ShowCategoryMenuAsync()
+    {
+        var choice = await PadMenu.ShowAsync(_host, "Category",
+            "Rarity and special families. Combines with types, generation, power, and theme.",
+            "Any", "Legendary", "Mythical", "Ultra Beast", "Paradox", "Pseudo-Legendary",
+            "Starter", "Fossil", "Baby", "Regional Form", "Mega-capable",
+            "Gigantamax-capable", "Has Alternate Forms");
+        if (choice is null) return;
+        _category = choice;
+        RefreshCapsules();
+        Refilter();
+    }
+
+    private async Task ShowPowerMenuAsync()
+    {
+        var choice = await PadMenu.ShowAsync(_host, "Power", null,
+            "Any", "400+ BST", "500+ BST", "600+ BST", "Physical Attacker",
+            "Special Attacker", "Fast", "Sturdy");
+        if (choice is null) return;
+        _power = choice;
+        RefreshCapsules();
+        Refilter();
+    }
+
+    private async Task ShowThemeMenuAsync()
+    {
+        var choice = await PadMenu.ShowAsync(_host, "Theme", "The fun filters. Subjective by design.",
+            "Any", "Dragons", "Aquatic", "Felines", "Canines", "Birds", "Dinosaurs");
+        if (choice is null) return;
+        _theme = choice;
+        RefreshCapsules();
+        Refilter();
+    }
+
+    private void Close(PickItem? result)
+    {
+        _claim?.Release();
+        if (_state is not null) _state.PreviewSpecies = null;
+        if (_router is not null) _router.Remove(this);
+        _host.Remove(_overlay);
+        _result.TrySetResult(result);
+    }
+}

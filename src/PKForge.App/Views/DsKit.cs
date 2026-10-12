@@ -1,0 +1,460 @@
+using Microsoft.Maui.Controls.Shapes;
+using PKForge.App.Theme;
+using PKForge.Chrome;
+using SkiaSharp;
+using SkiaSharp.Views.Maui;
+using SkiaSharp.Views.Maui.Controls;
+
+namespace PKForge.App.Views;
+
+/// <summary>
+/// A PKSM menu row rebuilt as layered navy chrome with a cyan/cobalt focus state.
+/// Draws its own chrome in Skia; the label (and optional icon) ride on top.
+/// </summary>
+public sealed class DsFolderButton : Grid
+{
+    private static Color ChipInk => UiTokens.EditorChipInk;
+    private readonly SKCanvasView _bg;
+    private readonly Label _label;
+    private readonly Label? _detail;
+    private readonly Image? _icon;
+    private readonly Grid _labelViewport;
+    private readonly string _iconName = "";
+    private bool _selected;
+    private int _marqueeGeneration;
+    private readonly List<Label> _gliding = [];
+
+    public Action? Tapped { get; set; }
+
+    public DsFolderButton(PadOption option, double height = 50)
+    {
+        HeightRequest = height;
+        ColumnDefinitions = [new(new GridLength(30)), new(new GridLength(30)), new(GridLength.Star)];
+
+        _bg = new SKCanvasView { InputTransparent = true };
+        _bg.PaintSurface += (_, args) => DrawRow(args.Surface.Canvas, args.Info, _selected);
+
+        // The icon column: a bundled PKSM pixel icon when the option carries a semantic
+        // name, else the accent glyph. White on blue buttons, indigo when selected.
+        View iconHost;
+        if (!string.IsNullOrEmpty(option.IconPath) && !option.IconPath.Contains('/'))
+        {
+            _iconName = option.IconPath;
+            var native = PksmIcons.IsNative(_iconName);
+            _icon = new Image
+            {
+                // Cyan, as the footer keys and the section chips.
+                Source = PksmIcons.Source(option.IconPath, native ? PksmIcons.Native : PksmIcons.Cyan),
+                WidthRequest = 22,
+                HeightRequest = 22,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center,
+                InputTransparent = true,
+            };
+            iconHost = _icon;
+        }
+        else if (option.Glyph is not null)
+        {
+            iconHost = new Label
+            {
+                Text = option.Glyph,
+                FontFamily = "Rounded",
+                FontSize = 18,
+                TextColor = option.Accent ?? UiTokens.IndigoInk,
+                HorizontalTextAlignment = TextAlignment.Center,
+                VerticalTextAlignment = TextAlignment.Center,
+            };
+        }
+        else
+        {
+            iconHost = new BoxView { InputTransparent = true, WidthRequest = 0 };
+        }
+
+        _label = new Label
+        {
+            Text = option.Label,
+            FontFamily = DsChrome.PixelFont,
+            FontSize = 15,
+            TextColor = UiTokens.Ink0,
+            VerticalTextAlignment = TextAlignment.Center,
+            LineBreakMode = LineBreakMode.NoWrap,
+            HorizontalOptions = LayoutOptions.Start,
+        };
+        _labelViewport = new Grid { IsClippedToBounds = true, Margin = new Thickness(0, 0, 8, 0) };
+        if (string.IsNullOrEmpty(option.Detail))
+            _labelViewport.Children.Add(_label);
+        else
+        {
+            // Label over its detail line; the pair stays centred in the row.
+            _detail = new Label
+            {
+                Text = option.Detail,
+                FontSize = UiTokens.TextSmall,
+                TextColor = UiTokens.InkSoft,
+                LineBreakMode = LineBreakMode.TailTruncation,
+                HorizontalOptions = LayoutOptions.Start,
+                InputTransparent = true,
+            };
+            _label.VerticalTextAlignment = TextAlignment.End;
+            _labelViewport.Children.Add(new VerticalStackLayout
+            {
+                Spacing = 0,
+                VerticalOptions = LayoutOptions.Center,
+                Children = { _label, _detail },
+            });
+            HeightRequest = Math.Max(height, 54);
+        }
+
+        Children.Add(_bg);
+        Grid.SetColumnSpan(_bg, 3);
+        Children.Add(iconHost);
+        Children.Add(_labelViewport);
+        Grid.SetColumn(iconHost, 1);
+        Grid.SetColumn(_labelViewport, 2);
+
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => Tapped?.Invoke();
+        GestureRecognizers.Add(tap);
+    }
+
+    public bool Selected
+    {
+        get => _selected;
+        set
+        {
+            if (_selected == value) return;
+            _selected = value;
+            _label.TextColor = value ? ChipInk : UiTokens.Ink0;
+            if (_detail is not null) _detail.TextColor = value ? ChipInk : UiTokens.InkSoft;
+            _bg.InvalidateSurface();
+            if (value) StartMarquee();
+            else StopMarquee();
+        }
+    }
+
+    /// <summary>Long selected labels and detail lines pause, glide left at reading speed,
+    /// pause, then return; each line on its own. Lines that fit allocate no animation.</summary>
+    private async void StartMarquee()
+    {
+        var generation = ++_marqueeGeneration;
+        _label.TranslationX = 0;
+        await Task.Delay(700);
+        if (!_selected || generation != _marqueeGeneration || _labelViewport.Width <= 0) return;
+        Glide(_label, generation);
+        if (_detail is not null) Glide(_detail, generation);
+    }
+
+    private async void Glide(Label line, int generation)
+    {
+        // A line narrower than the button fits: leave it alone (measuring it outside the
+        // layout pass can shift it out of place).
+        if (line.Width < _labelViewport.Width - 4) return;
+        var measured = line.Measure(double.PositiveInfinity, HeightRequest).Width;
+        var overflow = measured - _labelViewport.Width;
+        if (overflow <= 4) return;
+        // At rest a detail line ends in "…"; while it scrolls it shows in full.
+        line.LineBreakMode = LineBreakMode.NoWrap;
+        line.WidthRequest = measured;
+        _gliding.Add(line);
+
+        while (_selected && generation == _marqueeGeneration)
+        {
+            var duration = (uint)Math.Clamp(overflow * 45, 1800, 6500);
+            await line.TranslateToAsync(-overflow, 0, duration, Easing.Linear);
+            if (!_selected || generation != _marqueeGeneration) return;
+            await Task.Delay(900);
+            if (!_selected || generation != _marqueeGeneration) return;
+            line.TranslationX = 0;
+            await Task.Delay(700);
+        }
+    }
+
+    private void StopMarquee()
+    {
+        _marqueeGeneration++;
+        _label.TranslationX = 0;
+        // Only the lines that scrolled were widened; the others keep their layout untouched.
+        foreach (var line in _gliding)
+        {
+            line.CancelAnimations();
+            line.TranslationX = 0;
+            line.WidthRequest = -1;
+        }
+        _gliding.Clear();
+        if (_detail is not null) _detail.LineBreakMode = LineBreakMode.TailTruncation;
+    }
+
+    /// <summary>
+    /// Draws a flat list row (a fact row inside a panel, not a button): soft stripe resting,
+    /// the selected-button look under the cursor.
+    /// </summary>
+    internal static void DrawListRow(SKCanvas canvas, SKImageInfo info, bool selected)
+    {
+        canvas.Clear(SKColors.Transparent);
+        var d = (float)DeviceDisplay.MainDisplayInfo.Density;
+        canvas.Save();
+        canvas.Scale(d);
+        PksmPaint.StripeRow(canvas, new SKRect(0.5f, 1, info.Width / d - 0.5f, info.Height / d - 1), selected);
+        canvas.Restore();
+    }
+
+    /// <summary>Draws the row chrome: the resting menu button, or the cobalt selected look.</summary>
+    internal static void DrawRow(SKCanvas canvas, SKImageInfo info, bool selected)
+    {
+        // Radius and edges scale with density so the row matches the MAUI-drawn buttons.
+        canvas.Clear(SKColors.Transparent);
+        var d = (float)DeviceDisplay.MainDisplayInfo.Density;
+        canvas.Save();
+        canvas.Scale(d);
+        var r = new SKRect(0.5f, 0.5f, info.Width / d - 0.5f, info.Height / d - 0.5f);
+        // At rest, a dark band with a quiet edge; selected, the section chip's look (its blue
+        // gradient and a cyan rim), the same as a focused editor field.
+        using var fill = new SKPaint
+        {
+            IsAntialias = true,
+            Shader = selected
+                ? SKShader.CreateLinearGradient(new SKPoint(0, r.Top), new SKPoint(0, r.Bottom), [EditorPaint.ChipTop, EditorPaint.ChipBottom], SKShaderTileMode.Clamp)
+                : null,
+            Color = EditorPaint.Band.WithAlpha(200),
+        };
+        canvas.DrawRoundRect(r, 6, 6, fill);
+        using var rim = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = selected ? 2f : 1.2f,
+            Color = selected ? EditorPaint.Cyan : StoragePaint.WellEdge,
+        };
+        canvas.DrawRoundRect(SKRect.Inflate(r, -0.6f, -0.6f), 6, 6, rim);
+        canvas.Restore();
+    }
+}
+
+/// <summary>The drawn pixel-icon set for concepts PKSM has no asset for. 16x16 grid, outline + highlight.</summary>
+public enum DsIcon { Storage, Bank, Events, Pokedex, Trainer, Settings }
+
+public static class DsIcons
+{
+    // Each row is 16 chars; a space is transparent. Palettes are per-icon.
+    private static readonly Dictionary<DsIcon, (string[] Map, Dictionary<char, SKColor> Pal)> Data = new()
+    {
+        [DsIcon.Storage] = (new[]{
+            "                ","   oooooooooo   ","  ohhhhhhhhhho  ","  owwwwwwwwwwo  ","  owwwwwwwwwwo  ",
+            "  ooooooooooo o ","  owwwwwwwwwwo  ","  owwwoooowwwo  ","  owwoddddowwo  ","  owwoddddowwo  ",
+            "  owwoooooowwo  ","  owwwwwwwwwwo  ","  ooooooooooo   ","                ","                ","                "},
+            Pal('o',"#3a2f2a",'w',"#c98f52",'d',"#a06a34",'h',"#e6b877")),
+        [DsIcon.Pokedex] = (new[]{
+            "                ","   oooooooooo   ","  orrrrrrrrrro  ","  orwwrrrrrrro  ","  orrrrrrrrrro  ",
+            "  orkkkkkkkkro  ","  orkggggggkro  ","  orkggggggkro  ","  orkkkkkkkkro  ","  orrrrrrrrrro  ",
+            "  orwwrrrrwwro  ","  orrrrrrrrrro  ","   oooooooooo   ","                ","                ","                "},
+            Pal('o',"#5a1414",'r',"#d23b3b",'k',"#2a2a2a",'g',"#5fd06a",'w',"#f4d84a")),
+        [DsIcon.Bank] = (new[]{
+            "                ","   oooooooooo   ","  obbbbbbbbbbo  ","  obcccccccccbo "," obcrrrrrrrrcbo ",
+            " obcrrkkkkrrcbo "," obcrkwwwwkrcbo "," obcrkwrrwkrcbo ","  obcrrkkkkrrcbo","  obcrrrrrrrrcbo",
+            "  obcccccccccbo","  obbbbbbbbbbo  ","   oooooooooo   ","                ","                ","                "},
+            Pal('o',"#1d3a5a",'b',"#3a6ea5",'c',"#7fc3e0",'w',"#f4f4f4",'r',"#e2453e",'k',"#111111")),
+        [DsIcon.Trainer] = (new[]{
+            "                ","                ","  oooooooooooo  ","  oyyyyyyyyyyo  ","  oywwwoyyyyyo  ",
+            "  oybbwoykkkyo  ","  oywwwoyyyyyo  ","  oyyyyoykkkyo  ","  oyyyyoyyyyyo  ","  oyyyyoykkkyo  ",
+            "  oyyyyyyyyyyo  ","  oooooooooooo  ","                ","                ","                ","                "},
+            Pal('o',"#7a4e10",'y',"#e0a03c",'w',"#ffffff",'b',"#3a6ea5",'k',"#5a3a0a")),
+        [DsIcon.Events] = (new[]{
+            "       yy       ","     yywwyy     ","      ywwy      ","   oooooooooo   ","  orrryyyrrrro  ",
+            "  orrryyyrrrro  ","  ooooyyyooooo  ","  orrryyyrrrro  ","  orrryyyrrrro  ","  orrryyyrrrro  ",
+            "  orrryyyrrrro  ","  oooooooooooo  ","                ","                ","                ","                "},
+            Pal('o',"#5a1414",'r',"#e2453e",'y',"#f4d84a",'w',"#ffe9a8")),
+        [DsIcon.Settings] = (new[]{
+            "      oooo      ","   o oggggo o   ","   oggggggggo   ","  oggghhhhgggo  "," oggghkkkkhgggo ",
+            " ogghkkwwkkhggo ","  ggkkw  wkkgg  "," ogghkkwwkkhggo "," oggghkkkkhgggo ","  oggghhhhgggo  ",
+            "   oggggggggo   ","   o oggggo o   ","      oooo      ","                ","                ","                "},
+            Pal('o',"#1f5a2a",'g',"#4fbf5f",'h',"#bfeec6",'k',"#12401c",'w',"#ffffff")),
+    };
+
+    private static Dictionary<char, SKColor> Pal(params object[] pairs)
+    {
+        var d = new Dictionary<char, SKColor>();
+        for (var i = 0; i < pairs.Length; i += 2) d[(char)pairs[i]] = SKColor.Parse((string)pairs[i + 1]);
+        return d;
+    }
+
+    public static void Draw(SKCanvas canvas, SKImageInfo info, DsIcon icon)
+    {
+        canvas.Clear(SKColors.Transparent);
+        if (!Data.TryGetValue(icon, out var d)) return;
+        var s = Math.Min(info.Width, info.Height) / 16f;
+        var ox = (info.Width - 16 * s) / 2f;
+        var oy = (info.Height - 16 * s) / 2f;
+        using var paint = new SKPaint { IsAntialias = false };
+        for (var r = 0; r < d.Map.Length; r++)
+        {
+            var rowText = d.Map[r];
+            for (var q = 0; q < rowText.Length; q++)
+            {
+                if (!d.Pal.TryGetValue(rowText[q], out var col)) continue;
+                paint.Color = col;
+                canvas.DrawRect(ox + q * s, oy + r * s, s + 0.6f, s + 0.6f, paint);
+            }
+        }
+    }
+}
+
+/// <summary>
+/// A PKSM icon card: layered navy tile, bundled pixel icon as hero, pixel label beneath.
+/// </summary>
+public sealed class DsCard : Grid
+{
+    private readonly SKCanvasView _bg;
+    private readonly SKCanvasView _iconCanvas;
+    private readonly Label _label;
+    private readonly DsIcon? _drawnIcon;
+    private readonly string? _assetIcon;
+    private bool _selected;
+
+    public Action? Tapped { get; set; }
+
+    public DsCard(DsIcon icon, string label, double height = 88)
+        : this((DsIcon?)icon, null, label, height) { }
+
+    public DsCard(string pksmAssetIcon, string label, double height = 88)
+        : this(null, pksmAssetIcon, label, height) { }
+
+    private DsCard(DsIcon? drawn, string? asset, string label, double height)
+    {
+        _drawnIcon = drawn;
+        _assetIcon = asset;
+        HeightRequest = height;
+
+        _bg = new SKCanvasView { InputTransparent = true };
+        _bg.PaintSurface += (_, a) => DrawTile(a.Surface.Canvas, a.Info, _selected);
+
+        _iconCanvas = new SKCanvasView { InputTransparent = true, WidthRequest = 36, HeightRequest = 36 };
+        _iconCanvas.PaintSurface += (_, a) =>
+        {
+            if (_drawnIcon is { } di) DsIcons.Draw(a.Surface.Canvas, a.Info, di);
+        };
+        View iconView = _iconCanvas;
+        if (asset is not null)
+            iconView = PksmIcons.Icon(asset, 36, PksmIcons.White);
+
+        _label = new Label
+        {
+            Text = label, FontFamily = DsChrome.PixelFont, FontSize = 15, TextColor = UiTokens.Ink0,
+            VerticalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.WordWrap, MaxLines = 2,
+            HorizontalTextAlignment = TextAlignment.Center,
+        };
+
+        var row = new VerticalStackLayout
+        {
+            Padding = new Thickness(12, 9, 12, 11), Spacing = 7, VerticalOptions = LayoutOptions.Center,
+            Children = { iconView, _label },
+        };
+
+        Children.Add(_bg);
+        Children.Add(row);
+
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => Tapped?.Invoke();
+        GestureRecognizers.Add(tap);
+    }
+
+    public bool Selected
+    {
+        get => _selected;
+        set
+        {
+            if (_selected == value) return;
+            _selected = value;
+            _bg.InvalidateSurface();
+            // The Nintendo focus pop: a short spring scale, never a slow fade.
+            _ = _selected
+                ? this.ScaleToAsync(1.05, 130, Easing.SpringOut)
+                : this.ScaleToAsync(1.0, 110, Easing.CubicOut);
+        }
+    }
+
+    /// <summary>The resting menu tile; the cobalt selected look when chosen.</summary>
+    internal static void DrawTile(SKCanvas canvas, SKImageInfo info, bool selected)
+    {
+        canvas.Clear(SKColors.Transparent);
+        var d = (float)DeviceDisplay.MainDisplayInfo.Density;
+        canvas.Save();
+        canvas.Scale(d);
+        var r = new SKRect(0.5f, 0.5f, info.Width / d - 0.5f, info.Height / d - 0.5f);
+        if (selected) PksmPaint.SelectedButton(canvas, r, 6);
+        else PksmPaint.BlackButton(canvas, r, 6);
+        canvas.Restore();
+    }
+}
+
+/// <summary>Reusable screen chrome: continuous dark rails, hint footer, and logo-grid field.</summary>
+public static class DsChrome
+{
+    public const string PixelFont = "PixelUI";
+
+    /// <summary>The Gen-5 title strip translated into the logo's cobalt/cyan chrome.</summary>
+    public static View TitleBar(string title = "PKForge")
+    {
+        var bar = new Grid
+        {
+            HeightRequest = 28,
+            BackgroundColor = UiTokens.MaroonDeep,
+            Padding = new Thickness(14, 0),
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Star)],
+            Children =
+            {
+                new BoxView { Color = UiTokens.ShellEdge, HeightRequest = 2, VerticalOptions = LayoutOptions.End, InputTransparent = true },
+                new Label
+                {
+                    Text = title, FontFamily = PixelFont, FontSize = 16, TextColor = UiTokens.Bright, VerticalTextAlignment = TextAlignment.Center,
+                    HorizontalOptions = LayoutOptions.Center, HorizontalTextAlignment = TextAlignment.Center,
+                },
+            },
+        };
+        bar.SetColumn((View)bar.Children[1], 1);
+        bar.SetColumnSpan((View)bar.Children[0], 3);
+        return bar;
+    }
+
+    /// <summary>Dark status strip: a title on the left, status words + a battery on the right.</summary>
+    public static View StatusStrip(string left, params string[] flags)
+    {
+        var row = new HorizontalStackLayout { Spacing = 15, VerticalOptions = LayoutOptions.Center };
+        row.Children.Add(new Label { Text = left, FontFamily = PixelFont, FontSize = 14, TextColor = UiTokens.Ink0, VerticalTextAlignment = TextAlignment.Center });
+        foreach (var f in flags)
+        {
+            row.Children.Add(new BoxView { WidthRequest = 6, HeightRequest = 6, CornerRadius = 1, Color = UiTokens.InkSoft, VerticalOptions = LayoutOptions.Center });
+            row.Children.Add(new Label { Text = f, FontFamily = PixelFont, FontSize = UiTokens.TextBody, TextColor = UiTokens.InkSoft, VerticalTextAlignment = TextAlignment.Center });
+        }
+
+        var batt = new Border
+        {
+            WidthRequest = 22, HeightRequest = 12, StrokeThickness = 2, Stroke = UiTokens.InkSoft,
+            StrokeShape = new RoundRectangle { CornerRadius = 2 }, HorizontalOptions = LayoutOptions.End, VerticalOptions = LayoutOptions.Center,
+            Content = new BoxView { Color = UiTokens.Green, Margin = new Thickness(1, 1, 6, 1) },
+        };
+        var grid = new Grid
+        {
+            BackgroundColor = UiTokens.Paper, Padding = new Thickness(12, 4),
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
+            Children = { row, batt },
+        };
+        Grid.SetColumn(batt, 1);
+        return grid;
+    }
+
+    /// <summary>Hint footer — the shared PKSM hint bar (blue key discs + pixel labels).</summary>
+    public static View Footer(params (string Button, string Label, Action? OnTap)[] hints)
+        => Kit.HintBar(hints);
+
+    /// <summary>The logo's navy/cobalt grid behind every global menu body.</summary>
+    public static SKCanvasView GridBackground()
+    {
+        var view = new SKCanvasView { InputTransparent = true };
+        view.PaintSurface += (_, a) =>
+        {
+            var c = a.Surface.Canvas;
+            PksmPaint.LogoGrid(c, new SKRect(0, 0, a.Info.Width, a.Info.Height));
+        };
+        return view;
+    }
+}

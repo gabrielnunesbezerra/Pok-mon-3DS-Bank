@@ -1,0 +1,979 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using PKForge.App.Services;
+using PKForge.Domain;
+
+namespace PKForge.App.ViewModels;
+
+public partial class BoxBrowserViewModel : ObservableObject, IBoxPager
+{
+    private readonly IDocumentPicker _picker;
+    private readonly ISaveSessionService _sessions;
+    private readonly ILegalityService _legality;
+    private readonly ISafeSaveWriter _writer;
+    private readonly Theme.ThemeService _theme;
+    private readonly ILegalizerService? _legalizer;
+
+    private SlotSummary[] _slots = [];
+    /// <summary>One legality sweep's verdicts; reused until the save is written again.</summary>
+    private readonly LegalitySweepCache _sweep = new();
+
+    /// <summary>How many safe writes have been committed on the open save. Legality
+    /// verdicts are only valid within one generation: every write bumps this, so the
+    /// sweep cache goes stale the moment the save changes underneath it.</summary>
+    public long MutationGeneration { get; private set; } = 1;
+    /// <summary>Invalidates the legality sweep: dots and cached verdicts drop until the next scan.</summary>
+    private void BumpMutationGeneration()
+    {
+        MutationGeneration++;
+        OnPropertyChanged(nameof(LegalitySweep));
+        OnPropertyChanged(nameof(CurrentBoxLegality));
+    }
+
+    public BoxBrowserViewModel(IDocumentPicker picker, ISaveSessionService sessions, ILegalityService legality, ISafeSaveWriter writer, Theme.ThemeService theme, ILegalizerService? legalizer = null)
+    {
+        _picker = picker;
+        _sessions = sessions;
+        _legality = legality;
+        _writer = writer;
+        _theme = theme;
+        _legalizer = legalizer;
+    }
+
+    [ObservableProperty] private SaveSnapshot? _save;
+    [ObservableProperty] private int _boxIndex;
+    [ObservableProperty] private int _selectedSlot = -1;
+    [ObservableProperty] private string _status = "NO STORAGE CONNECTED - PRESS ACCESS STORAGE";
+    [ObservableProperty] private bool _isBusy;
+
+    // Structured connection facts for the blueprint chips (never merged into one status blob).
+    [ObservableProperty] private string _connectedName = "";
+    [ObservableProperty] private int _connectedGeneration;
+    [ObservableProperty] private bool _isConnected;
+
+    [ObservableProperty] private EntityDetail? _selected;
+    [ObservableProperty] private string _legalityBadge = string.Empty;
+    /// <summary>The selected slot's legality checks by topic; null until a verdict arrives.</summary>
+    [ObservableProperty] private IReadOnlyList<LegalityCheck>? _legalityChecks;
+    [ObservableProperty] private string _legalityText = string.Empty;
+
+    // Editor fields (strings for binding; parsed on save).
+    [ObservableProperty] private string _editNickname = string.Empty;
+    [ObservableProperty] private string _editLevel = string.Empty;
+    [ObservableProperty] private string _editFriendship = string.Empty;
+    [ObservableProperty] private string _editSpecies = string.Empty;
+    [ObservableProperty] private string _editNature = string.Empty;
+    [ObservableProperty] private string _editAbility = string.Empty;
+    [ObservableProperty] private string _editHeldItem = string.Empty;
+    [ObservableProperty] private string _editMove1 = string.Empty;
+    [ObservableProperty] private string _editMove2 = string.Empty;
+    [ObservableProperty] private string _editMove3 = string.Empty;
+    [ObservableProperty] private string _editMove4 = string.Empty;
+    [ObservableProperty] private string _editIvs = string.Empty;
+    [ObservableProperty] private string _editStats = string.Empty;
+    [ObservableProperty] private string _editEvs = string.Empty;
+    [ObservableProperty] private string _editBall = string.Empty;
+    [ObservableProperty] private string _editOt = string.Empty;
+    [ObservableProperty] private string _editGender = "2";
+    [ObservableProperty] private bool _editShiny;
+
+    public IReadOnlyList<SlotSummary> VisibleSlots =>
+        BoxIndex == -1
+            ? Enumerable.Range(0, 6).Select(i =>
+                _slots.FirstOrDefault(x => x.Box == -1 && x.Slot == i) is { Box: -1 } found
+                    ? found
+                    : new SlotSummary(-1, i, null, null, false, true)).ToArray()
+            : _slots.Where(x => x.Box == BoxIndex).OrderBy(x => x.Slot).ToArray();
+
+    public int BoxCount => _slots.Length == 0 ? 0 : _slots.Max(x => x.Box) + 1;
+
+    /// <summary>LCD readout above the grid; the party rides before box 1.</summary>
+    public string BoxLabel => Save is null ? "NO DATA" : BoxIndex == -1 ? "PARTY" : $"{BoxIndex + 1:00} / {BoxCount:00}";
+
+    partial void OnBoxIndexChanged(int value)
+    {
+        OnPropertyChanged(nameof(BoxLabel));
+        OnPropertyChanged(nameof(CurrentBoxLegality));
+    }
+    partial void OnSaveChanged(SaveSnapshot? value) => OnPropertyChanged(nameof(BoxLabel));
+
+    [RelayCommand]
+    private async Task OpenSaveAsync()
+    {
+        if (IsBusy) return;
+        try
+        {
+            IsBusy = true;
+            Status = "Choose a save file…";
+            var document = await _picker.PickSaveAsync();
+            if (document is null) { Status = "Open cancelled."; return; }
+            var session = await _sessions.OpenAsync(document);
+            _slots = session.Snapshot.Slots.ToArray();
+            Save = session.Snapshot;
+            BoxIndex = 0;
+            SelectedSlot = -1;
+            Selected = null;
+            OnPropertyChanged(nameof(VisibleSlots));
+            OnPropertyChanged(nameof(BoxCount));
+            OnPropertyChanged(nameof(BoxLabel));
+            ConnectedName = document.DisplayName;
+            ConnectedGeneration = Save.Generation;
+            BumpMutationGeneration();
+        }
+        catch (Exception error)
+        {
+            Status = $"Could not open save: {error.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    public void SelectSlot(int slot)
+    {
+        if (Save is null) return;
+        var engineSession = _sessions.CurrentSession;
+        if (engineSession is null) return;
+        var count = BoxIndex == -1 ? 6 : _slots.Count(x => x.Box == BoxIndex);
+        if (slot < 0 || slot >= count) return;
+
+        SelectedSlot = slot;
+        var detail = engineSession.ReadEntity(BoxIndex, slot);
+        Selected = detail;
+        _theme.ApplyTypes(detail.Types);
+        LegalityChecks = null;
+        if (detail.IsEmpty)
+        {
+            LegalityBadge = string.Empty;
+            LegalityText = "Empty slot.";
+            return;
+        }
+
+        EditNickname = detail.Nickname;
+        EditLevel = detail.Level.ToString();
+        EditFriendship = detail.Friendship.ToString();
+        EditSpecies = detail.Species.ToString();
+        EditNature = detail.Nature.ToString();
+        EditAbility = detail.Ability.ToString();
+        EditHeldItem = detail.HeldItem.ToString();
+        EditMove1 = detail.Move1.ToString();
+        EditMove2 = detail.Move2.ToString();
+        EditMove3 = detail.Move3.ToString();
+        EditMove4 = detail.Move4.ToString();
+        EditIvs = string.Join(' ', detail.IVs);
+        EditEvs = string.Join(' ', detail.EVs);
+        EditStats = detail.Stats is { Count: 6 } ? string.Join(' ', detail.Stats) : string.Empty;
+        EditBall = detail.Ball.ToString();
+        EditOt = detail.OriginalTrainer;
+        EditGender = detail.Gender.ToString();
+        EditShiny = detail.IsShiny;
+
+        // A fresh sweep already holds this verdict and its full report text, so the
+        // cursor info answers instantly; otherwise analyze just this slot off-thread.
+        var documentId = _sessions.Current?.Document.DocumentId;
+        if (documentId is not null &&
+            _sweep.TryGetVerdict(documentId, MutationGeneration, BoxIndex, slot, out var cached) &&
+            cached is not null)
+        {
+            LegalityChecks = cached.Checks;
+            LegalityBadge = cached.Valid ? "✓" : "✗";
+            LegalityText = string.Join('\n', cached.Report);
+            return;
+        }
+
+        // No transient "analyzing" flash: stay blank until the verdict is ready.
+        LegalityBadge = string.Empty;
+        LegalityText = string.Empty;
+        // Romhacks PKHeX cannot judge (Luminescent Platinum's own species and forms) get no
+        // verdict at all rather than a false "illegal".
+        if (!engineSession.SupportsLegalityAnalysis) return;
+        Task.Run(() =>
+        {
+            var report = _legality.Analyze(engineSession, BoxIndex, slot);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                // Same slot is not enough: a move reselects it with new contents meanwhile.
+                if (SelectedSlot != slot || !ReferenceEquals(Selected, detail)) return;
+                LegalityChecks = report.Checks;
+                LegalityBadge = report.Valid ? "✓" : "✗";
+                LegalityText = string.Join('\n', report.Lines);
+            });
+        });
+    }
+
+    [RelayCommand]
+    private async Task SaveEditAsync()
+    {
+        if (IsBusy) return;
+        // The editor's APPLY path writes outside RunMutationAsync (it edits the live
+        // session field by field), so it carries the same Hardcore guard itself.
+        if (HardcoreMode.Blocks(SaveAction.EditMon, out var hardcoreStatus))
+        {
+            Status = hardcoreStatus;
+            return;
+        }
+        var engineSession = _sessions.CurrentSession;
+        var session = _sessions.Current;
+        var detail = Selected;
+        if (engineSession is null || session is null || detail is null || detail.IsEmpty)
+        {
+            Status = "Nothing to save.";
+            return;
+        }
+
+        try
+        {
+            IsBusy = true;
+            var edit = new EntityEdit(
+                Species: ParseInt(EditSpecies),
+                Nickname: EditNickname.Length == 0 ? null : EditNickname,
+                Level: ParseInt(EditLevel),
+                Friendship: ParseInt(EditFriendship),
+                Nature: ParseInt(EditNature),
+                Ability: ParseInt(EditAbility),
+                HeldItem: ParseInt(EditHeldItem),
+                Move1: ParseInt(EditMove1),
+                Move2: ParseInt(EditMove2),
+                Move3: ParseInt(EditMove3),
+                Move4: ParseInt(EditMove4),
+                IVs: ParseIntList(EditIvs),
+                EVs: ParseIntList(EditEvs),
+                IsShiny: EditShiny != detail.IsShiny ? EditShiny : null,
+                Ball: ParseInt(EditBall),
+                OriginalTrainer: EditOt.Length == 0 ? null : EditOt,
+                Gender: ParseInt(EditGender));
+
+            Status = "Applying edit…";
+            engineSession.ApplyEdit(detail.Box, detail.Slot, edit);
+            var candidate = engineSession.Serialize();
+
+            Status = "Validating, backing up, writing…";
+            var receipt = await _writer.WriteScopedAsync(session.Document.DocumentId, session.Snapshot, candidate,
+                WriteScope.Only(new SlotRef(detail.Box, detail.Slot)),
+                $"Edit {EditorSubject(detail)} ({SlotLabel(detail.Box, detail.Slot)})");
+            if (receipt.Changed)
+            {
+                _sessions.MarkWritten(session.Document.DocumentId, candidate);
+                BumpMutationGeneration();
+            }
+
+            var updated = engineSession.ReadEntity(detail.Box, detail.Slot);
+            var askedAbility = ParseInt(EditAbility);
+            if (askedAbility is { } wanted && updated.Ability != wanted)
+                Status = $"Ability did not stick: asked for {wanted}, the mon holds {updated.Ability}. This is the diagnostic the developer needs.";
+            var index = Array.FindIndex(_slots, x => x.Box == detail.Box && x.Slot == detail.Slot);
+            if (index >= 0)
+                _slots[index] = _slots[index] with { Species = updated.Species, Nickname = updated.Nickname, IsShiny = updated.IsShiny, Form = updated.Form, HeldItem = updated.HeldItem };
+            OnPropertyChanged(nameof(VisibleSlots));
+            SelectSlot(detail.Slot);
+
+            Status = receipt.Changed
+                ? $"Saved. Restore point {ShortBackupId(receipt)} · {receipt.WrittenSha256[..8]}…"
+                : "Nothing changed - no write, no restore point.";
+        }
+        catch (Exception error)
+        {
+            DiscardPartialEdits();
+            Status = $"Write aborted: {error.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>The save was closed underneath the browser (it changed on disk and could not be
+    /// reopened): the grid empties and every write path sees "No save connected".</summary>
+    public void Disconnect()
+    {
+        _slots = [];
+        Save = null;
+        SelectedSlot = -1;
+        Selected = null;
+        IsConnected = false;
+        ConnectedName = "";
+        OnPropertyChanged(nameof(VisibleSlots));
+        OnPropertyChanged(nameof(BoxCount));
+        OnPropertyChanged(nameof(BoxLabel));
+        BumpMutationGeneration();
+    }
+
+    /// <summary>Re-reads the grid from the session service's current save (after a restore or detected-save open).</summary>
+    public void RefreshFromCurrentSession()
+    {
+        var session = _sessions.Current;
+        if (session is null) return;
+        _slots = session.Snapshot.Slots.ToArray();
+        Save = session.Snapshot;
+        BoxIndex = Math.Min(BoxIndex, Math.Max(0, BoxCount - 1));
+        SelectedSlot = -1;
+        Selected = null;
+        OnPropertyChanged(nameof(VisibleSlots));
+        OnPropertyChanged(nameof(BoxCount));
+        OnPropertyChanged(nameof(BoxLabel));
+        ConnectedName = session.Document.DisplayName;
+        ConnectedGeneration = session.Snapshot.Generation;
+        IsConnected = true;
+        BumpMutationGeneration();
+        Status = "READY";
+    }
+
+    // ── Legality sweep: cached verdicts for the whole save ──
+
+    /// <summary>The last sweep's verdicts while they still match the save's write
+    /// generation; null once anything has been written (dots disappear until rescanned).</summary>
+    public IReadOnlyList<SlotLegality>? LegalitySweep =>
+        _sweep.IsFresh(_sessions.Current?.Document.DocumentId ?? string.Empty, MutationGeneration)
+            ? _sweep.Results
+            : null;
+
+    /// <summary>Verdicts for the visible box only (slot → legal); null when stale.</summary>
+    public IReadOnlyDictionary<int, bool>? CurrentBoxLegality
+    {
+        get
+        {
+            var sweep = LegalitySweep;
+            if (sweep is null) return null;
+            Dictionary<int, bool>? map = null;
+            foreach (var verdict in sweep)
+            {
+                if (verdict.Box != BoxIndex) continue;
+                map ??= [];
+                map[verdict.Slot] = verdict.Valid;
+            }
+            return map;
+        }
+    }
+
+    /// <summary>Verdicts for every occupied slot. A fresh cache returns immediately;
+    /// otherwise the whole save is rescanned off-thread (onRescan fires first so the
+    /// caller can show progress). The result is cached for the current write generation.</summary>
+    public async Task<IReadOnlyList<SlotLegality>> GetLegalitySweepAsync(
+        Action? onRescan = null, Action<int, int>? onProgress = null, CancellationToken cancellation = default)
+    {
+        var engineSession = _sessions.CurrentSession;
+        var documentId = _sessions.Current?.Document.DocumentId ?? string.Empty;
+        if (engineSession is null || documentId.Length == 0)
+            return [];
+        if (_sweep.IsFresh(documentId, MutationGeneration) && _sweep.Results is not null)
+            return _sweep.Results;
+
+        onRescan?.Invoke();
+        var results = await Task.Run(() => _legality.Sweep(engineSession, onProgress, cancellation), cancellation);
+        _sweep.Store(documentId, MutationGeneration, results);
+        OnPropertyChanged(nameof(LegalitySweep));
+        OnPropertyChanged(nameof(CurrentBoxLegality));
+        return results;
+    }
+
+    /// <summary>
+    /// True when the open save refuses ordinary writes (read-only identity, unconfirmed
+    /// layout risk); <see cref="Status"/> then carries why. A move to another game asks
+    /// this before writing the destination, so a source that cannot release the Pokémon
+    /// never ends up with a clone in both games.
+    /// </summary>
+    public bool OpenSaveRefusesWrites()
+    {
+        if (_sessions.Current is not { } session) return false;
+        if (_writer.WhyWritesAreRefused(session.Document.DocumentId, session.Snapshot) is not { } reason) return false;
+        Status = reason;
+        return true;
+    }
+
+    /// <summary>
+    /// The open save's layout verdict (<see cref="LayoutRiskKind"/>), analysed off-thread: the
+    /// first call re-parses and round-trips the whole file, later calls and every write hit
+    /// the writer's per-document cache. Null when no save is open or the engine is confident.
+    /// </summary>
+    public async Task<LayoutRisk?> AssessOpenSaveLayoutAsync()
+    {
+        if (_sessions.Current is not { } session) return null;
+        return await Task.Run(() => _writer.LayoutRiskOf(session.Document.DocumentId, session.Snapshot));
+    }
+
+    /// <summary>
+    /// Asks the player whether to edit a suspected ROM hack at their own risk when a write is
+    /// refused for it (set by the page that can show the question). True = go ahead.
+    /// </summary>
+    public Func<string, Task<bool>>? ConfirmHackRisk { get; set; }
+
+    /// <summary>"Edit at my own risk" for a suspected ROM hack: persisted per document by the writer.</summary>
+    public void AcceptHackRisk()
+    {
+        if (_sessions.Current is { } session) _writer.ConfirmLayoutRisk(session.Document.DocumentId);
+    }
+
+    /// <summary>True when ordinary writes of the open save are refused, without touching <see cref="Status"/>.</summary>
+    public bool OpenSaveIsReadOnly =>
+        _sessions.Current is { } session && _writer.WhyWritesAreRefused(session.Document.DocumentId, session.Snapshot) is not null;
+
+    /// <summary>Runs a legalizer mutation (generate/legalize) then commits it through the safe write path.</summary>
+    public Task<bool> RunLegalizerAsync(Func<ILegalizerService, ISaveEngineSession, GenerationOutcome> operation, int slot,
+        SaveAction action = SaveAction.CreateMon)
+    {
+        var legalizer = _legalizer;
+        if (legalizer is null)
+        {
+            Status = "Legalizer unavailable.";
+            return Task.FromResult(false);
+        }
+        var description = Selected is { IsEmpty: false } detail
+            ? $"Legalize {EditorSubject(detail)} ({SlotLabel(BoxIndex, slot)})"
+            : null;
+        return RunMutationAsync(session => operation(legalizer, session), slot, changeDescription: description, action: action);
+    }
+
+    /// <summary>Runs any slot mutation then commits it through the safe write path (validate → backup → atomic write).
+    /// Hardcore mode is enforced here, at the one funnel every save write passes through:
+    /// a refused <paramref name="action"/> skips the operation entirely - so nothing is
+    /// even staged in the live session - and shows the reason instead of writing.</summary>
+    public async Task<bool> RunMutationAsync(Func<ISaveEngineSession, GenerationOutcome> operation, int slot,
+        bool refreshSlot = true, string? changeDescription = null, SaveAction action = SaveAction.EditMon)
+    {
+        if (HardcoreMode.Blocks(action, out var hardcoreStatus))
+        {
+            Status = hardcoreStatus;
+            return false;
+        }
+
+        var engineSession = _sessions.CurrentSession;
+        var session = _sessions.Current;
+        if (engineSession is null || session is null)
+        {
+            Status = "No save connected.";
+            return false;
+        }
+
+        try
+        {
+            IsBusy = true;
+            var outcome = await Task.Run(() => operation(engineSession));
+            if (!outcome.Success)
+            {
+                // A refused edit (Make mine on an event gift, say) leaves the player on the same
+                // Pokémon with the reason, not on an empty editor with nothing selected.
+                var (keepBox, keepSlot) = (BoxIndex, SelectedSlot);
+                DiscardPartialEdits();
+                if (_sessions.Current is not null && keepSlot >= 0)
+                {
+                    BoxIndex = keepBox;
+                    SelectSlot(keepSlot);
+                }
+                Status = outcome.Message;
+                return false;
+            }
+
+            var candidate = engineSession.Serialize();
+            SaveWriteReceipt receipt;
+            try
+            {
+                receipt = await _writer.WriteAsync(session.Document.DocumentId, session.Snapshot, candidate,
+                    changeDescription ?? outcome.Message);
+            }
+            catch (UnsafeSaveWriteException refused) when (refused.RequiresConfirmation && ConfirmHackRisk is { } confirm)
+            {
+                // A suspected ROM hack: ask right here, at the edit, and keep the edit if the
+                // player takes the risk. The restore point is still made before writing.
+                if (!await confirm(refused.Message)) throw;
+                AcceptHackRisk();
+                receipt = await _writer.WriteAsync(session.Document.DocumentId, session.Snapshot, candidate,
+                    changeDescription ?? outcome.Message);
+            }
+            if (receipt.Changed)
+            {
+                _sessions.MarkWritten(session.Document.DocumentId, candidate);
+                BumpMutationGeneration();
+            }
+
+            if (refreshSlot)
+            {
+                var updated = engineSession.ReadEntity(BoxIndex, slot);
+                var index = Array.FindIndex(_slots, x => x.Box == BoxIndex && x.Slot == slot);
+                if (index >= 0)
+                    _slots[index] = _slots[index] with
+                    {
+                        Species = updated.IsEmpty ? null : updated.Species,
+                        Nickname = updated.IsEmpty ? null : updated.Nickname,
+                        IsShiny = updated.IsShiny,
+                        Form = updated.Form,
+                        HeldItem = updated.IsEmpty ? 0 : updated.HeldItem,
+                    };
+                OnPropertyChanged(nameof(VisibleSlots));
+                SelectSlot(slot);
+            }
+            Status = receipt.Changed
+                ? $"{outcome.Message} · restore point {ShortBackupId(receipt)}"
+                : $"{outcome.Message} Nothing changed - no write, no restore point.";
+            return true;
+        }
+        catch (Exception error)
+        {
+            DiscardPartialEdits();
+            AppLog.Error("edit", $"Edit aborted ({action})", error);
+            Status = $"Aborted: {error.Message}";
+            return false;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>A failed mutation may have half-applied its edits to the live session; they are
+    /// dropped by reopening from the last written bytes, so the next write cannot carry them.</summary>
+    private void DiscardPartialEdits()
+    {
+        try
+        {
+            _sessions.RevertToBaseline();
+            RefreshFromCurrentSession();
+        }
+        catch (Exception)
+        {
+            // The baseline would not reopen: the session was closed rather than kept stale.
+        }
+        if (_sessions.Current is null) Disconnect();
+    }
+
+    public void PreviousBox() => ChangeBox(-1);
+    public void NextBox() => ChangeBox(1);
+
+    private const int GridColumns = 6;
+    private const int GridRows = 5;
+
+    // ── Organizer: the PC's multi-select cursor ──
+    // Marks live in StorageMarks (pure, unit-tested) and survive L/R box changes; the
+    // grid reads IsMarked/PendingRectangle, the page drives the gestures.
+
+    [ObservableProperty] private bool _selectMode;
+    private readonly StorageMarks _marks = new();
+
+    public int MarkedCount => _marks.Count;
+    public IReadOnlyList<(int Box, int Slot)> MarkedSlots => _marks.Ordered;
+    public bool IsMarked(int box, int slot) => _marks.Contains(box, slot);
+    public int MarkedInCurrentBox => _marks.CountIn(BoxIndex);
+    public bool CurrentBoxFullyMarked => _marks.IsPageFullyMarked(_slots, BoxIndex);
+    private int PageColumns => BoxIndex == -1 ? 2 : GridColumns;
+
+    /// <summary>The rectangle a hold-A / drag gesture is spanning on the open page, and
+    /// whether releasing it marks or unmarks; null while no gesture is in flight.</summary>
+    public (int From, int To, bool Mark)? PendingRectangle { get; private set; }
+
+    public bool InPendingRectangle(int slot) =>
+        PendingRectangle is { } r && StorageRectangle.Contains(r.From, r.To, slot, PageColumns);
+
+    public void EnterSelectMode()
+    {
+        CancelCarry();
+        SelectMode = true;
+        Status = "MULTI-SELECT - A MARKS · Y WHOLE BOX · X ACTIONS";
+        OnPropertyChanged(nameof(MarkedCount));
+    }
+
+    public void ExitSelectMode()
+    {
+        SelectMode = false;
+        PendingRectangle = null;
+        _marks.Clear();
+        Status = "READY";
+        OnPropertyChanged(nameof(MarkedCount));
+    }
+
+    /// <summary>"Select all in this box" on one button: marks the page, or clears it when
+    /// every Pokémon on it is already marked. Works on the party page too.</summary>
+    public bool ToggleBoxMarks()
+    {
+        var marked = _marks.TogglePage(_slots, BoxIndex);
+        AnnounceMarks(marked ? $"{PageName} MARKED" : $"{PageName} CLEARED");
+        return marked;
+    }
+
+    /// <summary>Marks every Pokémon in the open box (or the party); returns how many are marked now.</summary>
+    public int MarkBox()
+    {
+        _marks.MarkPage(_slots, BoxIndex);
+        AnnounceMarks($"{PageName} MARKED");
+        return _marks.Count;
+    }
+
+    /// <summary>Marks every Pokémon stored in the boxes (the party stays out: it cannot be emptied).</summary>
+    public int MarkAllBoxes()
+    {
+        _marks.MarkAllBoxes(_slots);
+        AnnounceMarks("ALL BOXES MARKED");
+        return _marks.Count;
+    }
+
+    /// <summary>Marks every Pokémon in the given boxes (hand-off from the box manager).</summary>
+    public int MarkBoxes(IReadOnlyCollection<int> boxes)
+    {
+        _marks.MarkBoxes(_slots, boxes);
+        AnnounceMarks($"{boxes.Count} BOX(ES) MARKED");
+        return _marks.Count;
+    }
+
+    /// <summary>Every slot of the open save (boxes, then the party when the save has one).</summary>
+    public IReadOnlyList<SlotSummary> AllSlots => _slots;
+
+    /// <summary>Marks the given slots (the held-item finder's hand-off); returns the mark count.</summary>
+    public int MarkSlots(IReadOnlyCollection<(int Box, int Slot)> targets)
+    {
+        _marks.MarkSlots(_slots, targets);
+        AnnounceMarks($"{targets.Count} MARKED");
+        return _marks.Count;
+    }
+
+    /// <summary>Flips the marks of the open box: marked become unmarked and the rest marked.</summary>
+    public void InvertBoxMarks()
+    {
+        _marks.InvertPage(_slots, BoxIndex);
+        AnnounceMarks($"{PageName} INVERTED");
+    }
+
+    public void ClearMarks()
+    {
+        _marks.Clear();
+        AnnounceMarks("MARKS CLEARED");
+    }
+
+    /// <summary>Clears the marks after a write without overwriting the write's own status line.</summary>
+    public void ClearMarksQuietly()
+    {
+        _marks.Clear();
+        PendingRectangle = null;
+        OnPropertyChanged(nameof(MarkedCount));
+    }
+
+    /// <summary>Marks/unmarks an occupied slot; false when the slot is empty.</summary>
+    public bool ToggleMark(int slot)
+    {
+        if (!_marks.Toggle(_slots, BoxIndex, slot)) return false;
+        AnnounceMarks(null);
+        return true;
+    }
+
+    /// <summary>Starts a rectangle gesture on a slot: the anchor flips like a tap, and the
+    /// rectangle then paints the anchor's new state (mark, or erase when it was unmarked).</summary>
+    public void BeginRectangle(int slot)
+    {
+        var toggled = _marks.Toggle(_slots, BoxIndex, slot);
+        PendingRectangle = (slot, slot, !toggled || _marks.Contains(BoxIndex, slot));
+        AnnounceMarks(null);
+    }
+
+    public void ExtendRectangle(int slot)
+    {
+        if (PendingRectangle is not { } r || slot < 0) return;
+        PendingRectangle = r with { To = slot };
+        var span = VisibleSlots.Count(s => s.Species is not null && InPendingRectangle(s.Slot));
+        Status = $"MULTI-SELECT - {(r.Mark ? "MARKING" : "UNMARKING")} {span} · RELEASE TO APPLY";
+    }
+
+    /// <summary>Applies the rectangle; false when it never grew past its anchor (a plain tap).</summary>
+    public bool CommitRectangle()
+    {
+        if (PendingRectangle is not { } r) return false;
+        PendingRectangle = null;
+        if (r.From == r.To) { AnnounceMarks(null); return false; }
+        _marks.SetRectangle(_slots, BoxIndex, r.From, r.To, PageColumns, r.Mark);
+        AnnounceMarks(null);
+        return true;
+    }
+
+    private string PageName => BoxIndex == -1 ? "PARTY" : $"BOX {BoxIndex + 1:00}";
+
+    private void AnnounceMarks(string? what)
+    {
+        Status = what is null
+            ? $"MULTI-SELECT - {_marks.Count} MARKED"
+            : $"MULTI-SELECT - {what} · {_marks.Count} MARKED";
+        OnPropertyChanged(nameof(MarkedCount));
+    }
+
+    /// <summary>
+    /// Moves every marked mon into the empty box slots from <paramref name="start"/> on (the
+    /// following boxes too when that box fills up). Taken slots are skipped, never replaced.
+    /// One backup, one write.
+    /// </summary>
+    public Task<bool> BulkMoveAsync(SlotRef start) => RunMutationAsync(session =>
+    {
+        var targets = new Queue<SlotRef>(SlotPlanning.FreeSlotsFrom(_slots, start));
+        var marked = _marks.Ordered;
+        var moved = 0;
+        foreach (var (box, slot) in marked)
+        {
+            if (!targets.TryDequeue(out var target)) break;
+            session.MoveSlot(box, slot, target.Box, target.Slot);
+            moved++;
+        }
+        var leftBehind = marked.Count - moved;
+        return new GenerationOutcome(moved > 0,
+            moved == 0 ? $"No free slot from box {start.Box + 1} slot {start.Slot + 1} onward."
+                : $"Moved {moved} Pokémon from box {start.Box + 1} slot {start.Slot + 1} on." + (leftBehind > 0 ? $" {leftBehind} stayed (no room)." : ""));
+    }, Math.Max(0, SelectedSlot), action: SaveAction.Move).ContinueWith(t =>
+    {
+        RefreshAllSlots();
+        if (t.Result) ClearMarksQuietly();
+        return t.Result;
+    }, TaskScheduler.FromCurrentSynchronizationContext());
+
+    /// <summary>Releases every marked mon. One backup, one write.</summary>
+    public Task<bool> BulkReleaseAsync() => BulkReleaseAsync(null);
+
+    /// <summary>Releases only the given slots (or every marked mon when null). One backup, one write.</summary>
+    public Task<bool> BulkReleaseAsync(IReadOnlyList<(int Box, int Slot)>? only) => RunMutationAsync(session =>
+    {
+        var targets = only ?? _marks.Ordered;
+        foreach (var (box, slot) in targets)
+            session.ReleaseSlot(box, slot);
+        return new GenerationOutcome(true, $"Released {targets.Count} Pokémon. Bye-bye!");
+    }, Math.Max(0, SelectedSlot), action: SaveAction.Release).ContinueWith(t =>
+    {
+        RefreshAllSlots();
+        // Marks that no longer point at a Pokémon go; the ones that stayed (a partial
+        // transfer) stay marked so the player can see what did not make it.
+        _marks.Prune(_slots);
+        OnPropertyChanged(nameof(MarkedCount));
+        return t.Result;
+    }, TaskScheduler.FromCurrentSynchronizationContext());
+
+    /// <summary>True when the marks would take every Pokémon out of the party.</summary>
+    public bool MarksEmptyTheParty()
+    {
+        var party = _slots.Where(s => s.Box == -1 && s.Species is not null).ToList();
+        return party.Count > 0 && party.All(s => _marks.Contains(-1, s.Slot));
+    }
+
+    /// <summary>Exports every marked mon; returns the written file paths for sharing.</summary>
+    public IReadOnlyList<string> BulkExport(string directory)
+    {
+        var session = _sessions.CurrentSession;
+        if (session is null) return [];
+        var paths = new List<string>();
+        foreach (var (box, slot) in _marks.Ordered)
+        {
+            var export = session.ExportSlot(box, slot);
+            var path = System.IO.Path.Combine(directory, export.FileName);
+            File.WriteAllBytes(path, export.Data);
+            paths.Add(path);
+        }
+        return paths;
+    }
+
+    /// <summary>Re-reads every slot of the save into the grid model (after bulk mutations).</summary>
+    public void RefreshAllSlots(bool includeEmptyPartySlots = false)
+    {
+        var session = _sessions.CurrentSession;
+        if (session is null) return;
+        // A successful party append can extend past the construction-time snapshot.
+        // Only request party placeholders for that flow; box-only saves have no party.
+        var slots = (includeEmptyPartySlots || _slots.Any(s => s.Box == -1))
+            ? session.Snapshot.Slots.Where(s => s.Box >= 0)
+                .Concat(Enumerable.Range(0, 6).Select(i => new SlotSummary(-1, i, null, null, false, true)))
+            : session.Snapshot.Slots;
+        _slots = slots.Select(s =>
+            {
+                var updated = session.ReadEntity(s.Box, s.Slot);
+                return s with
+                {
+                    Species = updated.IsEmpty ? null : updated.Species,
+                    Nickname = updated.IsEmpty ? null : updated.Nickname,
+                    IsShiny = updated.IsShiny,
+                    Form = updated.Form,
+                    HeldItem = updated.IsEmpty ? 0 : updated.HeldItem,
+                };
+            })
+            .ToArray();
+        OnPropertyChanged(nameof(VisibleSlots));
+    }
+
+    /// <summary>Origin of a mon currently being carried by the cursor; null when nothing is held.</summary>
+    [ObservableProperty] private (int Box, int Slot)? _carrySource;
+
+    /// <summary>Grid summary of the carried mon (for drawing it on the cursor).</summary>
+    public SlotSummary? CarriedSummary { get; private set; }
+
+    /// <summary>Picks up the mon under the cursor. False if the slot is empty or nothing is open.</summary>
+    public bool BeginCarry()
+    {
+        if (Save is null || SelectedSlot < 0) return false;
+        var slots = VisibleSlots;
+        if (SelectedSlot >= slots.Count || slots[SelectedSlot].Species is null) return false;
+        CarriedSummary = slots[SelectedSlot];
+        CarrySource = (BoxIndex, SelectedSlot);
+        Status = "CARRYING - place with A, cancel with B";
+        return true;
+    }
+
+    public void CancelCarry()
+    {
+        CarrySource = null;
+        CarriedSummary = null;
+        Status = "READY";
+    }
+
+    // Moves write in the order they were dropped, each against the bytes the previous one wrote.
+    private readonly SemaphoreSlim _moveWrites = new(1, 1);
+    // The last move's save being serialized off the UI thread: the session must not change under it.
+    private Task _serializing = Task.CompletedTask;
+    private int _movesInFlight;
+    private bool _dropWaiting;
+
+    /// <summary>
+    /// Drops the carried mon on the cursor slot (move or swap), writing safely at once. The grid
+    /// and the selection show the move before anything slow runs: serializing, checking and
+    /// writing the save (most of a second for a Scarlet/Violet save) run off the UI thread.
+    /// </summary>
+    public async Task DropAsync()
+    {
+        if (CarrySource is null || _dropWaiting) return;
+        if (!_serializing.IsCompleted)
+        {
+            // A quick second move: the Pokémon stays in hand until the first one's bytes are taken.
+            _dropWaiting = true;
+            try { await _serializing; }
+            finally { _dropWaiting = false; }
+        }
+        var engineSession = _sessions.CurrentSession;
+        var session = _sessions.Current;
+        if (CarrySource is not { } source || engineSession is null || session is null) return;
+        var carried = CarriedSummary;
+        var target = (Box: BoxIndex, Slot: SelectedSlot < 0 ? 0 : SelectedSlot);
+        CarrySource = null;
+        CarriedSummary = null;
+        if (source.Box == target.Box && source.Slot == target.Slot)
+        {
+            Status = "READY";
+            return;
+        }
+
+        var documentId = session.Document.DocumentId;
+        var writing = false;
+        try
+        {
+            IsBusy = true;
+            _movesInFlight++;
+            engineSession.MoveSlot(source.Box, source.Slot, target.Box, target.Slot);
+            // The verdicts already swept describe the slots before the move.
+            BumpMutationGeneration();
+            // Show the move at once: the grid would otherwise keep the old slots until the
+            // write below returns, the Pokémon drawn in both places and then gone from one.
+            foreach (var (box, slot) in new[] { (source.Box, source.Slot), (target.Box, target.Slot) })
+            {
+                var updated = engineSession.ReadEntity(box, slot);
+                var index = Array.FindIndex(_slots, x => x.Box == box && x.Slot == slot);
+                if (index >= 0)
+                    _slots[index] = _slots[index] with
+                    {
+                        Species = updated.IsEmpty ? null : updated.Species,
+                        Nickname = updated.IsEmpty ? null : updated.Nickname,
+                        IsShiny = updated.IsShiny,
+                        Form = updated.Form,
+                        HeldItem = updated.IsEmpty ? 0 : updated.HeldItem,
+                    };
+            }
+            OnPropertyChanged(nameof(VisibleSlots));
+            SelectSlot(target.Slot);
+            var serialize = Task.Run(engineSession.Serialize);
+            _serializing = serialize.ContinueWith(static _ => { }, TaskScheduler.Default);
+            await _moveWrites.WaitAsync();
+            writing = true;
+            var candidate = await serialize;
+            // The previous move's write is this one's original.
+            var original = _sessions.Current is { } current && current.Document.DocumentId == documentId
+                ? current.Snapshot
+                : throw new InvalidOperationException("The save was closed before the move was written.");
+            var receipt = await Task.Run(() => _writer.WriteScopedAsync(documentId, original, candidate,
+                WriteScope.Only(new SlotRef(source.Box, source.Slot), new SlotRef(target.Box, target.Slot)),
+                $"Move {(carried is { } summary ? summary.Nickname ?? $"#{summary.Species}" : "Pokémon")}: {SlotLabel(source.Box, source.Slot)} -> {SlotLabel(target.Box, target.Slot)}").AsTask());
+            if (receipt.Changed)
+                _sessions.MarkWritten(documentId, candidate);
+            Status = receipt.Changed
+                ? $"MOVED · restore point {ShortBackupId(receipt)}"
+                : "Nothing changed - no write, no restore point.";
+        }
+        catch (Exception error)
+        {
+            AppLog.Error("edit", "Move aborted", error);
+            Status = $"Move aborted: {error.Message}";
+        }
+        finally
+        {
+            if (writing) _moveWrites.Release();
+            IsBusy = --_movesInFlight > 0;
+        }
+    }
+
+    /// <summary>Deterministic 6×5 cursor: the selection IS the cursor, so it can never desync.</summary>
+    public bool MoveCursor(FocusDirection direction)
+    {
+        if (Save is null) return false;
+        var cols = BoxIndex == -1 ? 2 : GridColumns;
+        var rows = BoxIndex == -1 ? 3 : GridRows;
+        var slot = SelectedSlot < 0 ? 0 : SelectedSlot;
+        var col = slot % cols;
+        var row = slot / cols;
+        (col, row) = direction switch
+        {
+            FocusDirection.Left => (Math.Max(0, col - 1), row),
+            FocusDirection.Right => (Math.Min(cols - 1, col + 1), row),
+            FocusDirection.Up => (col, Math.Max(0, row - 1)),
+            FocusDirection.Down => (col, Math.Min(rows - 1, row + 1)),
+            _ => (col, row),
+        };
+        var next = row * cols + col;
+        if (next == SelectedSlot) return true; // edge of the grid still consumes the input
+        SelectSlot(next);
+        return true;
+    }
+
+    /// <summary>Opens a box (or the party, -1) with the cursor on one slot: the finder's jump.</summary>
+    public void JumpTo(int box, int slot)
+    {
+        if (Save is null || box < -1 || box >= BoxCount) return;
+        PendingRectangle = null;
+        BoxIndex = box;
+        SelectedSlot = -1;
+        Selected = null;
+        OnPropertyChanged(nameof(VisibleSlots));
+        SelectSlot(slot);
+        if (SelectMode) AnnounceMarks(null);
+    }
+
+    public void ChangeBox(int delta)
+    {
+        if (Save is null || BoxCount == 0) return;
+        // The party wraps around the boxes: last box, then PARTY, then box 1 again.
+        var next = BoxIndex + delta;
+        if (next > BoxCount - 1) next = -1;
+        else if (next < -1) next = BoxCount - 1;
+        PendingRectangle = null; // a rectangle belongs to one page
+        BoxIndex = next;
+        SelectedSlot = -1;
+        Selected = null;
+        OnPropertyChanged(nameof(VisibleSlots));
+        if (SelectMode) AnnounceMarks(null);
+    }
+
+    private static int? ParseInt(string text) =>
+        int.TryParse(text.Trim(), out var value) ? value : null;
+
+    internal static string SlotLabel(int box, int slot) => box == -1 ? $"Party {slot + 1}" : $"Box {box + 1}, Slot {slot + 1}";
+
+    private static string EditorSubject(Domain.EntityDetail detail) =>
+        string.IsNullOrWhiteSpace(detail.Nickname) ? "Pokémon" : detail.Nickname;
+
+    private static string ShortBackupId(Domain.SaveWriteReceipt receipt) =>
+        receipt.BackupId.Length == 0 ? "(none)" : $"{receipt.BackupId[..Math.Min(13, receipt.BackupId.Length)]}…";
+
+    private static int[]? ParseIntList(string text)
+    {
+        var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length != 6) return null;
+        var values = new int[6];
+        for (var i = 0; i < 6; i++)
+            if (!int.TryParse(parts[i], out values[i])) return null;
+        return values;
+    }
+}

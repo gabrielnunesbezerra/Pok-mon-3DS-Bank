@@ -1,0 +1,696 @@
+using PKForge.Domain;
+using SkiaSharp;
+
+namespace PKForge.App.Services;
+
+/// <summary>Loads and caches bundled PKHeX sprite assets as Skia bitmaps. Fully offline; no CDN dependency.</summary>
+public interface ISpriteService
+{
+    /// <summary>
+    /// Bundled pixel sprite (PKHeX art) for the exact look, resolved by
+    /// <see cref="SpriteCatalog.BundledCandidates"/>; null while a background load is pending.
+    /// </summary>
+    SKBitmap? GetSprite(SpriteLook look);
+
+    /// <summary>Warms the cache for a look and invokes <paramref name="onLoaded"/> when ready.</summary>
+    void Warm(SpriteLook look, Action onLoaded);
+
+    /// <summary>Plain species / form / shiny look - for surfaces that genuinely know no more (dex grids).</summary>
+    SKBitmap? GetSprite(int species, int form, bool shiny) => GetSprite(new SpriteLook(species, form, shiny));
+
+    /// <inheritdoc cref="Warm(SpriteLook, Action)"/>
+    void Warm(int species, int form, bool shiny, Action onLoaded) => Warm(new SpriteLook(species, form, shiny), onLoaded);
+
+    /// <summary>Ball icon by PKHeX ball id; null while loading / unknown ball.</summary>
+    SKBitmap? GetBall(int ball);
+
+    /// <summary>Warms the ball-icon cache and invokes <paramref name="onLoaded"/> when ready.</summary>
+    void WarmBall(int ball, Action onLoaded);
+
+    /// <summary>
+    /// Modern HOME-style render (512px, downloaded once and cached forever);
+    /// null while loading / offline with no cache - callers fall back to the pixel sprite.
+    /// </summary>
+    /// Null too when HOME has no art for this exact form (see <see cref="SpriteCatalog.Home"/>).
+    SKBitmap? GetHome(SpriteLook look);
+
+    /// <summary>Warms the HOME render cache and invokes <paramref name="onLoaded"/> when ready.</summary>
+    void WarmHome(SpriteLook look, Action onLoaded);
+
+    /// <summary>
+    /// True when no HOME render will come for this look (no art for the form, or the last load
+    /// failed): callers show the pixel sprite. While false and <see cref="GetHome"/> is still
+    /// null the render is on its way, and drawing a stand-in would only flash.
+    /// </summary>
+    bool HomeUnavailable(SpriteLook look);
+
+    /// <summary>
+    /// Animated Showdown sprite lookup with three-state semantics: returns false while the
+    /// answer is unknown (still loading - draw NOTHING, no fallback flash); true with a sprite
+    /// when available; true with null when this exact form has no animation (fall back now).
+    /// </summary>
+    bool TryGetShowdown(SpriteLook look, out AnimatedSprite? sprite);
+
+    /// <summary>Warms the animated-sprite cache and invokes <paramref name="onLoaded"/> when ready.</summary>
+    void WarmShowdown(SpriteLook look, Action onLoaded);
+
+    /// <summary>
+    /// BDSP-style box icon (the optional add-on) with three-state semantics, like
+    /// <see cref="TryGetShowdown"/>: false while it loads (draw nothing, no pixel flash);
+    /// true with the icon; true with null when the add-on has none (draw the pixel sprite).
+    /// </summary>
+    bool TryGetBdspIcon(SpriteLook look, Action onLoaded, out SKBitmap? icon);
+
+    /// <summary>
+    /// Showdown's static front sprite (bundled with the app), trimmed to its opaque pixels, with
+    /// the same three states as <see cref="TryGetBdspIcon"/>: false while it loads; true with the
+    /// sprite; true with null when Showdown has none for this look (draw PKHeX's art).
+    /// </summary>
+    bool TryGetShowdownFront(SpriteLook look, Action onLoaded, out SKBitmap? sprite);
+
+    /// <summary>
+    /// The PKHeX shiny sprite for a shiny look, trimmed to its visible pixels, only when real
+    /// shiny art exists (never the normal sprite in its place). Three states as
+    /// <see cref="TryGetBdspIcon"/>: false while it loads; true with the sprite; true with null
+    /// when there is no shiny art (draw the normal icon with the shiny star).
+    /// </summary>
+    bool TryGetShinySprite(SpriteLook look, Action onLoaded, out SKBitmap? sprite);
+
+    /// <summary>
+    /// Showdown's box icon for a look, as the bundled icon sheet plus the icon's cell on it,
+    /// with the same three states: false while the sheet loads; true with the sheet and cell;
+    /// true with a null sheet when Showdown has no icon for this look.
+    /// </summary>
+    bool TryGetShowdownIcon(SpriteLook look, Action onLoaded, out SKBitmap? sheet, out SKRectI cell);
+
+    /// <summary>Forgets which looks had no add-on icon, after an add-on was downloaded.</summary>
+    void ForgetAddOnLookups();
+
+    /// <summary>
+    /// Downloads one sprite pack file straight to its disk cache without decoding it, so bulk
+    /// downloads hold no bitmaps. False when the download failed.
+    /// </summary>
+    Task<bool> DownloadPackFileAsync(SpritePack.Entry entry, CancellationToken cancellationToken);
+}
+
+/// <summary>Decoded animation: frames plus per-frame durations in milliseconds.</summary>
+public sealed record AnimatedSprite(IReadOnlyList<SKBitmap> Frames, IReadOnlyList<int> DurationsMs)
+{
+    public int TotalDurationMs { get; } = Math.Max(1, DurationsMs.Sum());
+
+    /// <summary>Frame for a given absolute time, looping.</summary>
+    public SKBitmap FrameAt(long elapsedMs)
+    {
+        var t = (int)(elapsedMs % TotalDurationMs);
+        for (var i = 0; i < Frames.Count; i++)
+        {
+            t -= DurationsMs[i];
+            if (t < 0) return Frames[i];
+        }
+        return Frames[^1];
+    }
+}
+
+public sealed class SpriteService : ISpriteService
+{
+    private const int MaxCacheEntries = 1024;
+    // Animations keep every frame decoded, so far fewer of them fit in memory.
+    private const int MaxAnimatedEntries = 160;
+    private readonly Dictionary<string, SKBitmap?> _cache = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _loading = new(StringComparer.Ordinal);
+    private readonly Queue<string> _eviction = new();
+    private readonly Queue<string> _animatedEviction = new();
+    private readonly Lock _gate = new();
+
+    // Bounded concurrency: a burst of warm() calls (opening a full box, filling a
+    // living dex, a big bank deposit) must not spawn dozens of simultaneous decodes
+    // and starve the thread pool - that is what made navigation stutter.
+    private static readonly SemaphoreSlim DecodeGate = new(Math.Max(2, Environment.ProcessorCount - 1));
+    private static readonly SemaphoreSlim NetworkGate = new(4);
+
+    public SKBitmap? GetSprite(SpriteLook look)
+    {
+        lock (_gate)
+            return _cache.GetValueOrDefault(look.CacheKey);
+    }
+
+    public SKBitmap? GetBall(int ball)
+    {
+        lock (_gate)
+            return _cache.GetValueOrDefault($"ball-{ball}");
+    }
+
+    public void WarmBall(int ball, Action onLoaded)
+    {
+        var key = $"ball-{ball}";
+        lock (_gate)
+        {
+            if (_cache.ContainsKey(key)) { onLoaded(); return; }
+            if (!_loading.Add(key)) return;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            try
+            {
+                await using var stream = await FileSystem.OpenAppPackageFileAsync($"balls/_ball{ball}.png").ConfigureAwait(false);
+                bitmap = SKBitmap.Decode(stream);
+            }
+            catch
+            {
+                // Unknown ball id: cache the null so we don't retry forever.
+            }
+            lock (_gate)
+            {
+                _loading.Remove(key);
+                _cache[key] = bitmap;
+                _eviction.Enqueue(key);
+            }
+            onLoaded();
+        });
+    }
+
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
+
+    private readonly Dictionary<string, DateTime> _homeRetryAfter = new(StringComparer.Ordinal);
+
+    public SKBitmap? GetHome(SpriteLook look)
+    {
+        var remote = SpriteCatalog.Home(look);
+        if (remote is null) return null;
+        lock (_gate)
+            return _cache.GetValueOrDefault("home-" + remote.CacheName);
+    }
+
+    public bool HomeUnavailable(SpriteLook look)
+    {
+        if (SpriteCatalog.Home(look) is not { } remote) return true;
+        var key = "home-" + remote.CacheName;
+        lock (_gate)
+            return _homeRetryAfter.TryGetValue(key, out var after) && DateTime.UtcNow < after
+                   || _cache.TryGetValue(key, out var bitmap) && bitmap is null;
+    }
+
+    public void WarmHome(SpriteLook look, Action onLoaded)
+    {
+        // No HOME art for this exact form: nothing will ever load, and calling back would
+        // only make the caller repaint and ask again. It keeps drawing the pixel chain.
+        if (SpriteCatalog.Home(look) is not { } remote) return;
+        var key = "home-" + remote.CacheName;
+        lock (_gate)
+        {
+            if (_cache.ContainsKey(key)) { onLoaded(); return; }
+            // A recent failure (offline) is not retried on every repaint.
+            if (_homeRetryAfter.TryGetValue(key, out var after) && DateTime.UtcNow < after) return;
+            if (!_loading.Add(key)) return;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            var diskPath = Path.Combine(FileSystem.AppDataDirectory, "home", remote.CacheName);
+            await NetworkGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await DownloadToDiskAsync(RemoteBase + "home/" + remote.Path, diskPath, CancellationToken.None).ConfigureAwait(false);
+                bitmap = SKBitmap.Decode(diskPath);
+            }
+            catch
+            {
+                // Offline or missing render: leave the loading flag clear so a later
+                // attempt can retry; callers keep using the pixel sprite meanwhile.
+                lock (_gate)
+                {
+                    _loading.Remove(key);
+                    _homeRetryAfter[key] = DateTime.UtcNow.AddMinutes(1);
+                }
+                onLoaded();
+                return;
+            }
+            finally { NetworkGate.Release(); }
+            lock (_gate)
+            {
+                _loading.Remove(key);
+                _cache[key] = bitmap;
+                _eviction.Enqueue(key);
+                TrimCache();
+            }
+            onLoaded();
+        });
+    }
+
+    private const string RemoteBase = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/";
+
+    private readonly Dictionary<string, AnimatedSprite?> _animatedCache = new(StringComparer.Ordinal);
+
+    public bool TryGetShowdown(SpriteLook look, out AnimatedSprite? sprite)
+    {
+        if (SpriteCatalog.Showdown(look) is not { } remote)
+        {
+            sprite = null;
+            return true; // known: this exact form has no animation
+        }
+        lock (_gate)
+            return _animatedCache.TryGetValue("sd-" + remote.CacheName, out sprite);
+    }
+
+    public void WarmShowdown(SpriteLook look, Action onLoaded)
+    {
+        if (SpriteCatalog.Showdown(look) is not { } remote) return; // TryGetShowdown already says "none"
+        var key = "sd-" + remote.CacheName;
+        lock (_gate)
+        {
+            if (_animatedCache.ContainsKey(key)) { onLoaded(); return; }
+            if (!_loading.Add(key)) return;
+        }
+
+        Task.Run(async () =>
+        {
+            AnimatedSprite? sprite = null;
+            var diskPath = Path.Combine(FileSystem.AppDataDirectory, "showdown", remote.CacheName);
+            await NetworkGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await DownloadToDiskAsync(RemoteBase + "showdown/" + remote.Path, diskPath, CancellationToken.None).ConfigureAwait(false);
+                sprite = DecodeGif(diskPath);
+                lock (_gate)
+                {
+                    _loading.Remove(key);
+                    _animatedCache[key] = sprite;
+                    _animatedEviction.Enqueue(key);
+                    while (_animatedCache.Count > MaxAnimatedEntries && _animatedEviction.TryDequeue(out var oldest))
+                    {
+                        if (_animatedCache.Remove(oldest, out var evicted) && evicted is not null)
+                            foreach (var frame in evicted.Frames)
+                                DisposeAfterPaint(frame);
+                    }
+                }
+            }
+            catch
+            {
+                // Cache the miss so callers stop waiting and fall back immediately
+                // (a fresh app launch retries in case it was just a network blip).
+                lock (_gate)
+                {
+                    _loading.Remove(key);
+                    _animatedCache[key] = null;
+                }
+            }
+            finally { NetworkGate.Release(); }
+            onLoaded();
+        });
+    }
+
+    /// <summary>Decodes every GIF frame, compositing against the prior frame as GIF disposal expects.</summary>
+    private static AnimatedSprite? DecodeGif(string path)
+    {
+        using var codec = SKCodec.Create(path);
+        if (codec is null || codec.FrameCount <= 0) return null;
+
+        var info = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        var frameInfos = codec.FrameInfo;
+        var frames = new List<SKBitmap>(codec.FrameCount);
+        var durations = new List<int>(codec.FrameCount);
+
+        for (var i = 0; i < codec.FrameCount; i++)
+        {
+            var bitmap = new SKBitmap(info);
+            var options = new SKCodecOptions(i);
+            if (i > 0 && frameInfos[i].RequiredFrame >= 0)
+            {
+                // Start from the required prior frame's pixels, as the GIF spec composites.
+                var required = frames[frameInfos[i].RequiredFrame];
+                required.CopyTo(bitmap);
+                options = new SKCodecOptions(i) { PriorFrame = frameInfos[i].RequiredFrame };
+            }
+            codec.GetPixels(info, bitmap.GetPixels(), options);
+            frames.Add(bitmap);
+            durations.Add(Math.Max(20, frameInfos[i].Duration));
+        }
+        return frames.Count == 0 ? null : new AnimatedSprite(frames, durations);
+    }
+
+    public void Warm(SpriteLook look, Action onLoaded)
+    {
+        var key = look.CacheKey;
+        lock (_gate)
+        {
+            if (_cache.ContainsKey(key)) { onLoaded(); return; }
+            if (!_loading.Add(key)) return;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap;
+            await DecodeGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                bitmap = await LoadWithFallbackAsync(look).ConfigureAwait(false);
+            }
+            finally { DecodeGate.Release(); }
+            lock (_gate)
+            {
+                _loading.Remove(key);
+                _cache[key] = bitmap;
+                _eviction.Enqueue(key);
+                TrimCache();
+            }
+            onLoaded();
+        });
+    }
+
+    /// <summary>Drops the oldest bitmaps past the cap. Caller holds <see cref="_gate"/>.</summary>
+    private void TrimCache()
+    {
+        while (_cache.Count > MaxCacheEntries && _eviction.TryDequeue(out var oldest))
+        {
+            if (_cache.Remove(oldest, out var evicted) && evicted is not null)
+                DisposeAfterPaint(evicted);
+        }
+    }
+
+    /// <summary>
+    /// Views fetch bitmaps afresh on every paint and never keep them, and every paint runs on
+    /// the UI thread: disposing there, between paints, can never pull pixels out from under a
+    /// draw in progress (disposing on this background thread could).
+    /// </summary>
+    private static void DisposeAfterPaint(SKBitmap bitmap) => MainThread.BeginInvokeOnMainThread(bitmap.Dispose);
+
+    // Which add-on file a look resolves to (null: none), found once per look: a box repaints
+    // every frame while it animates, and probing the disk each time would be wasteful.
+    private readonly Dictionary<string, string?> _bdspPaths = new(StringComparer.Ordinal);
+
+    // Repaints of boxes that drew a pixel sprite for want of an add-on icon, so an add-on
+    // arriving in the background shows up without leaving the box.
+    private readonly Dictionary<string, Action> _awaitingAddOn = new(StringComparer.Ordinal);
+
+    public void ForgetAddOnLookups()
+    {
+        Action[] repaint;
+        lock (_gate)
+        {
+            _bdspPaths.Clear();
+            repaint = [.. _awaitingAddOn.Values.Distinct()];
+            _awaitingAddOn.Clear();
+        }
+        foreach (var invalidate in repaint) MainThread.BeginInvokeOnMainThread(invalidate);
+    }
+
+    public bool TryGetShowdownFront(SpriteLook look, Action onLoaded, out SKBitmap? sprite)
+    {
+        sprite = null;
+        if (ShowdownCatalog.FrontPath(look) is not { } path) return true;
+        var key = "sdfront-" + path;
+        lock (_gate)
+        {
+            if (_cache.TryGetValue(key, out sprite)) return true;
+            if (!_loading.Add(key)) return false;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            await DecodeGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await using var stream = await FileSystem.OpenAppPackageFileAsync(path).ConfigureAwait(false);
+                using var decoded = SKBitmap.Decode(stream);
+                bitmap = decoded is null ? null : TrimToOpaque(decoded);
+            }
+            catch (Exception error) when (error is IOException or FileNotFoundException) { }
+            finally { DecodeGate.Release(); }
+            lock (_gate)
+            {
+                _loading.Remove(key);
+                _cache[key] = bitmap; // a missing file caches null: PKHeX's art from then on
+                _eviction.Enqueue(key);
+                TrimCache();
+            }
+            onLoaded();
+        });
+        return false;
+    }
+
+    /// <summary>
+    /// A copy cropped to the opaque pixels. Showdown's fronts sit in 96×96 frames with uneven
+    /// padding; trimmed, every sprite can stand on the same ground line.
+    /// </summary>
+    private static SKBitmap TrimToOpaque(SKBitmap source, byte threshold = 0)
+    {
+        var bounds = PKForge.Chrome.StoragePaint.OpaqueBounds(source, new SKRectI(0, 0, source.Width, source.Height), threshold);
+        if (bounds.IsEmpty) return source.Copy();
+        using var trimmed = new SKBitmap();
+        source.ExtractSubset(trimmed, bounds);
+        return trimmed.Copy();
+    }
+
+    public bool TryGetShinySprite(SpriteLook look, Action onLoaded, out SKBitmap? sprite)
+    {
+        sprite = null;
+        if (!look.Shiny) return true;
+        var key = "shiny-" + look.CacheKey;
+        lock (_gate)
+        {
+            if (_cache.TryGetValue(key, out sprite)) return true;
+            if (!_loading.Add(key)) return false;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            await DecodeGate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                // Only candidates that keep the shiny colours; the first bundled one wins.
+                foreach (var candidate in SpriteCatalog.BundledCandidates(look)
+                    .Where(c => c.Fidelity is SpriteFidelity.Exact or SpriteFidelity.GenderMissing))
+                {
+                    try
+                    {
+                        await using var stream = await FileSystem.OpenAppPackageFileAsync(candidate.Path).ConfigureAwait(false);
+                        using var decoded = SKBitmap.Decode(stream);
+                        // Faint edge pixels (alpha 16 and under) would skew the fit to the icon.
+                        if (decoded is not null) bitmap = TrimToOpaque(decoded, 16);
+                        break;
+                    }
+                    catch (FileNotFoundException) { }
+                }
+            }
+            catch (IOException) { }
+            finally { DecodeGate.Release(); }
+            lock (_gate)
+            {
+                _loading.Remove(key);
+                _cache[key] = bitmap;
+                _eviction.Enqueue(key);
+                TrimCache();
+            }
+            onLoaded();
+        });
+        return false;
+    }
+
+    // The icon sheet is shared by every box icon, so it is loaded once and never evicted.
+    private SKBitmap? _iconSheet;
+    private bool _iconSheetLoading, _iconSheetMissing;
+    private readonly List<Action> _iconSheetWaiters = [];
+
+    public bool TryGetShowdownIcon(SpriteLook look, Action onLoaded, out SKBitmap? sheet, out SKRectI cell)
+    {
+        sheet = null;
+        cell = default;
+        if (ShowdownCatalog.IconCell(look) is not { } found) return true;
+        cell = new SKRectI(found.X, found.Y, found.X + found.Width, found.Y + found.Height);
+        lock (_gate)
+        {
+            if (_iconSheet is not null) { sheet = _iconSheet; return true; }
+            if (_iconSheetMissing) return true;
+            if (_iconSheetWaiters.Count < 512) _iconSheetWaiters.Add(onLoaded);
+            if (_iconSheetLoading) return false;
+            _iconSheetLoading = true;
+        }
+
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            try
+            {
+                await using var stream = await FileSystem.OpenAppPackageFileAsync(ShowdownCatalog.IconSheetPath).ConfigureAwait(false);
+                bitmap = SKBitmap.Decode(stream);
+            }
+            catch (Exception error) when (error is IOException or FileNotFoundException) { }
+            Action[] waiting;
+            lock (_gate)
+            {
+                _iconSheet = bitmap;
+                _iconSheetMissing = bitmap is null; // unreadable: PKHeX's icons from then on
+                waiting = [.. _iconSheetWaiters.Distinct()];
+                _iconSheetWaiters.Clear();
+            }
+            foreach (var invalidate in waiting) invalidate();
+        });
+        return false;
+    }
+
+    public bool TryGetBdspIcon(SpriteLook look, Action onLoaded, out SKBitmap? icon)
+    {
+        icon = null;
+        string? path;
+        lock (_gate)
+        {
+            if (!_bdspPaths.TryGetValue(look.CacheKey, out path))
+            {
+                path = BdspIcons.Candidates(look)
+                    .Select(candidate => Path.Combine(FileSystem.AppDataDirectory, candidate))
+                    .FirstOrDefault(File.Exists);
+                _bdspPaths[look.CacheKey] = path;
+            }
+            if (path is null)
+            {
+                // Not in the add-on, or not downloaded yet: pixel sprite until it arrives.
+                if (_awaitingAddOn.Count < 512) _awaitingAddOn[look.CacheKey] = onLoaded;
+                return true;
+            }
+            var key = "bdsp-" + path;
+            if (_cache.TryGetValue(key, out icon)) return true;
+            if (!_loading.Add(key)) return false;
+        }
+
+        var file = path;
+        Task.Run(async () =>
+        {
+            SKBitmap? bitmap = null;
+            await DecodeGate.WaitAsync().ConfigureAwait(false);
+            try { bitmap = SKBitmap.Decode(file); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            finally { DecodeGate.Release(); }
+            lock (_gate)
+            {
+                _loading.Remove("bdsp-" + file);
+                _cache["bdsp-" + file] = bitmap; // an unreadable file caches null: pixel sprite from then on
+                _eviction.Enqueue("bdsp-" + file);
+                TrimCache();
+            }
+            onLoaded();
+        });
+        return false;
+    }
+
+    public async Task<bool> DownloadPackFileAsync(SpritePack.Entry entry, CancellationToken cancellationToken)
+    {
+        var diskPath = Path.Combine(FileSystem.AppDataDirectory, entry.CachePath);
+        var url = entry.Url;
+        // The caller bounds its own concurrency; NetworkGate stays free for on-screen loads.
+        if (File.Exists(diskPath)) return true;
+        try
+        {
+            await DownloadToDiskAsync(url, diskPath, cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+        catch (Exception error) when (error is HttpRequestException or IOException or TaskCanceledException
+                                      && !cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Streams <paramref name="url"/> to a temporary file and renames it into place, so an
+    /// interrupted download never leaves a truncated file the cache would trust forever.
+    /// </summary>
+    private static async Task DownloadToDiskAsync(string url, string diskPath, CancellationToken cancellationToken)
+    {
+        if (File.Exists(diskPath)) return;
+        Directory.CreateDirectory(Path.GetDirectoryName(diskPath)!);
+        var temporary = diskPath + ".part";
+        try
+        {
+            using (var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false))
+            {
+                response.EnsureSuccessStatusCode();
+                await using var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                await using var target = File.Create(temporary);
+                await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
+            }
+            File.Move(temporary, diskPath, overwrite: true);
+        }
+        catch
+        {
+            try { File.Delete(temporary); } catch (IOException) { }
+            throw;
+        }
+    }
+
+    private static async Task<SKBitmap?> LoadWithFallbackAsync(SpriteLook look)
+    {
+        // SpriteCatalog owns the naming and the fidelity order (exact form shiny → exact
+        // form → PKHeX artwork → base form → "?"); the first bundled asset that exists wins.
+        foreach (var candidate in SpriteCatalog.BundledCandidates(look))
+        {
+            try
+            {
+                await using var stream = await FileSystem.OpenAppPackageFileAsync(candidate.Path).ConfigureAwait(false);
+                return TrimTransparentMargins(SKBitmap.Decode(stream));
+            }
+            catch (FileNotFoundException)
+            {
+                // Try next fallback.
+            }
+            catch (Exception)
+            {
+                return null; // Decode failure - don't retry other candidates.
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// PKHeX sprite PNGs carry generous transparent padding; cropping to the opaque
+    /// bounding box (plus a small breath) lets the creature fill its box slot.
+    /// </summary>
+    private static SKBitmap? TrimTransparentMargins(SKBitmap? source)
+    {
+        if (source is null) return null;
+
+        // Scan the raw pixel buffer once instead of calling GetPixel per pixel: each
+        // GetPixel is a separate interop hop, so the old loop cost thousands of them
+        // per sprite and stalled bulk loads. Both 8888 layouts keep alpha in byte 3.
+        var span = source.GetPixelSpan();
+        var bpp = source.BytesPerPixel;
+        if (span.IsEmpty || bpp < 4 || source.ColorType is not (SKColorType.Rgba8888 or SKColorType.Bgra8888))
+            return source; // unknown layout: skip trimming rather than risk misreading
+
+        var width = source.Width;
+        var height = source.Height;
+        var rowBytes = source.RowBytes;
+        int left = width, top = height, right = -1, bottom = -1;
+        for (var y = 0; y < height; y++)
+        {
+            var rowStart = y * rowBytes;
+            for (var x = 0; x < width; x++)
+            {
+                if (span[rowStart + x * bpp + 3] <= 16) continue;
+                if (x < left) left = x;
+                if (x > right) right = x;
+                if (y < top) top = y;
+                if (y > bottom) bottom = y;
+            }
+        }
+        if (right < 0) return source; // fully transparent - keep as-is
+
+        const int breath = 2;
+        left = Math.Max(0, left - breath);
+        top = Math.Max(0, top - breath);
+        right = Math.Min(source.Width - 1, right + breath);
+        bottom = Math.Min(source.Height - 1, bottom + breath);
+        if (left == 0 && top == 0 && right == source.Width - 1 && bottom == source.Height - 1)
+            return source;
+
+        var cropped = new SKBitmap(right - left + 1, bottom - top + 1);
+        using var canvas = new SKCanvas(cropped);
+        canvas.DrawBitmap(source, new SKRect(left, top, right + 1, bottom + 1), new SKRect(0, 0, cropped.Width, cropped.Height));
+        source.Dispose();
+        return cropped;
+    }
+}
