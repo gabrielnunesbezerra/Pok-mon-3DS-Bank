@@ -19,10 +19,14 @@ public static class BankMonFacts
         var lines = new List<string>();
         var species = Pick(s.specieslist, pk.Species, $"No. {pk.Species}");
         var gender = pk.Gender switch { 0 => " ♂", 1 => " ♀", _ => "" };
-        lines.Add($"{species}{(pk.Form != 0 ? $" (form {pk.Form})" : "")}{gender} · Lv {pk.CurrentLevel}{(pk.IsShiny ? " · shiny" : "")}{(pk.IsEgg ? " · egg" : "")}");
+        lines.Add($"{species}{gender} · Lv {pk.CurrentLevel}");
+        if (pk.Form != 0) lines.Add($"Form {pk.Form}");
+        if (pk.IsShiny) lines.Add("Shiny!");
+        if (pk.IsEgg) lines.Add("It is still an egg.");
         if (pk.Format >= 3)
         {
-            lines.Add($"Nature: {Pick(s.natures, (int)pk.Nature, "?")} · Ability: {Pick(s.abilitylist, pk.Ability, "?")}");
+            lines.Add($"Nature: {Pick(s.natures, (int)pk.Nature, "?")}");
+            lines.Add($"Ability: {Pick(s.abilitylist, pk.Ability, "?")}");
         }
         if (pk.HeldItem > 0)
             lines.Add($"Holding: {Pick(s.GetItemStrings(pk.Context, pk.Version), pk.HeldItem, $"item #{pk.HeldItem}")}");
@@ -32,12 +36,12 @@ public static class BankMonFacts
         foreach (var move in moves)
             if (move != 0) moveNames.Add(Pick(s.movelist, move, $"move #{move}"));
         if (moveNames.Count > 0) lines.Add($"Moves: {string.Join(", ", moveNames)}");
-        lines.Add($"Trainer: {pk.OriginalTrainerName} · ID {pk.DisplayTID:D5}");
+        lines.Add($"Trainer: {pk.OriginalTrainerName} (ID {pk.DisplayTID:D5})");
         if (pk.Format >= 3)
         {
             var origin = GameInfo.GetVersionName(pk.Version);
-            var ball = Pick(s.balllist, pk.Ball, "?");
-            lines.Add($"From: {(string.IsNullOrEmpty(origin) ? pk.Version.ToString() : origin)} · {ball}");
+            lines.Add($"Caught in: {(string.IsNullOrEmpty(origin) ? pk.Version.ToString() : origin)}");
+            lines.Add($"Ball: {Pick(s.balllist, pk.Ball, "?")}");
         }
         bool legal;
         try { legal = new LegalityAnalysis(pk).Valid; }

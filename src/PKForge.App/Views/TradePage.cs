@@ -307,7 +307,7 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
         if (offer is null)
         {
             sprite.Look = null;
-            name.Text = "—";
+            name.Text = "";
             facts.Text = empty;
             return;
         }

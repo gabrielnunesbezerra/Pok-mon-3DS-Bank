@@ -1698,3 +1698,260 @@ Menus, messages and the Poképark in English.	Menus, mensagens e o Poképark em 
 Follow the phone	Igual ao celular
 Português when the phone is in Portuguese, English otherwise.	Português quando o celular está em português, inglês nos outros casos.
 Offline	Offline
+# 3DS Bank 2.0: Item Storage, Shooting Star, friends, online trades, e-mail accounts.
+Item Storage	Armazém
+Use a Shooting Star	Usar uma Estrela Cadente
+Bring items from a game	Trazer itens de um jogo
+Take an item off a Pokémon	Tirar o item de um Pokémon
+Your Storage is empty. Bring items from a game's bag, or take an item off a Bank Pokémon.	Seu Armazém está vazio. Traga itens da mochila de um jogo ou tire o item de um Pokémon do Banco.
+Bring items	Trazer itens
+Shooting Star	Estrela Cadente
+Shooting Stars: {0}	Estrelas Cadentes: {0}
+A Shooting Star falls into your Storage every time your Bank holds 60 more Pokémon. Next one at {0} Pokémon (your Bank has {1}). Using one makes a Bank Pokémon shiny.	Uma Estrela Cadente cai no seu Armazém toda vez que o seu Banco chega a mais 60 Pokémon. A próxima vem com {0} Pokémon (seu Banco tem {1}). Usar uma deixa um Pokémon do Banco shiny.
+Items	Itens
+Items · {0} kinds, {1} in all	Itens · {0} tipos, {1} no total
+Not possible	Não deu
+In your Storage: {0}	No seu Armazém: {0}
+Give to a Bank Pokémon	Dar a um Pokémon do Banco
+It holds the item; what it held before comes to the Storage.	Ele segura o item; o que segurava antes vem para o Armazém.
+Send to a game's bag	Mandar para a mochila de um jogo
+The item leaves the Storage and goes into that game's bag.	O item sai do Armazém e vai para a mochila desse jogo.
+Who will hold {0}?	Quem vai segurar {0}?
+{0} → which game?	{0} → para qual jogo?
+How many {0}?	Quantos {0}?
+Bring items from which game?	Trazer itens de qual jogo?
+That game's bag could not be read: {0}	Não deu para ler a mochila desse jogo: {0}
+Nothing in that game's bag can come to the Storage. Key items and TMs stay in their game, and Generation 1 items cannot travel.	Nada na mochila desse jogo pode vir para o Armazém. Itens-chave e TMs ficam no jogo, e itens da Geração 1 não viajam.
+{0}: bag	{0}: mochila
+Take the item off which Pokémon?	Tirar o item de qual Pokémon?
+You have no Shooting Star yet. One falls every time your Bank holds 60 more Pokémon.	Você ainda não tem Estrela Cadente. Uma cai toda vez que o seu Banco chega a mais 60 Pokémon.
+Which Pokémon gets the Shooting Star?	Qual Pokémon recebe a Estrela Cadente?
+It cannot use the Shooting Star.	Ele não pode usar a Estrela Cadente.
+Use a Shooting Star?	Usar uma Estrela Cadente?
+{0} becomes shiny for good. One Shooting Star is used up.	{0} vira shiny para sempre. Uma Estrela Cadente é gasta.
+{0} becomes shiny for good. One Shooting Star is used up. Its game could not have made it shiny this way, so legality checkers (like PKHeX) will flag it. The game itself loads it normally.	{0} vira shiny para sempre. Uma Estrela Cadente é gasta. O jogo dele não teria como deixá-lo shiny assim, então verificadores de legalidade (como o PKHeX) vão apontar. O jogo em si carrega ele normalmente.
+Use it	Usar
+Shooting Star!	Estrela Cadente!
+No games linked. Link an emulator or open a save on Home first.	Nenhum jogo vinculado. Vincule um emulador ou abra um save no Início primeiro.
+All ({0})	Todos ({0})
+Medicine	Remédios
+Poké Balls	Poké Bolas
+Berries	Frutas
+Battle items	Itens de batalha
+Mail	Cartas
+Z-Crystals	Cristais Z
+PC	PC
+Candy	Doces
+Friends	Amigos
+Edit profile	Editar perfil
+Add a friend	Adicionar amigo
+Requests	Pedidos
+Refresh	Atualizar
+Loading…	Carregando…
+Requests ({0})	Pedidos ({0})
+{0} friend request(s) waiting for you.	{0} pedido(s) de amizade esperando por você.
+Add your friends by their username to trade with them.	Adicione seus amigos pelo nome de usuário para trocar com eles.
+No message yet.	Nenhum recado ainda.
+Friends · {0} ({1} online)	Amigos · {0} ({1} online)
+No friends yet.	Nenhum amigo ainda.
+In the app now	No app agora
+Not in the app	Fora do app
+Seen {0} min ago	Visto há {0} min
+Seen {0} h ago	Visto há {0} h
+Seen {0} days ago	Visto há {0} dias
+See profile	Ver perfil
+Both of you pick a Pokémon from your Banks and confirm.	Cada um escolhe um Pokémon do seu Banco e confirma.
+Remove friend	Remover amigo
+In the app now.	No app agora.
+{0}. Trades need both players online.	{0}. Trocas precisam dos dois jogadores online.
+Remove friend?	Remover amigo?
+{0} leaves your friends, and you leave theirs.	{0} sai dos seus amigos, e você sai dos amigos dele.
+Remove	Remover
+Inviting {0}…	Convidando {0}…
+Trainer profile	Perfil de treinador
+Favorite Pokémon: {0}	Pokémon favorito: {0}
+Favorite Pokémon: none	Pokémon favorito: nenhum
+Favorite game: {0}	Jogo favorito: {0}
+Favorite game: none	Jogo favorito: nenhum
+Pokémon in the Bank: {0} · Shiny: {1}	Pokémon no Banco: {0} · Shiny: {1}
+Shooting Stars earned: {0}	Estrelas Cadentes ganhas: {0}
+Trainer since {0}	Treinador desde {0}
+Name: {0}	Nome: {0}
+Message: {0}	Recado: {0}
+Message: none	Recado: nenhum
+Your friends see this card.	Seus amigos veem este cartão.
+Pick it from your Bank.	Escolha ele no seu Banco.
+Profile saved.	Perfil salvo.
+Name	Nome
+The name friends see (up to {0} letters).	O nome que os amigos veem (até {0} letras).
+Message	Recado
+A short message for your friends (up to {0} letters).	Um recado curto para os seus amigos (até {0} letras).
+Your favorite Pokémon	Seu Pokémon favorito
+Favorite game	Jogo favorito
+Type their username, or the start of it.	Digite o nome de usuário dele, ou o começo.
+Searching…	Procurando…
+No player's username starts with “{0}”.	Nenhum jogador tem nome de usuário começando com “{0}”.
+Already your friend.	Já é seu amigo.
+Players found	Jogadores encontrados
+Send friend request	Mandar pedido de amizade
+You and {0} are friends now!	Você e {0} agora são amigos!
+Request sent to {0}. You become friends when they accept it.	Pedido enviado para {0}. Vocês viram amigos quando ele aceitar.
+Friend requests	Pedidos de amizade
+No requests right now.	Nenhum pedido agora.
+Wants to be your friend.	Quer ser seu amigo.
+Accept the friend request?	Aceitar o pedido de amizade?
+Accept	Aceitar
+Decline	Recusar
+Later	Depois
+Trade with {0}	Troca com {0}
+Choose a Pokémon	Escolher um Pokémon
+Details	Detalhes
+You offer	Você oferece
+{0} offers	{0} oferece
+Connecting…	Conectando…
+Confirm trade	Confirmar troca
+Cancel trade	Cancelar troca
+Confirm	Confirmar
+{0} is here.	{0} está aqui.
+{0} seems to have left the app.	{0} parece ter saído do app.
+{0} Trying again…	{0} Tentando de novo…
+Trade complete!	Troca concluída!
+Trade over	Troca encerrada
+The trade went through.	A troca foi feita.
+The trade was called off.	A troca foi cancelada.
+Nothing chosen yet	Nada escolhido ainda
+{0} is choosing…	{0} está escolhendo…
+Choose another	Escolher outro
+Choose the Pokémon you want to offer.	Escolha o Pokémon que você quer oferecer.
+Waiting for {0} to choose…	Esperando {0} escolher…
+Look at both Pokémon. Confirm when you are happy with the trade.	Veja os dois Pokémon. Confirme quando gostar da troca.
+You confirmed. Waiting for {0} to confirm…	Você confirmou. Esperando {0} confirmar…
+{0} confirmed. Confirm to trade, or cancel.	{0} confirmou. Confirme para trocar ou cancele.
+Both confirmed. Trading…	Os dois confirmaram. Trocando…
+holding {0}	segurando {0}
+The Pokémon cannot change anymore: someone already confirmed.	O Pokémon não pode mais mudar: alguém já confirmou.
+Offer which Pokémon?	Oferecer qual Pokémon?
+Confirm trade?	Confirmar troca?
+Trade your {0} for {1}'s {2}? After both of you confirm, it cannot be undone.	Trocar seu {0} pelo {2} de {1}? Depois que os dois confirmarem, não dá para desfazer.
+Both of you confirmed: the trade is going through.	Os dois confirmaram: a troca está acontecendo.
+Cancel trade?	Cancelar troca?
+Nobody gives anything away. Each Pokémon stays in its own Bank.	Ninguém entrega nada. Cada Pokémon fica no seu Banco.
+No Pokémon in your Bank can be chosen for this.	Nenhum Pokémon do seu Banco pode ser escolhido para isso.
+Trade invitation	Convite de troca
+{0} wants to trade with you right now.	{0} quer trocar com você agora.
+Opens the trade screen. Nothing changes until both of you confirm.	Abre a tela de troca. Nada muda até os dois confirmarem.
+Achievement complete! Your Bank reached another 60 Pokémon, and a Shooting Star fell into your Storage.	Conquista concluída! Seu Banco chegou a mais 60 Pokémon, e uma Estrela Cadente caiu no seu Armazém.
+Achievement complete! Your Bank earned {0} Shooting Stars. They are in your Storage.	Conquista concluída! Seu Banco ganhou {0} Estrelas Cadentes. Elas estão no seu Armazém.
+Use one on a Bank Pokémon to make it shiny. Next star at {0} Pokémon.	Use uma num Pokémon do Banco para deixá-lo shiny. Próxima estrela com {0} Pokémon.
+Username or e-mail	Nome de usuário ou e-mail
+Username (how friends find you)	Nome de usuário (como os amigos te acham)
+E-mail	E-mail
+Forgot password	Esqueci a senha
+Back to sign in	Voltar para entrar
+Use the e-mail of your account. Accounts made before version 2.0 without an e-mail sign in with the username.	Use o e-mail da sua conta. Contas criadas antes da versão 2.0 sem e-mail entram com o nome de usuário.
+The username is how your friends find you (3 to 20 letters, numbers, dots or underscores). The e-mail is how you sign in and get a new password if you forget it.	O nome de usuário é como os seus amigos te acham (3 a 20 letras, números, pontos ou sublinhados). O e-mail é como você entra e recebe uma senha nova se esquecer.
+Type the e-mail of your account. A link to make a new password goes there. Accounts without an e-mail can get help from support.	Digite o e-mail da sua conta. Um link para criar uma senha nova vai para lá. Contas sem e-mail podem pedir ajuda ao suporte.
+Send the link	Mandar o link
+Type your e-mail (or the username of an account made before 2.0).	Digite seu e-mail (ou o nome de usuário de uma conta criada antes da 2.0).
+Type a valid e-mail. If you ever forget your password, the link to make a new one goes there.	Digite um e-mail válido. Se você esquecer a senha, o link para criar uma nova vai para lá.
+Sending…	Enviando…
+Done! Open the link sent to {0} (look in spam too), make a new password, then sign in here with the e-mail.	Pronto! Abra o link enviado para {0} (olhe no spam também), crie uma senha nova e depois entre aqui com o e-mail.
+Item #{0}	Item nº {0}
+{0} could not be kept in the Storage: {1}	{0} não pôde ser guardado no Armazém: {1}
+{0} went back to your Storage.	{0} voltou para o seu Armazém.
+The Storage had no room for {0} (999 at most).	O Armazém não tinha espaço para {0} (no máximo 999).
+That Pokémon is no longer in the Bank.	Esse Pokémon não está mais no Banco.
+Pokémon from {0} keep their items in their own game.	Pokémon de {0} guardam os itens no próprio jogo.
+The Storage has no {0} left.	O Armazém não tem mais {0}.
+It cannot hold that.	Ele não pode segurar isso.
+The Storage has no room for the {0} it holds now (999 at most).	O Armazém não tem espaço para o {0} que ele segura agora (no máximo 999).
+{0} is holding {1} now. {2} went to your Storage.	{0} está segurando {1} agora. {2} foi para o seu Armazém.
+{0} is holding {1} now.	{0} está segurando {1} agora.
+It is not holding anything.	Ele não está segurando nada.
+The Storage has no room for more {0} (999 at most).	O Armazém não tem espaço para mais {0} (no máximo 999).
+{0} went from {1} to your Storage.	{0} foi de {1} para o seu Armazém.
+That Pokémon changed in the meantime. Try again.	Esse Pokémon mudou nesse meio tempo. Tente de novo.
+You have no Shooting Star yet.	Você ainda não tem Estrela Cadente.
+{0} is shiny now!	{0} agora é shiny!
+Those items are no longer in the bag.	Esses itens não estão mais na mochila.
+{0} ×{1} moved from {2} to your Storage.	{0} ×{1} foi de {2} para o seu Armazém.
+The Storage does not have {0} {1}.	O Armazém não tem {0} {1}.
+That game's bag cannot take it.	A mochila desse jogo não aceita isso.
+{0} could not go to {1}.	{0} não pôde ir para {1}.
+{0} ×{1} moved to {2}'s bag. The rest stayed in the Storage.	{0} ×{1} foi para a mochila de {2}. O resto ficou no Armazém.
+{0} ×{1} moved to {2}'s bag.	{0} ×{1} foi para a mochila de {2}.
+The Storage could not be changed: {0}	Não deu para mudar o Armazém: {0}
+That is you!	Esse é você!
+{0} is not in the app right now. Both players need to be online to trade.	{0} não está no app agora. Os dois jogadores precisam estar online para trocar.
+Pokémon from {0} can only live in their own game, so they cannot be traded.	Pokémon de {0} só vivem no próprio jogo, então não podem ser trocados.
+This trade no longer exists.	Esta troca não existe mais.
+Both players need to pick a Pokémon first.	Os dois jogadores precisam escolher um Pokémon antes.
+{0} cannot be kept in your Bank, so this trade cannot happen.	{0} não pode ficar no seu Banco, então esta troca não pode acontecer.
+The Pokémon you offered is no longer in your Bank. Pick it again.	O Pokémon que você ofereceu não está mais no seu Banco. Escolha de novo.
+The trade was called off. Your Pokémon is back in your Bank.	A troca foi cancelada. Seu Pokémon voltou para o seu Banco.
+You received {0} from {1}!	Você recebeu {0} de {1}!
+{0} went to {1}.	{0} foi para {1}.
+{0} evolved into {1}!	{0} evoluiu para {1}!
+{0} evolved into {1}! {2} was used up.	{0} evoluiu para {1}! {2} foi gasto.
+{0} evolved into {1}! It is still called {2}.	{0} evoluiu para {1}! Ele continua se chamando {2}.
+{0} evolved into {1}! {2} was used up. It is still called {3}.	{0} evoluiu para {1}! {2} foi gasto. Ele continua se chamando {3}.
+It holds an item that only exists in its own game, so the Storage cannot keep it.	Ele segura um item que só existe no próprio jogo, então o Armazém não pode guardar.
+Pokémon from {0} cannot use the Shooting Star.	Pokémon de {0} não podem usar a Estrela Cadente.
+An egg has to hatch before it can use the Shooting Star.	Um ovo precisa chocar antes de usar a Estrela Cadente.
+It is already shiny.	Ele já é shiny.
+This Pokémon cannot be made shiny.	Este Pokémon não pode virar shiny.
+Pokémon from Generation 1 games cannot hold items.	Pokémon dos jogos da Geração 1 não seguram itens.
+Pokémon from Let's Go Pikachu and Eevee cannot hold items.	Pokémon de Let's Go Pikachu e Eevee não seguram itens.
+An egg cannot hold an item.	Um ovo não segura item.
+This item does not exist in Generation {0} games.	Este item não existe nos jogos da Geração {0}.
+Generation {0} games do not let a Pokémon hold this item.	Os jogos da Geração {0} não deixam um Pokémon segurar este item.
+This game's bag cannot be reached.	Não dá para acessar a mochila deste jogo.
+This item does not exist in that game.	Este item não existe nesse jogo.
+That game's bag has no room for it.	A mochila desse jogo não tem espaço para ele.
+This item cannot go in that game's bag.	Este item não pode ir na mochila desse jogo.
+Form {0}	Forma {0}
+Shiny!	Shiny!
+It is still an egg.	Ainda é um ovo.
+Nature: {0}	Natureza: {0}
+Ability: {0}	Habilidade: {0}
+Holding: {0}	Segurando: {0}
+Moves: {0}	Golpes: {0}
+Trainer: {0} (ID {1})	Treinador: {0} (ID {1})
+Caught in: {0}	Capturado em: {0}
+Ball: {0}	Bola: {0}
+Legality checks: passed.	Verificação de legalidade: passou.
+Legality checks: flagged (it may have been edited).	Verificação de legalidade: apontou problema (ele pode ter sido editado).
+That e-mail already has an account. Sign in with it, or use Forgot password.	Esse e-mail já tem conta. Entre com ele ou use Esqueci a senha.
+The server is not ready for new accounts yet (it still needs the 3DS Bank 2.0 rules). Talk to support.	O servidor ainda não está pronto para contas novas (ele ainda precisa das regras do 3DS Bank 2.0). Fale com o suporte.
+That e-mail address does not look right.	Esse e-mail não parece certo.
+Wrong e-mail or password.	E-mail ou senha errados.
+Wrong username or password. If you added an e-mail to your account, sign in with the e-mail.	Nome de usuário ou senha errados. Se você adicionou um e-mail à conta, entre com o e-mail.
+Type the e-mail of your account. An account without an e-mail can only get a new password through support.	Digite o e-mail da sua conta. Uma conta sem e-mail só consegue senha nova pelo suporte.
+No account uses that e-mail. Check it, or talk to support.	Nenhuma conta usa esse e-mail. Confira ou fale com o suporte.
+Another account already uses that e-mail.	Outra conta já usa esse e-mail.
+Too many e-mails were sent. Wait a little and try again.	Muitos e-mails foram enviados. Espere um pouco e tente de novo.
+The server refused that. If it keeps happening, the server may still need the 3DS Bank 2.0 rules: talk to support.	O servidor recusou isso. Se continuar acontecendo, o servidor pode ainda precisar das regras do 3DS Bank 2.0: fale com o suporte.
+Held item {0} does not exist in {1}: it goes back to your Storage.	O item segurado {0} não existe em {1}: ele volta para o seu Armazém.
+Sign in to add friends and trade.	Entre na sua conta para adicionar amigos e trocar.
+Add an e-mail (password recovery)	Adicionar um e-mail (recuperar senha)
+E-mail: {0}	E-mail: {0}
+With an e-mail you can make a new password if you forget it. You then sign in with the e-mail.	Com um e-mail você cria uma senha nova se esquecer. Depois disso você entra com o e-mail.
+Forgot the password? “Forgot password” on the sign-in screen sends a link here. Pick this to change it.	Esqueceu a senha? “Esqueci a senha” na tela de entrar manda um link para cá. Escolha isto para trocar o e-mail.
+Add an e-mail	Adicionar um e-mail
+Change the e-mail	Trocar o e-mail
+A link goes to this address; the e-mail changes when you open it. From then on you sign in with the e-mail.	Um link vai para este endereço; o e-mail muda quando você abrir. A partir daí você entra com o e-mail.
+Check your e-mail	Confira seu e-mail
+A confirmation link went to {0}. Open it to finish (look in spam too). After that, sign in with this e-mail; your username stays the same for your friends.	Um link de confirmação foi para {0}. Abra para terminar (olhe no spam também). Depois disso, entre com este e-mail; seu nome de usuário continua o mesmo para os seus amigos.
+Held item…	Item segurado…
+Give it an item from the Storage, or keep its item in the Storage.	Dê um item do Armazém para ele, ou guarde o item dele no Armazém.
+It becomes shiny for good. One Shooting Star is used up.	Ele vira shiny para sempre. Uma Estrela Cadente é gasta.
+Give an item from the Storage	Dar um item do Armazém
+What it holds now goes to the Storage.	O que ele segura agora vai para o Armazém.
+Keep {0} in the Storage	Guardar {0} no Armazém
+It stops holding it; the Storage keeps it.	Ele para de segurar; o Armazém guarda.
+Holding {0}.	Segurando {0}.
+Not holding anything.	Não está segurando nada.
+Give {0} an item	Dar um item para {0}
+Your Item Storage is empty. Bring items from a game's bag on the Item Storage screen.	Seu Armazém está vazio. Traga itens da mochila de um jogo na tela do Armazém.
+{0} {1} moved to the 3DS Bank Storage	{0} {1} foram para o Armazém do 3DS Bank
+{0} {1} arrived from the 3DS Bank Storage	{0} {1} chegaram do Armazém do 3DS Bank

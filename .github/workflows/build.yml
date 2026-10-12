@@ -25,8 +25,18 @@ jobs:
         run: dotnet restore PKForge.sln
       - name: Test
         run: |
-          dotnet test tests/PKForge.Domain.Tests/PKForge.Domain.Tests.csproj --no-restore --configuration Release
-          dotnet test tests/PKForge.Engine.Tests/PKForge.Engine.Tests.csproj --no-restore --configuration Release
+          set -o pipefail
+          status=0
+          for project in tests/PKForge.Domain.Tests/PKForge.Domain.Tests.csproj tests/PKForge.Engine.Tests/PKForge.Engine.Tests.csproj; do
+            if ! dotnet test "$project" --no-restore --configuration Release 2>&1 | tee -a test.log; then status=1; fi
+          done
+          if [[ $status -ne 0 ]]; then
+            # Annotations are readable without the raw log: each failing test with its message.
+            awk '/^ *Failed [A-Za-z]/{if(f)print msg; f=1; msg=$0; n=0; next} f&&n<10{msg=msg" | "$0; n++; if(n==10){print msg; f=0}} END{if(f)print msg}' test.log \
+              | sort -u | head -25 | while IFS= read -r line; do echo "::error::${line:0:1500}"; done
+            grep -E ': error |error CS[0-9]+' test.log | sort -u | head -15 | while IFS= read -r line; do echo "::error::${line:0:900}"; done
+            exit 1
+          fi
       # A push to main publishes a release when the app version (ApplicationDisplayVersion in
       # PKForge.App.csproj) has no release yet: bump the version, push, and the APK appears.
       - name: Decide release

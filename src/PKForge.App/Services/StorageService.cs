@@ -78,7 +78,7 @@ public sealed class StorageService
         var parts = new List<string>();
         if (kept.Count > 0) parts.Add($"{Describe(kept)} went back to your Storage.");
         if (full.Count > 0) parts.Add($"The Storage had no room for {Describe(full)} (999 at most).");
-        return string.Join(" ", parts);
+        return string.Join("\n", parts);
     }
 
     private string Describe(IEnumerable<int> items) => string.Join(", ", items.GroupBy(item => item)

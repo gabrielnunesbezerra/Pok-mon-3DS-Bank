@@ -509,11 +509,11 @@ public sealed class SocialService
             }
             return true;
         });
-        if (!applied) return $"You received {theirs.Nickname} from {partnerName}!";
-        var gave = mine is null ? "" : $"{mine.Nickname} went to {partnerName}. ";
-        return evolution is null
-            ? $"{gave}You received {theirs.Nickname} from {partnerName}!"
-            : $"{gave}You received {theirs.Nickname} from {partnerName}! {evolution.Message}";
+        var lines = new List<string>(3);
+        if (applied && mine is not null) lines.Add($"{mine.Nickname} went to {partnerName}.");
+        lines.Add($"You received {theirs.Nickname} from {partnerName}!");
+        if (applied && evolution is not null) lines.Add(evolution.Message);
+        return string.Join("\n", lines);
     }
 
     /// <summary>Puts a held-aside Pokémon back in the Bank (its old slot when free). False when there was none.</summary>

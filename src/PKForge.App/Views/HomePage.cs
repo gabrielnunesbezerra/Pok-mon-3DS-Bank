@@ -86,7 +86,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         // 3DS Bank: the Dex Autopilot (it evolves Pokémon) and the event database (it hands
         // out Pokémon) are not part of this app. 2.0 adds the Storage and Friends.
         var bank = new DsCard("bank", "Bank") { Tapped = () => _ = PushAsync<BankPage>() };
-        var storage = new DsCard("storagebox", "Storage") { Tapped = () => _ = PushAsync<StoragePage>() };
+        var storage = new DsCard("storagebox", "Item Storage") { Tapped = () => _ = PushAsync<StoragePage>() };
         var friends = new DsCard("friends", "Friends") { Tapped = () => _ = OpenFriendsAsync() };
         var park = new DsCard("park", "Poképark") { Tapped = () => _ = PushParkAsync() };
         var settings = new DsCard("settings", "Settings") { Tapped = () => _ = ShowSettingsAsync() };

@@ -923,7 +923,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             var state = storage.Read();
             if (state.Items.Count == 0)
             {
-                await PadMenu.ShowAsync(_hostGrid, "Storage", "Your Storage is empty. Bring items from a game's bag on the Storage screen.", "OK");
+                await PadMenu.ShowAsync(_hostGrid, "Item Storage", "Your Item Storage is empty. Bring items from a game's bag on the Item Storage screen.", "OK");
                 return;
             }
             var directory = System.IO.Path.Combine(FileSystem.AppDataDirectory, "items");
@@ -946,7 +946,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         if (outcome is null) return;
         if (outcome.Success) AfterEntryChanged();
         _boxViewModel.Status = outcome.Message;
-        await PadMenu.ShowAsync(_hostGrid, outcome.Success ? "Storage" : "Not possible", outcome.Message, "OK");
+        await PadMenu.ShowAsync(_hostGrid, outcome.Success ? "Item Storage" : "Not possible", outcome.Message, "OK");
     }
 
     // ── The organizer's actions: bulk moves, keepsakes, releases, sorting ─────
@@ -1241,7 +1241,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
         if (note is null) return;
         _boxViewModel.Status = $"{_boxViewModel.Status} {note}";
-        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
+        await PadMenu.ShowAsync(_hostGrid, "Item Storage", note, "OK");
     }
 
     /// <summary>

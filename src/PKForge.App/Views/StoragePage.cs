@@ -29,14 +29,14 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
     {
         _storage = storage;
         _bank = bank;
-        Title = "Storage";
+        Title = "Item Storage";
         BackgroundColor = UiTokens.Housing;
         NavigationPage.SetHasNavigationBar(this, false);
 
         var back = Kit.MiniCapsule("Back", UiTokens.Ink0);
         back.WidthRequest = 72;
         back.Clicked += async (_, _) => await Navigation.PopAsync();
-        var header = Kit.HeaderBar("Storage");
+        var header = Kit.HeaderBar("Item Storage");
         header.VerticalOptions = LayoutOptions.Center;
         var titleRow = new Grid
         {
@@ -228,7 +228,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
         catch (Exception error) when (error is IOException or InvalidOperationException or Infrastructure.CloudAccountException)
         {
             AppLog.Warn("storage", error.ToString());
-            await PadMenu.ShowAsync(_host, "Storage", error.Message, "OK");
+            await PadMenu.ShowAsync(_host, "Item Storage", error.Message, "OK");
         }
         finally
         {
@@ -240,7 +240,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
     private async Task Say(StorageOutcome outcome)
     {
         _status.Text = outcome.Message;
-        await PadMenu.ShowAsync(_host, outcome.Success ? "Storage" : "Not possible", outcome.Message, "OK");
+        await PadMenu.ShowAsync(_host, outcome.Success ? "Item Storage" : "Not possible", outcome.Message, "OK");
     }
 
     // ── One item ─────────────────────────────────────────────────────────────

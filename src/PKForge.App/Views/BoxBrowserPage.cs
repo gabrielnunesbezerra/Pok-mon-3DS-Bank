@@ -1346,7 +1346,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
         if (note is null) return;
         _viewModel.Status = $"{_viewModel.Status} {note}";
-        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
+        await PadMenu.ShowAsync(_hostGrid, "Item Storage", note, "OK");
     }
 
     /// <summary>Clones every marked mon into the first free box slots. One write.</summary>
