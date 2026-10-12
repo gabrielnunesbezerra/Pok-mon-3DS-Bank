@@ -14,9 +14,16 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   O modo Hardcore do PKForge fica ligado para sempre e não aparece nas configurações, e o
   próprio motor do app recusa essas operações mesmo que alguma tela tente fazer.
 - **Mover, nunca copiar.** Dá para mover Pokémon entre caixas, mandar para o Bank, tirar do
-  Bank e mandar para outro jogo, organizar, soltar e exportar. "Duplicar", "Copiar para o
-  Bank" e "Copiar para o jogo" não existem. Restaurar um backup que traria de volta um
-  Pokémon que já saiu do save também é bloqueado.
+  Bank e mandar para outro jogo, organizar e soltar. "Duplicar", "Copiar para o Bank" e
+  "Copiar para o jogo" não existem. Restaurar um backup que traria de volta um Pokémon que já
+  saiu do save também é bloqueado.
+- **O que não dá para usar não aparece.** Dex Autopilot, eventos, editores do save e a edição
+  do painel do Pokémon foram tirados da tela; o painel só mostra as informações.
+- **Conta.** O app abre numa tela de login (criar conta, entrar, falar com o suporte pelo
+  WhatsApp). O Bank fica salvo na conta e volta ao entrar de novo, mesmo depois de desinstalar.
+- **Exportar e importar.** Exportar tira o Pokémon do Bank e salva um arquivo .pk; importar
+  devolve só arquivos que saíram deste Bank, uma vez cada. Assim um arquivo nunca duplica um
+  Pokémon.
 - **Só Geração 1 a 7.** Saves de Sword/Shield, Brilliant Diamond/Shining Pearl, Legends:
   Arceus, Scarlet/Violet e ROM hacks baseados neles (Luminescent Platinum, Compass) não
   abrem. Let's Go Pikachu/Eevee conta como Geração 7 e abre.
@@ -44,9 +51,9 @@ Citra MMJ e Eden. Também dá para abrir um arquivo de save sozinho.
 Baixe o arquivo `3DSBank-vX.Y.Z.apk` na página de
 [Releases](https://github.com/gabrielnunesbezerra/Pok-mon-3DS-Bank/releases) pelo celular e
 abra. Na primeira vez o Android pede para permitir a instalação de apps desconhecidos.
-Para atualizar, instale o APK novo por cima: o Bank e os backups continuam lá.
-Desinstalar o app apaga o Bank, então antes exporte como banco do PKSM
-(Bank > Export > PKSM bank), que dá para importar de volta.
+Para atualizar, instale o APK novo por cima. O Bank fica salvo na sua conta, então mesmo
+desinstalando é só entrar de novo que ele volta. Use a conta em um celular por vez: se dois
+celulares mudarem o mesmo Bank ao mesmo tempo, vale o último que salvar.
 
 O 3DS Bank usa um nome de pacote próprio, então pode ficar instalado junto com o PKForge.
 
@@ -62,7 +69,22 @@ precisa da mesma chave para atualizar por cima do anterior.
 Para compilar localmente: .NET 10 SDK, `dotnet workload install maui-android`, depois
 `dotnet build src/PKForge.App/PKForge.App.csproj -c Release -f net10.0-android`.
 
-As regras do 3DS Bank ficam em `src/PKForge.Domain/ThreeDsBankPolicy.cs`.
+As regras do 3DS Bank ficam em `src/PKForge.Domain/ThreeDsBankPolicy.cs`. As contas usam um
+projeto Firebase (Authentication por e-mail/senha e Realtime Database); a chave e o endereço
+ficam em `src/PKForge.App/Services/AccountService.cs` (`CloudSettings`). Regras do banco:
+
+```json
+{
+  "rules": {
+    "banks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    }
+  }
+}
+```
 
 ## Créditos
 
