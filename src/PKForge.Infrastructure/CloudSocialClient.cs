@@ -292,11 +292,11 @@ public sealed class CloudSocialClient(CloudAccountClient account)
     // ── Reading ──────────────────────────────────────────────────────────────
 
     /// <summary>Time-ordered and unguessable: the creation time plus random bits, as a database key.</summary>
-    internal static string NewTradeId() =>
+    public static string NewTradeId() =>
         DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString("x", CultureInfo.InvariantCulture)
         + Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant();
 
-    internal static TradeRecord ReadTrade(string id, JsonElement trade)
+    public static TradeRecord ReadTrade(string id, JsonElement trade)
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
         if (trade.TryGetProperty("names", out var nameList) && nameList.ValueKind == JsonValueKind.Object)

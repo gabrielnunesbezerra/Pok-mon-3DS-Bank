@@ -1410,17 +1410,6 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             copy ? null : async () => await _viewModel.BulkReleaseAsync(marked) ? null : _viewModel.Status);
         if (outcome.Success && copy) _viewModel.ClearMarksQuietly();
         _viewModel.Status = outcome.Message;
-        if (outcome.Success || outcome.Duplicated) await KeepReturnedItemsAsync(returned);
-    }
-
-    /// <summary>3DS Bank 2.0: held items the other game could not take go to the Storage, and the player is told.</summary>
-    private async Task KeepReturnedItemsAsync(IReadOnlyCollection<int> items)
-    {
-        if (items.Count == 0) return;
-        var note = IPlatformApplication.Current?.Services.GetService<StorageService>()?.KeepReturned(items);
-        if (note is null) return;
-        _viewModel.Status = $"{_viewModel.Status} {note}";
-        await PadMenu.ShowAsync(_hostGrid, "Storage", note, "OK");
     }
 
     private async Task ReleaseSelectionAsync()

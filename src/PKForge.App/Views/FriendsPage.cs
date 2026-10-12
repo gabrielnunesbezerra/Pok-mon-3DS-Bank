@@ -408,12 +408,12 @@ public sealed class FriendsPage : ContentPage, IPadHandler, IOverlayHost
             if (choice == nameOption)
             {
                 var text = await TextPopup.ShowLineAsync(_host, "Name", $"The name friends see (up to {PlayerProfile.MaxDisplayName} letters).", draft.DisplayName);
-                if (text is not null) draft = draft with { DisplayName = Clip(text, PlayerProfile.MaxDisplayName) };
+                if (text is not null) draft = draft with { DisplayName = ClipText(text, PlayerProfile.MaxDisplayName) };
             }
             else if (choice == bioOption)
             {
                 var text = await TextPopup.ShowLineAsync(_host, "Message", $"A short message for your friends (up to {PlayerProfile.MaxBio} letters).", draft.Bio);
-                if (text is not null) draft = draft with { Bio = Clip(text, PlayerProfile.MaxBio) };
+                if (text is not null) draft = draft with { Bio = ClipText(text, PlayerProfile.MaxBio) };
             }
             else if (choice == favoriteOption)
             {
@@ -424,7 +424,7 @@ public sealed class FriendsPage : ContentPage, IPadHandler, IOverlayHost
                         FavoriteSpecies = entry.Info.Species,
                         FavoriteForm = entry.Info.Form,
                         FavoriteShiny = entry.Info.Shiny,
-                        FavoriteNickname = Clip(entry.Info.Nickname, 24),
+                        FavoriteNickname = ClipText(entry.Info.Nickname, 24),
                     };
             }
             else if (choice == gameOption)
@@ -435,7 +435,7 @@ public sealed class FriendsPage : ContentPage, IPadHandler, IOverlayHost
         }
     }
 
-    private static string Clip(string text, int max)
+    private static string ClipText(string text, int max)
     {
         var trimmed = text.Trim();
         return trimmed.Length <= max ? trimmed : trimmed[..max];
