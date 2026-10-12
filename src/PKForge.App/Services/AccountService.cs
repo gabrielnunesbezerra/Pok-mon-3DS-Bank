@@ -6,10 +6,10 @@ namespace PKForge.App.Services;
 public static class CloudSettings
 {
     /// <summary>Project settings > General > Web API key. Public by design: the database rules protect each Bank.</summary>
-    public const string ApiKey = "";
+    public const string ApiKey = "AIzaSyC60Y7TatOmUtsHQ2Nr9g4JDmCbHsaTE0w";
 
     /// <summary>Realtime Database > Data: the address at the top.</summary>
-    public const string DatabaseUrl = "";
+    public const string DatabaseUrl = "https://ds-bank-92a42-default-rtdb.firebaseio.com";
 
     /// <summary>Support on WhatsApp (country code + area code + number).</summary>
     public const string SupportWhatsApp = "5541996038238";
