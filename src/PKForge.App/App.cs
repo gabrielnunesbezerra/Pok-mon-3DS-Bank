@@ -33,6 +33,9 @@ public sealed class App : Application
     {
         Trace("App ctor");
 
+        // Português or English, decided before the first page is built.
+        Services.Lang.Install();
+
         // Every page reads its chrome colors when it is built, so the scheme comes first.
         Services.ColorThemeSetting.ApplyStored();
 

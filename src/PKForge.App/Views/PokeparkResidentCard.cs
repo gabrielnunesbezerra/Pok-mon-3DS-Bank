@@ -86,7 +86,7 @@ public sealed class PokeparkResidentCard : IPadHandler
         notes.Add(new Label
         {
             Text = care is { CanCare: true }
-                ? "Snack and Play grant its wish; the friendship it gains is saved to the Pokémon and goes with it to its game."
+                ? "A berry or a game grants its wish; the friendship it gains is saved to the Pokémon and goes with it to its game."
                 : "Park personality is just for fun. Your Pokémon's game data stays unchanged.",
             FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft,
         });
@@ -94,7 +94,7 @@ public sealed class PokeparkResidentCard : IPadHandler
         var body = new Grid { ColumnSpacing = 14, ColumnDefinitions = [new(new GridLength(0.36, GridUnitType.Star)), new(new GridLength(0.64, GridUnitType.Star))], Children = { left, journal } };
         Grid.SetColumn(journal, 1);
         var actions = new Grid { ColumnSpacing = 6, ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)] };
-        var captions = new[] { ("♪", "Talk"), ("●", "Snack"), ("✦", "Play"), ("~", "Relax") };
+        var captions = new[] { ("♪", "Talk"), ("●", "Berry"), ("✦", "Play"), ("~", "Relax") };
         for (var i = 0; i < captions.Length; i++)
         {
             var index = i;

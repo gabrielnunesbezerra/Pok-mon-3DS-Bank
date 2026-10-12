@@ -1,0 +1,1700 @@
+# 3DS Bank: English -> Português (Brasil). EN<TAB>PT; {0} placeholders; \n is a line break.
+Close	Fechar
+About 3DS Bank	Sobre o 3DS Bank
+Pokémon bank for Generation 1 to 7. Moves only: no editing.	Banco de Pokémon da Geração 1 à 7. Só mover: nada de edição.
+Version	Versão
+v{0} · diagnostic	v{0} · diagnóstico
+3DS Bank by	3DS Bank por
+Based on PKForge by @22sh, design by @spritedmistery (GPL-3)	Baseado no PKForge de @22sh, design de @spritedmistery (GPL-3)
+Engine PKHeX · chrome PKSM (GPL-3)	Motor PKHeX · visual PKSM (GPL-3)
+Pokémon save	Save de Pokémon
+3DS Bank failed to start:\n\n{0}	O 3DS Bank não conseguiu abrir:\n\n{0}
+Diagnostics builds are updated manually.	Versões de diagnóstico são atualizadas manualmente.
+Version {0} is available.	A versão {0} está disponível.
+3DS Bank {0} is up to date.	O 3DS Bank {0} está atualizado.
+Update install confirmed.	Instalação da atualização confirmada.
+Update install status {0}: {1}	Status da instalação da atualização {0}: {1}
+Android stopped the installation (status {0}).	O Android interrompeu a instalação (status {0}).
+Restore points	Pontos de restauração
+Back	Voltar
+Restore	Restaurar
+Connect to a save first - restoring writes into the connected save.	Abra um save primeiro: restaurar grava no save aberto.
+Restore this point?	Restaurar este ponto?
+Write the {0} UTC restore point into the connected save? The current state is preserved as a new restore point first.	Gravar o ponto de restauração de {0} UTC no save aberto? O estado atual é guardado antes como um novo ponto de restauração.
+Write the {0} UTC restore point into the connected save? No Pokémon that has left this save since then would come back. The current state is preserved as a new restore point first.	Gravar o ponto de restauração de {0} UTC no save aberto? Nenhum Pokémon que saiu deste save desde então voltaria. O estado atual é guardado antes como um novo ponto de restauração.
+{0}: this restore point could not be compared with the current save. If any Pokémon was moved to the Bank or sent to another game after it was taken, restoring brings it back here and it would then exist twice - a duplication 3DS Bank does not allow.	{0}: não deu para comparar este ponto de restauração com o save atual. Se algum Pokémon foi para o Banco ou para outro jogo depois dele, restaurar traz esse Pokémon de volta aqui e ele passaria a existir duas vezes, uma duplicação que o 3DS Bank não permite.
+ and {0} more	 e mais {0}
+{0} now in the Bank	{0} agora no Banco
+{0} sent to another game or released	{0} enviados a outro jogo ou soltos
+{0}: restoring would bring back {1} Pokémon that left this save after this point ({2}): {3}. Any that still exist in the Bank or another game would then exist twice - a duplication 3DS Bank does not allow.	{0}: restaurar traria de volta {1} Pokémon que saíram deste save depois deste ponto ({2}): {3}. Os que ainda existem no Banco ou em outro jogo passariam a existir duas vezes, uma duplicação que o 3DS Bank não permite.
+Restore blocked	Restauração bloqueada
+\n\nNothing was written. Move those Pokémon back into this save first, then try this restore point again.	\n\nNada foi gravado. Traga esses Pokémon de volta para este save primeiro e depois tente este ponto de restauração de novo.
+Egg #{0}	Ovo nº {0}
+No backups yet. One is created automatically before every write.	Ainda não há backups. Um é criado automaticamente antes de cada gravação.
+{0} backup(s) of this save. Restoring writes into it.	{0} backup(s) deste save. Restaurar grava nele.
+{0} backup(s). Open a save to enable restore.	{0} backup(s). Abra um save para poder restaurar.
+Open a save first - restore writes into the open save file.	Abra um save primeiro: restaurar grava no arquivo de save aberto.
+This restore point belongs to another save, so it was not restored here.	Este ponto de restauração é de outro save, então não foi restaurado aqui.
+Restoring {0}…	Restaurando {0}…
+Safety copy: the state right before this restore	Cópia de segurança: o estado logo antes desta restauração
+Restored. Previous state kept as restore point {0}…	Restaurado. O estado anterior ficou como o ponto de restauração {0}…
+This restore point matches the current state - nothing was written.	Este ponto de restauração é igual ao estado atual, nada foi gravado.
+Restore aborted: {0}	Restauração cancelada: {0}
+Box {0}	Caixa {0}
+Open this box	Abrir esta caixa
+Pick it up to move it	Pegar para mover
+Rename…	Renomear…
+Wallpaper…	Papel de parede…
+Insert a new box before it	Inserir uma caixa nova antes
+Insert a new box after it	Inserir uma caixa nova depois
+Delete this box…	Apagar esta caixa…
+Empty box.	Caixa vazia.
+All boxes · {0} boxes · {1} Pokémon	Todas as caixas · {0} caixas · {1} Pokémon
+Open	Abrir
+Pick up	Pegar
+Box menu	Menu da caixa
+New box	Caixa nova
+Page	Página
+Cancel	Cancelar
+Drop here	Soltar aqui
+Move instead	Mover em vez disso
+Swap instead	Trocar em vez disso
+FULL	CHEIA
+⇄ swap	⇄ trocar
+Boxes	Caixas
+Search	Buscar
+Grab	Pegar
+Mark	Marcar
+Actions	Ações
+Box	Caixa
+Summary	Resumo
+Bank	Banco
+Search closed: {0}	Busca fechada: {0}
+Export	Exportar
+A .pk folder is read by PKHeX and 3DS Bank; a PKSM bank goes back to your 3DS.	Uma pasta .pk é lida pelo PKHeX e pelo 3DS Bank; um banco PKSM volta para o seu 3DS.
+Folder of .pk files	Pasta de arquivos .pk
+One .pk file per Pokémon, readable by PKHeX and 3DS Bank.	Um arquivo .pk por Pokémon, lido pelo PKHeX e pelo 3DS Bank.
+PKSM bank for the 3DS (.bnk)	Banco PKSM para o 3DS (.bnk)
+One bank file to copy back to PKSM on your 3DS.	Um arquivo de banco para copiar de volta ao PKSM no seu 3DS.
+Export archive	Exportar arquivo
+A folder of .pk files plus a manifest — readable by PKHeX and 3DS Bank alike.	Uma pasta de arquivos .pk com um manifesto, lida pelo PKHeX e pelo 3DS Bank.
+Whole bank	Banco inteiro
+This box only	Só esta caixa
+Nothing to export — this box is empty.	Nada para exportar: esta caixa está vazia.
+this box	esta caixa
+Packing the archive…	Montando o arquivo…
+Writing .pk files to {0}.	Gravando arquivos .pk em {0}.
+Nothing to export — the bank is empty.	Nada para exportar: o banco está vazio.
+Archive written: {0} Pokémon from {1} → {2}.	Arquivo gravado: {0} Pokémon de {1} → {2}.
+{0} selected	{0} selecionados
+Export PKSM bank	Exportar banco PKSM
+Box layout and box names are kept. Gen 9, BDSP and Legends mons have no PKSM slot and are left out.	A ordem e os nomes das caixas são mantidos. Pokémon da Ger. 9, BDSP e Legends não cabem no PKSM e ficam de fora.
+Import	Importar
+From a 3DS: copy /3ds/PKSM/banks/ (or /3ds/PKSM/dumps/) off the SD card to this device, then pick the files.	De um 3DS: copie /3ds/PKSM/banks/ (ou /3ds/PKSM/dumps/) do cartão SD para este aparelho e escolha os arquivos.
+PKSM bank, dumps zip or .pk files	Banco PKSM, zip de dumps ou arquivos .pk
+Files copied off your 3DS; you see a preview before anything is added.	Arquivos copiados do seu 3DS; você vê uma prévia antes de qualquer coisa entrar.
+Every .pk file in a folder joins the bank; exact copies are skipped.	Todo arquivo .pk da pasta entra no banco; cópias exatas são puladas.
+Import from folder?	Importar da pasta?
+Every recognized .pk file in {0} joins the bank. Exact copies of mons already stored are skipped.	Todo arquivo .pk reconhecido em {0} entra no banco. Cópias exatas de Pokémon já guardados são puladas.
+Reading the archive…	Lendo o arquivo…
+Scanning {0}.	Lendo {0}.
+No recognizable Pokémon in that folder.	Nenhum Pokémon reconhecido nessa pasta.
+{0} imported · {1} duplicate(s) skipped	{0} importados · {1} repetido(s) pulado(s)
+ · {0} unreadable	 · {0} ilegíveis
+Import cancelled.	Importação cancelada.
+Import failed: {0}	A importação falhou: {0}
+Box {0} only	Só a caixa {0}
+Exported Pokémon leave the Bank and are saved as .pk files. Import brings them back.	Pokémon exportados saem do Banco e viram arquivos .pk. Importar traz eles de volta.
+the whole Bank	o Banco inteiro
+Nothing to export here.	Nada para exportar aqui.
+Export and remove?	Exportar e remover?
+{0} Pokémon from {1} will leave the Bank and be saved as .pk files in a folder you pick. Only those files can bring them back, once each, with Import.	{0} Pokémon de {1} vão sair do Banco e virar arquivos .pk numa pasta que você escolher. Só esses arquivos trazem eles de volta, uma vez cada, com Importar.
+Exporting…	Exportando…
+{0} Pokémon exported to {1} and removed from the Bank.	{0} Pokémon exportados para {1} e removidos do Banco.
+No Pokémon exported from this Bank are waiting to come back.	Nenhum Pokémon exportado deste Banco está esperando para voltar.
+Importing…	Importando…
+Reading {0}.	Lendo {0}.
+{0} back in the Bank	{0} de volta no Banco
+{0} already here	{0} já estão aqui
+{0} not exported from this Bank	{0} não foram exportados deste Banco
+{0} unreadable	{0} ilegíveis
+Box {0} / {1}	Caixa {0} / {1}
+Bank · Box {0} · slot {1}	Banco · Caixa {0} · espaço {1}
+Nothing to summarize in an empty slot.	Nada para resumir num espaço vazio.
+Bank · Box {0}	Banco · Caixa {0}
+{0} marked · X actions · B clears	{0} marcados · X ações · B limpa
+Box {0} slot {1} empty	Caixa {0} espaço {1} vazio
+ · A adds	 · A adiciona
+{0} · Y mark · X actions	{0} · Y marca · X ações
+#{0} {1}{2} Lv.{3} · Gen {4} · {5}	#{0} {1}{2} Nv.{3} · Ger. {4} · {5}
+Nothing to mark in an empty slot.	Nada para marcar num espaço vazio.
+A read-only look at this Pokémon.	Uma olhada neste Pokémon, só para ver.
+Edit	Editar
+Evolve…	Evoluir…
+Evolves it right here in the bank.	Evolui aqui mesmo no banco.
+Send to Poképark	Mandar para o Poképark
+It joins the Poképark visitors. The bank is not changed.	Ele vira visitante do Poképark. O banco não muda.
+Duplicate	Duplicar
+An exact copy goes into the first free bank slot.	Uma cópia exata vai para o primeiro espaço livre do banco.
+Send to game…	Mandar para um jogo…
+Moves it into a game's boxes and out of the bank.	Leva ele para as caixas de um jogo e tira do banco.
+Copy to game…	Copiar para um jogo…
+Puts a copy in a game's boxes; this one stays in the bank.	Põe uma cópia nas caixas de um jogo; este fica no banco.
+Move (carry)	Mover (carregar)
+Pick it up and drop it in another slot.	Pegue e solte em outro espaço.
+Export .pk file	Exportar arquivo .pk
+It leaves the Bank as a .pk file; Import brings it back.	Ele sai do Banco como arquivo .pk; Importar traz ele de volta.
+Release from bank	Soltar do banco
+Removes it from the bank for good; there is no undo.	Tira ele do banco para sempre, sem desfazer.
+From {0} · Gen {1} · deposited {2}	De {0} · Ger. {1} · guardado em {2}
+Release from bank?	Soltar do banco?
+{0} marked	{0} marcados
+slot {0}	espaço {0}
+Nothing selected	Nada selecionado
+Boxes…	Caixas…
+Every box at a glance, to reorder, rename or restyle them.	Todas as caixas de uma vez, para reordenar, renomear ou mudar o visual.
+Move to another box…	Mover para outra caixa…
+They fill a box's empty slots, in order.	Eles ocupam os espaços vazios de uma caixa, em ordem.
+Move to a position…	Mover para uma posição…
+They land from a slot you pick; what is there slides back.	Eles entram a partir do espaço que você escolher; o que está lá vai para trás.
+Duplicate all	Duplicar todos
+Each copy goes into the first free bank slot.	Cada cópia vai para o primeiro espaço livre do banco.
+Export .pk files	Exportar arquivos .pk
+They leave the Bank as .pk files in a folder you pick; Import brings them back.	Eles saem do Banco como arquivos .pk numa pasta que você escolher; Importar traz eles de volta.
+Send to a game…	Mandar para um jogo…
+Moves them into a game; only those that arrive leave the bank.	Leva eles para um jogo; só saem do banco os que chegarem.
+Release from bank…	Soltar do banco…
+Removes them from the bank for good; there is no undo.	Tira eles do banco para sempre, sem desfazer.
+Mark range to here	Marcar até aqui
+Marks every Pokémon from your last mark to the cursor.	Marca todos os Pokémon da sua última marcação até o cursor.
+Mark everything in this box	Marcar tudo nesta caixa
+Invert marks in this box	Inverter marcações nesta caixa
+Marked Pokémon in this box are unmarked, the rest marked.	Os marcados desta caixa são desmarcados e o resto é marcado.
+Mark the whole bank	Marcar o banco inteiro
+Mark by filter…	Marcar por filtro…
+Search the bank and mark what matches.	Busque no banco e marque o que bater.
+Clear marks	Limpar marcações
+Sort box {0}…	Ordenar caixa {0}…
+Reorders this box by dex number, level, type and more.	Reordena esta caixa por número da dex, nível, tipo e mais.
+Sort the whole bank…	Ordenar o banco inteiro…
+Reorders every Pokémon in the bank by the order you pick.	Reordena todos os Pokémon do banco na ordem que você escolher.
+Sort the marked into boxes…	Ordenar os marcados em caixas…
+The marked move, sorted, into new boxes after the last one used.	Os marcados vão, em ordem, para caixas novas depois da última usada.
+Compact the bank (close gaps)	Compactar o banco (fechar buracos)
+Fills every empty slot from box 1 on, keeping the order.	Preenche todo espaço vazio a partir da caixa 1, mantendo a ordem.
+Rename box {0}…	Renomear caixa {0}…
+Wallpaper for box {0}…	Papel de parede da caixa {0}…
+Delete box {0}…	Apagar caixa {0}…
+Its Pokémon move to free slots in other boxes first.	Os Pokémon dela vão antes para espaços livres em outras caixas.
+Bank actions · {0}	Ações do banco · {0}
+Marks keep across box pages. Sorting rewrites the bank's own index.	As marcações continuam ao trocar de caixa. Ordenar regrava o índice do próprio banco.
+Y marks slots; with nothing marked X acts on the cursor slot.	Y marca espaços; sem nada marcado, X age no espaço do cursor.
+Export as a PKSM bank	Exportar como banco PKSM
+Move to which box?	Mover para qual caixa?
+{0} selected · the box's empty slots take them in order.	{0} selecionados · os espaços vazios da caixa recebem eles em ordem.
+Nothing moved: box {0} is full.	Nada foi movido: a caixa {0} está cheia.
+{0} moved into box {1}	{0} movidos para a caixa {1}
+ · {0} stayed (no room).	 · {0} ficaram (sem espaço).
+{0} selected.	{0} selecionados.
+Slot {0}	Espaço {0}
+Fill forward from slot? (box {0})	Preencher a partir do espaço? (caixa {0})
+The selection lands here in order; whatever is already there slides back.	A seleção entra aqui em ordem; o que já está lá vai para trás.
+No room in box {0} from slot {1}.	Sem espaço na caixa {0} a partir do espaço {1}.
+{0} placed from box {1} slot {2} · {3} slots changed	{0} colocados a partir da caixa {1} espaço {2} · {3} espaços mudaram
+ · {0} had no room.	 · {0} ficaram sem espaço.
+Nothing was cloned: {0}	Nada foi clonado: {0}
+{0} cloned in the bank.	{0} clonado no banco.
+{0} Pokémon cloned in the bank.	{0} Pokémon clonados no banco.
+Release from the bank?	Soltar do banco?
+Release {0}? Bank releases are permanent (the bank has no restore points yet).	Soltar {0}? Soltar do banco é permanente (o banco ainda não tem pontos de restauração).
+Release all {0} selected Pokémon? Bank releases are permanent (the bank has no restore points yet).	Soltar os {0} Pokémon selecionados? Soltar do banco é permanente (o banco ainda não tem pontos de restauração).
+Release	Soltar
+Release all	Soltar todos
+Released {0} Pokémon from the bank.	{0} Pokémon soltos do banco.
+{0} selected → pick the destination	{0} selecionados → escolha o destino
+the connected game	o jogo aberto
+No empty slot in the connected game.	Nenhum espaço vazio no jogo aberto.
+the connected game has room for {0} of {1} Pokémon.	o jogo aberto tem espaço para {0} de {1} Pokémon.
+{0} cannot go to {1}. {2}	{0} não pode ir para {1}. {2}
+{0} joined the game.	{0} entrou no jogo.
+{0} went back to the bank.	{0} voltou para o banco.
+{0} arrived from the bank	{0} chegou do banco
+{0} went back to the bank	{0} voltou para o banco
+Sort the whole bank	Ordenar o banco inteiro
+Sort box {0}	Ordenar caixa {0}
+A real reorder of the bank's slots - stored bytes never move.	Uma reordenação de verdade dos espaços do banco; os dados guardados não mudam.
+Nothing to sort there yet.	Nada para ordenar aí ainda.
+the whole bank	o banco inteiro
+box {0}	caixa {0}
+Sort {0} marked	Ordenar {0} marcados
+They move, in order, into new boxes after the last one in use.	Eles vão, em ordem, para caixas novas depois da última em uso.
+boxes {0}-{1}	caixas {0}-{1}
+ The {0} box{1} after it move{2} down one.	 As caixas seguintes ({0}) sobem uma posição.
+It is empty.{0}	Está vazia.{0}
+Its {0} Pokémon move to free spaces in your other boxes first, so none are lost.{1}	Os {0} Pokémon dela vão antes para espaços livres nas suas outras caixas, então nenhum se perde.{1}
+Delete {0}?	Apagar {0}?
+Delete	Apagar
+Box deleted.	Caixa apagada.
+Box deleted; its {0} Pokémon moved to free spaces.	Caixa apagada; os {0} Pokémon dela foram para espaços livres.
+Rename box {0}	Renomear caixa {0}
+Up to 24 characters · empty for its number	Até 24 caracteres · vazio para usar o número
+Box {0} shows its number again.	A caixa {0} voltou a mostrar o número.
+Box {0} is now "{1}".	A caixa {0} agora se chama "{1}".
+Wallpaper · {0}	Papel de parede · {0}
+Compact	Compactar
+Nothing to do: {0} is already in that order.	Nada a fazer: {0} já está nessa ordem.
+Rearrange now?	Reorganizar agora?
+{0} across {1}: {2} of {3} Pokémon change slot. The bank's index is rewritten in one go and the marks follow their Pokémon.	{0} em {1}: {2} de {3} Pokémon mudam de espaço. O índice do banco é regravado de uma vez e as marcações seguem os Pokémon.
+Sort	Ordenar
+{0} · {1} · {2} moved.	{0} · {1} · {2} movidos.
+{0} · {1} still marked	{0} · {1} ainda marcados
+{0} (connected)	{0} (aberto)
+No games linked. Link an emulator on Home first.	Nenhum jogo vinculado. Vincule um emulador na tela inicial primeiro.
+Send to game	Mandar para um jogo
+Evolution	Evolução
+Pokémon from {0} can only be evolved in their own game.	Pokémon de {0} só podem evoluir no próprio jogo.
+This Pokémon's data could not be read.	Não deu para ler os dados deste Pokémon.
+Congratulations!	Parabéns!
+Evolution failed	A evolução falhou
+{0} updated in the bank.	{0} atualizado no banco.
+Add to bank	Adicionar ao banco
+Create a Pokémon	Criar um Pokémon
+Build a legal Pokémon step by step.	Monte um Pokémon legal passo a passo.
+Paste a Showdown set	Colar um set do Showdown
+Turns a Pokémon Showdown text set into a Pokémon.	Transforma um set de texto do Pokémon Showdown em Pokémon.
+Import .pk file	Importar arquivo .pk
+Adds Pokémon from .pk files you pick.	Adiciona Pokémon dos arquivos .pk que você escolher.
+Scan a .pk QR	Ler um QR .pk
+Pick a picture of a .pk QR code to add its Pokémon.	Escolha uma foto de um QR .pk para adicionar o Pokémon dele.
+Generation I	Geração I
+Generation II	Geração II
+Generation III	Geração III
+Generation IV	Geração IV
+Generation V	Geração V
+Generation VI	Geração VI
+Generation VII	Geração VII
+Generation VIII	Geração VIII
+Generation IX	Geração IX
+Create for which game era?	Criar para qual geração?
+No save connected. The mon gets a placeholder identity in the format you pick; edit it after.	Nenhum save aberto. O Pokémon recebe uma identidade provisória no formato escolhido; edite depois.
+Creating for the bank…	Criando para o banco…
+The offline legalizer is at work.	O legalizador offline está trabalhando.
+No legal combination found.	Nenhuma combinação legal encontrada.
+The set becomes a legal mon stored in the bank.	O set vira um Pokémon legal guardado no banco.
+Reading the set…	Lendo o set…
+Could not build a legal mon from that set.	Não deu para montar um Pokémon legal com esse set.
+Received a Pokémon over QR.	Pokémon recebido por QR.
+Nothing was deposited: {0} is not a recognizable Pokémon.	Nada foi guardado: {0} não é um Pokémon reconhecível.
+Deposited {0} Pokémon into the bank.	{0} Pokémon guardados no banco.
+Nothing was deposited: {0}	Nada foi guardado: {0}
+{0} deposited in the bank.	{0} guardado no banco.
+{0} → pick the destination	{0} → escolha o destino
+{0} joined the game (box {1}).	{0} entrou no jogo (caixa {1}).
+this game	este jogo
+Export failed: {0}	A exportação falhou: {0}
+This box is empty.	Esta caixa está vazia.
+An empty space · {0} / {1} in this box	Um espaço vazio · {0} / {1} nesta caixa
+Gen {0}	Ger. {0}
+From {0}	De {0}
+None	Nenhum
+No.{0}	Nº {0}
+Type	Tipo
+Nature	Natureza
+Ability	Habilidade
+Ball	Bola
+Fighting	Lutador
+Flying	Voador
+Poison	Venenoso
+Ground	Terrestre
+Rock	Pedra
+Bug	Inseto
+Ghost	Fantasma
+Steel	Aço
+Fire	Fogo
+Water	Água
+Grass	Planta
+Electric	Elétrico
+Psychic	Psíquico
+Ice	Gelo
+Dragon	Dragão
+Dark	Sombrio
+Fairy	Fada
+Bank search	Busca no banco
+Name or nickname…	Nome ou apelido…
+Jump	Ir
+Done	Pronto
+Filter	Filtro
+Mark all	Marcar todos
+{0} of {1}	{0} de {1}
+Filters · {0}	Filtros · {0}
+Gen: {0}	Ger.: {0}
+Source: {0}	Origem: {0}
+Sort: {0}{1}	Ordem: {0}{1}
+Mark {0}	Marcar {0}
+Reset	Limpar
+Bank filters · {0} match	Filtros do banco · {0} resultados
+Pick a filter, set it, and this menu comes back. RESET clears everything.	Escolha um filtro, ajuste, e este menu volta. LIMPAR apaga tudo.
+Shiny only: {0}	Só shiny: {0}
+Generation: {0}	Geração: {0}
+The generation of its data, not the game it was caught in.	A geração dos dados dele, não do jogo em que foi capturado.
+Source game: {0}	Jogo de origem: {0}
+The game it was deposited from.	O jogo de onde ele foi guardado.
+Type: {0}	Tipo: {0}
+Matches either of its types.	Vale qualquer um dos tipos dele.
+Rarity: {0}	Raridade: {0}
+Legendary, mythical, or both.	Lendário, singular ou os dois.
+Eggs: {0}	Ovos: {0}
+Gender: {0}	Gênero: {0}
+Held item: {0}	Item segurado: {0}
+Anything holding an item, or one item in particular.	Qualquer um segurando item, ou um item específico.
+Default names only: {0}	Só nomes padrão: {0}
+Hides nicknamed Pokémon.	Esconde Pokémon com apelido.
+Lowest level: {0}	Nível mínimo: {0}
+Hides anything below this level.	Esconde quem estiver abaixo deste nível.
+Highest level: {0}	Nível máximo: {0}
+Hides anything above this level.	Esconde quem estiver acima deste nível.
+Reset all filters	Limpar todos os filtros
+Also clears the search text.	Também apaga o texto da busca.
+All generations	Todas as gerações
+GEN {0}	GER. {0}
+Generation	Geração
+Which era's storage format?	Formato de qual geração?
+GEN I	GER. I
+GEN II	GER. II
+GEN III	GER. III
+GEN IV	GER. IV
+GEN V	GER. V
+GEN VI	GER. VI
+GEN VII	GER. VII
+GEN VIII	GER. VIII
+GEN IX	GER. IX
+All sources	Todas as origens
+Source game	Jogo de origem
+Which game did they come from?	De qual jogo eles vieram?
+All types	Todos os tipos
+Either of a mon's types may match.	Vale qualquer um dos tipos do Pokémon.
+Rarity	Raridade
+All rarities	Todas as raridades
+Legendary	Lendário
+Mythical	Singular
+Legendary or mythical	Lendário ou singular
+Any item	Qualquer item
+All	Todos
+All (no item filter)	Todos (sem filtro de item)
+Any held item	Qualquer item segurado
+Held item	Item segurado
+MALE	MACHO
+Female	Fêmea
+Genderless	Sem gênero
+Gender	Gênero
+Read from each stored Pokémon.	Lido de cada Pokémon guardado.
+Male	Macho
+Any gender	Qualquer gênero
+Any lowest level	Qualquer nível mínimo
+Any highest level	Qualquer nível máximo
+Lv.{0}	Nv.{0}
+Lowest level	Nível mínimo
+Highest level	Nível máximo
+Hide anything below this level.	Esconder quem estiver abaixo deste nível.
+Hide anything above this level.	Esconder quem estiver acima deste nível.
+Sort the results	Ordenar os resultados
+Dex number	Número da dex
+lowest first	menor primeiro
+highest first	maior primeiro
+Species name	Nome da espécie
+Nickname	Apelido
+Level	Nível
+strongest first	mais fortes primeiro
+weakest first	mais fracos primeiro
+shinies first	shinies primeiro
+shinies last	shinies por último
+Normal → Fairy	Normal → Fada
+Fairy → Normal	Fada → Normal
+Legendary / mythical	Lendário / singular
+rare first	raros primeiro
+rare last	raros por último
+oldest era first	geração mais antiga primeiro
+newest era first	geração mais nova primeiro
+Origin game	Jogo de origem
+Date deposited	Data em que foi guardado
+newest first	mais novos primeiro
+oldest first	mais antigos primeiro
+♂ ♀ genderless	♂ ♀ sem gênero
+genderless ♀ ♂	sem gênero ♀ ♂
+Poké Ball	Poké Bola
+by ball number	pelo número da bola
+Which way round?	Em que ordem?
+Date	Data
+Oldest	Mais antigo
+Gen	Ger.
+Game	Jogo
+Dex #	Dex nº
+THE BANK IS EMPTY	O BANCO ESTÁ VAZIO
+NO POKéMON MATCH	NENHUM POKéMON BATE
+#{0} {1}{2} · Box {3} slot {4} · Gen {5} · {6}	#{0} {1}{2} · Caixa {3} espaço {4} · Ger. {5} · {6}
+ · holds {0}	 · segura {0}
+there {0} for {1} Pokémon.	{0} para {1} Pokémon.
+Nothing to send.	Nada para mandar.
+3DS Bank moves Pokémon; it never copies them.	O 3DS Bank move Pokémon; ele nunca copia.
+Nothing was sent: {0}	Nada foi enviado: {0}
+Copied {0} to {1}.	{0} copiados para {1}.
+Moved {0} to {1}.	{0} movidos para {1}.
+They reached {0} but could not leave where they were ({1}), and {2} could not give them back ({3}). Nothing is lost: {4} are now in both places.	Eles chegaram em {0} mas não conseguiram sair de onde estavam ({1}), e {2} não conseguiu devolver ({3}). Nada se perdeu: {4} estão agora nos dois lugares.
+Nothing was sent: they could not leave where they were ({0}), so {1} gave them back.	Nada foi enviado: eles não conseguiram sair de onde estavam ({0}), então {1} devolveu eles.
+the Bank	o Banco
+Colors	Cores
+Choose	Escolher
+Next game	Próximo jogo
+Duotone	Duas cores
+Horizon	Horizonte
+Veiled	Véu
+Default	Padrão
+Atk	Atq
+SpA	AtE
+SpD	DfE
+Spe	Vel
+Report ›	Relatório ›
+Illegal	Ilegal
+Not checked for this ROM hack	Não verificado para este ROM hack
+Checking…	Verificando…
+No legality details were reported.	Nenhum detalhe de legalidade foi informado.
+Legalize selection	Legalizar seleção
+Make shiny	Deixar shiny
+Remove shiny	Tirar shiny
+Set me as handler	Me colocar como treinador atual
+Heal selection	Curar seleção
+Rewrite the illegal marked Pokémon to their closest legal version.	Reescreve os marcados ilegais na versão legal mais próxima.
+Only when a legal shiny version exists, unless HaX mode is on.	Só quando existe uma versão shiny legal, a não ser com o modo HaX.
+Only when a legal version exists, unless HaX mode is on.	Só quando existe uma versão legal, a não ser com o modo HaX.
+You become their current trainer, as after a real trade.	Você vira o treinador atual deles, como depois de uma troca de verdade.
+Full HP, status and PP in the party; boxed Pokémon get PP back.	HP, status e PP cheios na equipe; os das caixas recuperam o PP.
+Keep one of each identical Pokémon and release the copies.	Mantém um de cada Pokémon idêntico e solta as cópias.
+Every illegal marked Pokémon is rewritten to its closest legal version; legal ones are left alone.	Todo Pokémon marcado ilegal é reescrito na versão legal mais próxima; os legais ficam como estão.
+Legalizing…	Legalizando…
+Marked Pokémon become shiny. 	Os Pokémon marcados ficam shiny. 
+Marked Pokémon lose their shininess. 	Os Pokémon marcados deixam de ser shiny. 
+HaX mode: the PID is rewritten even when that breaks legality.	Modo HaX: o PID é reescrito mesmo que isso quebre a legalidade.
+A legal Pokémon is only changed when a legal version of it exists (shiny-locked ones stay as they are).	Um Pokémon legal só muda quando existe uma versão legal dele (os que não podem ser shiny ficam como estão).
+Making shiny…	Deixando shiny…
+Removing shiny…	Tirando o shiny…
+Made shiny:	Ficaram shiny:
+Removed shiny from	Shiny removido de
+Your trainer becomes the current handler of the marked Gen 6+ Pokémon, as a real trade does (name, gender, friendship, trade memory). Your own Pokémon return to you as OT; any handover that would break legality is skipped.	Seu treinador vira o treinador atual dos Pokémon marcados da Ger. 6+, como numa troca de verdade (nome, gênero, amizade, memória da troca). Seus próprios Pokémon voltam para você como TO; qualquer passagem que quebre a legalidade é pulada.
+Handed over	Passados
+Party members get full HP, status and PP; boxed Pokémon get their PP back.	Os da equipe ficam com HP, status e PP cheios; os das caixas recuperam o PP.
+Healed	Curados
+{0}\n{1} marked. The current state stays available as a restore point.	{0}\n{1} marcados. O estado atual continua disponível como ponto de restauração.
+{0} Pokémon, one backed-up write.	{0} Pokémon, uma gravação com backup.
+{0} ({1} marked)	{0} ({1} marcados)
+No clones among the marked Pokémon.	Nenhum clone entre os Pokémon marcados.
+Every extra clone is locked against release.	Todo clone extra está travado contra soltar.
+ {0} locked clone(s) stay.	 {0} clone(s) travado(s) ficam.
+Delete clones?	Apagar clones?
+{0} duplicate(s) share an identity (EC + PID, or PID + OT + TID) with another marked Pokémon. One of each is kept (a party member first).{1} The current state stays available as a restore point.	{0} repetido(s) têm a mesma identidade (EC + PID, ou PID + TO + TID) de outro Pokémon marcado. Um de cada fica (primeiro um da equipe).{1} O estado atual continua disponível como ponto de restauração.
+Delete clones	Apagar clones
+This box	Esta caixa
+This box and the next ones	Esta caixa e as seguintes
+Choose a box…	Escolher uma caixa…
+The party	A equipe
+Nothing is written.	Nada é gravado.
+Storage	Armazenamento
+Connected	Aberto
+Party	Equipe
+Holding · {0}	Segurando · {0}
+Manage · {0}	Organizar · {0}
+{0} · marked {1}/{2}	{0} · marcados {1}/{2}
+LOCK	TRAVA
+Place	Soltar aqui
+Multi-select	Seleção múltipla
+Tools	Ferramentas
+Mark · hold for area	Marcar · segure para área
+Unmark box	Desmarcar caixa
+Select box	Marcar caixa
+Actions ({0})	Ações ({0})
+Move mode	Modo mover
+Clear	Limpar
+Navigate	Navegar
+Use field	Usar campo
+Drop box	Soltar caixa
+Hold box	Segurar caixa
+Swap	Trocar
+Browse	Navegar
+Deselect	Desmarcar
+Select	Marcar
+Box actions	Ações da caixa
+Ready	Pronto
+READ-ONLY · this save's layout is not supported	SÓ LEITURA · o formato deste save não é suportado
+Look at boxes and party. Nothing is ever written.	Veja as caixas e a equipe. Nada é gravado.
+Restore points are still made. Change this later from Home.	Os pontos de restauração continuam sendo feitos. Mude isso depois na tela inicial.
+3DS Bank can show this save but will not write it: {0}\nWriting it with the retail layout would break the file, so there is no way to edit it at your own risk.	O 3DS Bank consegue mostrar este save mas não grava nele: {0}\nGravar com o formato do jogo original estragaria o arquivo, então não há como mexer nele.
+Select a Pokémon	Escolha um Pokémon
+Tap an empty slot to add one	Toque num espaço vazio para adicionar um
+Multi-select (- button)	Seleção múltipla (botão -)
+Mark several Pokémon to move them together.	Marque vários Pokémon para mover todos juntos.
+How to get a Pokémon…	Como conseguir um Pokémon…
+How to obtain a species in the game you are editing.	Como obter uma espécie no jogo aberto.
+Find held item…	Achar item segurado…
+See which Pokémon hold an item and go to one.	Veja quais Pokémon seguram um item e vá até um deles.
+IV ranking…	Ranking de IVs…
+Every Pokémon sorted by its IVs; pick one to go to it.	Todos os Pokémon ordenados pelos IVs; escolha um para ir até ele.
+Day Care / Nursery	Creche / Berçário
+See who is at the Day Care and withdraw them to the PC.	Veja quem está na Creche e tire de lá para o PC.
+Check every Pokémon in the save and repair the illegal ones.	Verifica todos os Pokémon do save e corrige os ilegais.
+Check every Pokémon in the save.	Verifica todos os Pokémon do save.
+Find cloned Pokémon and impossible values across the save.	Encontra Pokémon clonados e valores impossíveis no save.
+The first catch on each route, from where each Pokémon was met.	A primeira captura de cada rota, pelo lugar onde cada Pokémon foi encontrado.
+Collection dex…	Coleção da dex…
+Living dex tracker for the Bank and this save, normal and shiny.	Acompanhamento da living dex do Banco e deste save, normal e shiny.
+Sort boxes…	Ordenar caixas…
+Order this box or all boxes by dex number, level, type and more.	Ordena esta caixa ou todas por número da dex, nível, tipo e mais.
+Storage tools	Ferramentas das caixas
+Multi-select - {0} marked	Seleção múltipla - {0} marcados
+Box is already first	A caixa já é a primeira
+Box is already last	A caixa já é a última
+Box {0} swapped with box {1}.	Caixa {0} trocada com a caixa {1}.
+BOX MANAGER - no boxes selected	ORGANIZAR CAIXAS - nenhuma caixa selecionada
+Box manager - {0} box(es) selected	Organizar caixas - {0} caixa(s) selecionada(s)
+{0} selected boxes	{0} caixas selecionadas
+Empty selected boxes	Esvaziar caixas selecionadas
+Empty all boxes	Esvaziar todas as caixas
+Box actions · {0}	Ações da caixa · {0}
+No selection means the current box. Every write creates a restore point.	Sem seleção vale a caixa atual. Toda gravação cria um ponto de restauração.
+Select Pokémon in these boxes	Marcar os Pokémon destas caixas
+Mark every Pokémon in these boxes in multi-select.	Marca todos os Pokémon destas caixas na seleção múltipla.
+Mark all boxes	Marcar todas as caixas
+Select every box for the actions in this menu.	Seleciona todas as caixas para as ações deste menu.
+Lock / Unlock box(es)	Travar / destravar caixa(s)
+Locked boxes are skipped by sorting, batch edits and emptying.	Caixas travadas ficam fora da ordenação e do esvaziamento.
+Copy box(es)…	Copiar caixa(s)…
+Copy these boxes over other boxes, replacing what is there.	Copia estas caixas por cima de outras, substituindo o que tiver lá.
+Delete box(es) (rescue Pokémon)	Apagar caixa(s) (salvando os Pokémon)
+Removes the boxes; their Pokémon move to free slots first.	Remove as caixas; os Pokémon delas vão antes para espaços livres.
+Releases every Pokémon in the boxes. The party is not touched.	Solta todos os Pokémon das caixas. A equipe não é mexida.
+Clear box marks	Limpar marcações de caixa
+Box manager - {0} boxes selected	Organizar caixas - {0} caixas selecionadas
+Box locks updated - {0} box(ES) locked	Travas atualizadas - {0} caixa(s) travada(s)
+{0} target box(ES) are locked	{0} caixa(s) de destino estão travadas
+Empty selected boxes?	Esvaziar as caixas selecionadas?
+Release every Pokémon in {0} box(es). A restore point is created first.	Soltar todos os Pokémon de {0} caixa(s). Um ponto de restauração é criado antes.
+Emptied {0} box(es).	{0} caixa(s) esvaziada(s).
+Locked boxes are protected - unlock or empty them one by one	Caixas travadas estão protegidas: destrave ou esvazie uma por uma
+Empty every box?	Esvaziar todas as caixas?
+Release every boxed Pokémon. Party Pokémon are untouched. A restore point is created first.	Soltar todos os Pokémon das caixas. Os da equipe não são mexidos. Um ponto de restauração é criado antes.
+Empty all	Esvaziar tudo
+All storage boxes emptied.	Todas as caixas foram esvaziadas.
+Start at box {0}	Começar na caixa {0}
+Copy boxes	Copiar caixas
+Choose the first destination box. Existing contents there will be replaced.	Escolha a primeira caixa de destino. O que tiver lá será substituído.
+Replace destination boxes?	Substituir as caixas de destino?
+Copy {0} box(es) starting at box {1}. Destination contents will be replaced.	Copiar {0} caixa(s) a partir da caixa {1}. O conteúdo de destino será substituído.
+Copied {0} box(es) starting at box {1}.	{0} caixa(s) copiada(s) a partir da caixa {1}.
+Every box is selected: rescued Pokémon have nowhere to go, so they are released.	Todas as caixas estão selecionadas: os Pokémon não têm para onde ir, então serão soltos.
+Pokémon are rescued into free slots first.	Os Pokémon vão antes para espaços livres.
+Delete selected boxes?	Apagar as caixas selecionadas?
+Remove {0} box(es) from the order. {1}	Tirar {0} caixa(s) da lista. {1}
+Removed {0} box(es) from the order.	{0} caixa(s) tirada(s) da lista.
+No Pokémon in this save is holding an item	Nenhum Pokémon deste save está segurando um item
+Find held item	Achar item segurado
+Mark all {0} (multi-select)	Marcar todos os {0} (seleção múltipla)
+To clear them, use Batch editor and Remove held items.	Para tirar os itens, isso não é possível no 3DS Bank.
+Party {0}	Equipe {0}
+Box {0} · slot {1}	Caixa {0} · espaço {1}
+{0} · {1} holder(s)	{0} · {1} segurando
+Highest IVs first	Maiores IVs primeiro
+Lowest IVs first	Menores IVs primeiro
+IV ranking	Ranking de IVs
+Ranking IVs…	Ordenando IVs…
+Reading every Pokémon's IVs.	Lendo os IVs de todos os Pokémon.
+No Pokémon to rank in this save	Nenhum Pokémon para ordenar neste save
+IV ranking · {0} first	Ranking de IVs · {0} primeiro
+IV ranking: {0}	Ranking de IVs: {0}
+the party	a equipe
+Unmark {0}	Desmarcar {0}
+Select all in {0}	Marcar tudo em {0}
+Select all boxes	Marcar todas as caixas
+Invert {0}	Inverter {0}
+Swap marked and unmarked Pokémon here.	Troca marcados e desmarcados aqui.
+Move to box…	Mover para a caixa…
+Move to Bank	Mover para o Banco
+They leave this save and are stored in the Bank.	Eles saem deste save e ficam guardados no Banco.
+Copy to Bank	Copiar para o Banco
+Copies go to the Bank; the originals stay here.	Cópias vão para o Banco; os originais ficam aqui.
+Move to another game…	Mover para outro jogo…
+They leave this save and join another linked game.	Eles saem deste save e vão para outro jogo vinculado.
+Copy to another game…	Copiar para outro jogo…
+Copies join another linked game; the originals stay here.	Cópias vão para outro jogo vinculado; os originais ficam aqui.
+Clone the marked Pokémon into the first free box slots.	Clona os marcados nos primeiros espaços livres.
+Export (.pk files)	Exportar (arquivos .pk)
+Share each marked Pokémon as its own file.	Compartilha cada Pokémon marcado como um arquivo.
+Mark Pokémon holding…	Marcar quem segura…
+Find Pokémon holding an item, then mark them or go to one.	Ache os Pokémon que seguram um item e marque eles ou vá até um.
+Box manager…	Organizar caixas…
+Reorder, lock or empty whole boxes.	Reordene, trave ou esvazie caixas inteiras.
+Back to move mode	Voltar ao modo mover
+Leave multi-select.	Sair da seleção múltipla.
+Multi-select · {0} marked	Seleção múltipla · {0} marcados
+Marks stay while you change box with L/R.	As marcações ficam enquanto você troca de caixa com L/R.
+Select all in this box	Marcar tudo nesta caixa
+Select all in the party	Marcar toda a equipe
+Unmark this box	Desmarcar esta caixa
+Unmark the party	Desmarcar a equipe
+Invert this box	Inverter esta caixa
+Invert the party	Inverter a equipe
+Move {0} Pokémon?	Mover {0} Pokémon?
+Move	Mover
+Exported {0} Pokémon.	{0} Pokémon exportados.
+THE PARTY NEEDS ONE POKéMON - UNMARK A PARTY MEMBER	A EQUIPE PRECISA DE UM POKéMON - DESMARQUE UM DA EQUIPE
+COPY	COPIAR
+MOVE	MOVER
+{0} selection to game	{0} seleção para o jogo
+{0} Pokémon are copied; the originals stay	{0} Pokémon são copiados; os originais ficam
+{0} Pokémon leave this save	{0} Pokémon saem deste save
+No other games linked. Link another emulator or save on Home.	Nenhum outro jogo vinculado. Vincule outro emulador ou save na tela inicial.
+Could not read {0}: {1}	Não deu para ler {0}: {1}
+Where in {0}?	Onde em {0}?
+{0} selection?	{0} seleção?
+Copies of {0} Pokémon join {1}; the originals stay here. If one cannot enter that format, none are copied.	Cópias de {0} Pokémon vão para {1}; os originais ficam aqui. Se um não couber naquele formato, nenhum é copiado.
+{0} Pokémon will leave this save and join {1}. If one cannot enter that format, all stay here.	{0} Pokémon vão sair deste save e entrar em {1}. Se um não couber naquele formato, todos ficam aqui.
+ They land in {0}.	 Eles chegam em {0}.
+Copy all	Copiar todos
+Move all	Mover todos
+1 of {0} Pokémon	1 de {0} Pokémon
+{0} Pokémon arrived from a transfer	{0} Pokémon chegaram por transferência
+{0} Pokémon sent back: the transfer was undone	{0} Pokémon devolvidos: a transferência foi desfeita
+No Pokémon could be duplicated. Check free storage.	Nenhum Pokémon pôde ser duplicado. Veja o espaço livre.
+Cloned {0} Pokémon.	{0} Pokémon clonados.
+ {0} could not be duplicated.	 {0} não puderam ser duplicados.
+Nothing was sent: {0} could not be read for the Bank.	Nada foi enviado: não deu para ler {0} para o Banco.
+{0} marked mon(ES) are locked - unlock or unmark them	{0} Pokémon marcados estão travados: destrave ou desmarque
+Release selection?	Soltar a seleção?
+Release all {0} marked Pokémon? The current save state is kept as a restore point.	Soltar todos os {0} Pokémon marcados? O estado atual do save fica guardado como ponto de restauração.
+Imported {0} Pokémon.	{0} Pokémon importados.
+ {0} file(s) not recognized.	 {0} arquivo(s) não reconhecido(s).
+How should the boxes be ordered?	Como ordenar as caixas?
+Alphabetical	Ordem alfabética
+Level (strongest first)	Nível (mais fortes primeiro)
+IV total (best first)	Total de IVs (melhores primeiro)
+Age (oldest first)	Idade (mais antigos primeiro)
+Shiny first	Shiny primeiro
+Which boxes?	Quais caixas?
+All boxes	Todas as caixas
+Which direction?	Em que direção?
+Normal order	Ordem normal
+Reversed	Invertida
+ (reversed)	 (invertida)
+Sort now?	Ordenar agora?
+This box's Pokémon are reordered and compacted to the top.	Os Pokémon desta caixa são reordenados e juntados no começo.
+Every box's Pokémon are pooled, ordered, and compacted from box 1. Empties gather at the end.	Os Pokémon de todas as caixas são juntados, ordenados e organizados a partir da caixa 1. Os espaços vazios ficam no fim.
+Sorted {0} Pokémon{1}.	{0} Pokémon ordenados{1}.
+This box is empty	Esta caixa está vazia
+This generation has no natures	Esta geração não tem natureza
+EC       (not in this generation)	EC       (não existe nesta geração)
+Nature   {0}	Natureza {0}
+No catch data in this save	Nenhum dado de captura neste save
+Nuzlocke report	Relatório Nuzlocke
+Open a save first.	Abra um save primeiro.
+Legality check	Verificar legalidade
+This save is a romhack format without offline legality tables - nothing to check here.	Este save é de um ROM hack sem tabelas de legalidade offline, então não há o que verificar.
+Checking legality…	Verificando a legalidade…
+Scanning the party and every box.	Lendo a equipe e todas as caixas.
+This save stores no Pokémon.	Este save não tem Pokémon.
+All {0} Pokémon are legal.	Todos os {0} Pokémon são legais.
+{0} illegal of {1}. The red-dotted slots in this box fail PKHeX's checks.	{0} ilegais de {1}. Os espaços com ponto vermelho nesta caixa não passam nas verificações do PKHeX.
+Legality check cancelled.	Verificação de legalidade cancelada.
+Audit report	Relatório de auditoria
+This save is a romhack format without offline legality tables - nothing to audit here.	Este save é de um ROM hack sem tabelas de legalidade offline, então não há o que auditar.
+Auditing…	Auditando…
+Fingerprinting every Pokémon and checking values.	Identificando cada Pokémon e verificando os valores.
+Audit cancelled.	Auditoria cancelada.
+Audit: no clones, no impossible values	Auditoria: nenhum clone, nenhum valor impossível
+Audit: {0} clone groups, {1} flagged	Auditoria: {0} grupos de clones, {1} marcados
+Share report	Compartilhar relatório
+{0} Pokémon audited in this save.	{0} Pokémon auditados neste save.
+No clones: every Pokémon has a unique identity fingerprint.	Nenhum clone: todo Pokémon tem uma identidade única.
+## Clones ({0} groups)	## Clones ({0} grupos)
+{0} match ×{1}:	{0} igual ×{1}:
+No impossible values: every Pokémon passed PKHeX's checks.	Nenhum valor impossível: todo Pokémon passou nas verificações do PKHeX.
+## Impossible values ({0})	## Valores impossíveis ({0})
+Bank audit is future work: bank entries keep no EC/PID fingerprint.	A auditoria do banco ainda não existe: os registros do banco não guardam EC/PID.
+3DS Bank audit report	Relatório de auditoria do 3DS Bank
+Trainer card	Cartão de treinador
+Bag & items	Mochila e itens
+Fashion	Roupas
+Trainer records	Recordes do treinador
+The game's own trainer records, view only.	Os recordes do próprio jogo, só para ver.
+Event flags	Flags de evento
+Wonder cards	Cartões Maravilha
+Mystery Gift events and the gift cards stored in this save.	Eventos de Presente Misterioso e os cartões guardados neste save.
+World & events	Mundo e eventos
+Export save copy	Exportar cópia do save
+Share a copy of this save file.	Compartilha uma cópia deste arquivo de save.
+Backups made before each change; go back to one.	Backups feitos antes de cada mudança; volte para um deles.
+Close save	Fechar save
+Save data	Dados do save
+In-save inbox	Caixa de entrada do save
+The Mystery Gift cards stored in this save, view only.	Os cartões de Presente Misterioso guardados neste save, só para ver.
+Exported {0}	{0} exportado
+Save export failed: {0}	A exportação do save falhou: {0}
+Trainer profiles	Perfis de treinador
+Bag	Mochila
+This game exposes no editable bag.	Este jogo não tem mochila para mostrar.
+Pouch	Bolso
+{0} - {1} kinds - name table {2}	{0} - {1} tipos - tabela de nomes {2}
+{0} - {1} kinds	{0} - {1} tipos
+Cancelled	Cancelado
+Holding box {0} - L/R swap · A drop	Segurando a caixa {0} - L/R troca · A solta
+Box manager - A hold · L/R browse · Y mark box · X actions	Organizar caixas - A segura · L/R navega · Y marca caixa · X ações
+Illegal.	Ilegal.
+Explain legality	Explicar legalidade
+Why this Pokémon is flagged, with fixes when there are any.	Por que este Pokémon foi marcado, com correções quando existem.
+Adds it to the Poképark visitors. The save is not changed.	Ele vira visitante do Poképark. O save não muda.
+Pick it up and carry it to another slot.	Pegue e leve para outro espaço.
+Send to Bank	Mandar para o Banco
+It leaves this save and is stored in the Bank.	Ele sai deste save e fica guardado no Banco.
+Send to another game…	Mandar para outro jogo…
+It leaves this save and joins another linked game.	Ele sai deste save e vai para outro jogo vinculado.
+Share this Pokémon as a file.	Compartilha este Pokémon como arquivo.
+See its PID and IVs, and change its nature without losing shininess.	Veja o PID e os IVs, e mude a natureza sem perder o shiny.
+See its PID, nature and IVs.	Veja o PID, a natureza e os IVs.
+Lock / Unlock release	Travar / destravar soltura
+A locked Pokémon cannot be released.	Um Pokémon travado não pode ser solto.
+Nothing else is flagged.	Nada mais está marcado.
+Show as .pk QR	Mostrar como QR .pk
+.pk QR	QR .pk
+Pokémon from {0} can't travel by .pk QR. Use Send to Bank or Export .pk file instead.	Pokémon de {0} não viajam por QR .pk. Use Mandar para o Banco ou Exportar arquivo .pk.
+{0} · .PK QR	{0} · QR .PK
+Mon locked - release blocked	Pokémon travado: não pode ser solto
+Mon unlocked	Pokémon destravado
+Evolve	Evoluir
+{0} → pick the destination (the mon leaves this box)	{0} → escolha o destino (o Pokémon sai desta caixa)
+Copy	Copiar
+{0} to another game?	{0} para outro jogo?
+A copy of {0} joins {1}; the original stays here.	Uma cópia de {0} vai para {1}; o original fica aqui.
+{0} will leave this box and join {1} (box space permitting).	{0} vai sair desta caixa e entrar em {1} (se tiver espaço nas caixas).
+{0} moved to {1}.	{0} foi para {1}.
+Could not read this mon for the bank.	Não deu para ler este Pokémon para o banco.
+{0} copied to the Bank. The original stays in the game.	{0} copiado para o Banco. O original fica no jogo.
+{0} deposited in the Bank.	{0} guardado no Banco.
+Deposit {0} in the Bank ({1})	Guardar {0} no Banco ({1})
+{0} is locked - unlock it first	{0} está travado: destrave primeiro
+Release?	Soltar?
+Release {0} back into the wild? The current save state is kept as a restore point.	Soltar {0} na natureza? O estado atual do save fica guardado como ponto de restauração.
+{0} was released. Bye-bye!	{0} foi solto. Tchau, tchau!
+Species	Espécie
+GENDER	GÊNERO
+LEGALITY	LEGALIDADE
+Export .PK	Exportar .PK
+EXPORT .PK	EXPORTAR .PK
+NICKNAME	APELIDO
+LEVEL	NÍVEL
+ABILITY	HABILIDADE
+FRIENDSHIP	AMIZADE
+BALL	BOLA
+MOVE 1	GOLPE 1
+MOVE 2	GOLPE 2
+MOVE 3	GOLPE 3
+MOVE 4	GOLPE 4
+PKMN Info	Dados do PKMN
+PKMN Moves	Golpes do PKMN
+Stats	Atributos
+Legality	Legalidade
+Illegality report	Relatório de ilegalidade
+EXP {0} · max level	EXP {0} · nível máximo
+EXP {0} at Lv {1}  ·  {2} to Lv {3}	EXP {0} no Nv {1}  ·  {2} para o Nv {3}
+(none)	(nenhum)
+NO STORAGE CONNECTED - PRESS ACCESS STORAGE	NENHUM ARMAZENAMENTO ABERTO - ABRA UM SAVE
+NO DATA	SEM DADOS
+Choose a save file…	Escolha um arquivo de save…
+Open cancelled.	Abertura cancelada.
+Could not open save: {0}	Não deu para abrir o save: {0}
+Empty slot.	Espaço vazio.
+Nothing to save.	Nada para salvar.
+READY	PRONTO
+{0} · restore point {1}	{0} · ponto de restauração {1}
+Aborted: {0}	Cancelado: {0}
+MULTI-SELECT - A MARKS · Y WHOLE BOX · X ACTIONS	SELEÇÃO MÚLTIPLA - A MARCA · Y CAIXA INTEIRA · X AÇÕES
+{0} MARKED	{0} MARCADO
+{0} CLEARED	{0} LIMPO
+ALL BOXES MARKED	TODAS AS CAIXAS MARCADAS
+{0} BOX(ES) MARKED	{0} CAIXA(S) MARCADA(S)
+{0} INVERTED	{0} INVERTIDO
+MARKS CLEARED	MARCAÇÕES LIMPAS
+MULTI-SELECT - {0} {1} · RELEASE TO APPLY	SELEÇÃO MÚLTIPLA - {0} {1} · SOLTE PARA APLICAR
+PARTY	EQUIPE
+BOX {0}	CAIXA {0}
+MULTI-SELECT - {0} MARKED	SELEÇÃO MÚLTIPLA - {0} MARCADOS
+MULTI-SELECT - {0} · {1} MARKED	SELEÇÃO MÚLTIPLA - {0} · {1} MARCADOS
+No free slot from box {0} slot {1} onward.	Nenhum espaço livre a partir da caixa {0} espaço {1}.
+Moved {0} Pokémon from box {1} slot {2} on.	{0} Pokémon movidos a partir da caixa {1} espaço {2}.
+ {0} stayed (no room).	 {0} ficaram (sem espaço).
+Released {0} Pokémon. Bye-bye!	{0} Pokémon soltos. Tchau, tchau!
+CARRYING - place with A, cancel with B	CARREGANDO - solte com A, cancele com B
+Move {0}: {1} -> {2}	Mover {0}: {1} -> {2}
+MOVED · restore point {0}	MOVIDO · ponto de restauração {0}
+Move aborted: {0}	Movimento cancelado: {0}
+Box {0}, Slot {1}	Caixa {0}, espaço {1}
+The account server refused the request.	O servidor de contas recusou o pedido.
+That username is taken. Pick another one.	Esse nome de usuário já existe. Escolha outro.
+Wrong username or password.	Usuário ou senha errados.
+This account was disabled. Talk to support.	Esta conta foi desativada. Fale com o suporte.
+Too many attempts. Wait a little and try again.	Tentativas demais. Espere um pouco e tente de novo.
+Accounts are switched off on the server. Talk to support.	As contas estão desligadas no servidor. Fale com o suporte.
+Your sign-in expired. Sign in again.	Seu login expirou. Entre de novo.
+The account server refused the request ({0}).	O servidor de contas recusou o pedido ({0}).
+The server refused access to this Bank. Sign in again.	O servidor recusou o acesso a este Banco. Entre de novo.
+The Bank server address is wrong. Talk to support.	O endereço do servidor do Banco está errado. Fale com o suporte.
+The Bank server answered {0}: {1}	O servidor do Banco respondeu {0}: {1}
+Your Bank was updated from your account.	Seu Banco foi atualizado pela sua conta.
+Your Bank is saved to your account.	Seu Banco está salvo na sua conta.
+Your Bank is ready.	Seu Banco está pronto.
+Welcome back! {0} Pokémon are in your Bank.	Bem-vindo de volta! {0} Pokémon estão no seu Banco.
+The {0} Pokémon already on this phone are now saved to your account.	Os {0} Pokémon que já estavam neste celular agora estão salvos na sua conta.
+Your account's Bank is here, plus {0} Pokémon that were on this phone.	O Banco da sua conta chegou, junto com {0} Pokémon que estavam neste celular.
+Your account's Bank is here.	O Banco da sua conta chegou.
+Sync failed: {0}	A sincronização falhou: {0}
+Collection dex closed: {0}	Coleção da dex fechada: {0}
+Scope	Escopo
+Missing only	Só os que faltam
+Counting your collection…	Contando sua coleção…
+Reading the bank and every game on your shelf.	Lendo o banco e todos os jogos da sua estante.
+Shiny forms	Formas shiny
+Forms	Formas
+Shiny living dex	Living dex shiny
+{0}/{1} forms	{0}/{1} formas
+This game	Este jogo
+Shiny owned	Shiny que tenho
+Owned + shiny	Tenho + shiny
+Owned	Tenho
+Missing	Faltam
+Only the species in the open save's game.	Só as espécies do jogo do save aberto.
+Gen {0} · {1}/{2}	Ger. {0} · {1}/{2}
+View: normal living dex	Ver: living dex normal
+View: SHINY living dex	Ver: living dex SHINY
+Only shiny Pokémon count toward each species.	Só Pokémon shiny contam para cada espécie.
+View: one per species	Ver: um por espécie
+View: every form	Ver: todas as formas
+Back to one entry per species.	Voltar para uma entrada por espécie.
+Lists each form on its own, like Unown letters and Vivillon patterns.	Lista cada forma separada, como as letras de Unown e os padrões de Vivillon.
+How to get	Como conseguir
+Where to find this species in each game.	Onde achar esta espécie em cada jogo.
+{0} (No. {1}) does not exist in Generation {2} games: their data only knows species No. 1 to {3}, so there is nothing to store it as.	{0} (Nº {1}) não existe nos jogos da Geração {2}: os dados deles só conhecem as espécies 1 a {3}, então não há como guardar.
+{0} is not in {1}'s species data at all, so the game has no way to store it.	{0} não está nos dados de espécies de {1}, então o jogo não tem como guardar.
+Backwards transfer (Gen {0} format → Gen {1}): no official route exists, so legality checkers will likely flag this Pokémon even though the game can load it.	Transferência para trás (formato Ger. {0} → Ger. {1}): não existe caminho oficial, então verificadores de legalidade devem marcar este Pokémon, mesmo que o jogo consiga abrir.
+The egg hatches: an egg from a newer game cannot be carried into an older one.	O ovo choca: um ovo de um jogo mais novo não pode ir para um mais antigo.
+Form {0} of {1} does not exist in {2}: stored as its base form.	A forma {0} de {1} não existe em {2}: guardado na forma base.
+Origin game {0} did not exist yet in {1}: recorded as {2}.	O jogo de origem {0} ainda não existia em {1}: registrado como {2}.
+Met location has no equivalent in {0}: recorded as {1}.	O local de encontro não existe em {0}: registrado como {1}.
+Egg location has no equivalent in {0} and is cleared.	O local do ovo não existe em {0} e foi apagado.
+ Replaced with level-up moves from {0}: {1}.	 Trocado por golpes de nível de {0}: {1}.
+{0} did not exist in {1} and cannot be kept.{2}	{0} não existia em {1} e não pode ficar.{2}
+Hidden Ability {0} does not exist in {1}: the first regular ability is used instead.	A Habilidade Oculta {0} não existe em {1}: a primeira habilidade normal é usada.
+Ability {0} did not exist in {1}: now {2}.	A habilidade {0} não existia em {1}: agora é {2}.
+Shininess could not be carried into {0}'s stat DNA.	O shiny não pôde ir para os atributos de {0}.
+New PID generated: {0} ties nature, gender and ability to it, and the old one disagreed.	Novo PID gerado: {0} liga natureza, gênero e habilidade a ele, e o antigo não batia.
+Shininess could not be kept alongside the nature and gender in {0}'s PID rules.	Não deu para manter o shiny junto com a natureza e o gênero nas regras de PID de {0}.
+Held item {0} does not exist in {1} and is removed.	O item segurado {0} não existe em {1} e foi tirado.
+{0} did not exist in {1}: now a Poké Ball.	{0} não existia em {1}: agora é uma Poké Bola.
+Language {0} did not exist in {1}: recorded as {2}.	O idioma {0} não existia em {1}: registrado como {2}.
+Trainer name '{0}' does not fit {1}'s character set or length: stored as '{2}'.	O nome de treinador '{0}' não cabe nos caracteres de {1}: guardado como '{2}'.
+Nickname '{0}' cannot be written in {1}'s character set: reset to the species name.	O apelido '{0}' não pode ser escrito com os caracteres de {1}: voltou ao nome da espécie.
+Nickname '{0}' does not fit {1}'s character set or length: stored as '{2}'.	O apelido '{0}' não cabe nos caracteres de {1}: guardado como '{2}'.
+IVs become {0} DVs (halved, 0-15) and EVs become stat experience; Sp. Def shares Special.	Os IVs viram DVs de {0} (pela metade, 0-15) e os EVs viram experiência de atributo; Def. Esp. divide com Especial.
+Hyper Training does not exist in {0}: the stats fall back to the real IVs.	O Hyper Training não existe em {0}: os atributos voltam aos IVs reais.
+Tera Type is dropped: {0} has no Terastallization.	O Tipo Tera é descartado: {0} não tem Terastalização.
+Gigantamax Factor is dropped: {0} has no Dynamax.	O Fator Gigantamax é descartado: {0} não tem Dynamax.
+Alpha status is dropped: {0} has no Alphas.	O status Alfa é descartado: {0} não tem Alfas.
+Relearnable moves are dropped: {0} does not store them.	Os golpes reaprendíveis são descartados: {0} não guarda eles.
+Memories are dropped: {0} does not store them.	As memórias são descartadas: {0} não guarda elas.
+Species #{0}	Espécie nº {0}
+Move #{0}	Golpe nº {0}
+Ability #{0}	Habilidade nº {0}
+Ball #{0}	Bola nº {0}
+No. {0}	Nº {0}
+Region	Região
+{0} · Gen {1}	{0} · Ger. {1}
+Base stats	Atributos base
+Attack	Ataque
+Defense	Defesa
+Sp. Atk	Atq. Esp.
+Sp. Def	Def. Esp.
+Speed	Velocidade
+Abilities	Habilidades
+Hidden	Oculta
+Caught · {0}	Capturado · {0}
+Form	Forma
+{0} is not in the encounter database.	{0} não está no banco de dados de encontros.
+Keep browsing	Continuar vendo
+Open {0} to catch this one - the database answers for every game, but a Pokémon needs that save open to land in it.	Abra {0} para capturar este: o banco de dados responde por todos os jogos, mas o Pokémon precisa daquele save aberto para entrar nele.
+No empty slot in this box for the encounter.	Nenhum espaço vazio nesta caixa para o encontro.
+Caught · {0} · {1}	Capturado · {0} · {1}
+How to get · {0} of {1} games	Como conseguir · {0} de {1} jogos
+WAYS	FORMAS
+BACK	VOLTAR
+Generation {0}	Geração {0}
+Not obtainable here	Não dá para conseguir aqui
+Egg	Ovo
+Eggs	Ovos
+Wild	Selvagem
+Static	Fixo
+Trade	Troca
+Trades	Trocas
+Event	Evento
+Events	Eventos
+Special	Especial
+{0} · {1} ways	{0} · {1} formas
+Catch	Capturar
+Games	Jogos
+EGGS	OVOS
+WILD	SELVAGEM
+In-game trades	Trocas no jogo
+Lv. {0}	Nv. {0}
+Lv. {0}-{1}	Nv. {0}-{1}
+{0} spots	{0} lugares
+Not your game	Não é seu jogo
+This is how {0} gives out this Pokémon. Open that save to catch one into it.	É assim que {0} dá este Pokémon. Abra esse save para capturar um nele.
+3DS Bank game library	Biblioteca de jogos do 3DS Bank
+Cascade Lake	Lago Cascata
+Cool shallows and open swimming water	Águas rasas e frescas, e água aberta para nadar
+Ember Grove	Bosque das Brasas
+Warm basalt shelves and sleepy sparks	Pedras quentes de basalto e faíscas sonolentas
+Sky Summit	Cume do Céu
+Mountain breezes above the cloud line	Brisas da montanha acima das nuvens
+Verdant Grove	Bosque Verdejante
+Broad leaves, flowers, and soft moss	Folhas largas, flores e musgo macio
+Static Meadow	Campo Elétrico
+Tall grass humming with little lights	Grama alta zumbindo com luzinhas
+Meadow Commons	Campo Comum
+A welcoming green meadow for everyone	Um campo verde e acolhedor para todo mundo
+3DS BANK - editing is disabled	3DS BANK - edição desligada
+MOVE ONLY	SÓ MOVER
+{0} ({1} blocked)	{0} ({1} bloqueado)
+Edit game · hold	Opções do jogo · segure
+Link	Vincular
+File	Arquivo
+Settings	Configurações
+Hello! Welcome to 3DS Bank!	Olá! Bem-vindo ao 3DS Bank!
+This is a place where your Pokémon from Generation 1 to 7 can live together, safely.	Aqui seus Pokémon da Geração 1 à 7 podem viver juntos, em segurança.
+I keep them in the Bank and move them between your games, exactly as you caught them. Nothing here edits a Pokémon.	Eu guardo eles no Banco e levo entre os seus jogos do jeitinho que você capturou. Nada aqui edita um Pokémon.
+And every move is backed up before it is written, so nothing is ever lost.	E todo movimento tem backup antes de ser gravado, então nada se perde.
+Now then... let's find your games!	Então... vamos achar seus jogos!
+Get started	Começar
+Link an emulator	Vincular um emulador
+Pick the emulator folder where your games keep their saves.	Escolha a pasta do emulador onde seus jogos guardam os saves.
+Open a single save file	Abrir um arquivo de save
+Pick one save file instead of a whole emulator folder.	Escolha um arquivo de save em vez da pasta inteira do emulador.
+Download the sprite pack ({0})	Baixar o pacote de sprites ({0})
+Animated sprites, HOME pictures and item icons, to use offline.	Sprites animados, imagens do HOME e ícones de itens, para usar offline.
+Maybe later	Talvez depois
+Filter games	Filtrar jogos
+All games	Todos os jogos
+Release order	Ordem de lançamento
+Every game, from the oldest release to the newest.	Todos os jogos, do lançamento mais antigo ao mais novo.
+Alphabetical (A-Z)	Ordem alfabética (A-Z)
+Game Boy (Gen I-II)	Game Boy (Ger. I-II)
+GBA (Gen III)	GBA (Ger. III)
+DS (Gen IV-V)	DS (Ger. IV-V)
+3DS (Gen VI-VII)	3DS (Ger. VI-VII)
+Switch (Gen VII-IX)	Switch (Ger. VII-IX)
+Gen I	Ger. I
+Gen II	Ger. II
+Gen III	Ger. III
+Gen IV	Ger. IV
+Gen V	Ger. V
+Gen VI	Ger. VI
+Gen VII	Ger. VII
+Gen VIII	Ger. VIII
+Gen IX	Ger. IX
+Which save do you want to open?	Qual save você quer abrir?
+Choose the save to rename, recolor or identify.	Escolha o save para renomear, mudar a cor ou identificar.
+Decide later	Decidir depois
+Which version is this?	Qual versão é esta?
+Both versions write the same save file, so 3DS Bank cannot tell them apart. Pick yours once; you can change it later from the save's menu (long-press).	As duas versões gravam o mesmo arquivo de save, então o 3DS Bank não consegue diferenciar. Escolha a sua uma vez; dá para mudar depois no menu do save (segurando).
+Link a storage unit	Vincular um armazenamento
+Choose a platform to see its emulators.	Escolha uma plataforma para ver os emuladores dela.
+Single save file	Arquivo de save avulso
+Save in game and stop emulation before editing Colosseum or XD. Select Dolphin's GC folder, a region folder, or Card A / Card B containing .gci saves. For .raw memory cards, export the game as GCI with Dolphin's Memory Card Manager, or configure that card slot as GCI Folder. After editing, start the game normally; loading an old save state can undo your edits.	Salve no jogo e pare a emulação antes de mexer em Colosseum ou XD. Escolha a pasta GC do Dolphin, uma pasta de região, ou Card A / Card B com saves .gci. Para cartões de memória .raw, exporte o jogo como GCI no Memory Card Manager do Dolphin, ou configure aquele slot como pasta GCI. Depois, abra o jogo normalmente; carregar um save state antigo pode desfazer as mudanças.
+Save in game and close DraStic. Select its backup folder containing .dsv battery saves, or the DraStic data folder. Save states are not supported. Restart the game normally after editing.	Salve no jogo e feche o DraStic. Escolha a pasta de backup com os saves .dsv, ou a pasta de dados do DraStic. Save states não são suportados. Depois, abra o jogo normalmente.
+Save in game and close Pizza Boy. Select the folder containing its battery saves (.sav), not save states. If Android hides the folder, export the battery save in Pizza Boy and link that export. Import the edited export back into Pizza Boy, then restart the game normally.	Salve no jogo e feche o Pizza Boy. Escolha a pasta com os saves de bateria (.sav), não os save states. Se o Android esconder a pasta, exporte o save no Pizza Boy e vincule essa exportação. Importe o arquivo de volta no Pizza Boy e abra o jogo normalmente.
+Save in game and close the emulator. Select the user folder you chose in its setup (the one containing sdmc); sdmc, Nintendo 3DS or a folder above the user folder also work. Restart the game normally after editing.	Salve no jogo e feche o emulador. Escolha a pasta de usuário que você definiu na configuração (a que tem a sdmc); sdmc, Nintendo 3DS ou uma pasta acima da de usuário também funcionam. Depois, abra o jogo normalmente.
+Save in game and close Citra MMJ. In the file picker open the Citra MMJ entry (or Android/data/org.citra.emu/files) and select citra-emu, or /citra-emu on older Android. Restart the game normally after editing.	Salve no jogo e feche o Citra MMJ. No seletor de arquivos abra a entrada Citra MMJ (ou Android/data/org.citra.emu/files) e escolha citra-emu, ou /citra-emu em Androids mais antigos. Depois, abra o jogo normalmente.
+Save in game and close the emulator. Select its files root containing the emulated storage. Restart the game normally after editing.	Salve no jogo e feche o emulador. Escolha a pasta raiz de arquivos com o armazenamento emulado. Depois, abra o jogo normalmente.
+Save in game and close melonDS. Select the folder containing your .sav battery saves: next to your ROMs by default, or the save folder set in melonDS's settings. Save states are not supported. Restart the game normally after editing.	Salve no jogo e feche o melonDS. Escolha a pasta com os saves .sav: ao lado das ROMs por padrão, ou a pasta de saves definida nas configurações do melonDS. Save states não são suportados. Depois, abra o jogo normalmente.
+Save in game and close the emulator. Select its saves folder (or the folder containing your battery saves). Save states are not supported. Restart the game normally after editing.	Salve no jogo e feche o emulador. Escolha a pasta de saves (ou a pasta com os saves de bateria). Save states não são suportados. Depois, abra o jogo normalmente.
+Link {0}	Vincular {0}
+ If Android does not offer access to the folder, use Single save file with an exported save.	 Se o Android não liberar acesso à pasta, use Arquivo de save avulso com um save exportado.
+Choose folder	Escolher pasta
+Show hidden saves ({0})	Mostrar saves escondidos ({0})
+Account	Conta
+Account: {0}	Conta: {0}
+Your Bank is saved to this account. Save now, get support or sign out.	Seu Banco fica salvo nesta conta. Salve agora, fale com o suporte ou saia.
+Manage linked storage	Gerenciar armazenamentos vinculados
+Unlink emulator folders. Your files stay on the device.	Desvincula pastas de emulador. Seus arquivos continuam no aparelho.
+Open a save file	Abrir um arquivo de save
+Saves you hid from Home. Pick one to show it again.	Saves que você escondeu da tela inicial. Escolha um para mostrar de novo.
+Color scheme: {0}	Esquema de cores: {0}
+Box background: {0}	Fundo das caixas: {0}
+The app's colors: the default blues or a theme for each type.	As cores do app: os azuis padrão ou um tema para cada tipo.
+How each PC box shows the wallpaper the game gives it.	Como cada caixa do PC mostra o papel de parede do jogo.
+The backups made before each write, to put a save back as it was.	Os backups feitos antes de cada gravação, para deixar um save como estava.
+Check for update	Procurar atualização
+Music	Música
+Play your own audio files in the background.	Toque seus próprios arquivos de áudio em segundo plano.
+Misc	Outros
+Sprite pack, rescan, logs and the second screen.	Pacote de sprites, nova busca, registros e a segunda tela.
+Quit 3DS Bank	Sair do 3DS Bank
+Quit 3DS Bank?	Sair do 3DS Bank?
+Unsaved edits in open menus are already backed up per write.	Tudo já está salvo, cada gravação tem backup.
+Quit	Sair
+Last saved at {0}.	Salvo pela última vez às {0}.
+Your Bank is saved a few seconds after every change.	Seu Banco é salvo alguns segundos depois de cada mudança.
+Save Bank now	Salvar o Banco agora
+Sends this phone's Bank to your account right away.	Manda o Banco deste celular para a sua conta na hora.
+Talk to support	Falar com o suporte
+Opens a WhatsApp chat with support.	Abre uma conversa no WhatsApp com o suporte.
+Sign out	Sair da conta
+Your Bank stays in your account; this phone's copy is removed.	Seu Banco fica na sua conta; a cópia deste celular é apagada.
+Bank saved to your account.	Banco salvo na sua conta.
+The Bank could not be saved.	Não deu para salvar o Banco.
+Could not open WhatsApp. Support: +{0}	Não deu para abrir o WhatsApp. Suporte: +{0}
+Sign out?	Sair da conta?
+Your Bank stays saved in your account. Signing in again brings it back.	Seu Banco continua salvo na sua conta. Entrar de novo traz ele de volta.
+Not saved yet	Ainda não foi salvo
+The newest changes to your Bank could not be sent ({0}). Signing out now loses them. Sign out anyway?	As últimas mudanças do seu Banco não puderam ser enviadas ({0}). Sair agora perde essas mudanças. Sair mesmo assim?
+Sign out anyway	Sair mesmo assim
+Hidden saves	Saves escondidos
+Pick a save to show it on Home and in save pickers again.	Escolha um save para mostrar na tela inicial e nas listas de saves de novo.
+No linked storage units.	Nenhum armazenamento vinculado.
+Unlink {0} · {1}	Desvincular {0} · {1}
+Unlink all storage units	Desvincular todos os armazenamentos
+Removes every linked folder. Your files stay on the device.	Remove todas as pastas vinculadas. Seus arquivos continuam no aparelho.
+Linked storage	Armazenamentos vinculados
+Remove a linked emulator folder without resetting the app.	Remova uma pasta de emulador vinculada sem resetar o app.
+Unlink all storage?	Desvincular tudo?
+Every linked emulator folder will be removed from 3DS Bank. Your files stay on the device.	Todas as pastas de emulador vinculadas saem do 3DS Bank. Seus arquivos continuam no aparelho.
+Unlink all	Desvincular tudo
+All linked storage units removed.	Todos os armazenamentos vinculados foram removidos.
+Unlink storage?	Desvincular armazenamento?
+Remove {0} · {1} from 3DS Bank? Your files stay on the device.	Remover {0} · {1} do 3DS Bank? Seus arquivos continuam no aparelho.
+Unlink	Desvincular
+{0} unlinked.	{0} desvinculado.
+Update check failed: {0}	A busca por atualização falhou: {0}
+A new version of 3DS Bank is available! Version {0} is ready to install. Would you like to update now?	Tem versão nova do 3DS Bank! A versão {0} está pronta para instalar. Quer atualizar agora?
+DON'T REMIND ME	NÃO LEMBRAR
+Version {0} will be offered again next launch.	A versão {0} vai aparecer de novo na próxima vez que abrir.
+I won't remind you about version {0} again.	Não vou lembrar da versão {0} de novo.
+Downloading the update!	Baixando a atualização!
+3DS Bank {0} is on its way. Android will confirm the installation.	O 3DS Bank {0} está chegando. O Android vai confirmar a instalação.
+Update paused. You can start it again from Settings.	Atualização pausada. Dá para recomeçar nas Configurações.
+Update failed: {0}	A atualização falhou: {0}
+Open the release page?	Abrir a página da versão?
+The in-app installer could not finish. The GitHub release page has the same APK.	O instalador do app não conseguiu terminar. A página da versão no GitHub tem o mesmo APK.
+Android is installing the update.	O Android está instalando a atualização.
+The 3DS Bank release page is open.	A página da versão do 3DS Bank está aberta.
+Android needs permission to install 3DS Bank updates. Allow install unknown apps for 3DS Bank, then check again?	O Android precisa de permissão para instalar atualizações do 3DS Bank. Permita instalar apps desconhecidos para o 3DS Bank e procure de novo?
+OPEN SETTINGS	ABRIR CONFIGURAÇÕES
+NOT NOW	AGORA NÃO
+Android did not install the update ({0}). The GitHub release page has the same APK.	O Android não instalou a atualização ({0}). A página da versão no GitHub tem o mesmo APK.
+Shuffle	Aleatório
+In order	Em ordem
+Playing: {0}	Tocando: {0}
+Library: {0} track(s)	Biblioteca: {0} faixa(s)
+\nLast error: {0}	\nÚltimo erro: {0}
+Background music	Música de fundo
+Pause	Pausar
+Play	Tocar
+Skip to next track	Pular para a próxima faixa
+Add music files ({0})	Adicionar músicas ({0})
+Pick audio files on your device to add to the library.	Escolha arquivos de áudio no aparelho para adicionar à biblioteca.
+Clear library	Limpar biblioteca
+Empties the list. Your audio files stay on the device.	Esvazia a lista. Seus arquivos de áudio continuam no aparelho.
+Order: {0}	Ordem: {0}
+Play the library in order or shuffled.	Tocar a biblioteca em ordem ou aleatória.
+Autostart: {0}	Tocar ao abrir: {0}
+ON starts the music when 3DS Bank opens.	LIGADO começa a música quando o 3DS Bank abre.
+Added {0} track(s) to the music library.	{0} faixa(s) adicionada(s) à biblioteca.
+Those files are already in the library.	Esses arquivos já estão na biblioteca.
+Clear music library?	Limpar a biblioteca de músicas?
+Removes every track. Your audio files on storage are untouched.	Remove todas as faixas. Seus arquivos de áudio não são mexidos.
+Box background	Fundo das caixas
+The game's wallpaper pattern in the color scheme's tones.	O padrão do papel de parede do jogo nos tons do esquema de cores.
+The game's wallpaper under a veil of the color scheme.	O papel de parede do jogo sob um véu do esquema de cores.
+The wallpaper's pattern in two tones, the color scheme's to its own.	O padrão do papel de parede em duas cores, a do esquema e a dele.
+The wallpaper rises from the bottom and fades into the color scheme.	O papel de parede sobe de baixo e some no esquema de cores.
+Box background: {0}.	Fundo das caixas: {0}.
+Download full sprite pack ({0})	Baixar o pacote completo de sprites ({0})
+Rescan games	Buscar jogos de novo
+Look through your linked folders for saves again.	Procura saves de novo nas pastas vinculadas.
+Scan report	Relatório da busca
+What the last scan found in each folder, to copy and send us.	O que a última busca achou em cada pasta, para copiar e mandar para a gente.
+Crash reports and recent activity, to send us when something goes wrong.	Relatórios de erro e atividade recente, para mandar quando algo der errado.
+Second screen: OFF	Segunda tela: DESLIGADA
+Second screen: ON	Segunda tela: LIGADA
+OFF keeps 3DS Bank on one screen, so the other stays free (an emulator, say).	DESLIGADA deixa o 3DS Bank em uma tela só, e a outra fica livre (para um emulador, por exemplo).
+Still busy	Ainda ocupado
+3DS Bank is still busy with {0}. Try again in a moment; if it stays stuck, close and reopen 3DS Bank.	O 3DS Bank ainda está ocupado com {0}. Tente de novo daqui a pouco; se travar, feche e abra o 3DS Bank de novo.
+Second screen off: 3DS Bank stays on this screen.	Segunda tela desligada: o 3DS Bank fica nesta tela.
+Second screen on.	Segunda tela ligada.
+Second screen on, but no second display is available.	Segunda tela ligada, mas não tem uma segunda tela disponível.
+Copy report	Copiar relatório
+Scan report copied	Relatório da busca copiado
+Share logs	Compartilhar registros
+The logs could not be packed: {0}	Não deu para juntar os registros: {0}
+3DS Bank closed unexpectedly	O 3DS Bank fechou sozinho
+A crash report was saved. Sharing it helps us fix it: it holds the error, your recent activity, file names and your device model, never your save data.	Um relatório de erro foi salvo. Compartilhar ajuda a gente a corrigir: ele tem o erro, sua atividade recente, nomes de arquivos e o modelo do aparelho, nunca os dados do seu save.
+Not now	Agora não
+Sprite pack	Pacote de sprites
+Already downloaded: every sprite is on this device, so it all works offline.	Já baixado: todos os sprites estão neste aparelho, então tudo funciona offline.
+Catching all the sprites!	Pegando todos os sprites!
+Downloading animated battle sprites and HOME renders for every Pokémon. You can cancel anytime; finished parts are kept and it resumes where it left off.	Baixando sprites animados de batalha e imagens do HOME de todos os Pokémon. Dá para cancelar quando quiser; as partes prontas ficam e o download continua de onde parou.
+Sprite pack complete - fully offline now.	Pacote de sprites completo, agora tudo offline.
+Sprite pack paused - resume anytime from Settings.	Pacote de sprites pausado, continue quando quiser nas Configurações.
+Sprite pack stopped: {0}	O pacote de sprites parou: {0}
+Save could not open	Não deu para abrir o save
+Emulated console storage	Armazenamento de console emulado
+{0} lives inside {1}'s emulated storage - the delicate path. 3DS Bank backs up before every write, but close the emulator first.	{0} fica dentro do armazenamento emulado do {1}, o caminho delicado. O 3DS Bank faz backup antes de cada gravação, mas feche o emulador primeiro.
+Connect	Abrir
+Pow {0} · Acc {1} · PP {2}	Poder {0} · Precisão {1} · PP {2}
+Starting…	Começando…
+Username	Nome de usuário
+Password	Senha
+Sign in	Entrar
+Create account	Criar conta
+Talk to support (WhatsApp)	Falar com o suporte (WhatsApp)
+Your Bank is saved to your account, so uninstalling the app never loses your Pokémon.	Seu Banco fica salvo na sua conta, então desinstalar o app nunca faz você perder seus Pokémon.
+Usernames have 3 to 20 letters, numbers, dots or underscores, with no spaces.	O nome de usuário tem de 3 a 20 letras, números, pontos ou sublinhados, sem espaços.
+The password needs at least {0} characters.	A senha precisa ter pelo menos {0} caracteres.
+Creating your account…	Criando sua conta…
+Signing in…	Entrando…
+Loading your Bank…	Carregando seu Banco…
+Signed in, but your Bank could not be loaded: {0} Try again.	Você entrou, mas não deu para carregar seu Banco: {0} Tente de novo.
+Something went wrong: {0}	Algo deu errado: {0}
+3DS Bank opened on the lower screen. For the two-screen layout, launch it from the main screen.	O 3DS Bank abriu na tela de baixo. Para usar as duas telas, abra pela tela principal.
+Summary · {0}	Resumo · {0}
+Nothing here	Nada aqui
+Can't read this Pokémon\n{0}	Não deu para ler este Pokémon\n{0}
+Empty slot	Espaço vazio
+Not checked	Não verificado
+This Pokémon is still an egg: its stats and moves appear once it hatches.	Este Pokémon ainda é um ovo: os atributos e golpes aparecem quando ele chocar.
+Trainer	Treinador
+ID No.	Nº de ID
+friendship {0}	amizade {0}
+Handler	Treinador atual
+Now with	Agora com
+Its original trainer	Seu treinador original
+OT friendship {0}	Amizade com o TO {0}
+Character	Caráter
+Neutral: no stat is raised or lowered.	Neutra: nenhum atributo sobe ou desce.
+Mint	Menta
+Stats follow it: {0}	Os atributos seguem ela: {0}
+Square sparkles	Brilho quadrado
+Star sparkles	Brilho de estrela
+Trait	Traço
+Gen 1 and 2 Pokémon have no nature or ability.	Pokémon da Ger. 1 e 2 não têm natureza nem habilidade.
+Items & care	Itens e cuidados
+Friendship	Amizade
+Infected	Infectado
+Strain {0}, {1} day(s) left	Cepa {0}, {1} dia(s) restante(s)
+Cured	Curado
+EV gains stay doubled	Os ganhos de EV continuam dobrados
+Never infected	Nunca infectado
+Markings	Marcações
+It loves you deeply.	Ele te ama muito.
+It is very friendly toward you.	Ele é muito amigo seu.
+It is quite friendly.	Ele é bem amigável.
+It is warming up to you.	Ele está se acostumando com você.
+It is still getting used to you.	Ele ainda está se acostumando com você.
+Stat	Atributo
+No stats recorded.	Nenhum atributo registrado.
+Hidden Power	Poder Oculto
+Tera Type	Tipo Tera
+Moves	Golpes
+No moves recorded.	Nenhum golpe registrado.
+Relearnable	Reaprendíveis
+Illegal · {0}	Ilegal · {0}
+Technical Records	Registros Técnicos
+No records learned.	Nenhum registro aprendido.
+Power {0} · Accuracy {1}	Poder {0} · Precisão {1}
+Origin	Origem
+Unknown	Desconhecido
+Received {0}	Recebido {0}
+Met	Encontrado
+Hatched	Chocado
+At Lv. {0}	No Nv. {0}
+Language	Idioma
+This game's met data isn't readable yet.	Os dados de encontro deste jogo ainda não podem ser lidos.
+Format	Formato
+{0}  ·  Gen {1}	{0}  ·  Ger. {1}
+Encryption constant {0}	Constante de criptografia {0}
+Fateful encounter: an event or gift Pokémon.	Encontro fatídico: um Pokémon de evento ou presente.
+Memories	Memórias
+Ribbons & marks	Fitas e marcas
+{0} ribbon(s)  ·  {1} mark(s)	{0} fita(s)  ·  {1} marca(s)
+No ribbons or marks yet.	Ainda sem fitas ou marcas.
+The legality analysis is running.	A análise de legalidade está rodando.
+No legality data for this game.	Sem dados de legalidade para este jogo.
+Why	Por quê
+Legality data only exists for the official games, so ROM hack Pokémon are neither legal nor illegal.	Os dados de legalidade só existem para os jogos oficiais, então Pokémon de ROM hack não são nem legais nem ilegais.
+Every check passed.	Todas as verificações passaram.
+1 problem found.	1 problema encontrado.
+{0} problems found.	{0} problemas encontrados.
+Checks	Verificações
+Invalid	Inválido
+Fishy	Suspeito
+Valid	Válido
+PHYS	FÍS
+SPEC	ESP
+Mystery gift inbox	Caixa de Presente Misterioso
+This game does not expose a supported Mystery Gift card store.	Este jogo não tem um local de cartões de Presente Misterioso suportado.
+No Mystery Gift cards or received-gift records are stored in this save.	Nenhum cartão de Presente Misterioso ou registro de presente recebido neste save.
+Mystery gift inbox · {0}	Caixa de Presente Misterioso · {0}
+Received gift record	Registro de presente recebido
+Stored Wonder Card	Cartão Maravilha guardado
+Pokémon: {0} · Lv. {1}	Pokémon: {0} · Nv. {1}
+Non-Pokémon gift or record	Presente ou registro que não é Pokémon
+History entry	Registro do histórico
+Gift used	Presente usado
+Gift unused	Presente não usado
+{0}\n{1} · {2}\n{3}\n{4}\n\nRead-only: 3DS Bank does not alter cards or received flags.	{0}\n{1} · {2}\n{3}\n{4}\n\nSó leitura: o 3DS Bank não mexe nos cartões nem nas marcações de recebido.
+Card #{0}	Cartão nº {0}
+{0} (current)  {1}	{0} (atual)  {1}
+If {0}  {1}	Se {0}  {1}
+Minted: stats follow {0} ({1}); changing the nature keeps them.	Com menta: os atributos seguem {0} ({1}); mudar a natureza mantém eles.
+This Pokémon cannot change here.	Este Pokémon não pode mudar aqui.
+Pokémon from Generation 1 and 2 have no nature.	Pokémon da Geração 1 e 2 não têm natureza.
+It already has that nature.	Ele já tem essa natureza.
+No personality keeps it the same with that nature.	Nenhuma personalidade deixa ele igual com essa natureza.
+In its game the nature is tied to how it was met, so a new nature would make it illegal. It keeps its nature.	No jogo dele, a natureza está ligada a como ele foi encontrado, então uma natureza nova deixaria ele ilegal. Ele fica com a natureza que tem.
+Search…	Buscar…
+PICK	ESCOLHER
+Move type	Tipo do golpe
+Type: All	Tipo: Todos
+A picks: {0}	A escolhe: {0}
+A or tap again picks: {0}	A ou tocar de novo escolhe: {0}
+Search a Pokémon…	Buscar um Pokémon…
+Types	Tipos
+Any	Qualquer
+Category: {0}	Categoria: {0}
+Power: {0}	Força: {0}
+Theme: {0}	Tema: {0}
+Category	Categoria
+Power	Força
+Theme	Tema
+{0}: Any	{0}: Qualquer
+Ultra Beast	Ultracriatura
+Paradox	Paradoxo
+Pseudo-Legendary	Pseudolendário
+Starter	Inicial
+Fossil	Fóssil
+Baby	Bebê
+Regional Form	Forma regional
+Mega-capable	Pode Mega Evoluir
+Gigantamax-capable	Pode Gigantamax
+Has Alternate Forms	Tem formas alternativas
+400+ BST	400+ de total base
+500+ BST	500+ de total base
+600+ BST	600+ de total base
+Physical Attacker	Atacante físico
+Special Attacker	Atacante especial
+Fast	Rápido
+Sturdy	Resistente
+Dragons	Dragões
+Aquatic	Aquáticos
+Felines	Felinos
+Canines	Caninos
+Birds	Aves
+Dinosaurs	Dinossauros
+Clear all filters	Limpar todos os filtros
+FILTER BY TYPE (toggle)	FILTRAR POR TIPO (liga/desliga)
+A Pokémon must match every checked type.	O Pokémon precisa ter todos os tipos marcados.
+Categories, power, and themes combine with the type gems and generation chips.	Categorias, força e temas se combinam com os tipos e as gerações.
+Legendary, starter, fossil, baby and other groups.	Lendários, iniciais, fósseis, bebês e outros grupos.
+Base stat total or battle style, such as fast.	Total de atributos base ou estilo de batalha, como rápido.
+Fun groups like dragons, birds or dinosaurs.	Grupos divertidos como dragões, aves ou dinossauros.
+Also clears the type and generation picks.	Também limpa os tipos e as gerações escolhidos.
+Rarity and special families. Combines with types, generation, power, and theme.	Raridade e famílias especiais. Combina com tipos, geração, força e tema.
+The fun filters. Subjective by design.	Os filtros divertidos. Subjetivos de propósito.
+Only Pokémon that live in the Bank gain friendship here.	Só Pokémon que moram no Banco ganham amizade aqui.
+This Pokémon cannot gain friendship here.	Este Pokémon não pode ganhar amizade aqui.
+Happy for now. It will want something new in {0} min.	Feliz por enquanto. Vai querer algo novo em {0} min.
+It is asking for a berry.	Está pedindo uma fruta.
+It wants to play.	Quer brincar.
+Its game has no natures.	O jogo dele não tem natureza.
+It already changed its nature once.	Ele já mudou de natureza uma vez.
+It can change its nature after {0} more in the park.	Ele pode mudar de natureza depois de mais {0} no parque.
+It feels at home: it can change its nature once.	Ele se sente em casa: pode mudar de natureza uma vez.
+{0} is no longer in the Bank.	{0} não está mais no Banco.
+{0} already got what it wanted. Come back when it asks for something new.	{0} já ganhou o que queria. Volte quando ele pedir algo novo.
+{0} wanted a berry, not a game.	{0} queria uma fruta, não brincar.
+{0} wanted to play, not to eat.	{0} queria brincar, não comer.
+{0} cannot gain friendship here.	{0} não pode ganhar amizade aqui.
+{0} adores you! Friendship is at its maximum.	{0} te adora! A amizade está no máximo.
+{0} loved it! Friendship +{1} ({2}/255).	{0} amou! Amizade +{1} ({2}/255).
+{0} already changed its nature once.	{0} já mudou de natureza uma vez.
+{0} needs more time in the park first.	{0} precisa de mais tempo no parque primeiro.
+Its nature could not change.	A natureza dele não pôde mudar.
+{0} has a new nature!	{0} tem uma natureza nova!
+Poképark  /  field journal	Poképark  /  diário de campo
+This journal is a playful Poképark story. Game data stays unchanged.	Este diário é uma historinha do Poképark. Os dados do jogo não mudam.
+Mood: {0}	Humor: {0}
+Right now: {0}	Agora: {0}
+PERSONALITY  {0}\n\nMEADOW MEMORY  {1}	PERSONALIDADE  {0}\n\nMEMÓRIA DO CAMPO  {1}
+Favorite little things  {0}	Coisinhas favoritas  {0}
+Meet Pokémon	Conhecer Pokémon
+Options	Opções
+exploring and enjoying the park	explorando e curtindo o parque
+While you were away	Enquanto você estava fora
+Your meadow is waiting. Select a Pokémon in a box or Bank → Send to Poképark.	Seu campo está esperando. Escolha um Pokémon numa caixa ou no Banco → Mandar para o Poképark.
+{0}  ·  {1}/12 residents  ·  Tap a Pokémon · A opens its card	{0}  ·  {1}/12 moradores  ·  Toque num Pokémon · A abre o cartão dele
+Save only	Só do save
+Bank only	Só do Banco
+Disabled	Desligado
+Save + Bank	Save + Banco
+Poképark options	Opções do Poképark
+Auto-fill: {0}. Existing residents are never moved or replaced.	Preencher sozinho: {0}. Os moradores atuais nunca são trocados.
+Park journal	Diário do parque
+Auto-fill mode	Modo de preencher sozinho
+Invite Pokémon	Convidar Pokémon
+Empty park	Esvaziar o parque
+Widget help	Ajuda do widget
+Sprite credits	Créditos dos sprites
+Auto-fill park	Preencher o parque sozinho
+Choose where automatic residents may come from. Manual invites remain available in every mode.	Escolha de onde podem vir os moradores automáticos. Convidar na mão continua funcionando em todos os modos.
+Park guide	Guia do parque
+Open a Pokémon’s action menu in your save boxes or Bank, then choose Send to Poképark. Its original stays right where it is.	Abra o menu de ações de um Pokémon nas caixas do save ou no Banco e escolha Mandar para o Poképark. O original fica onde está.
+Empty the park?	Esvaziar o parque?
+Remove all {0} residents from Poképark? Their original Pokémon stay in their save or Bank.	Tirar os {0} moradores do Poképark? Os Pokémon originais continuam no save ou no Banco.
+A meadow on your home screen	Um campo na sua tela inicial
+Add 3DS Bank Poképark in Cocoon's widget picker. Resize it to give your Pokémon more room. The full meadow shows a quiet, living moment; tap it to return here. Your residents are saved between visits.	Adicione o Poképark do 3DS Bank pelo seletor de widgets do Cocoon. Aumente o tamanho para dar mais espaço aos seus Pokémon. O campo inteiro mostra um momento tranquilo; toque nele para voltar aqui. Seus moradores ficam salvos entre as visitas.
+An empty meadow	Um campo vazio
+Invite a Pokémon from its save-box or Bank action menu with Send to Poképark. Then tap it here to spend some time together.	Convide um Pokémon pelo menu de ações dele numa caixa do save ou no Banco com Mandar para o Poképark. Depois toque nele aqui para passar um tempo juntos.
+Leave the park?	Sair do parque?
+Remove {0} from this meadow? Its original stays in its box. You can invite it again anytime.	Tirar {0} deste campo? O original continua na caixa dele. Dá para convidar de novo quando quiser.
+Leave park	Sair do parque
+A new nature, once	Uma natureza nova, uma vez só
+Change nature?	Mudar a natureza?
+Change	Mudar
+{0} can change its nature only once in its life. Make it {1}?	{0} só pode mudar de natureza uma vez na vida. Deixar ele {1}?
+{0}  ·  L/R switch habitats	{0}  ·  L/R troca de habitat
+Picnic time	Hora do piquenique
+A picnic is better with company! Invite a Pokémon from your boxes or Bank first.	Piquenique é melhor com companhia! Convide um Pokémon das suas caixas ou do Banco primeiro.
+Picnic time!	Hora do piquenique!
+You share a basket of berries with everyone. Happy little sounds drift across the meadow. There’s enough for every resident!	Você divide uma cesta de frutas com todo mundo. Barulhinhos felizes se espalham pelo campo. Tem para todos os moradores!
+Homesick swimmer	Nadador com saudade
+quiet water and familiar shores	água calma e margens conhecidas
+Misses the place it came from and keeps searching the pond for a familiar ripple.	Sente falta de onde veio e fica procurando no lago uma ondinha conhecida.
+looks toward the lake, then gives you a small, uncertain wave.	olha para o lago e depois acena para você, meio sem jeito.
+Short-tempered spark	Faísca esquentada
+warm stones and plenty of personal space	pedras quentes e bastante espaço só dele
+Has been on edge all day and snaps at every leaf that lands nearby.	Ficou irritado o dia todo e briga com cada folha que cai por perto.
+huffs a tiny puff of smoke, then tries very hard to calm down.	solta uma fumacinha e se esforça muito para se acalmar.
+Overloaded thinker	Pensador sobrecarregado
+quiet shade and gentle company	sombra tranquila e companhia calma
+The meadow feels too loud today, even when everything is perfectly still.	O campo parece barulhento demais hoje, mesmo com tudo parado.
+flinches at a distant rustle and slowly relaxes when you stay nearby.	se assusta com um barulho longe e relaxa devagar quando você fica por perto.
+Lonely night wanderer	Andarilho solitário da noite
+dim corners and one trusted friend	cantinhos escuros e um amigo de confiança
+Has spent most of the day at the edge of the meadow, hoping someone will notice.	Passou quase o dia todo na beira do campo, torcendo para alguém notar.
+keeps its distance, but does not leave when you sit beside it.	fica de longe, mas não vai embora quando você senta ao lado.
+Wilted little heart	Coraçãozinho murcho
+soft rain and untouched grass	chuva fraca e grama intocada
+The meadow feels strangely empty today, and even its favorite flowers cannot cheer it up.	O campo parece estranhamente vazio hoje, e nem as flores favoritas animam ele.
+lowers its gaze, then accepts your quiet company.	abaixa o olhar e depois aceita sua companhia em silêncio.
+Uneasy visitor	Visitante desconfiado
+calm voices and a little extra patience	vozes calmas e um pouco mais de paciência
+Still has not decided whether this park is somewhere it can truly relax.	Ainda não decidiu se este parque é um lugar onde pode relaxar de verdade.
+watches you carefully, waiting to see whether you will stay.	te observa com cuidado, esperando para ver se você vai ficar.
+Curious explorer	Explorador curioso
+new paths and rustling grass	caminhos novos e grama balançando
+Keeps checking whether that flower has grown since yesterday.	Fica conferindo se aquela flor cresceu desde ontem.
+tilts its head, curious about your day.	inclina a cabeça, curioso sobre o seu dia.
+Easygoing dreamer	Sonhador tranquilo
+quiet afternoons and soft grass	tardes calmas e grama macia
+Has found a sunny patch and considers it the best spot in the park.	Achou um cantinho de sol e acha que é o melhor lugar do parque.
+gives you a slow, contented nod.	faz que sim com a cabeça, devagar e satisfeito.
+Friendly neighbor	Vizinho simpático
+company and little greetings	companhia e cumprimentos
+Always seems to be nearby when a new resident arrives.	Parece estar sempre por perto quando chega um morador novo.
+comes closer to keep you company.	chega mais perto para te fazer companhia.
+Playful wanderer	Andarilho brincalhão
+stretching its legs and surprises	esticar as pernas e surpresas
+Once followed a drifting leaf all the way across the meadow.	Uma vez seguiu uma folha voando de um lado a outro do campo.
+does a cheerful little wiggle.	dá uma rebolada animada.
+Thoughtful observer	Observador pensativo
+watching the pond and peaceful corners	olhar o lago e cantinhos tranquilos
+Is convinced the ripples on the pond are trying to say something.	Tem certeza de que as ondinhas do lago estão tentando dizer alguma coisa.
+pauses its daydream to look up at you.	para de sonhar acordado para olhar para você.
+Flower enthusiast	Fã de flores
+colorful petals and fresh air	pétalas coloridas e ar fresco
+Has a favorite flower, but seems to pick a different one every day.	Tem uma flor favorita, mas parece escolher uma diferente todo dia.
+looks delighted that you stopped by.	parece muito feliz por você ter passado aqui.
+Tiny pathfinder	Pequeno desbravador
+hidden trails and bent blades of grass	trilhas escondidas e grama amassada
+Found a shortcut through the meadow and now checks whether anyone else has discovered it.	Achou um atalho pelo campo e agora confere se mais alguém descobriu.
+points proudly toward a nearby path.	aponta orgulhoso para uma trilha ali perto.
+Rain listener	Ouvinte da chuva
+fresh puddles and soft drumming	poças frescas e batuque suave
+Remembers the last rainstorm by the little rings it left in the pond.	Lembra da última chuva pelas rodinhas que ela deixou no lago.
+leans closer as if waiting for the clouds to speak.	chega mais perto como se esperasse as nuvens falarem.
+Berry guardian	Guardião das frutas
+ripe berries and generous picnics	frutas maduras e piqueniques fartos
+Planted a berry seed near the fence and visits it with great responsibility.	Plantou uma semente de fruta perto da cerca e visita ela com muita responsabilidade.
+offers you a berry, then keeps one for later.	te oferece uma fruta e guarda outra para depois.
+Cloud watcher	Observador de nuvens
+open skies and slow afternoons	céu aberto e tardes lentas
+Once spent so long watching clouds that it mistook one for a very sleepy Pokémon.	Uma vez ficou tanto tempo olhando as nuvens que achou que uma era um Pokémon dormindo.
+looks up, then points at a particularly convincing cloud.	olha para cima e aponta para uma nuvem bem convincente.
+Grassland guide	Guia do capinzal
+tall grass and familiar footsteps	grama alta e passos conhecidos
+Can recognize every regular resident by the sound of their walk through the meadow.	Reconhece cada morador pelo som dos passos no campo.
+greets you with a knowing little nod.	te cumprimenta com um aceno de quem já sabe.
+Sunset collector	Colecionador de pôr do sol
+golden light and quiet goodbyes	luz dourada e despedidas tranquilas
+Keeps returning to the same hill to watch the meadow turn amber at day's end.	Volta sempre ao mesmo morro para ver o campo ficar cor de âmbar no fim do dia.
+settles beside you for one peaceful moment.	senta ao seu lado por um momento de paz.
+The first pages are still blank. Leave your Pokémon to enjoy the park, then check back later.	As primeiras páginas ainda estão em branco. Deixe seus Pokémon curtirem o parque e volte depois.
+A record of discoveries, friendships, disagreements, and quiet moments while you were away.	Um registro de descobertas, amizades, briguinhas e momentos tranquilos enquanto você estava fora.
+PMD SpriteCollab · Community sprites: CC BY-NC 4.0. Original PMD sprites: CHUNSOFT. Pokémon © Nintendo / Creatures / GAME FREAK. Sprites displayed with scaling; choose a visitor for its contributors and source.	PMD SpriteCollab · Sprites da comunidade: CC BY-NC 4.0. Sprites originais de PMD: CHUNSOFT. Pokémon © Nintendo / Creatures / GAME FREAK. Sprites mostrados com redimensionamento; escolha um visitante para ver os autores e a fonte.
+Open sprite repository	Abrir repositório de sprites
+Bundled PKHeX sprite; PMD walking sprite unavailable.	Sprite do PKHeX incluído; o sprite andando do PMD não está disponível.
+View original credits	Ver créditos originais
+Poképark  /  resident journal	Poképark  /  diário do morador
+It wants	Ele quer
+Right now	Agora
+Personality	Personalidade
+Favorite little things	Coisinhas favoritas
+Meadow memory	Memória do campo
+Snack and Play grant its wish; the friendship it gains is saved to the Pokémon and goes with it to its game.	Fruta e Brincar realizam o desejo dele; a amizade que ele ganha fica salva no Pokémon e vai junto para o jogo.
+Park personality is just for fun. Your Pokémon's game data stays unchanged.	A personalidade no parque é só diversão. Os dados de jogo do seu Pokémon não mudam.
+Talk	Conversar
+Snack	Fruta
+Relax	Descansar
+A  Choose    B  Back	A  Escolher    B  Voltar
+{0} · Trainer {1}	{0} · Treinador {1}
+Resting and enjoying the view	Descansando e curtindo a vista
+Enjoying a berry picnic	Curtindo um piquenique de frutas
+Playful	Brincalhão
+Bouncing along with the ball	Pulando junto com a bola
+Peaceful	Tranquilo
+Listening to the meadow	Ouvindo o campo
+Delighted	Encantado
+Happy to see you!	Feliz em te ver!
+This Pokémon is no longer in the bank.	Este Pokémon não está mais no banco.
+Bank · Box {0} · Slot {1}	Banco · Caixa {0} · Espaço {1}
+Open a save to send a Pokémon to Poképark.	Abra um save para mandar um Pokémon para o Poképark.
+Select a Pokémon first.	Escolha um Pokémon primeiro.
+Eggs can visit Poképark after they hatch.	Ovos podem visitar o Poképark depois de chocar.
+{0} · {1} · Slot {2}	{0} · {1} · Espaço {2}
+{0} already lives in Poképark.	{0} já mora no Poképark.
+Poképark has {0} residents. Open the park and remove a resident before adding another.	O Poképark tem {0} moradores. Abra o parque e tire um morador antes de adicionar outro.
+{0} now lives in Poképark! Visit it to give it treats and play.	{0} agora mora no Poképark! Visite para dar frutas e brincar.
+{0} now visits Poképark! Your original Pokémon stays in its save.	{0} agora visita o Poképark! O Pokémon original fica no save.
+A / tap · continue	A / toque · continuar
+UNSUPPORTED ROM HACK	ROM HACK NÃO SUPORTADO
+This looks like a ROM hack. 3DS Bank detected it but its engine is not built for this game: Pokémon, moves or items may show wrong and editing can damage the save. Continue at your own risk.	Isto parece um ROM hack. O 3DS Bank reconheceu, mas o motor dele não foi feito para este jogo: Pokémon, golpes ou itens podem aparecer errados. Só dá para ver.
+Browse read-only	Só ver
+ROM HACK · UNSUPPORTED	ROM HACK · NÃO SUPORTADO
+SAVE IS READ-ONLY	O SAVE É SÓ LEITURA
+This save was set to open as {0}, but its bytes carry the {1} layout. Change the game from the save's menu on the home screen. The file was not touched.	Este save foi configurado para abrir como {0}, mas os dados dele têm o formato {1}. Mude o jogo no menu do save na tela inicial. O arquivo não foi mexido.
+a standard game	um jogo comum
+The destination slot is occupied.	O espaço de destino está ocupado.
+The party is full.	A equipe está cheia.
+from {0}	de {0}
+This is not a readable Pokémon file.	Este não é um arquivo de Pokémon legível.
+Only the transfer flow can take a Pokémon back to an older game, because it shows what the downgrade changes.	Só a transferência pode levar um Pokémon para um jogo mais antigo, porque ela mostra o que muda.
+3DS Bank only moves Pokémon forward, like the official games: it cannot go back to an older generation.	O 3DS Bank só leva Pokémon para frente, como os jogos oficiais: ele não volta para uma geração mais antiga.
+The official games have no way to bring it into this game, so 3DS Bank does not either.	Os jogos oficiais não têm como levar ele para este jogo, então o 3DS Bank também não.
+Let's Go Pikachu and Eevee only exchange Pokémon with each other.	Let's Go Pikachu e Eevee só trocam Pokémon entre si.
+Eggs cannot travel to another generation. Hatch it first.	Ovos não podem ir para outra geração. Choque primeiro.
+This game cannot keep it as it is (its species or form would change), so it stays where it is.	Este jogo não consegue manter ele como está (a espécie ou a forma mudaria), então ele fica onde está.
+Moving it out of its ROM hack would rewrite parts of it, so it stays in its own game.	Tirar ele do ROM hack reescreveria partes dele, então ele fica no próprio jogo.
+Day Care	Creche
+Day Care {0}	Creche {0}
+Card {0}	Cartão {0}
+Slot 1	Espaço 1
+Slot 2	Espaço 2
+Circle	Círculo
+Triangle	Triângulo
+Square	Quadrado
+Heart	Coração
+Star	Estrela
+Diamond	Losango
+On	Ligado
+Off	Desligado
+Legality is not checked for this game.	A legalidade não é verificada para este jogo.
+No findings.	Nada encontrado.
+Open save	Abrir save
+Set game…	Definir jogo…
+Hide save	Esconder save
+Reset to detected	Voltar ao detectado
+Make read-only	Deixar só leitura
+The colour of this save's cartridge on the Home shelf.	A cor do cartucho deste save na estante da tela inicial.
+Say which game this is, from those that share its save format.	Diga qual jogo é este, entre os que usam o mesmo formato de save.
+{0} · read-only now	{0} · só leitura agora
+Remove from Home and pickers. Settings can show it again.	Tira da tela inicial e das listas. As Configurações podem mostrar de novo.
+Forget your name, colour and game choices. The file is not touched.	Esquece o nome, a cor e o jogo que você escolheu. O arquivo não é mexido.
+Forget this save's name, color, game choice and ROM-hack editing choice, and show it again if hidden? The save file itself is not touched.	Esquecer o nome, a cor, o jogo e a escolha de ROM hack deste save, e mostrar de novo se estiver escondido? O arquivo de save não é mexido.
+{0} · set by you	{0} · definido por você
+{0} · read from the save	{0} · lido do save
+Name this save	Nome deste save
+Leave empty to use the game's name	Deixe vazio para usar o nome do jogo
+Console color	Cor do console
+The standard colour for this generation.	A cor padrão desta geração.
+Cartridge color	Cor do cartucho
+This save uses a CFRU layout. Only games that write it are listed, so 3DS Bank never opens it with the wrong engine.	Este save usa o formato CFRU. Só os jogos que gravam nele aparecem, então o 3DS Bank nunca abre ele com o motor errado.
+Pick the retail game, or mark it as a ROM hack built on it.	Escolha o jogo original, ou marque como um ROM hack feito em cima dele.
+Only games that share this save's layout are listed. A ROM hack built on it keeps the retail engine.	Só aparecem jogos com o mesmo formato deste save. Um ROM hack feito em cima dele usa o motor do jogo original.
+This game is…	Este jogo é…
+MMM d, yyyy	d 'de' MMM 'de' yyyy
+{0} emulators	{0} emuladores
+No diagnostic scan has run yet. Use Rescan games, then open Scan report again.	Nenhuma busca de diagnóstico rodou ainda. Use Buscar jogos de novo e abra o Relatório da busca outra vez.
+Link an emulator's storage to begin.	Vincule o armazenamento de um emulador para começar.
+No storage units linked yet. Open Link and choose your platform and emulator.	Nenhum armazenamento vinculado ainda. Abra Vincular e escolha sua plataforma e emulador.
+a scan	uma busca
+Scanning {0} unit · {1}…	Buscando {0} · {1}…
+Scan of {0} failed: {1}	A busca em {0} falhou: {1}
+No games found. Scanned {0} file(s), {1} looked like saves but did not parse.	Nenhum jogo encontrado. {0} arquivo(s) lido(s), {1} pareciam saves mas não abriram.
+{0} save(s) on the shelf. Scanned {1} file(s).	{0} save(s) na estante. {1} arquivo(s) lido(s).
+opening a save file	abrindo um arquivo de save
+Select the save file to link…	Escolha o arquivo de save para vincular…
+Link cancelled.	Vínculo cancelado.
+Linking {0}…	Vinculando {0}…
+Storage linked.	Armazenamento vinculado.
+Could not link save: {0}	Não deu para vincular o save: {0}
+{0} linked	{0} vinculado
+Found {0} Pokémon save{1} in {2}.	{0} save(s) de Pokémon encontrado(s) em {2}.
+No saves found in {0}	Nenhum save encontrado em {0}
+{0} file(s) looked like saves but could not be read. 	{0} arquivo(s) pareciam saves mas não puderam ser lidos. 
+ The folder stays linked; unlink it from Manage linked storage.	 A pasta continua vinculada; desvincule em Gerenciar armazenamentos vinculados.
+Pick the emulator's user folder, the one that contains sdmc (sdmc or Nintendo 3DS work too). Saves live in sdmc/Nintendo 3DS/…/title/00040000/<game>/data/00000001/main.	Escolha a pasta de usuário do emulador, a que tem a sdmc (sdmc ou Nintendo 3DS também funcionam). Os saves ficam em sdmc/Nintendo 3DS/…/title/00040000/<jogo>/data/00000001/main.
+Pick the folder that holds your .sav files: next to your ROMs by default, or the save folder set in melonDS's settings.	Escolha a pasta com seus arquivos .sav: ao lado das ROMs por padrão, ou a pasta de saves definida nas configurações do melonDS.
+Pick DraStic's backup folder (its .dsv battery saves) or the DraStic data folder.	Escolha a pasta de backup do DraStic (os saves .dsv) ou a pasta de dados do DraStic.
+Pick Eden's files root, the folder that contains its emulated storage.	Escolha a pasta raiz do Eden, a que tem o armazenamento emulado.
+Pick the folder that holds your save files.	Escolha a pasta com seus arquivos de save.
+opening {0}	abrindo {0}
+Connecting to {0}…	Abrindo {0}…
+Connected.	Aberto.
+Could not connect: {0}	Não deu para abrir: {0}
+box summary	resumo da caixa
+{0} · SLOT {1}	{0} · ESPAÇO {1}
+EMPTY BANK SLOT	ESPAÇO DO BANCO VAZIO
+POKÉPARK  /  FIELD JOURNAL	POKÉPARK  /  DIÁRIO DE CAMPO
+FAVORITE LITTLE THINGS  {0}	COISINHAS FAVORITAS  {0}
+SUMMARY ON THE TOP SCREEN  ·  L / R  NEXT POKéMON  ·  B  CLOSE	RESUMO NA TELA DE CIMA  ·  L / R  PRÓXIMO POKéMON  ·  B  FECHAR
+{0} · checking the download…	{0} · conferindo o download…
+{0} · downloading {1} / {2} MB	{0} · baixando {1} / {2} MB
+{0} · unpacking {1} / {2}	{0} · descompactando {1} / {2}
+First free space	Primeiro espaço livre
+Wherever there is room, box by box.	Onde tiver espaço, caixa por caixa.
+Full	Cheia
+{0} free	{0} livres
+{0} Pokémon. Pick where they start.	{0} Pokémon. Escolha onde eles começam.
+Free	Livre
+Taken, skipped	Ocupado, pulado
+Box {0}: start at which slot?	Caixa {0}: começar em qual espaço?
+They fill the free slots from here on, then the next boxes. Taken slots are skipped.	Eles ocupam os espaços livres daqui em diante e depois as próximas caixas. Os ocupados são pulados.
+There is no free slot from there on.	Não tem espaço livre daí em diante.
+box {0} slot {1}	caixa {0} espaço {1}
+{0} to {1}	{0} até {1}
+{0}; {1} will not fit.	{0}; {1} não vão caber.
+Save	Salvar
+Color scheme	Esquema de cores
+{0} (in use)	{0} (em uso)
+3DS Bank does not edit Pokémon or save data. Pokémon can only be moved, sent, released or exported.	O 3DS Bank não edita Pokémon nem dados do save. Pokémon só podem ser movidos, enviados, soltos ou exportados.
+3DS Bank only opens saves from Generation 1 to 7. The file was not touched.	O 3DS Bank só abre saves da Geração 1 à 7. O arquivo não foi mexido.
+Money	Dinheiro
+This game does not expose a supported trainer-record table.	Este jogo não tem uma tabela de recordes de treinador suportada.
+Previous page	Página anterior
+Next page	Próxima página
+Trainer records · {0}/{1}	Recordes do treinador · {0}/{1}
+Read-only: record meanings and safe limits differ by game.	Só leitura: o significado e os limites dos recordes mudam de jogo para jogo.
+Record {0} · {1}	Recorde {0} · {1}
+Record {0} · {1}/{2}	Recorde {0} · {1}/{2}
+{0} cannot go to {1}. A ROM hack only takes back its own Pokémon.	{0} não pode ir para {1}. Um ROM hack só aceita de volta os próprios Pokémon.
+{0} cannot go to {1}. 	{0} não pode ir para {1}. 
+{0} Only {1} can take it.	{0} Só {1} aceita ele.
+It is a {0} Pokémon with no Generation 3 counterpart, so only {1} can take it.	Ele é um Pokémon de {0} sem equivalente na Geração 3, então só {1} aceita ele.
+{0} is not a readable Pokémon file.	{0} não é um arquivo de Pokémon legível.
+Transfer	Transferir
+Warnings (backwards transfer)	Avisos (transferência para trás)
+Warnings	Avisos
+… and {0} more warnings	… e mais {0} avisos
+Changes	Mudanças
+… and {0} more	… e mais {0}
+Send anyway	Mandar mesmo assim
+Send	Mandar
+Transfer preview	Prévia da transferência
+Likely flagged as illegal ✗ (the game still loads it)	Deve ser marcado como ilegal ✗ (o jogo ainda abre)
+Legality unknown	Legalidade desconhecida
+It goes back into its own game exactly as it was stored.	Ele volta para o próprio jogo exatamente como foi guardado.
+Conversion details are not available for this game's engine; the transfer itself is unchanged.	Os detalhes da conversão não estão disponíveis para o motor deste jogo; a transferência em si não muda.
+This game has no offline legality analysis.	Este jogo não tem análise de legalidade offline.
+No legality analyzer is available.	Nenhum analisador de legalidade disponível.
+Legality analysis failed for this entity.	A análise de legalidade falhou para este Pokémon.
+Egg hatches during the transfer: the target format cannot store eggs from the old game.	O ovo choca na transferência: o formato de destino não guarda ovos do jogo antigo.
+ (re-derived from the ability slot in the target game's species data)	 (calculada de novo pelo espaço de habilidade nos dados do jogo de destino)
+Ability: {0} → {1}{2}.	Habilidade: {0} → {1}{2}.
+Nature: {0} → {1}.	Natureza: {0} → {1}.
+Gender: {0} → {1}.	Gênero: {0} → {1}.
+Shiny state: {0} → {1}.	Shiny: {0} → {1}.
+Form: {0} → {1}.	Forma: {0} → {1}.
+PID created: {0} (Gen 1-2 Pokémon have no PID; the modern format needs a new identity).	PID criado: {0} (Pokémon da Ger. 1-2 não têm PID; o formato moderno precisa de uma identidade nova).
+PID regenerated: {0} → {1} (old games track nature/gender/ability in the PID).	PID gerado de novo: {0} → {1} (jogos antigos guardam natureza/gênero/habilidade no PID).
+Encryption constant set to {0}.	Constante de criptografia definida como {0}.
+ (Gen 1-2 stat DNA does not map 1:1 to modern IVs)	 (os atributos da Ger. 1-2 não correspondem 1:1 aos IVs modernos)
+IVs rewritten: {0}{1}.	IVs reescritos: {0}{1}.
+Ball: {0} → {1}.	Bola: {0} → {1}.
+Met location: {0} → {1}.	Local de encontro: {0} → {1}.
+Egg location: {0} → {1}.	Local do ovo: {0} → {1}.
+Met level: {0} → {1}.	Nível de encontro: {0} → {1}.
+Met date: {0} → {1}.	Data de encontro: {0} → {1}.
+Origin game: {0} → {1}.	Jogo de origem: {0} → {1}.
+Nickname: '{0}' → '{1}'.	Apelido: '{0}' → '{1}'.
+Nickname flag: {0} → {1}.	Marcação de apelido: {0} → {1}.
+Original trainer: '{0}' → '{1}'.	Treinador original: '{0}' → '{1}'.
+Original trainer gender: {0} → {1}.	Gênero do treinador original: {0} → {1}.
+Original trainer ID: {0}/{1} → {2}/{3}.	ID do treinador original: {0}/{1} → {2}/{3}.
+Moves: {0} will be lost (the target format cannot hold it).	Golpes: {0} será perdido (o formato de destino não guarda ele).
+Moves: slot {0} gains {1}.	Golpes: o espaço {0} ganha {1}.
+Moves: {0} → {1}.	Golpes: {0} → {1}.
+Held item lost: {0}.	Item segurado perdido: {0}.
+Held item gained: {0}.	Item segurado ganho: {0}.
+Held item: {0} → {1}.	Item segurado: {0} → {1}.
+Held item reinterpreted: {0} → {1} (the index now points into the target game's item table).	Item segurado reinterpretado: {0} → {1} (o número agora aponta para a tabela de itens do jogo de destino).
+{0} (count {1}→{2})	{0} (quantidade {1}→{2})
+Ribbons lost: {0}.	Fitas perdidas: {0}.
+Ribbons gained: {0}.	Fitas ganhas: {0}.
+{0} → {1} (box {2}).	{0} → {1} (caixa {2}).
+{0} arrived from a transfer	{0} chegou por transferência
+{0} joined {1} (box {2}).	{0} entrou em {1} (caixa {2}).
+No game is connected.	Nenhum jogo aberto.
+{0} has room for {1} of {2} Pokémon.	{0} tem espaço para {1} de {2} Pokémon.
+{0} cannot enter {1}.	{0} não pode entrar em {1}.
+{0} has no empty slot from box {1} slot {2} onward.	{0} não tem espaço vazio a partir da caixa {1} espaço {2}.
+{0} has no empty slot in any box.	{0} não tem espaço vazio em nenhuma caixa.
+{0} of {1} Pokémon carry species ids that do not exist in vanilla {2}, so this is most likely a ROM hack built on its layout.	{0} de {1} Pokémon têm números de espécie que não existem no {2} original, então isto deve ser um ROM hack feito no formato dele.
+this save does not round-trip as vanilla {0}: its sector checksums follow a different layout, so it is most likely a ROM hack PKForge does not recognize, and writing it as vanilla would corrupt it.	este save não fecha como o {0} original: as somas de verificação seguem outro formato, então deve ser um ROM hack que o 3DS Bank não reconhece, e gravar como original estragaria o arquivo.
+{0} of {1} party Pokémon do not decode as vanilla {2} data, so this is most likely a ROM hack PKForge does not recognize.	{0} de {1} Pokémon da equipe não abrem como dados do {2} original, então deve ser um ROM hack que o 3DS Bank não reconhece.
+{0} of {1} PC Pokémon do not decode as vanilla {2} data, so this is most likely a ROM hack PKForge does not recognize.	{0} de {1} Pokémon do PC não abrem como dados do {2} original, então deve ser um ROM hack que o 3DS Bank não reconhece.
+the save could not be re-read for the safety check ({0}).	não deu para reler o save para a verificação de segurança ({0}).
+the new bytes are no longer a readable save.	os dados novos não são mais um save legível.
+the write would turn a {0} save into a {1} one.	a gravação transformaria um save {0} num {1}.
+the Pokémon slots could not be compared ({0}).	não deu para comparar os espaços de Pokémon ({0}).
+the number of Pokémon slots changed.	o número de espaços de Pokémon mudou.
+{0} held a readable Pokémon that the new bytes corrupt.	{0} tinha um Pokémon legível que os dados novos estragam.
+{0} changed although this edit did not target it.	{0} mudou sem esta mudança mirar nele.
+Party slot {0}	Equipe, espaço {0}
+Box {0}, slot {1}	Caixa {0}, espaço {1}
+♪  Talk	♪  Conversar
+●  Berry	●  Fruta
+✦  Play	✦  Brincar
+~  Relax	~  Descansar
+↗  Leave park	↗  Sair do parque
+✧  Change nature	✧  Mudar natureza
+A berry or a game grants its wish; the friendship it gains is saved to the Pokémon and goes with it to its game.	Uma fruta ou uma brincadeira realiza o desejo dele; a amizade que ele ganha fica salva no Pokémon e vai junto para o jogo.
+Language: {0}	Idioma: {0}
+Português (Brasil) or English. Moves, items and natures keep their English names.	Português (Brasil) ou inglês. Golpes, itens e naturezas ficam com os nomes em inglês.
+Menus, messages and the Poképark in Portuguese.	Menus, mensagens e o Poképark em português.
+Menus, messages and the Poképark in English.	Menus, mensagens e o Poképark em inglês.
+Follow the phone	Igual ao celular
+Português when the phone is in Portuguese, English otherwise.	Português quando o celular está em português, inglês nos outros casos.
+Offline	Offline

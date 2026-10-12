@@ -124,7 +124,7 @@ public sealed class HomePage : ContentPage, IPadHandler
         var root = new Grid
         {
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("3DS Bank", "Offline"), bodyHost, footer },
+            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("3DS Bank", SignedInName() ?? "Offline"), bodyHost, footer },
         };
         Grid.SetRow((View)root.Children[1], 1);
         Grid.SetRow(bodyHost, 2);
@@ -135,6 +135,10 @@ public sealed class HomePage : ContentPage, IPadHandler
     }
 
     private Grid _hostGrid = null!;
+
+    /// <summary>The account this phone's Bank is saved to, shown in the status strip.</summary>
+    private static string? SignedInName() =>
+        IPlatformApplication.Current?.Services.GetService<AccountService>()?.Username is { Length: > 0 } name ? name : null;
 
     /// <summary>
     /// The shelf's selection is drawn by PKForge (the cyan frame); Android's own focused
@@ -601,8 +605,10 @@ public sealed class HomePage : ContentPage, IPadHandler
         if (hiddenCount > 0) options.Add(new PadOption(hiddenOption, IconPath: "show", Detail: "Saves you hid from Home. Pick one to show it again."));
         var scheme = $"Color scheme: {PKForge.Chrome.ColorTheme.Current.Name}";
         var background = $"Box background: {BoxBackground.Name(BoxBackground.Style)}";
+        var language = $"Language: {Lang.CurrentName}";
         options.AddRange(
         [
+            new PadOption(language, IconPath: "editor", Detail: "Português (Brasil) or English. Moves, items and natures keep their English names."),
             new PadOption(scheme, IconPath: "palette", Detail: "The app's colors: the default blues or a theme for each type."),
             new PadOption(background, IconPath: "box", Detail: "How each PC box shows the wallpaper the game gives it."),
             new PadOption("Restore points", IconPath: "history", Detail: "The backups made before each write, to put a save back as it was."),
@@ -617,6 +623,7 @@ public sealed class HomePage : ContentPage, IPadHandler
         if (choice == hiddenOption) { await ShowHiddenSavesAsync(); return; }
         if (choice == scheme) { await ShowColorSchemeAsync(); return; }
         if (choice == background) { await ShowBoxBackgroundAsync(); return; }
+        if (choice == language) { await ShowLanguageAsync(); return; }
         switch (choice)
         {
             case "Link an emulator": await ShowLinkMenuAsync(); break;
@@ -930,6 +937,22 @@ public sealed class HomePage : ContentPage, IPadHandler
             BoxBackground.Set(style);
             _viewModel.Status = $"Box background: {BoxBackground.Name(style)}.";
         }
+    }
+
+    /// <summary>Português or English; the screens are built again in the new language.</summary>
+    private async Task ShowLanguageAsync()
+    {
+        const string portuguese = "Português (Brasil)", english = "English", phone = "Follow the phone";
+        var picked = await PadMenu.ShowAsync(_hostGrid, "Language", null,
+            new PadOption(portuguese, Detail: "Menus, messages and the Poképark in Portuguese."),
+            new PadOption(english, Detail: "Menus, messages and the Poképark in English."),
+            new PadOption(phone, Detail: "Português when the phone is in Portuguese, English otherwise."));
+        var code = picked switch { portuguese => Lang.Portuguese, english => Lang.English, phone => "", _ => null };
+        if (code is null || code == Lang.Setting) return;
+        var wasPortuguese = Lang.IsPortuguese;
+        Lang.Set(code);
+        AppLog.Info("lang", $"Player picked language '{code}'");
+        if (Lang.IsPortuguese != wasPortuguese && Application.Current is App app) await app.ReloadForThemeAsync();
     }
 
     /// <summary>The color scheme picker; a new scheme rebuilds Home and the lower screen in its colors.</summary>

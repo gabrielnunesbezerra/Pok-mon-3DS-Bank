@@ -9,6 +9,9 @@ namespace PKForge.Chrome;
 /// </summary>
 public static class PksmPaint
 {
+    /// <summary>Translates text drawn on canvases (headers, banners, labels); the app sets it to its language.</summary>
+    public static Func<string, string> Localize { get; set; } = static text => text;
+
     // ---------- Shared brushes ----------
 
     private static SKPaint Paint(SKColor c) => new() { Color = c, IsAntialias = true, Style = SKPaintStyle.Fill };
@@ -107,6 +110,7 @@ public static class PksmPaint
     /// <summary>Header strip: accent body (cobalt by default), soft top light, dark outline, white caption.</summary>
     public static void HeaderStrip(SKCanvas c, SKRect r, string label, SKFont font, SKColor? accent = null)
     {
+        label = Localize(label);
         var body = accent ?? Pksm.HeaderBlue;
         using (var outline = Paint(Pksm.ButtonBlueDeep)) c.DrawRoundRect(r, 4, 4, outline);
         var inner = SKRect.Inflate(r, -1.5f, -1.5f);
@@ -220,6 +224,7 @@ public static class PksmPaint
     /// </summary>
     public static void BoxNameBar(SKCanvas c, SKRect r, string label, SKFont font, bool canPrev, bool canNext)
     {
+        label = Localize(label);
         using (var outline = Paint(Pksm.ButtonBlueDeep)) c.DrawRoundRect(r, 4, 4, outline);
         var inner = SKRect.Inflate(r, -1.5f, -1.5f);
         Vertical(c, inner, 3, Lighter(Pksm.HeaderBlue, 0.16f), Darker(Pksm.HeaderBlue, 0.1f));
@@ -327,12 +332,13 @@ public static class PksmPaint
     /// <summary>Pixel-font text helper.</summary>
     public static void DrawText(SKCanvas c, string text, float x, float y, SKFont font, SKPaint paint, SKTextAlign align)
     {
-        c.DrawText(text, x, y, align, font, paint);
+        c.DrawText(Localize(text), x, y, align, font, paint);
     }
 
     /// <summary>Text with the classic 2px offset game shadow. y is the baseline.</summary>
     public static void ShadowText(SKCanvas c, string text, float x, float y, SKFont font, SKColor color, SKColor shadow, SKTextAlign align = SKTextAlign.Left)
     {
+        text = Localize(text);
         using (var sp = new SKPaint { Color = shadow })
             c.DrawText(text, x + 2, y + 2, align, font, sp);
         using (var fp = new SKPaint { Color = color })

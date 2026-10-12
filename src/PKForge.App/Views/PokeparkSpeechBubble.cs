@@ -27,11 +27,11 @@ public sealed class PokeparkSpeechBubble : IPadHandler
     private PokeparkSpeechBubble(Grid host, string speaker, string message, ParkPokemon? mon,
         ISpriteService? sprites, PokeparkSpriteService? walking)
     {
-        _host = host; _message = message;
+        _host = host; _message = Lang.T(message);
         _router = IPlatformApplication.Current?.Services.GetService<GamepadRouter>();
         var ink = Color.FromArgb("#355443");
-        _line = new Label { TextColor = ink, FontFamily = "PixelUI", FontSize = 17,
-            LineBreakMode = LineBreakMode.WordWrap, VerticalOptions = LayoutOptions.Center };
+        _line = Lang.Raw(new Label { TextColor = ink, FontFamily = "PixelUI", FontSize = 17,
+            LineBreakMode = LineBreakMode.WordWrap, VerticalOptions = LayoutOptions.Center });
         _hint = new Label { Text = "A / tap · reveal", TextColor = Color.FromArgb("#74846A"),
             FontFamily = "PixelUI", FontSize = UiTokens.TextSmall, HorizontalOptions = LayoutOptions.End };
         var name = new Label { Text = speaker, FontFamily = "PixelUI", FontSize = 17,

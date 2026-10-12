@@ -10,8 +10,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <ApplicationId>io.github.gabrielnunesbezerra.threedsbank</ApplicationId>
     <ApplicationTitle>3DS Bank</ApplicationTitle>
-    <ApplicationVersion>110</ApplicationVersion>
-    <ApplicationDisplayVersion>1.1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>120</ApplicationVersion>
+    <ApplicationDisplayVersion>1.2.0</ApplicationDisplayVersion>
     <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DiagnosticBuild)' == 'true'">
@@ -35,9 +35,10 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidLinkDescription Include="Platforms/Android/linker.xml" />
-    <MauiIcon Include="Resources/AppIcon/pkforge.png" Color="#14121D" />
-    <MauiSplashScreen Include="Resources/Splash/splash.png" Color="#14121D" BaseSize="180,180" />
+    <MauiIcon Include="Resources/AppIcon/pkforge.png" Color="#0E2233" />
+    <MauiSplashScreen Include="Resources/Splash/splash.png" Color="#0E2233" BaseSize="180,180" />
     <MauiFont Include="Resources/Fonts/*.ttf" />
+    <EmbeddedResource Include="Resources/I18n/pt-BR.tsv" LogicalName="i18n.pt-BR.tsv" />
   </ItemGroup>
   <ItemGroup>
     <!-- Bundled fallback sprites from pristine PKHeX submodule (always offline-available). -->

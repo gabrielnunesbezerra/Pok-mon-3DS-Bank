@@ -12,7 +12,21 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   EVs, golpes, natureza, shiny, itens, dinheiro, Pokédex, eventos, legalização, evolução
   dentro do app, criação de Pokémon, Mystery Gift, editor hexadecimal ou editores de save.
   O modo Hardcore do PKForge fica ligado para sempre e não aparece nas configurações, e o
-  próprio motor do app recusa essas operações mesmo que alguma tela tente fazer.
+  próprio motor do app recusa essas operações mesmo que alguma tela tente fazer. A única
+  exceção é o cuidado no Poképark, explicado abaixo.
+- **Poképark.** Cada Pokémon do Bank que mora no parque pede uma fruta ou uma brincadeira, e
+  o pedido muda a cada 30 minutos. Atender o pedido dá +10 de amizade uma vez por pedido, e
+  a amizade fica salva no Pokémon e vai junto para o jogo. Depois de 3 horas no parque ele
+  pode mudar de natureza uma única vez na vida. Se a nova natureza deixaria o Pokémon ilegal
+  (na Geração 3 e 4 a natureza depende de como ele foi encontrado), a troca é recusada.
+- **Transferências pesadas são recusadas.** O Pokémon só vai para frente, como nos jogos
+  oficiais: não volta para uma geração mais antiga, não troca de espécie ou forma (um Rattata
+  de Alola não vai para Pokémon X), Let's Go só troca com Let's Go e uma ROM hack só recebe
+  de volta os próprios Pokémon. O app mostra o motivo da recusa.
+- **Sem Pokémon Showdown.** Exportar e importar times do Showdown e o QR de .pk saíram.
+- **Português.** O app fica em português (Brasil) ou inglês, em Configurações > Idioma ou
+  no botão da tela de login. Sem escolha, segue o idioma do celular. Golpes, itens e
+  naturezas ficam com os nomes em inglês.
 - **Mover, nunca copiar.** Dá para mover Pokémon entre caixas, mandar para o Bank, tirar do
   Bank e mandar para outro jogo, organizar e soltar. "Duplicar", "Copiar para o Bank" e
   "Copiar para o jogo" não existem. Restaurar um backup que traria de volta um Pokémon que já

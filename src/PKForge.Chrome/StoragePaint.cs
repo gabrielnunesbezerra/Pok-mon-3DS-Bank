@@ -211,6 +211,7 @@ public static class StoragePaint
     /// </summary>
     public static void BoxHeader(SKCanvas c, SKRect r, string label, SKFont font, bool canPrev, bool canNext, float unit)
     {
+        label = PksmPaint.Localize(label);
         var edge = 3f * unit;
         var radius = 18f * unit;
         using (var frame = Fill(Frame)) c.DrawRoundRect(r, radius, radius, frame);

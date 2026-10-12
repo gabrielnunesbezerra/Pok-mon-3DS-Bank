@@ -186,6 +186,7 @@ public static class EditorPaint
 
     private static void Text(SKCanvas c, string text, float x, float cy, SKFont font, SKColor color, float maxWidth = float.MaxValue)
     {
+        text = PksmPaint.Localize(text);
         while (text.Length > 1 && font.MeasureText(text) > maxWidth) text = text[..^1];
         using var paint = Fill(color);
         var m = font.Metrics;
@@ -194,6 +195,7 @@ public static class EditorPaint
 
     private static void Centered(SKCanvas c, string text, float cx, float cy, SKFont font, SKColor color)
     {
+        text = PksmPaint.Localize(text);
         using var paint = Fill(color);
         var m = font.Metrics;
         c.DrawText(text, cx, cy - (m.Ascent + m.Descent) / 2, SKTextAlign.Center, font, paint);

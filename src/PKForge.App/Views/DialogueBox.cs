@@ -37,11 +37,11 @@ public sealed class DialogueBox : IPadHandler
         _lines = lines.Length == 0 ? [""] : lines;
         _router = IPlatformApplication.Current?.Services.GetService<GamepadRouter>();
 
-        _text = new Label
+        _text = Lang.Raw(new Label
         {
             FontFamily = DsChrome.PixelFont, FontSize = 16, TextColor = UiTokens.Bright,
             LineBreakMode = LineBreakMode.WordWrap, VerticalOptions = LayoutOptions.Start,
-        };
+        });
         _more = AdvanceArrow();
 
         // Gen-5 message window: maroon face, deep-maroon frame, white pixel text.
@@ -104,7 +104,7 @@ public sealed class DialogueBox : IPadHandler
 
     private void StartLine()
     {
-        _current = _lines[_lineIndex];
+        _current = Lang.T(_lines[_lineIndex]);
         _charIndex = 0;
         _text.Text = "";
         _more.IsVisible = false;
