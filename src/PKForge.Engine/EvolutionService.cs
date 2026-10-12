@@ -51,6 +51,7 @@ public sealed class EvolutionService : IEvolutionService
 
     public GenerationOutcome Evolve(ISaveEngineSession session, int box, int slot, EvolutionRequest request)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
         if (session is not SaveEngineSession engine)

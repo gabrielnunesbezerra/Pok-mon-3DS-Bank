@@ -107,6 +107,7 @@ public static class ShowdownTeamService
     public static GenerationOutcome Place(ISaveEngineSession session, ILegalizerService legalizer,
         IReadOnlyList<ShowdownSetPreview> sets, IReadOnlyList<SlotRef> targets, bool allowUnsupportedSpecies = false)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         ArgumentNullException.ThrowIfNull(session);
         var queue = new Queue<SlotRef>(targets);
         var placed = 0;

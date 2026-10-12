@@ -155,6 +155,7 @@ public sealed class FileBankService : IBankService
 
     public void Replace(Guid id, byte[] data, BankEntryInfo info)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         lock (_gate)
         {
             var index = _entries.FindIndex(e => e.Id == id);

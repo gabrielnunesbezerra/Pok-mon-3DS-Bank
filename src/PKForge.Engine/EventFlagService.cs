@@ -174,6 +174,7 @@ public static class EventFlagService
 
     public static GenerationOutcome SetFlag(ISaveEngineSession session, EventFlagBank bank, int index, bool value)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engine || !IsSupported(session))
             return new GenerationOutcome(false, "This save has no event flags.");
         var backend = Backend.For(engine.SaveFile);
@@ -191,6 +192,7 @@ public static class EventFlagService
     /// <summary>Stores a work var; values outside the var's storage range are refused, never wrapped.</summary>
     public static GenerationOutcome SetWork(ISaveEngineSession session, int index, long value)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engine || !IsSupported(session))
             return new GenerationOutcome(false, "This save has no event work.");
         var backend = Backend.For(engine.SaveFile);

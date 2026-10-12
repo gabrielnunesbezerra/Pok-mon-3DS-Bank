@@ -107,8 +107,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
         if (HardcoreMode.IsOn)
         {
             await PadMenu.ShowAsync(host, "Living Dex Autopilot",
-                "Hardcore mode is on. The Autopilot evolves by trade and rearranges boxes, which Hardcore forbids; " +
-                "turn Hardcore off in Settings to use it.", "OK");
+                "3DS Bank does not include the Autopilot: it evolves Pokémon by trade, and 3DS Bank never changes a Pokémon.", "OK");
             return;
         }
         try
@@ -531,7 +530,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 var (before, after, target) => ($"+{after - before}", $"{before} → {after} of {target}", Pksm.Legal),
             };
             var id = source.Id;
-            _rows.Add(new Row(RowKind.Card, $"dest:{id}", bank ? "PKForge Bank" : source.Label,
+            _rows.Add(new Row(RowKind.Card, $"dest:{id}", bank ? "3DS Bank" : source.Label,
                 bank ? "Living dex boxes in Pokédex order. Every generation fits."
                      : $"Gen {source.Generation} game{Trainer(id)} · {source.FreeSlots?.Count ?? 0} free box spaces")
             {
@@ -739,13 +738,13 @@ public sealed class LivingDexAutopilotPage : IPadHandler
         if (_plan is not { } plan || _staging is not { } staging) return;
         var outgoing = plan.OutgoingBySource;
         var dest = plan.Options.DestinationId;
-        _rows.Add(new Row(RowKind.Info, "c:dest", plan.DestinationKind == LivingDexSourceKind.Bank ? "PKForge Bank" : plan.DestinationLabel,
+        _rows.Add(new Row(RowKind.Info, "c:dest", plan.DestinationKind == LivingDexSourceKind.Bank ? "3DS Bank" : plan.DestinationLabel,
             $"Receives {LivingDexPlanSummary.Count(staging.Staged, "Pokémon", "Pokémon")}: {plan.CoveredBefore} → {plan.CoveredBefore + staging.Staged} of {plan.TargetCount}")
         {
             Game = BadgeOf(dest), Right = $"+{staging.Staged}", RightColor = Pksm.Legal,
         });
         foreach (var (id, count) in outgoing.OrderByDescending(p => p.Value))
-            _rows.Add(new Row(RowKind.Info, $"c:{id}", id == LivingDexPlanner.BankId ? "PKForge Bank" : Label(id),
+            _rows.Add(new Row(RowKind.Info, $"c:{id}", id == LivingDexPlanner.BankId ? "3DS Bank" : Label(id),
                 $"Gives {LivingDexPlanSummary.Count(count, "spare Pokémon", "spare Pokémon")}{Trainer(id)}")
             {
                 Game = BadgeOf(id), Right = $"-{count}", RightColor = Pksm.Ink,
@@ -782,13 +781,13 @@ public sealed class LivingDexAutopilotPage : IPadHandler
         if (run.Committed)
         {
             var done = run.Outcomes.Where(o => o.Status == LivingDexStepStatus.Done && o.Step.Fills).ToList();
-            _rows.Add(new Row(RowKind.Info, "r:dest", plan.DestinationKind == LivingDexSourceKind.Bank ? "PKForge Bank" : plan.DestinationLabel,
+            _rows.Add(new Row(RowKind.Info, "r:dest", plan.DestinationKind == LivingDexSourceKind.Bank ? "3DS Bank" : plan.DestinationLabel,
                 $"Received {LivingDexPlanSummary.Count(done.Count, "Pokémon", "Pokémon")}")
             {
                 Game = BadgeOf(plan.Options.DestinationId), Right = $"+{done.Count}", RightColor = Pksm.Legal,
             });
             foreach (var group in done.Where(o => o.Step.SourceId is not null).GroupBy(o => o.Step.SourceId!).OrderByDescending(g => g.Count()))
-                _rows.Add(new Row(RowKind.Info, $"r:{group.Key}", group.Key == LivingDexPlanner.BankId ? "PKForge Bank" : Label(group.Key),
+                _rows.Add(new Row(RowKind.Info, $"r:{group.Key}", group.Key == LivingDexPlanner.BankId ? "3DS Bank" : Label(group.Key),
                     $"Gave {LivingDexPlanSummary.Count(group.Count(), "Pokémon", "Pokémon")}")
                 {
                     Game = BadgeOf(group.Key), Right = $"-{group.Count()}", RightColor = Pksm.Ink,
@@ -829,7 +828,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 break;
             case Stage.Running:
                 _lead.Text = "Moving your Pokémon…";
-                _status.Text = "Keep PKForge open. B stops after the current game (the rest is put back).";
+                _status.Text = "Keep 3DS Bank open. B stops after the current game (the rest is put back).";
                 break;
             case Stage.Result:
                 _lead.Text = _run?.Committed == true ? "Done! Your living dex is updated." : "Nothing was changed.";

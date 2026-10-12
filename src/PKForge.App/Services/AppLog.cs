@@ -139,7 +139,7 @@ public static class AppLog
             {
                 Directory.CreateDirectory(Folder);
                 var report = new StringBuilder()
-                    .AppendLine($"PKForge crash report · {DateTimeOffset.Now:O}")
+                    .AppendLine($"3DS Bank crash report · {DateTimeOffset.Now:O}")
                     .AppendLine(kind)
                     .AppendLine()
                     .AppendLine(DeviceDetails())
@@ -161,9 +161,9 @@ public static class AppLog
     private static string DeviceSummary()
     {
 #if ANDROID
-        return $"PKForge {AppInfo.Current.VersionString} ({AppInfo.Current.BuildString}) · {Android.OS.Build.Manufacturer} {Android.OS.Build.Model} · Android {Android.OS.Build.VERSION.Release} (API {(int)Android.OS.Build.VERSION.SdkInt})";
+        return $"3DS Bank {AppInfo.Current.VersionString} ({AppInfo.Current.BuildString}) · {Android.OS.Build.Manufacturer} {Android.OS.Build.Model} · Android {Android.OS.Build.VERSION.Release} (API {(int)Android.OS.Build.VERSION.SdkInt})";
 #else
-        return $"PKForge {AppInfo.Current.VersionString}";
+        return $"3DS Bank {AppInfo.Current.VersionString}";
 #endif
     }
 

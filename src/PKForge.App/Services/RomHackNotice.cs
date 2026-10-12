@@ -16,7 +16,7 @@ public static class RomHackNotice
     public const string Title = "UNSUPPORTED ROM HACK";
 
     public const string Warning =
-        "This looks like a ROM hack. PKForge detected it but its engine is not built for this game: " +
+        "This looks like a ROM hack. 3DS Bank detected it but its engine is not built for this game: " +
         "Pokémon, moves or items may show wrong and editing can damage the save. Continue at your own risk.";
 
     public const string ReadOnlyOption = "Browse read-only";

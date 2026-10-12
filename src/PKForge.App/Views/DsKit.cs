@@ -392,7 +392,7 @@ public static class DsChrome
     public const string PixelFont = "PixelUI";
 
     /// <summary>The Gen-5 title strip translated into the logo's cobalt/cyan chrome.</summary>
-    public static View TitleBar(string title = "PKForge")
+    public static View TitleBar(string title = "3DS Bank")
     {
         var bar = new Grid
         {

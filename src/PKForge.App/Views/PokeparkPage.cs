@@ -334,7 +334,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 Reload();
             }
             else if (choice == "Widget help")
-                await PadMenu.ShowAsync(_host, "A meadow on your home screen", "Add PKForge Poképark in Cocoon's widget picker. Resize it to give your Pokémon more room. The full meadow shows a quiet, living moment; tap it to return here. Your residents are saved between visits.", "OK");
+                await PadMenu.ShowAsync(_host, "A meadow on your home screen", "Add 3DS Bank Poképark in Cocoon's widget picker. Resize it to give your Pokémon more room. The full meadow shows a quiet, living moment; tap it to return here. Your residents are saved between visits.", "OK");
             else if (choice == "Sprite credits") await CreditsAsync();
         }
         finally { _menuOpen = false; }

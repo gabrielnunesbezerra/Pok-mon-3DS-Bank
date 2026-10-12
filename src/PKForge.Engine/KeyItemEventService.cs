@@ -231,6 +231,7 @@ public static class KeyItemEventService
     /// <summary>Gives the item and writes every flag/var the official distribution writes.</summary>
     public static GenerationOutcome Enable(ISaveEngineSession session, string id)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (!TryFind(session, id, out var save, out var definition))
             return new GenerationOutcome(false, "That event is not available for this game.");
 
@@ -254,6 +255,7 @@ public static class KeyItemEventService
     /// flags, story state vars) is left alone: it records what the player actually did.</summary>
     public static GenerationOutcome Disable(ISaveEngineSession session, string id)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (!TryFind(session, id, out var save, out var definition))
             return new GenerationOutcome(false, "That event is not available for this game.");
 

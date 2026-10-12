@@ -171,6 +171,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public void ApplyEdit(int box, int slot, EntityEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot) ?? throw new InvalidOperationException("Cannot edit an empty slot.");
         var location = box == -1 ? null : ResolveSlot(box, slot);
         var before = mon.Buffer.AsSpan(mon.Offset, mon.Size).ToArray();
@@ -408,6 +409,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public bool DuplicateSlot(int fromBox, int fromSlot, int toBox, int toSlot)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ObjectDisposedException.ThrowIf(_disposed, this);
         var source = TryMon(fromBox, fromSlot);
         if (source is null || !source.LooksValid) return false;
@@ -813,6 +815,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public bool RerollNatureKeepShiny(int box, int slot, int nature)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid) return false;
         var location = box == -1 ? null : ResolveSlot(box, slot);
@@ -824,30 +827,49 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public IReadOnlyList<int> GetMissingSpecies() => [];
     public DexEntryState GetDexEntry(int species) => new(false, false);
-    public void SetDexEntry(int species, bool seen, bool caught) { }
+    public void SetDexEntry(int species, bool seen, bool caught)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public bool IsDexSpecies(int species) => species >= 1;
     public DexProgress GetDexProgress() => new(0, 0, 1);
-    public void CompleteDex() => throw NotYet("The Unbound Pokédex editor");
+    public void CompleteDex()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The Unbound Pokédex editor");
+    }
     public IReadOnlyList<NuzlockeCatch> GetNuzlockeReport() => [];
 
     // Unbound's custom maps and encounter tables are not in the pinned Core's
     // database, so vanilla Emerald encounters would be misinformation.
     public IReadOnlyList<EncounterCard> GetEncounterCards(int species, int form) => [];
-    public GenerationOutcome PlaceEncounter(int species, int form, int cardIndex, int targetBox, int targetSlot) =>
+    public GenerationOutcome PlaceEncounter(int species, int form, int cardIndex, int targetBox, int targetSlot)
+    {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         throw NotYet("Unbound encounter cards");
+    }
 
     public bool SupportsBoxTools => false;
     public int SortBoxes(SortCriteria criteria, IReadOnlyList<int>? boxes = null, bool reverse = false) =>
         throw NotYet("Unbound box sorting");
 
-    public int PlaceLivingDex(byte[] compressedBundle) =>
+    public int PlaceLivingDex(byte[] compressedBundle)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The Unbound living dex (its species table needs Unbound-legal templates)");
+    }
 
-    public int BatchApply(IReadOnlyList<string> instructions, IReadOnlyList<int>? boxes = null) =>
+    public int BatchApply(IReadOnlyList<string> instructions, IReadOnlyList<int>? boxes = null)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The Unbound batch editor");
+    }
 
-    public int BatchApplySlots(IReadOnlyList<(int Box, int Slot)> slots, IReadOnlyList<string> instructions) =>
+    public int BatchApplySlots(IReadOnlyList<(int Box, int Slot)> slots, IReadOnlyList<string> instructions)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The Unbound batch editor");
+    }
 
     public string GetBoxName(int box) => $"BOX {box + 1}";
 
@@ -875,10 +897,15 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
         return new TrainerInfo(name, (int)(id32 & 0xFFFF), (int)(id32 >> 16), money, 0);
     }
 
-    public void SetTrainer(TrainerInfo trainer) => throw NotYet("The Unbound trainer editor");
+    public void SetTrainer(TrainerInfo trainer)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The Unbound trainer editor");
+    }
 
     public GenerationOutcome MakeMine(int box, int slot, TrainerProfile? profile = null)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid)
             return new GenerationOutcome(false, "That slot is empty.");
@@ -954,6 +981,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public int SetItemCount(string pouchName, int itemId, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var layout = BagLayouts().FirstOrDefault(p => p.Name.Equals(pouchName, StringComparison.OrdinalIgnoreCase));
         if (layout.Name is null)
             return 0;
@@ -1020,25 +1048,54 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
         BinaryPrimitives.WriteUInt16LittleEndian(_data.AsSpan(sectorOffset + 0xFF6), checksum);
     }
     public IReadOnlyList<CountedEntry> GetPokeBeans() => [];
-    public int SetPokeBeanCount(int index, int count) => 0;
+    public int SetPokeBeanCount(int index, int count)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public IReadOnlyList<UndergroundItem> GetGrandUndergroundItems() => [];
-    public int SetGrandUndergroundItemCount(int itemId, int count) => 0;
+    public int SetGrandUndergroundItemCount(int itemId, int count)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public DaycareInfo GetDaycare() => new(false, []);
-    public DaycareWithdrawal WithdrawDaycareToFirstEmptyBox(int facility, int slot) => throw NotYet("The Unbound Day Care");
+    public DaycareWithdrawal WithdrawDaycareToFirstEmptyBox(int facility, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The Unbound Day Care");
+    }
     public bool SupportsLegalFashionUnlock => false;
-    public void UnlockAllLegalFashion() { }
+    public void UnlockAllLegalFashion()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public bool SupportsStylePoints => false;
     public int GetStylePoints() => 0;
-    public void SetStylePoints(int value) { }
+    public void SetStylePoints(int value)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public MysteryGiftInbox GetMysteryGiftInbox() => new(false, []);
     public TrainerRecordsInfo GetTrainerRecords() => new(false, []);
     public TrainerStats GetTrainerStats() => new(false, 0, 0, 0, false, 0, 0, false, 0, 0);
-    public void SetTrainerStats(TrainerStatsEdit edit) => throw NotYet("Unbound trainer statistics");
+    public void SetTrainerStats(TrainerStatsEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("Unbound trainer statistics");
+    }
     public bool SupportsRTCRepair => false;
-    public void RepairRTC() { }
+    public void RepairRTC()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
 
     public MetInfo GetMetInfo(int box, int slot) => throw NotYet("Unbound met/origin editing");
-    public void ApplyMetEdit(int box, int slot, MetEdit edit) => throw NotYet("Unbound met/origin editing");
+    public void ApplyMetEdit(int box, int slot, MetEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("Unbound met/origin editing");
+    }
     public IReadOnlyList<NamedChoice> GetLocationChoices(int box, int slot, bool egg) => [];
     public IReadOnlyList<NamedChoice> GetVersionChoices() => [];
     public IReadOnlyList<NamedChoice> GetLanguageChoices(int box, int slot) => [];
@@ -1067,6 +1124,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public void ApplyPotentialEdit(int box, int slot, PotentialEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid) return;
         if (edit.AbilitySlot is { } want)
@@ -1098,6 +1156,7 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
 
     public void ApplyMoveDetails(int box, int slot, MoveDetailsEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null or { LooksValid: false }) return;
         if (!mon.Party)
@@ -1116,27 +1175,50 @@ internal sealed class UnboundEngineSession : ISaveEngineSession
     }
 
     public MoveShopInfo GetMoveShop(int box, int slot) => new(false, []);
-    public void ApplyMoveShopEdit(int box, int slot, MoveShopEdit edit) { }
+    public void ApplyMoveShopEdit(int box, int slot, MoveShopEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
 
     public CosmeticInfo GetCosmetics(int box, int slot) => new(
         [], [], false, 0, 0, false, 0, false, 0, 0, false, 0, 0, false, false,
         false, 0, false, false, false, false, 0);
 
-    public void ApplyCosmeticEdit(int box, int slot, CosmeticEdit edit) { }
+    public void ApplyCosmeticEdit(int box, int slot, CosmeticEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public PokerusInfo GetPokerus(int box, int slot) => new(false, PokerusStatus.Susceptible, 0, 0);
-    public void SetPokerus(int box, int slot, PokerusStatus status) { }
+    public void SetPokerus(int box, int slot, PokerusStatus status)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public IReadOnlyList<RibbonEntry> GetRibbons(int box, int slot) => [];
-    public void SetRibbon(int box, int slot, string id, int value) { }
+    public void SetRibbon(int box, int slot, string id, int value)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public AffixedRibbonInfo GetAffixedRibbon(int box, int slot) => new(false, -1, string.Empty, []);
-    public void SetAffixedRibbon(int box, int slot, int ribbonIndex) { }
+    public void SetAffixedRibbon(int box, int slot, int ribbonIndex)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public IReadOnlyDictionary<string, int> GetObtainableRibbonMaxima(int box, int slot) =>
         new Dictionary<string, int>();
-    public int AwardAllObtainableRibbons(int box, int slot) => 0;
+    public int AwardAllObtainableRibbons(int box, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public bool SupportsLegalityAnalysis => false;
 
     public bool SupportsCompassSettings => false;
     public IReadOnlyList<CompassSetting> GetCompassSettings() => [];
-    public bool SetCompassSetting(string id, int choiceIndex) => false;
+    public bool SetCompassSetting(string id, int choiceIndex)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return false;
+    }
 
     public void Dispose() => _disposed = true;
 

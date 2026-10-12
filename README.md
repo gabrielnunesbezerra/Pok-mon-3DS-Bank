@@ -1,209 +1,71 @@
-<p align="center"><img src="docs/images/logo-transparent.png" alt="PKForge" width="140" /></p>
+# 3DS Bank
 
-<p align="center"><b>A Pokémon save editor and bank for Android, with support for dual-screen handhelds.</b></p>
+Banco de Pokémon para Android, da Geração 1 à 7, sem edição. Feito para eu e meus amigos
+guardarmos e trocarmos Pokémon entre os nossos jogos de emulador.
 
-<p align="center">
-  <a href="https://discord.gg/bMtzZmTDfu"><img src="https://img.shields.io/badge/Discord-Join%20the%20server-5865F2?logo=discord&logoColor=white" alt="Discord" /></a>
-  <a href="https://github.com/sofianeelhor/PKForge/releases"><img src="https://img.shields.io/badge/Download-APK-2B4E95" alt="Download" /></a>
-  <a href="https://github.com/sofianeelhor/PKForge/wiki"><img src="https://img.shields.io/badge/Wiki-Read%20the%20manual-2B4E95" alt="Wiki" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue" alt="License" /></a>
-</p>
+O 3DS Bank é uma versão modificada do [PKForge](https://github.com/sofianeelhor/PKForge)
+de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
 
----
+## O que mudou em relação ao PKForge
 
-A Pokémon save editor and cross-generation Bank for Android, tuned for dual-screen
-handhelds like the AYN Thor.
-Built on [PKHeX.Core](https://github.com/kwsch/PKHeX) with the
-[Auto Legality Mod](https://github.com/santacrab2/PKHeX-Plugins) built in, so
-legalizing a Pokémon works fully offline, on device.
+- **Nada é editado.** O app não altera Pokémon nem dados do save: sem editar status, IVs,
+  EVs, golpes, natureza, shiny, itens, dinheiro, Pokédex, eventos, legalização, evolução
+  dentro do app, criação de Pokémon, Mystery Gift, editor hexadecimal ou editores de save.
+  O modo Hardcore do PKForge fica ligado para sempre e não aparece nas configurações, e o
+  próprio motor do app recusa essas operações mesmo que alguma tela tente fazer.
+- **Mover, nunca copiar.** Dá para mover Pokémon entre caixas, mandar para o Bank, tirar do
+  Bank e mandar para outro jogo, organizar, soltar e exportar. "Duplicar", "Copiar para o
+  Bank" e "Copiar para o jogo" não existem. Restaurar um backup que traria de volta um
+  Pokémon que já saiu do save também é bloqueado.
+- **Só Geração 1 a 7.** Saves de Sword/Shield, Brilliant Diamond/Shining Pearl, Legends:
+  Arceus, Scarlet/Violet e ROM hacks baseados neles (Luminescent Platinum, Compass) não
+  abrem. Let's Go Pikachu/Eevee conta como Geração 7 e abre.
+- **Atualizações** vêm das Releases deste repositório.
 
-<p align="center">
-  <img src="docs/screenshots/dual-screen.png" alt="A box on the main screen, the Pokémon inspector on the second screen" width="100%" />
-</p>
+Pokémon editados fora do app (no PKHeX, por exemplo) continuam abrindo normalmente: o
+3DS Bank só garante que nada é alterado por ele.
 
-Every screen, every emulator and every feature is explained with screenshots in the
-**[PKForge wiki](https://github.com/sofianeelhor/PKForge/wiki)**.
+## Jogos
 
-Not affiliated with Nintendo, Game Freak, or The Pokémon Company.
+- **Geração I:** Red, Blue, Green (JP), Yellow
+- **Geração II:** Gold, Silver, Crystal
+- **Geração III:** Ruby, Sapphire, Emerald, FireRed, LeafGreen, Box: Ruby & Sapphire, Colosseum, XD
+- **Geração IV:** Diamond, Pearl, Platinum, HeartGold, SoulSilver
+- **Geração V:** Black, White, Black 2, White 2
+- **Geração VI:** X, Y, Omega Ruby, Alpha Sapphire
+- **Geração VII:** Sun, Moon, Ultra Sun, Ultra Moon, Let's Go Pikachu, Let's Go Eevee
+- **ROM hacks:** Pokémon Unbound, Radical Red, GS Chronicles
 
-> [!CAUTION]
-> pkforgeapp.com is **not** an official PKForge site and is not run by the maintainer. Do not download anything from it. Only use releases from this repository.
+Emuladores: RetroArch, Linkboy, Pizza Boy, melonDS, DraStic, Dolphin, Azahar, Lime3DS,
+Citra MMJ e Eden. Também dá para abrir um arquivo de save sozinho.
 
-## Features
+## Instalação
 
-- **Manage your Pokémon.** Open any save from a linked emulator or a single file and
-  take full control of your team and boxes. Edit stats, IVs, EVs, moves, nature,
-  ability, held item, Met/Origin, Tera type, Hyper Training, shininess, friendship,
-  Pokérus, and more, with a live legality check as you go.
-- **One-tap legalize.** The Auto Legality Mod is built into the app, so legalizing a
-  Pokémon works fully offline, on device.
-- **Move Pokémon between games.** Grab a Pokémon from one save and drop it into another,
-  across generations, from Gen 1 to Gen 9 and back. A preview shows every change and
-  the legality verdict before anything is written.
-- **A Bank like Pokémon Home.** Store your whole collection in a cross-game Bank with
-  as many themed boxes as you need. Organize with the gamepad, keep living dexes, and pull
-  anything back out into any save whenever you need it.
-- **Track your collection.** The Living Dex tracker follows all 1025 Pokémon across
-  every generation, including shiny variants, so you always know what you still need.
-- **Living Dex Autopilot.** Builds a living dex from the Pokémon you already own across
-  all your games and the Bank. It moves Pokémon (never copies them), evolves trade
-  evolutions on the way, and writes nothing until you confirm.
-- **Browse and inject events.** The full Mystery Gift database is bundled and works
-  offline. Browse Wonder Cards from old distributions and inject them straight into
-  your save.
-- **Edit the bag.** The bag editor handles any pouch, any item, any quantity, with
-  presets and one-tap refills.
-- **Edit the trainer.** Change your name, IDs, money, and gender on the trainer card,
-  and manage trainer profiles and records.
-- **RNG tools.** Inspect PID, IVs, and nature, and reroll a nature while keeping
-  shininess.
-- **Batch edit.** The organizer handles multi-select operations: copy, move, duplicate,
-  delete, release, and send to the Bank or Poképark in bulk.
-- **Breed and hatch.** The egg factory and Day Care / Nursery tools generate eggs and
-  hatch Pokémon, including one egg of every species.
-- **Complete the Pokédex.** Mark everything seen, generate a living dex, and track
-  what is missing.
-- **Play with your Pokémon.** The Poképark is a living habitat where your Pokémon
-  wander while you're away. The Nuzlocke report tracks first encounters and dupes per
-  route, and the encounter browser shows every way to catch a species in each game.
-- **Share your teams.** Import and export Showdown sets, and generate QR codes to move
-  a set between devices.
-- **Game-specific editors.** Grand Underground, Poké Beans, Fashion, and more for each
-  game.
-- **World & events.** Clock repair for Ruby / Sapphire / Emerald, roaming legendaries,
-  re-arming one-time encounters, Entralink and Dream World, Apricorn Box and Pokéwalker,
-  honey trees, event flags, and key item events such as the Eon Ticket or the GS Ball.
-- **Organize boxes.** Box manager (move, lock, copy, rename, wallpapers), sort by dex,
-  level, IVs, type or age, and a legality check and audit of the whole save.
-- **ROM hacks.** Pokémon Unbound, Radical Red, GS Chronicles, Luminescent Platinum and
-  Pokémon Compass are supported with their own data. Unknown hacks open read-only with a
-  warning.
-- **HaX and Hardcore modes.** HaX lifts the legality limits. Hardcore turns data editing
-  off for challenge runs and RetroAchievements players, while moving Pokémon stays
-  possible.
-- **Built for handhelds.** Fully playable with a gamepad or by touch. On dual-screen
-  devices the second screen shows the Pokémon inspector, game art, Pokédex entries or
-  the Poképark journal.
-- **Keep your saves safe.** Every write is validated, then preceded by a restore point.
-  Only the Pokémon you touched may change, and risky saves open read-only. The 20 most
-  recent restore points are kept.
+Baixe o arquivo `3DSBank-vX.Y.Z.apk` na página de
+[Releases](https://github.com/gabrielnunesbezerra/Pok-mon-3DS-Bank/releases) pelo celular e
+abra. Na primeira vez o Android pede para permitir a instalação de apps desconhecidos.
+Para atualizar, instale o APK novo por cima: o Bank e os backups continuam lá.
+Desinstalar o app apaga o Bank, então antes exporte como banco do PKSM
+(Bank > Export > PKSM bank), que dá para importar de volta.
 
-## Screenshots
+O 3DS Bank usa um nome de pacote próprio, então pode ficar instalado junto com o PKForge.
 
-<p align="center">
-  <img src="docs/screenshots/home.png" alt="Home" width="49%" />
-  <img src="docs/screenshots/editor.png" alt="Editor" width="49%" />
-</p>
+## Compilação
 
-<p align="center">
-  <img src="docs/screenshots/bank.png" alt="Bank" width="49%" />
-  <img src="docs/screenshots/living-dex.png" alt="Living Dex" width="49%" />
-</p>
+O GitHub Actions compila e testa a cada envio (`.github/workflows/build.yml`). Uma tag
+`vX.Y.Z` publica uma Release com o APK assinado. A assinatura vem dos secrets
+`BANK_ANDROID_KEYSTORE_BASE64`, `BANK_ANDROID_KEYSTORE_PASSWORD` e `BANK_ANDROID_KEY_ALIAS`;
+todo APK precisa da mesma chave para atualizar por cima do anterior.
 
-<p align="center">
-  <img src="docs/screenshots/mystery-gift.png" alt="Mystery Gift" width="49%" />
-  <img src="docs/screenshots/bag.png" alt="Bag" width="49%" />
-</p>
+Para compilar localmente: .NET 10 SDK, `dotnet workload install maui-android`, depois
+`dotnet build src/PKForge.App/PKForge.App.csproj -c Release -f net10.0-android`.
 
-<p align="center">
-  <img src="docs/screenshots/rng.png" alt="RNG tools" width="49%" />
-  <img src="docs/screenshots/pokepark.png" alt="Poképark" width="49%" />
-</p>
+As regras do 3DS Bank ficam em `src/PKForge.Domain/ThreeDsBankPolicy.cs`.
 
-<p align="center">
-  <img src="docs/screenshots/trainer-card.png" alt="Trainer card" width="49%" />
-  <img src="docs/screenshots/showdown-qr.png" alt="Showdown QR" width="49%" />
-</p>
+## Créditos
 
-<p align="center">
-  <img src="docs/screenshots/nuzlocke.png" alt="Nuzlocke report" width="49%" />
-  <img src="docs/screenshots/encounters.png" alt="Encounter browser" width="49%" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/generate.png" alt="Generate a Pokémon" width="49%" />
-  <img src="docs/screenshots/transfer.png" alt="Transfer preview" width="49%" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/autopilot.png" alt="Living Dex Autopilot" width="49%" />
-  <img src="docs/screenshots/link.png" alt="Linking an emulator" width="49%" />
-</p>
-
-## Supported games
-
-PKForge reads and edits saves from every mainline generation, plus the GameCube side
-games and popular romhacks:
-
-- **Generation I:** Red, Blue, Green (JP), Yellow
-- **Generation II:** Gold, Silver, Crystal
-- **Generation III:** Ruby, Sapphire, Emerald, FireRed, LeafGreen, Pokémon Box: Ruby & Sapphire, Colosseum, XD: Gale of Darkness
-- **Generation IV:** Diamond, Pearl, Platinum, HeartGold, SoulSilver
-- **Generation V:** Black, White, Black 2, White 2
-- **Generation VI:** X, Y, Omega Ruby, Alpha Sapphire
-- **Generation VII:** Sun, Moon, Ultra Sun, Ultra Moon, Let's Go Pikachu, Let's Go Eevee
-- **Generation VIII:** Sword, Shield, Brilliant Diamond, Shining Pearl, Legends: Arceus
-- **Generation IX:** Scarlet, Violet
-- **Romhacks:** Pokémon Unbound, Radical Red, GS Chronicles, Luminescent Platinum, Pokémon Compass
-
-## Supported emulators
-
-Link a storage unit and PKForge finds your saves automatically:
-
-- **Game Boy / Game Boy Color:** RetroArch, Linkboy, Pizza Boy C
-- **Game Boy Advance:** RetroArch, Linkboy, Pizza Boy A
-- **Nintendo DS:** melonDS, DraStic, RetroArch
-- **GameCube:** Dolphin
-- **Nintendo 3DS:** Azahar, Lime3DS, Citra MMJ
-- **Nintendo Switch:** Eden
-
-You can also open a single save file directly.
-
-## Installation
-
-Download the APK from [Releases](https://github.com/sofianeelhor/PKForge/releases) and
-allow installs from unknown sources. First run walks you through linking an emulator or
-opening a single save file.
-
-New to PKForge? Start with [Getting Started](https://github.com/sofianeelhor/PKForge/wiki/Getting-Started).
-If PKForge finds no saves, the folder picked is usually the wrong one: see
-[Choosing the right folder](https://github.com/sofianeelhor/PKForge/wiki/Choosing-the-Right-Folder).
-
-## 💬 Discord
-
-Join for updates, support, bug reports, feature requests, or just to chat about the project.
-
-👉 **[Join the PKForge Discord](https://discord.gg/bMtzZmTDfu)**
-
-[![Discord](https://discordapp.com/api/guilds/1542192456018427926/widget.png?style=banner3&time-)](https://discord.gg/XkeD2vKJCZ)
-
-## Building
-
-.NET 10 SDK with the `maui-android` workload, Android SDK (API 36).
-
-```bash
-git submodule update --init --recursive
-dotnet test tests/PKForge.Domain.Tests/PKForge.Domain.Tests.csproj
-dotnet test tests/PKForge.Engine.Tests/PKForge.Engine.Tests.csproj
-dotnet build src/PKForge.App/PKForge.App.csproj -f net10.0-android
-```
-
-Version tags build and publish the APK from CI.
-
-### Layout
-
-```
-src/PKForge.Domain          contracts and DTOs, no engine or Android dependencies
-src/PKForge.Engine          adapters over pinned PKHeX.Core
-src/PKForge.AutoMod         compiles the Auto Legality Mod against our Core
-src/PKForge.Infrastructure  bank, backups, atomic save writer
-src/PKForge.App             MAUI app, SkiaSharp UI, gamepad and second screen
-src/PKForge.Chrome          the design system: tokens and painters, pure Skia
-tools/ChromePreview         renders the design system off-device
-docs/                       architecture, bank model, development, art direction
-```
-
-## Credits
+- [PKForge](https://github.com/sofianeelhor/PKForge) de sofianeelhor (@22sh), o app
+  inteiro em que o 3DS Bank se baseia
 
 - [PKHeX](https://github.com/kwsch/PKHeX) by Kaphotics and every contributor over the
   years, the engine everything runs on
@@ -224,6 +86,7 @@ docs/                       architecture, bank model, development, art direction
 - [Bulbagarden Archives](https://archives.bulbagarden.net), Pokérus status sprites
 - Sprites and Pokémon names © Nintendo, Creatures Inc., GAME FREAK inc.
 
-## License
+## Licença
 
-GPLv3 or later, inherited from PKHeX.Core. See [LICENSE](LICENSE).
+GPLv3 ou posterior, herdada do PKForge e do PKHeX.Core. Veja [LICENSE](LICENSE).
+Não é afiliado à Nintendo, Game Freak ou The Pokémon Company.

@@ -25,7 +25,7 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
             SaveFormat.Unbound when unbound => OpenUnbound(bytes, displayName),
             SaveFormat.RadicalRed when cfru => OpenRadicalRed(bytes, displayName),
             SaveFormat.GsChronicles when gsc => OpenGsChronicles(bytes, displayName),
-            SaveFormat.Standard when !unbound && !gsc && !cfru => new SaveEngineSession(bytes, displayName),
+            SaveFormat.Standard when !unbound && !gsc && !cfru => RequireSupportedGeneration(new SaveEngineSession(bytes, displayName)),
             _ => throw new InvalidDataException(
                 $"This save was set to open as {FormatName(format)}, but its bytes carry the {(unbound ? "Unbound" : gsc ? "GS Chronicles" : cfru ? "CFRU (Radical Red)" : "standard")} layout. " +
                 "Change the game from the save's menu on the home screen. The file was not touched."),
@@ -50,6 +50,7 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
             return OpenRadicalRed(bytes, displayName).Snapshot;
         if (!SaveParser.TryGetSaveFile(bytes.ToArray(), out var save) || save is null)
             throw new InvalidDataException("The selected bytes are not a recognized save file.");
+        ThreeDsBankPolicy.ThrowIfGenerationUnsupported(save.Generation);
 
         var slots = new List<SlotSummary>(save.BoxCount * save.BoxSlotCount);
         for (var box = 0; box < save.BoxCount; box++)
@@ -74,7 +75,16 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
             return OpenGsChronicles(bytes, displayName);
         if (SaveParser.IsPokemonRadicalRed(RetroArchSaveContainer.Decode(bytes.Span)))
             return OpenRadicalRed(bytes, displayName);
-        return new SaveEngineSession(bytes, displayName);
+        return RequireSupportedGeneration(new SaveEngineSession(bytes, displayName));
+    }
+
+    /// <summary>3DS Bank opens Generation 1-7 only; a newer save is closed again untouched.</summary>
+    private static ISaveEngineSession RequireSupportedGeneration(SaveEngineSession session)
+    {
+        if (ThreeDsBankPolicy.SupportsGeneration(session.Generation))
+            return session;
+        session.Dispose();
+        throw new InvalidDataException(ThreeDsBankPolicy.GenerationRefusedMessage);
     }
 
     private static Unbound.UnboundEngineSession OpenUnbound(ReadOnlyMemory<byte> bytes, string? displayName) =>
@@ -120,6 +130,7 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
             return RadicalRed.CfruEntity.Describe(bytes, name, sourceName);
         var entity = EntityBytes.Parse(bytes, format);
         if (entity is null || entity.Species == 0) return null;
+        if (!ThreeDsBankPolicy.SupportsGeneration(entity.Format)) return null;
         return new BankEntryInfo(entity.Species, entity.Form, entity.IsShiny,
             entity.IsNicknamed ? entity.Nickname : GameInfo.GetStrings("en").specieslist[entity.Species],
             entity.CurrentLevel, entity.Format, sourceName, EntityBytes.FormatOf(entity), entity.HeldItem, EntitySprite.Traits(entity));
@@ -134,6 +145,8 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
         var entity = EntityBytes.Parse(entityBytes, format);
         if (entity is null || entity.Species == 0)
             return null; // genuinely not an editable Pokémon
+        if (!ThreeDsBankPolicy.SupportsGeneration(entity.Format))
+            return null; // 3DS Bank: Generation 1-7 formats only
 
         // A throwaway save of the mon's own generation gives the editor a real trainer
         // context (legality, ability tables, stat maths) without touching any game file.
@@ -189,6 +202,8 @@ public sealed class SaveEngine : IFormatAwareSaveEngine
         var raw = RetroArchSaveContainer.Decode(bytes.Span);
         if (!SaveParser.TryGetSaveFile(raw, out var save) || save is null)
             return null;
+        if (!ThreeDsBankPolicy.SupportsGeneration(save.Generation))
+            return null; // 3DS Bank: Generation 1-7 saves only
 
         if (SaveParser.IsLuminescentPlatinum(raw))
             return new SaveDescription("Luminescent Platinum", save.Generation, save.OT, save.PlayTimeString, LanguageTag(save));

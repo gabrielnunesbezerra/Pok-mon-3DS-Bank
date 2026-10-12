@@ -63,7 +63,7 @@ public static class QrEntityService
         var parsed = QrEntityCodec.TryParse(payload);
         if (parsed is null)
         {
-            await PadMenu.ShowAsync(host, "QR", "That QR code is not a PKForge .pk transfer.", "OK");
+            await PadMenu.ShowAsync(host, "QR", "That QR code is not a 3DS Bank .pk transfer.", "OK");
             return null;
         }
 

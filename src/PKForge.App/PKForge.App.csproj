@@ -8,16 +8,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <ApplicationId>org.pkforge.app</ApplicationId>
-    <ApplicationTitle>PKForge</ApplicationTitle>
-    <ApplicationVersion>310</ApplicationVersion>
-    <ApplicationDisplayVersion>3.1.0</ApplicationDisplayVersion>
+    <ApplicationId>io.github.gabrielnunesbezerra.threedsbank</ApplicationId>
+    <ApplicationTitle>3DS Bank</ApplicationTitle>
+    <ApplicationVersion>100</ApplicationVersion>
+    <ApplicationDisplayVersion>1.0.0</ApplicationDisplayVersion>
     <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition="'$(DiagnosticBuild)' == 'true'">
     <!-- Diagnostic builds install beside production and cannot overwrite its app-private data. -->
-    <ApplicationId>org.pkforge.app.debug</ApplicationId>
-    <ApplicationTitle>PKForge Diagnostics</ApplicationTitle>
+    <ApplicationId>io.github.gabrielnunesbezerra.threedsbank.debug</ApplicationId>
+    <ApplicationTitle>3DS Bank Diagnostics</ApplicationTitle>
     <DefineConstants>$(DefineConstants);DIAGNOSTIC</DefineConstants>
     <!-- Diagnostic APKs are sideloaded, not deployed by an IDE. Fast Deployment
          otherwise expects assemblies in an app-private override directory and

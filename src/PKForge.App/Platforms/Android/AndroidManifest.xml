@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto">
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-  <application android:label="PKForge" android:icon="@mipmap/pkforge" android:roundIcon="@mipmap/pkforge_round" android:allowBackup="true" android:supportsRtl="true" />
+  <application android:label="3DS Bank" android:icon="@mipmap/pkforge" android:roundIcon="@mipmap/pkforge_round" android:allowBackup="true" android:supportsRtl="true" />
 </manifest>

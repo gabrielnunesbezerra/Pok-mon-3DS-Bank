@@ -242,6 +242,7 @@ public sealed class LivingDexExecutor(
     public async Task<LivingDexStaging> StageAsync(LivingDexPlan plan, IReadOnlyDictionary<string, DetectedSave> saves,
         IProgress<LivingDexProgress>? progress = null, CancellationToken cancellationToken = default)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(saves);
         var staging = new LivingDexStaging(plan);
@@ -261,6 +262,7 @@ public sealed class LivingDexExecutor(
     public async Task<LivingDexRunResult> ApplyAsync(LivingDexPlan plan, IReadOnlyDictionary<string, DetectedSave> saves,
         IProgress<LivingDexProgress>? progress = null, CancellationToken cancellationToken = default)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         using var staging = await StageAsync(plan, saves, progress, cancellationToken).ConfigureAwait(false);
         return await CommitAsync(staging, progress, cancellationToken).ConfigureAwait(false);
     }
@@ -469,6 +471,7 @@ public sealed class LivingDexExecutor(
     public async Task<LivingDexRunResult> CommitAsync(LivingDexStaging staging, IProgress<LivingDexProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ArgumentNullException.ThrowIfNull(staging);
         if (staging.Committed) throw new InvalidOperationException("This plan was already applied.");
         var plan = staging.Plan;

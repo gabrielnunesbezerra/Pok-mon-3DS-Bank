@@ -3,33 +3,22 @@ using PKForge.Domain;
 namespace PKForge.App.Services;
 
 /// <summary>
-/// Hardcore mode, PKForge edition: the achievement-hunter setting. While it is on the
-/// open save may be browsed, organised, moved, transferred, backed up and exported,
-/// but nothing that edits, fabricates or duplicates Pokémon data can be written - a
-/// Pokémon may be MOVED, never COPIED. Off by default. Hardcore wins over
-/// <see cref="HaXMode"/>: HaX mode only widens which options are offered, and every
-/// one of its writes still has to pass this guard.
+/// 3DS Bank runs PKForge's Hardcore mode permanently: the open save may be browsed,
+/// organised, moved, transferred, backed up and exported, but nothing that edits,
+/// fabricates or duplicates Pokémon data can be written - a Pokémon may be MOVED, never
+/// COPIED. There is no setting to turn it off, and the engine refuses the same edits on
+/// its own (<see cref="Domain.ThreeDsBankPolicy"/>), so a missed screen cannot bypass it.
 /// </summary>
 public static class HardcoreMode
 {
-    private const string Key = "hardcore_mode";
-
     /// <summary>The one line every blocked surface shows instead of writing.</summary>
-    public const string StatusLine = "HARDCORE MODE - data editing is off";
+    public const string StatusLine = "3DS BANK - editing is disabled";
 
-    /// <summary>Short marker for footers and headers while the mode is on.</summary>
-    public const string Marker = "HARDCORE";
+    /// <summary>Short marker for footers and headers.</summary>
+    public const string Marker = "MOVE ONLY";
 
-    /// <summary>The settings-screen explanation; the HaX-mode relationship is stated, not implied.</summary>
-    public const string SettingExplanation =
-        "For RetroAchievements-style play. Browsing, organising, moving, sending to another game, " +
-        "bank deposit and withdrawal as a MOVE, restore points and exports stay available; " +
-        "anything that edits, generates or duplicates Pokémon data is blocked, and a Pokémon can be moved but never copied. " +
-        "Hardcore wins over HaX mode: while it is on, HaX mode options cannot be written either.";
-
-    public static bool IsOn => Preferences.Default.Get(Key, false);
-
-    public static void Set(bool on) => Preferences.Default.Set(Key, on);
+    /// <summary>Always on in 3DS Bank.</summary>
+    public static bool IsOn => true;
 
     /// <summary>The decision table for the current setting.</summary>
     public static SaveGuard Guard => SaveGuard.For(IsOn);

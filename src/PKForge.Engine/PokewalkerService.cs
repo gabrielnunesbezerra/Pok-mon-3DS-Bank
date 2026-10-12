@@ -63,6 +63,7 @@ public static class PokewalkerService
 
     public static PokewalkerState SetCounters(ISaveEngineSession session, uint steps, uint watts)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         save.PokewalkerSteps = Math.Min(steps, MaxCounter);
         save.PokewalkerWatts = Math.Min(watts, MaxCounter);
@@ -71,6 +72,7 @@ public static class PokewalkerService
 
     public static PokewalkerState SetCourse(ISaveEngineSession session, int course, bool unlocked)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         ArgumentOutOfRangeException.ThrowIfNegative(course);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(course, CourseCount);
@@ -86,6 +88,7 @@ public static class PokewalkerService
     /// Japanese mask on every save; we keep the save to what its cartridge could have done.</summary>
     public static PokewalkerState UnlockAll(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         save.PokewalkerCoursesSetAll(SAV4HGSS.GetPossiblePokewalkerCourseUnlock(save.Language));
         return GetState(session);

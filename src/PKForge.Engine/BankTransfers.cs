@@ -67,6 +67,9 @@ public static class BankTransfers
         ArgumentNullException.ThrowIfNull(writeDestination);
         ArgumentNullException.ThrowIfNull(undoDestination);
         if (count == 0) return new BatchTransferOutcome(false, "Nothing to send.");
+        // 3DS Bank: a Pokémon is moved, never copied - the source always lets go.
+        if (releaseSource is null && ThreeDsBankPolicy.EditingLocked)
+            return new BatchTransferOutcome(false, "3DS Bank moves Pokémon; it never copies them.");
         if (await Step(writeDestination) is { } refused)
             return new BatchTransferOutcome(false, $"Nothing was sent: {refused}");
         if (releaseSource is null)

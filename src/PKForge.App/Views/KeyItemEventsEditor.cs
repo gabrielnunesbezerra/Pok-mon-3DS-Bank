@@ -72,7 +72,7 @@ public static class KeyItemEventsEditor
 
         if (HardcoreMode.Blocks(SaveAction.InjectEvent, out var blocked))
         {
-            await EditorMenu.ShowAsync(host, "Hardcore mode", blocked, "OK");
+            await EditorMenu.ShowAsync(host, "3DS Bank", blocked, "OK");
             return true;
         }
 

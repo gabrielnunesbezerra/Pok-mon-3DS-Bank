@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test-and-build:
@@ -26,63 +27,67 @@ jobs:
         run: |
           dotnet test tests/PKForge.Domain.Tests/PKForge.Domain.Tests.csproj --no-restore --configuration Release
           dotnet test tests/PKForge.Engine.Tests/PKForge.Engine.Tests.csproj --no-restore --configuration Release
-      - name: Decode permanent release signing key
-        if: github.ref_type == 'tag'
+      # Every 3DS Bank APK must carry the same signature, or Android refuses to update an
+      # installed copy (and uninstalling first would delete the Bank). The key lives in the
+      # repository secrets BANK_ANDROID_KEYSTORE_BASE64 / _PASSWORD / _KEY_ALIAS.
+      - name: Decode signing key
+        id: signing
         env:
-          PKFORGE_ANDROID_KEYSTORE_BASE64: ${{ secrets.PKFORGE_ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.BANK_ANDROID_KEYSTORE_BASE64 }}
         run: |
-          if [[ -z "$PKFORGE_ANDROID_KEYSTORE_BASE64" ]]; then
-            echo "Permanent release signing secret is missing."
-            exit 1
+          if [[ -z "$KEYSTORE_BASE64" ]]; then
+            if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+              echo "::error::The BANK_ANDROID_KEYSTORE_BASE64 secret is missing; releases must be signed with the 3DS Bank key."
+              exit 1
+            fi
+            echo "::warning::No signing secret: this test APK uses a throwaway key and cannot update an installed 3DS Bank."
+            exit 0
           fi
-          printf '%s' "$PKFORGE_ANDROID_KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/pkforge-release.p12"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "${RUNNER_TEMP}/3dsbank.p12"
+          echo "keystore=${RUNNER_TEMP}/3dsbank.p12" >> "$GITHUB_OUTPUT"
       - name: Build Android APK
         shell: bash
         env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/pkforge-release.p12
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.PKFORGE_ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.PKFORGE_ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.PKFORGE_ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ steps.signing.outputs.keystore }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.BANK_ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.BANK_ANDROID_KEY_ALIAS }}
         run: |
-          configuration="Debug"
+          # Release, never Debug: a Debug APK expects an IDE to deploy its assemblies and
+          # closes at once when installed by hand.
           signing_args=(-p:AndroidKeyStore=false)
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            configuration="Release"
+          if [[ -n "$ANDROID_KEYSTORE_PATH" ]]; then
             signing_args=(
               -p:AndroidKeyStore=true
               -p:AndroidSigningKeyStore="$ANDROID_KEYSTORE_PATH"
               -p:AndroidSigningStorePass="$ANDROID_KEYSTORE_PASSWORD"
               -p:AndroidSigningKeyAlias="$ANDROID_KEY_ALIAS"
-              -p:AndroidSigningKeyPass="$ANDROID_KEY_PASSWORD"
+              -p:AndroidSigningKeyPass="$ANDROID_KEYSTORE_PASSWORD"
             )
           fi
           dotnet build src/PKForge.App/PKForge.App.csproj --no-restore \
-            --configuration "$configuration" -f net10.0-android "${signing_args[@]}"
+            --configuration Release -f net10.0-android "${signing_args[@]}"
       - name: Locate APK
         id: apk
         run: |
           apk=$(find src/PKForge.App/bin -name '*-Signed.apk' | head -1)
+          if [[ -z "$apk" ]]; then echo "::error::No signed APK was produced."; exit 1; fi
           echo "path=$apk" >> "$GITHUB_OUTPUT"
-          echo "name=PKForge-${GITHUB_REF_NAME}.apk" >> "$GITHUB_OUTPUT"
-      - name: Verify permanent release signature
-        if: github.ref_type == 'tag'
-        run: |
-          expected="E2:6F:3F:FF:8A:89:00:D8:5E:D8:EF:72:E1:CA:7F:50:33:D2:A5:57:98:0B:26:19:F1:1D:6D:E2:10:09:BF:D8"
-          actual=$(keytool -printcert -jarfile "${{ steps.apk.outputs.path }}" | tr -d '\r' | grep -m1 'SHA256:')
-          echo "$actual"
-          echo "$actual" | grep -Fq "$expected"
+          cp "$apk" "3DSBank-${GITHUB_REF_NAME//\//-}.apk"
+          echo "name=3DSBank-${GITHUB_REF_NAME//\//-}.apk" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
-        if: github.ref_type != 'tag'
         with:
-          name: pkforge-apk
-          path: ${{ steps.apk.outputs.path }}
-          retention-days: 3
-      - name: Stage release asset
-        if: github.ref_type == 'tag'
-        run: cp "${{ steps.apk.outputs.path }}" "PKForge-${GITHUB_REF_NAME}.apk"
+          name: 3dsbank-apk
+          path: ${{ steps.apk.outputs.name }}
+          retention-days: 14
       - name: Release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: PKForge-${{ github.ref_name }}.apk
+          name: 3DS Bank ${{ github.ref_name }}
+          files: ${{ steps.apk.outputs.name }}
+          body: |
+            Baixe o arquivo **${{ steps.apk.outputs.name }}** abaixo no celular e abra para instalar.
+            Na primeira vez o Android pede para permitir a instalação de apps desconhecidos.
+
+            Download **${{ steps.apk.outputs.name }}** below on your phone and open it to install.
           generate_release_notes: true

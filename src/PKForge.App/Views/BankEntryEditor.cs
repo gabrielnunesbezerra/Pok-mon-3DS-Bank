@@ -51,7 +51,7 @@ public static class BankEntryEditor
         if (session is null)
         {
             await EditorMenu.ShowAsync(host, "Can't edit",
-                "The stored bytes aren't a Pokémon PKForge can edit.", "OK");
+                "The stored bytes aren't a Pokémon 3DS Bank can edit.", "OK");
             return false;
         }
 
@@ -796,7 +796,7 @@ public static class BankEntryEditor
             // Hardcore mode: the stored mon may be inspected here but never rewritten.
             if (HardcoreMode.Blocks(SaveAction.EditMon, out var status))
             {
-                await EditorMenu.ShowAsync(_host, "Hardcore mode", status, "OK");
+                await EditorMenu.ShowAsync(_host, "3DS Bank", status, "OK");
                 return;
             }
             var export = _session.ExportSlot(0, 0);
@@ -834,7 +834,7 @@ public static class BankEntryEditor
             // A scan over this entry fabricates its replacement: creation, not a move.
             if (HardcoreMode.Blocks(SaveAction.CreateMon, out var status))
             {
-                await EditorMenu.ShowAsync(_host, "Hardcore mode", status, "OK");
+                await EditorMenu.ShowAsync(_host, "3DS Bank", status, "OK");
                 return;
             }
             var received = await QrEntityService.ScanAsync(_host, _engine,

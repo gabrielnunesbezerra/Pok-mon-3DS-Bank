@@ -46,7 +46,7 @@ public static class MysteryGiftInboxEditor
                 : "Non-Pokémon gift or record";
             var state = card.IsReceivedRecord ? "History entry" : card.GiftUsed ? "Gift used" : "Gift unused";
             await EditorMenu.ShowAsync(host, card.Title,
-                $"{kind}\n{CardNumber(card)} · {card.Type}\n{contents}\n{state}\n\nRead-only: PKForge does not alter cards or received flags.", "Back");
+                $"{kind}\n{CardNumber(card)} · {card.Type}\n{contents}\n{state}\n\nRead-only: 3DS Bank does not alter cards or received flags.", "Back");
         }
     }
 

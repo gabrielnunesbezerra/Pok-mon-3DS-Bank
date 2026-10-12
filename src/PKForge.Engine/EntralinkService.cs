@@ -89,6 +89,7 @@ public static class EntralinkService
 
     public static EntralinkState SetLevels(ISaveEngineSession session, int whiteForest, int blackCity)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         save.Entralink.WhiteForestLevel = (ushort)Math.Clamp(whiteForest, 0, MaxLevel);
         save.Entralink.BlackCityLevel = (ushort)Math.Clamp(blackCity, 0, MaxLevel);
@@ -98,6 +99,7 @@ public static class EntralinkService
     /// <summary>EntreeForest.UnlockAllAreas: areas 3-8 and the 9th area open.</summary>
     public static EntralinkState UnlockAllAreas(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var forest = Require(session).EntreeForest;
         forest.StartAccess();
         forest.UnlockAllAreas();
@@ -109,6 +111,7 @@ public static class EntralinkService
     /// (no template used twice), a random learnable Dream World move each, and all areas open.</summary>
     public static EntralinkState FillForestLegally(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         var source = (save is SAV5BW ? Encounters5BW.DreamWorld_BW : Encounters5B2W2.DreamWorld_B2W2)
             .Concat(Encounters5DR.DreamWorld_Common).ToList();
@@ -136,6 +139,7 @@ public static class EntralinkService
     /// <summary>EntreeForest.DeleteAll: an empty forest.</summary>
     public static EntralinkState ClearForest(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var forest = Require(session).EntreeForest;
         forest.StartAccess();
         forest.DeleteAll();
@@ -149,6 +153,7 @@ public static class EntralinkService
 
     public static EntralinkState SetPassPower(ISaveEngineSession session, int slot, int power)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (Require(session) is not SAV5B2W2 b2w2)
             throw new NotSupportedException("Pass Powers exist only in Black 2 and White 2.");
         if (!Enum.IsDefined((PassPower5)power))
@@ -168,6 +173,7 @@ public static class EntralinkService
     /// (sets the Funfest flag and each mission's prerequisite event flags).</summary>
     public static EntralinkState UnlockAllMissions(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (Require(session) is not SAV5B2W2 b2w2)
             throw new NotSupportedException("Funfest missions to unlock exist only in Black 2 and White 2.");
         b2w2.Festa.UnlockAllFunfestMissions();

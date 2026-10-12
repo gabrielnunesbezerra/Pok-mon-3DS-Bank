@@ -28,6 +28,7 @@ public sealed class LegalizerService : ILegalizerService
 
     public GenerationOutcome Generate(ISaveEngineSession session, int box, int slot, GenerationRequest request)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is Unbound.UnboundEngineSession unbound)
             return unbound.GenerateInto(box, slot, request);
         if (session is RadicalRed.CfruEngineSession radicalRed)
@@ -39,6 +40,7 @@ public sealed class LegalizerService : ILegalizerService
     public GenerationOutcome GenerateFromShowdown(ISaveEngineSession session, int box, int slot, string showdownText,
         bool allowUnsupportedSpecies = false)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is Unbound.UnboundEngineSession unbound)
             return unbound.GenerateFromShowdownText(box, slot, showdownText);
         if (session is RadicalRed.CfruEngineSession radicalRed)
@@ -130,6 +132,7 @@ public sealed class LegalizerService : ILegalizerService
 
     public GenerationOutcome LegalizeSlot(ISaveEngineSession session, int box, int slot)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -291,6 +294,7 @@ public sealed class LegalizerService : ILegalizerService
     public GenerationOutcome LegalizeSlots(ISaveEngineSession session, IReadOnlyList<(int Box, int Slot)> slots,
         Action<int, int>? onProgress = null, CancellationToken cancellationToken = default)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -333,13 +337,17 @@ public sealed class LegalizerService : ILegalizerService
         };
     }
 
-    public GeneratedEntity? GenerateData(ISaveEngineSession session, GenerationRequest request) =>
-        GenerateDataFromShowdown(session, BuildShowdownText(request, ((SaveEngineSession)session).SaveFile.Context),
+    public GeneratedEntity? GenerateData(ISaveEngineSession session, GenerationRequest request)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return GenerateDataFromShowdown(session, BuildShowdownText(request, ((SaveEngineSession)session).SaveFile.Context),
             request.AllowUnsupportedSpecies);
+    }
 
     public GeneratedEntity? GenerateDataFromShowdown(ISaveEngineSession session, string showdownText,
         bool allowUnsupportedSpecies = false)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (session is not SaveEngineSession engineSession) return null;
         var save = engineSession.SaveFile;
 
@@ -370,6 +378,7 @@ public sealed class LegalizerService : ILegalizerService
 
     public GenerationOutcome FillSpecies(ISaveEngineSession session, IReadOnlyList<int> species, Action<int, int>? onProgress = null, CancellationToken cancellationToken = default)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -399,6 +408,7 @@ public sealed class LegalizerService : ILegalizerService
     /// target generation, then placed into the first empty PC slots.</summary>
     public GenerationOutcome GenerateEggs(ISaveEngineSession session, IReadOnlyList<int> species, EggOptions options, Action<int, int>? onProgress = null, CancellationToken cancellationToken = default)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -562,6 +572,7 @@ public sealed class LegalizerService : ILegalizerService
 
     public GenerationOutcome FillLivingDex(ISaveEngineSession session, byte[] compressedBundle, Action<int, int>? onProgress = null, CancellationToken cancellationToken = default)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         if (compressedBundle is not { Length: > 0 })

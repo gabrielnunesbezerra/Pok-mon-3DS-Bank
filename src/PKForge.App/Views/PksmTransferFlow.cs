@@ -74,7 +74,7 @@ public static class PksmTransferFlow
         if (HardcoreMode.IsOn && plans.Any(p => !p.IsBank && p.ReadyCount > 0))
         {
             plans.RemoveAll(p => !p.IsBank);
-            notes.Add("Loose .pk files and dumps are copies - skipped in Hardcore mode (banks still import).");
+            notes.Add("Loose .pk files and dumps are copies - 3DS Bank skips them (banks still import).");
         }
         if (plans.Sum(p => p.ReadyCount) == 0)
         {

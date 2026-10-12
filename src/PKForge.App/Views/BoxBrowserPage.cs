@@ -384,7 +384,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
     private async Task<bool> DeniedAsync(SaveAction action)
     {
         if (!Denied(action)) return false;
-        await PadMenu.ShowAsync(_hostGrid, "Hardcore mode", _viewModel.Status, "OK");
+        await PadMenu.ShowAsync(_hostGrid, "3DS Bank", _viewModel.Status, "OK");
         return true;
     }
 
@@ -446,7 +446,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                 break;
             case LayoutRiskKind.CorruptingLayout when CorruptingExplained.Add(documentId):
                 await PadMenu.ShowAsync(_hostGrid, RomHackNotice.CorruptingTitle,
-                    $"PKForge can show this save but will not write it: {risk.Reason}\n" +
+                    $"3DS Bank can show this save but will not write it: {risk.Reason}\n" +
                     "Writing it with the retail layout would break the file, so there is no way to edit it at your own risk.", "OK");
                 break;
         }
@@ -2054,7 +2054,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             await File.WriteAllTextAsync(path, text);
             await Share.Default.RequestAsync(new ShareFileRequest
             {
-                Title = "PKForge audit report",
+                Title = "3DS Bank audit report",
                 File = new ShareFile(path),
             });
         }
@@ -3819,7 +3819,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             new PadOption("Export .pk file", IconPath: "export", Detail: "Share this Pokémon as a file."),
             new PadOption("Show as Showdown set", IconPath: "script", Detail: "Its set as Showdown text you can copy."),
             new PadOption("Show as QR code", IconPath: "qr", Detail: "Its Showdown set as a QR code."),
-            new PadOption("Show as .pk QR", IconPath: "qr", Detail: "The whole Pokémon as a QR code that PKForge can scan into the Bank."),
+            new PadOption("Show as .pk QR", IconPath: "qr", Detail: "The whole Pokémon as a QR code that 3DS Bank can scan into the Bank."),
             new PadOption("RNG / IVs", IconPath: "dice", Detail: "See its PID and IVs, and change its nature without losing shininess."),
             new PadOption("Lock / Unlock release", IconPath: "padlock", Detail: "A locked Pokémon cannot be released."),
             new PadOption("Release", IconPath: "release")));

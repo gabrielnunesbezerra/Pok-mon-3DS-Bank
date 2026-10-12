@@ -45,6 +45,7 @@ public static class ApricornService
 
     public static IReadOnlyList<ApricornCount> SetCount(ISaveEngineSession session, int index, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
@@ -55,6 +56,7 @@ public static class ApricornService
     /// <summary>SAV_Apricorn "All" (99 each) or "None" (0 each).</summary>
     public static IReadOnlyList<ApricornCount> SetAll(ISaveEngineSession session, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var save = Require(session);
         for (var i = 0; i < Count; i++)
             save.SetApricornCount(i, Math.Clamp(count, 0, MaxCount));

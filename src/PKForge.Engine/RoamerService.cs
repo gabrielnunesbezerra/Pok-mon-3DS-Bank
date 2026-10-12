@@ -52,6 +52,7 @@ public static class RoamerService
     /// <summary>New legal PID/IV (and full HP). <paramref name="shiny"/> searches for a shiny result.</summary>
     public static RoamerInfo Reroll(ISaveEngineSession session, int index, bool shiny)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var slots = Slots(session);
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, slots.Count);
@@ -68,6 +69,7 @@ public static class RoamerService
 
     public static RoamerInfo SetGen6State(ISaveEngineSession session, int state, uint? timesEncountered = null)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (session is not SaveEngineSession { SaveFile: SAV6XY xy })
             throw new NotSupportedException("Roam states can be set only for X and Y.");
         ArgumentOutOfRangeException.ThrowIfNegative(state);

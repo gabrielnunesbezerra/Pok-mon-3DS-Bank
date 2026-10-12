@@ -13,11 +13,8 @@ namespace PKForge.App.Services;
 /// the Hardcore guard, so Hardcore wins for edits.
 /// </para>
 /// </summary>
+/// <remarks>3DS Bank never edits Pokémon, so HaX mode is permanently off.</remarks>
 public static class HaXMode
 {
-    private const string Key = "hax_mode";
-
-    public static bool IsOn => Preferences.Default.Get(Key, false);
-
-    public static void Set(bool on) => Preferences.Default.Set(Key, on);
+    public static bool IsOn => false;
 }

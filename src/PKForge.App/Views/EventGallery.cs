@@ -1287,7 +1287,7 @@ public static class EventGallery
             _exportPk.IsVisible = !item;
             _bank.IsEnabled = !Blocked;
             _exportPk.IsEnabled = !Blocked;
-            _note.Text = Blocked ? "Hardcore mode: receiving is off."
+            _note.Text = Blocked ? "3DS Bank: receiving is off."
                 : !item && _ctx.TargetSlot < 0 ? "Free a slot in this box to receive."
                 : Shown.Received ? "Already received once - receiving again still works."
                 : !Shown.Compatible ? "Card is for another language; it still converts."

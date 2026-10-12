@@ -37,6 +37,7 @@ public static class SaveBlockEditorService
 
     public static GenerationOutcome SetBool(ISaveEngineSession session, uint key, bool value)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (!TryGet(session, key, out var block))
             return new GenerationOutcome(false, $"No block {key:X8} in this save.");
         if (block.Type is not (SCTypeCode.Bool1 or SCTypeCode.Bool2))
@@ -49,6 +50,7 @@ public static class SaveBlockEditorService
     /// stores it; out-of-range or non-finite input is refused rather than wrapped.</summary>
     public static GenerationOutcome SetNumber(ISaveEngineSession session, uint key, string text)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (!TryGet(session, key, out var block))
             return new GenerationOutcome(false, $"No block {key:X8} in this save.");
         if (!IsNumeric(block.Type))

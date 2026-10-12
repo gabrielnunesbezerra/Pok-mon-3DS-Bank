@@ -122,7 +122,7 @@ public static class SaveIdentitySheet
         var message = guess.Family switch
         {
             SaveLayoutFamily.Cfru or SaveLayoutFamily.UnboundCfru or SaveLayoutFamily.GsChroniclesCfru =>
-                "This save uses a CFRU layout. Only games that write it are listed, so PKForge never opens it with the wrong engine.",
+                "This save uses a CFRU layout. Only games that write it are listed, so 3DS Bank never opens it with the wrong engine.",
             SaveLayoutFamily.Other => "Pick the retail game, or mark it as a ROM hack built on it.",
             _ => "Only games that share this save's layout are listed. A ROM hack built on it keeps the retail engine.",
         };

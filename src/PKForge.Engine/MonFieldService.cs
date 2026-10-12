@@ -37,6 +37,7 @@ public static class MonFieldService
 
     public static FormChangeResult SetForm(ISaveEngineSession session, int box, int slot, int form)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         var names = FormNames(pk);
         if (names.Length <= 1) throw new InvalidOperationException("This species has no alternate forms.");
@@ -212,6 +213,7 @@ public static class MonFieldService
     /// </summary>
     public static void SetFormArgument(ISaveEngineSession session, int box, int slot, uint value)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         var field = FormArgumentOf(pk) ?? throw new InvalidOperationException("This Pokémon has no form argument.");
         if (field.Kind == FormArgumentKind.TripleParty && box != -1)
@@ -253,6 +255,7 @@ public static class MonFieldService
 
     public static void SetStatNature(ISaveEngineSession session, int box, int slot, int nature)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         if (pk.Format < 8) throw new InvalidOperationException("Only Gen 8+ formats store a separate stat nature.");
         if (!NatureFacts.IsValid(nature)) throw new ArgumentOutOfRangeException(nameof(nature));
@@ -308,6 +311,7 @@ public static class MonFieldService
     /// </summary>
     public static bool SetShinyKind(ISaveEngineSession session, int box, int slot, ShinyKind kind)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         if (pk.Format <= 2) throw new InvalidOperationException("Gen 1/2 shininess comes from the DVs; use the shiny switch.");
         var wasLegal = new LegalityAnalysis(pk).Valid;
@@ -354,6 +358,7 @@ public static class MonFieldService
     /// </summary>
     public static PersonalityEditResult SetPid(ISaveEngineSession session, int box, int slot, uint pid)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         if (pk.Format <= 2) throw new InvalidOperationException("Gen 1/2 Pokémon have no PID.");
         if (pk.PID == pid) return new PersonalityEditResult(false, []);
@@ -383,6 +388,7 @@ public static class MonFieldService
     /// <summary>Writes a raw encryption constant (Gen 6+ formats).</summary>
     public static PersonalityEditResult SetEncryptionConstant(ISaveEngineSession session, int box, int slot, uint ec)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         if (pk.Format < 6) throw new InvalidOperationException("Gen 1-5 formats have no separate encryption constant.");
         if (pk.EncryptionConstant == ec) return new PersonalityEditResult(false, []);
@@ -439,6 +445,7 @@ public static class MonFieldService
 
     public static void ApplyTrainerEdit(ISaveEngineSession session, int box, int slot, TrainerFieldsEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ArgumentNullException.ThrowIfNull(edit);
         var (engine, pk) = Read(session, box, slot);
         if (edit.OtGender is { } otGender)
@@ -541,6 +548,7 @@ public static class MonFieldService
     /// <summary>Writes one memory; like PKHeX's editor, "no memory" clears the other three values.</summary>
     public static void SetMemory(ISaveEngineSession session, int box, int slot, MemoryEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ArgumentNullException.ThrowIfNull(edit);
         var (engine, pk) = Read(session, box, slot);
         var field = MemoryOf(pk, edit.Handler) ?? throw new InvalidOperationException("This format keeps no trainer memories.");
@@ -653,6 +661,7 @@ public static class MonFieldService
 
     public static void SetTechRecord(ISaveEngineSession session, int box, int slot, int index, bool learned)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, pk) = Read(session, box, slot);
         if (!HasTechRecords(pk) || pk is not ITechRecord record)
             throw new InvalidOperationException("This format stores no Technical Records.");
@@ -662,11 +671,17 @@ public static class MonFieldService
     }
 
     /// <summary>PKHeX's "Give all": every record this species or its evolution chain can learn in this game.</summary>
-    public static int SetAllLegalTechRecords(ISaveEngineSession session, int box, int slot) =>
-        ApplyTechRecords(session, box, slot, TechnicalRecordApplicatorOption.LegalAll);
+    public static int SetAllLegalTechRecords(ISaveEngineSession session, int box, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return ApplyTechRecords(session, box, slot, TechnicalRecordApplicatorOption.LegalAll);
+    }
 
-    public static int ClearTechRecords(ISaveEngineSession session, int box, int slot) =>
-        ApplyTechRecords(session, box, slot, TechnicalRecordApplicatorOption.None);
+    public static int ClearTechRecords(ISaveEngineSession session, int box, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return ApplyTechRecords(session, box, slot, TechnicalRecordApplicatorOption.None);
+    }
 
     private static int ApplyTechRecords(ISaveEngineSession session, int box, int slot, TechnicalRecordApplicatorOption option)
     {

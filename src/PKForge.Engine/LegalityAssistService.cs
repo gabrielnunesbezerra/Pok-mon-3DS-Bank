@@ -137,6 +137,7 @@ public sealed class LegalityAssistService : ILegalityAssistService
 
     public GenerationOutcome Apply(ISaveEngineSession session, LegalityFixPreview preview)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         ArgumentNullException.ThrowIfNull(preview);
         if (!preview.Available || preview.Candidate.IsEmpty)
             return new GenerationOutcome(false, preview.Unavailable ?? "Nothing to apply.");

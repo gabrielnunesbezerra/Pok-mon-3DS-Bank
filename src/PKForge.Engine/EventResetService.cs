@@ -66,6 +66,7 @@ public static class EventResetService
 
     public static GenerationOutcome Reset(ISaveEngineSession session, string id)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engine)
             return new GenerationOutcome(false, "This game has no resettable events.");
         switch (engine.SaveFile)

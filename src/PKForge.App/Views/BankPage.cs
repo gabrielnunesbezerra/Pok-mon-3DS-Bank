@@ -242,7 +242,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
     {
         if (!HardcoreMode.Blocks(action, out var status)) return false;
         _boxViewModel.Status = status;
-        await PadMenu.ShowAsync(_hostGrid, "Hardcore mode", status, "OK");
+        await PadMenu.ShowAsync(_hostGrid, "3DS Bank", status, "OK");
         return true;
     }
 
@@ -257,8 +257,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
     private async Task ExportArchiveAsync()
     {
         var format = await PadMenu.ShowAsync(_hostGrid, "Export",
-            "A .pk folder is read by PKHeX and PKForge; a PKSM bank goes back to your 3DS.",
-            new PadOption("Folder of .pk files", IconPath: "folder", Detail: "One .pk file per Pokémon, readable by PKHeX and PKForge."),
+            "A .pk folder is read by PKHeX and 3DS Bank; a PKSM bank goes back to your 3DS.",
+            new PadOption("Folder of .pk files", IconPath: "folder", Detail: "One .pk file per Pokémon, readable by PKHeX and 3DS Bank."),
             new PadOption("PKSM bank for the 3DS (.bnk)", IconPath: "bank", Detail: "One bank file to copy back to PKSM on your 3DS."));
         if (format is null) return;
         if (format.StartsWith("PKSM", StringComparison.Ordinal))
@@ -267,7 +267,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler
             return;
         }
         var choice = await PadMenu.ShowAsync(_hostGrid, "Export archive",
-            "A folder of .pk files plus a manifest — readable by PKHeX and PKForge alike.",
+            "A folder of .pk files plus a manifest — readable by PKHeX and 3DS Bank alike.",
             new PadOption("Whole bank", IconPath: "bank"),
             new PadOption("This box only", IconPath: "box"));
         if (choice is null) return;

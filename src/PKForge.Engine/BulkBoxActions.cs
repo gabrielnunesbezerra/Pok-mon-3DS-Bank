@@ -22,6 +22,7 @@ public static class BulkBoxActions
     public static BulkOutcome SetShiny(ISaveEngineSession session, IReadOnlyList<(int Box, int Slot)> slots, bool shiny,
         bool keepLegal = true, Action<int, int>? onProgress = null, CancellationToken cancellationToken = default)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, save) = Require(session);
         var changed = 0;
         var notes = new List<string>();
@@ -69,6 +70,7 @@ public static class BulkBoxActions
     /// </summary>
     public static BulkOutcome SetCurrentTrainerAsHandler(ISaveEngineSession session, IReadOnlyList<(int Box, int Slot)> slots)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, save) = Require(session);
         var changed = 0;
         var skipped = 0;
@@ -103,6 +105,7 @@ public static class BulkBoxActions
     /// <summary>Restores HP, status and PP (PKM.Heal) for party members; boxed mons get their PP back.</summary>
     public static BulkOutcome Heal(ISaveEngineSession session, IReadOnlyList<(int Box, int Slot)> slots)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (engine, save) = Require(session);
         var changed = 0;
         foreach (var (box, slot) in slots)

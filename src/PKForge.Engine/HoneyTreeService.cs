@@ -105,21 +105,27 @@ public static class HoneyTreeService
     }
 
     /// <summary>Slathers the tree: the timer becomes PKHeX's "Catchable" value; the encounter is kept.</summary>
-    public static HoneyTree Slather(ISaveEngineSession session, int index) =>
-        Write(session, index, tree => tree.Time = CatchableTime);
+    public static HoneyTree Slather(ISaveEngineSession session, int index)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return Write(session, index, tree => tree.Time = CatchableTime);
+    }
 
     /// <summary>
     /// Writes a full tree state, clamped to SAV_HoneyTree's input ranges. Setting
     /// <see cref="HoneyTreeValue.Group"/> also rewrites SubTable (Group - 1), as PKHeX does.
     /// </summary>
-    public static HoneyTree SetTree(ISaveEngineSession session, int index, uint time, int group, int slot, int shakes) =>
-        Write(session, index, tree =>
+    public static HoneyTree SetTree(ISaveEngineSession session, int index, uint time, int group, int slot, int shakes)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return Write(session, index, tree =>
         {
             tree.Time = Math.Min(time, MaxTime);
             tree.Shake = Math.Clamp(shakes, 0, MaxShakes);
             tree.Group = Math.Clamp(group, GroupNone, GroupMunchlax);
             tree.Slot = Math.Clamp(slot, 0, SlotCount - 1);
         });
+    }
 
     /// <summary>
     /// Makes Munchlax wait in the tree: catchable timer, Munchlax group (every slot of the
@@ -129,6 +135,7 @@ public static class HoneyTreeService
     /// </summary>
     public static HoneyTree SetMunchlaxReady(ISaveEngineSession session, int index)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (!GetMunchlaxTrees(session).Contains(index))
             throw new InvalidOperationException($"{Locations[index]} is not a Munchlax tree for this trainer; a Munchlax caught there would be illegal.");
         return SetTree(session, index, CatchableTime, GroupMunchlax, 0, MunchlaxShakes);

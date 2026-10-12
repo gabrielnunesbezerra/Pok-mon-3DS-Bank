@@ -42,7 +42,7 @@ public static class SaveBlockEditor
 
             if (HardcoreMode.Blocks(SaveAction.WriteRawBytes, out var blocked))
             {
-                await EditorMenu.ShowAsync(host, "Hardcore mode", blocked, "OK");
+                await EditorMenu.ShowAsync(host, "3DS Bank", blocked, "OK");
                 continue;
             }
 

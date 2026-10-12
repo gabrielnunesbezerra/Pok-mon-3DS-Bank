@@ -39,7 +39,7 @@ public sealed class MainActivity : MauiAppCompatActivity
         {
             Services.AppLog.Warn("second", $"Still on display {Display?.DisplayId} after moving to the main screen");
             Android.Widget.Toast.MakeText(this,
-                "PKForge opened on the lower screen. For the two-screen layout, launch it from the main screen.",
+                "3DS Bank opened on the lower screen. For the two-screen layout, launch it from the main screen.",
                 Android.Widget.ToastLength.Long)?.Show();
             return;
         }

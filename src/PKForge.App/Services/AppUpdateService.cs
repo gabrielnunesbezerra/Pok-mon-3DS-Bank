@@ -14,7 +14,7 @@ namespace PKForge.App.Services;
 /// Auto-check failures stay silent; manual checks surface their error in the status bar.</summary>
 public sealed class AppUpdateService
 {
-    private const string LatestUrl = "https://api.github.com/repos/sofianeelhor/PKForge/releases/latest";
+    private const string LatestUrl = "https://api.github.com/repos/gabrielnunesbezerra/Pok-mon-3DS-Bank/releases/latest";
     private const string SkippedVersionKey = "update_skipped_version";
     private static readonly HttpClient Http = new(new SocketsHttpHandler
     {
@@ -37,7 +37,7 @@ public sealed class AppUpdateService
         using var request = new HttpRequestMessage(HttpMethod.Get, LatestUrl);
         request.Headers.Accept.ParseAdd("application/vnd.github+json");
         request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        request.Headers.UserAgent.ParseAdd($"PKForge/{AppInfo.Current.VersionString} (+https://github.com/sofianeelhor/PKForge)");
+        request.Headers.UserAgent.ParseAdd($"3DSBank/{AppInfo.Current.VersionString} (+https://github.com/gabrielnunesbezerra/Pok-mon-3DS-Bank)");
 
         using var response = await Http.SendAsync(request, checkTimeout.Token).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
@@ -68,7 +68,7 @@ public sealed class AppUpdateService
             update,
             AppUpdateRules.IsNewerVersion(AppInfo.Current.VersionString, update.Version)
                 ? $"Version {update.Version} is available."
-                : $"PKForge {AppInfo.Current.VersionString} is up to date.");
+                : $"3DS Bank {AppInfo.Current.VersionString} is up to date.");
     }
 
     public bool ShouldPromptAutomatically(AvailableAppUpdate update) =>
@@ -94,7 +94,7 @@ public sealed class AppUpdateService
             File.Delete(old);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, update.DownloadUrl);
-        request.Headers.UserAgent.ParseAdd($"PKForge/{AppInfo.Current.VersionString}");
+        request.Headers.UserAgent.ParseAdd($"3DSBank/{AppInfo.Current.VersionString}");
         using var response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
         var total = response.Content.Headers.ContentLength ?? update.SizeBytes;
@@ -210,9 +210,9 @@ public sealed class AppUpdateService
 [Android.Content.BroadcastReceiver(Enabled = true, Exported = false)]
 public sealed class UpdateInstallReceiver : Android.Content.BroadcastReceiver
 {
-    public const string ActionName = "org.pkforge.app.UPDATE_INSTALL_RESULT";
-    public const string ExtraApkPath = "org.pkforge.app.UPDATE_APK";
-    public const string ExtraAskedUser = "org.pkforge.app.UPDATE_ASKED_USER";
+    public const string ActionName = "io.github.gabrielnunesbezerra.threedsbank.UPDATE_INSTALL_RESULT";
+    public const string ExtraApkPath = "io.github.gabrielnunesbezerra.threedsbank.UPDATE_APK";
+    public const string ExtraAskedUser = "io.github.gabrielnunesbezerra.threedsbank.UPDATE_ASKED_USER";
     public const int RequestCode = 4701;
 
     /// <summary>Raised on the main thread when Android refused the update even with its own

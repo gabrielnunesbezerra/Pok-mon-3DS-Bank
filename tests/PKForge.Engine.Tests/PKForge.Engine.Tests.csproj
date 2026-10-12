@@ -14,4 +14,9 @@
     <ProjectReference Include="../../src/PKForge.Engine/PKForge.Engine.csproj" />
     <ProjectReference Include="../../src/PKForge.Infrastructure/PKForge.Infrastructure.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- 3DS Bank locks editing and Gen 8+ saves in the app (ThreeDsBankPolicy). The engine
+         tests lift both locks so they keep covering the original PKForge code paths. -->
+    <RuntimeHostConfigurationOption Include="ThreeDsBank.TestMode" Value="true" />
+  </ItemGroup>
 </Project>

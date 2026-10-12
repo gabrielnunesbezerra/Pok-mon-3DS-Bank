@@ -149,6 +149,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyEdit(int box, int slot, EntityEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -318,6 +319,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetPokerus(int box, int slot, PokerusStatus status)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ValidateCoordinates(box, slot);
         var entity = GetEntityCore(box, slot);
@@ -390,6 +392,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
         Justification = "PKHeX.Core is preserve=all in the Android linker descriptor; ribbon properties are retained.")]
     public void SetRibbon(int box, int slot, string id, int value)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ValidateCoordinates(box, slot);
@@ -439,6 +442,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
         Justification = "PKHeX.Core is preserve=all in the Android linker descriptor; ribbon properties are retained.")]
     public int AwardAllObtainableRibbons(int box, int slot)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ValidateCoordinates(box, slot);
         var entity = GetEntityCore(box, slot);
@@ -489,6 +493,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetAffixedRibbon(int box, int slot, int ribbonIndex)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ValidateCoordinates(box, slot);
         var entity = GetEntityCore(box, slot);
@@ -542,6 +547,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public bool DuplicateSlot(int fromBox, int fromSlot, int toBox, int toSlot)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ValidateCoordinates(fromBox, fromSlot);
         ValidateCoordinates(toBox, toSlot);
@@ -663,6 +669,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int PlaceLivingDex(byte[] compressedBundle)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         using var input = new MemoryStream(compressedBundle);
         using var inflate = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress);
@@ -748,6 +755,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int BatchApply(IReadOnlyList<string> instructions, IReadOnlyList<int>? boxes = null)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         var targetBoxes = boxes ?? Enumerable.Range(0, _save.BoxCount).ToList();
         var touched = 0;
@@ -765,6 +773,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int BatchApplySlots(IReadOnlyList<(int Box, int Slot)> slots, IReadOnlyList<string> instructions)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         var touched = 0;
         foreach (var (box, slot) in slots)
@@ -1080,6 +1089,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public bool RerollNatureKeepShiny(int box, int slot, int nature)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ValidateCoordinates(box, slot);
         var wanted = (Nature)Math.Clamp(nature, 0, 24);
@@ -1218,6 +1228,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetDexEntry(int species, bool seen, bool caught)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfLessThan(species, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(species, _save.MaxSpeciesID);
@@ -1429,6 +1440,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public GenerationOutcome PlaceEncounter(int species, int form, int cardIndex, int targetBox, int targetSlot)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         ThrowIfDisposed();
         ValidateCoordinates(targetBox, targetSlot);
         if (targetBox != -1 && GetEntityCore(targetBox, targetSlot).Species != 0)
@@ -1535,6 +1547,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetTrainer(TrainerInfo trainer)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         if (_save is SAV3 sav3 && !string.Equals(_save.OT, trainer.Name, StringComparison.Ordinal))
             PrefillTrainerName3(sav3.SmallBlock.OriginalTrainerTrash, sav3.Japanese);
@@ -1561,6 +1574,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public GenerationOutcome MakeMine(int box, int slot, TrainerProfile? profile = null)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         ThrowIfDisposed();
         ValidateCoordinates(box, slot);
         var source = GetEntity(box, slot);
@@ -1687,6 +1701,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void CompleteDex()
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         for (ushort species = 1; species <= _save.MaxSpeciesID; species++)
             SetDexFlagsCore(species, seen: true, caught: true);
@@ -1723,6 +1738,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int SetItemCount(string pouchName, int itemId, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         var bag = _save.Inventory;
         var pouch = bag.Pouches.FirstOrDefault(p => p.Type.ToString() == pouchName)
@@ -1764,6 +1780,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int SetPokeBeanCount(int index, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         if (_save is not SAV7 sav)
             throw new NotSupportedException("This game has no Poké Pelago Bean storage.");
@@ -1796,6 +1813,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public int SetGrandUndergroundItemCount(int itemId, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         if (_save is not SAV8BS sav)
             throw new NotSupportedException("This game has no Grand Underground inventory.");
@@ -1852,6 +1870,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public DaycareWithdrawal WithdrawDaycareToFirstEmptyBox(int facilityIndex, int slot)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         var facilities = GetDaycareFacilities();
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)facilityIndex, (uint)facilities.Count);
@@ -1906,6 +1925,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void UnlockAllLegalFashion()
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         switch (_save)
         {
@@ -1930,6 +1950,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetStylePoints(int value)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         if (_save is not SAV6XY xy)
             throw new NotSupportedException("Style points exist in Pokémon X and Y only.");
@@ -2007,6 +2028,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void SetTrainerStats(TrainerStatsEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         // Hours are clamped before PKHeX sees them: Gen 1's raw setter wipes the
@@ -2081,6 +2103,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void RepairRTC()
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         switch (_save)
         {
@@ -2165,6 +2188,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyMetEdit(int box, int slot, MetEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -2310,6 +2334,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyPotentialEdit(int box, int slot, PotentialEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -2412,6 +2437,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyMoveDetails(int box, int slot, MoveDetailsEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -2505,6 +2531,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyMoveShopEdit(int box, int slot, MoveShopEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -2576,6 +2603,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public void ApplyCosmeticEdit(int box, int slot, CosmeticEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(edit);
         ValidateCoordinates(box, slot);
@@ -2736,6 +2764,7 @@ public sealed class SaveEngineSession : ISaveEngineSession
 
     public bool SetCompassSetting(string id, int choiceIndex)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (_save is not SAV9SV sv)
             return false;
         var definition = Array.Find(CompassDefinitions, d => d.Id == id);

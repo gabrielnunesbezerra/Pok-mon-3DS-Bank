@@ -253,6 +253,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public void ApplyEdit(int box, int slot, EntityEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot) ?? throw new InvalidOperationException("Cannot edit an empty slot.");
         var location = box == -1 ? null : ResolveSlot(box, slot);
         var before = mon.Buffer.AsSpan(mon.Offset, mon.Size).ToArray();
@@ -411,6 +412,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public bool DuplicateSlot(int fromBox, int fromSlot, int toBox, int toSlot)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         ObjectDisposedException.ThrowIf(_disposed, this);
         var source = TryMon(fromBox, fromSlot);
         if (source is null || !source.LooksValid) return false;
@@ -829,7 +831,11 @@ internal class CfruEngineSession : ISaveEngineSession
         return new TrainerInfo(name.Length > 0 ? name : "PKForge", tid, sid, money, gender);
     }
 
-    public void SetTrainer(TrainerInfo trainer) => throw NotYet("The trainer editor");
+    public void SetTrainer(TrainerInfo trainer)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The trainer editor");
+    }
 
     public string GetBoxName(int box)
     {
@@ -852,6 +858,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public void SetDexEntry(int nationalSpecies, bool seen, bool caught)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var dex = Game.DexNumberOf(nationalSpecies);
         if (dex is < 1 or > DexCapacity) return;
         SetDexBit(DexSeenOffset, dex, seen);
@@ -1009,6 +1016,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public bool RerollNatureKeepShiny(int box, int slot, int nature)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid) return false;
         var location = box == -1 ? null : ResolveSlot(box, slot);
@@ -1020,6 +1028,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public GenerationOutcome MakeMine(int box, int slot, TrainerProfile? profile = null)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid)
             return new GenerationOutcome(false, "That slot is empty.");
@@ -1036,20 +1045,36 @@ internal class CfruEngineSession : ISaveEngineSession
     }
 
     public IReadOnlyList<int> GetMissingSpecies() => [];
-    public void CompleteDex() => throw NotYet("The complete-dex action (the CFRU dex needs the hack's own national table)");
+    public void CompleteDex()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The complete-dex action (the CFRU dex needs the hack's own national table)");
+    }
     public IReadOnlyList<NuzlockeCatch> GetNuzlockeReport() => [];
     public IReadOnlyList<EncounterCard> GetEncounterCards(int species, int form) => [];
-    public GenerationOutcome PlaceEncounter(int species, int form, int cardIndex, int targetBox, int targetSlot) =>
+    public GenerationOutcome PlaceEncounter(int species, int form, int cardIndex, int targetBox, int targetSlot)
+    {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         throw NotYet("Encounter cards");
+    }
     public bool SupportsBoxTools => false;
     public int SortBoxes(SortCriteria criteria, IReadOnlyList<int>? boxes = null, bool reverse = false) =>
         throw NotYet("Box sorting");
-    public int PlaceLivingDex(byte[] compressedBundle) =>
+    public int PlaceLivingDex(byte[] compressedBundle)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The living dex (the hack's species table needs hack-legal templates)");
-    public int BatchApply(IReadOnlyList<string> instructions, IReadOnlyList<int>? boxes = null) =>
+    }
+    public int BatchApply(IReadOnlyList<string> instructions, IReadOnlyList<int>? boxes = null)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The batch editor");
-    public int BatchApplySlots(IReadOnlyList<(int Box, int Slot)> slots, IReadOnlyList<string> instructions) =>
+    }
+    public int BatchApplySlots(IReadOnlyList<(int Box, int Slot)> slots, IReadOnlyList<string> instructions)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         throw NotYet("The batch editor");
+    }
     public void SwapBoxes(int a, int b) => throw NotYet("Box swapping");
     public void DeleteBox(int box) => throw NotYet("Box management");
 
@@ -1109,6 +1134,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public int SetItemCount(string pouchName, int itemId, int count)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var layout = Array.Find(BagLayouts, pouch => pouch.Name.Equals(pouchName, StringComparison.OrdinalIgnoreCase));
         if (layout.Name is null) return 0;
 
@@ -1152,25 +1178,54 @@ internal class CfruEngineSession : ISaveEngineSession
     }
 
     public IReadOnlyList<CountedEntry> GetPokeBeans() => [];
-    public int SetPokeBeanCount(int index, int count) => 0;
+    public int SetPokeBeanCount(int index, int count)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public IReadOnlyList<UndergroundItem> GetGrandUndergroundItems() => [];
-    public int SetGrandUndergroundItemCount(int itemId, int count) => 0;
+    public int SetGrandUndergroundItemCount(int itemId, int count)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public DaycareInfo GetDaycare() => new(false, []);
-    public DaycareWithdrawal WithdrawDaycareToFirstEmptyBox(int facility, int slot) => throw NotYet("The Day Care");
+    public DaycareWithdrawal WithdrawDaycareToFirstEmptyBox(int facility, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("The Day Care");
+    }
     public bool SupportsLegalFashionUnlock => false;
-    public void UnlockAllLegalFashion() { }
+    public void UnlockAllLegalFashion()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public bool SupportsStylePoints => false;
     public int GetStylePoints() => 0;
-    public void SetStylePoints(int value) { }
+    public void SetStylePoints(int value)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public MysteryGiftInbox GetMysteryGiftInbox() => new(false, []);
     public TrainerRecordsInfo GetTrainerRecords() => new(false, []);
     public TrainerStats GetTrainerStats() => new(false, 0, 0, 0, false, 0, 0, false, 0, 0);
-    public void SetTrainerStats(TrainerStatsEdit edit) => throw NotYet("Trainer statistics");
+    public void SetTrainerStats(TrainerStatsEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("Trainer statistics");
+    }
     public bool SupportsRTCRepair => false;
-    public void RepairRTC() { }
+    public void RepairRTC()
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
 
     public MetInfo GetMetInfo(int box, int slot) => throw NotYet("Met/origin editing");
-    public void ApplyMetEdit(int box, int slot, MetEdit edit) => throw NotYet("Met/origin editing");
+    public void ApplyMetEdit(int box, int slot, MetEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        throw NotYet("Met/origin editing");
+    }
     public IReadOnlyList<NamedChoice> GetLocationChoices(int box, int slot, bool egg) => [];
     public IReadOnlyList<NamedChoice> GetVersionChoices() => [];
     public IReadOnlyList<NamedChoice> GetLanguageChoices(int box, int slot) => [];
@@ -1200,6 +1255,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public void ApplyPotentialEdit(int box, int slot, PotentialEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null || !mon.LooksValid) return;
         if (edit.AbilitySlot is { } want)
@@ -1236,6 +1292,7 @@ internal class CfruEngineSession : ISaveEngineSession
 
     public void ApplyMoveDetails(int box, int slot, MoveDetailsEdit edit)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var mon = TryMon(box, slot);
         if (mon is null or { LooksValid: false }) return;
         if (!mon.Party)
@@ -1254,27 +1311,50 @@ internal class CfruEngineSession : ISaveEngineSession
     }
 
     public MoveShopInfo GetMoveShop(int box, int slot) => new(false, []);
-    public void ApplyMoveShopEdit(int box, int slot, MoveShopEdit edit) { }
+    public void ApplyMoveShopEdit(int box, int slot, MoveShopEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
 
     public CosmeticInfo GetCosmetics(int box, int slot) => new(
         [], [], false, 0, 0, false, 0, false, 0, 0, false, 0, 0, false, false,
         false, 0, false, false, false, false, 0);
 
-    public void ApplyCosmeticEdit(int box, int slot, CosmeticEdit edit) { }
+    public void ApplyCosmeticEdit(int box, int slot, CosmeticEdit edit)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public PokerusInfo GetPokerus(int box, int slot) => new(false, PokerusStatus.Susceptible, 0, 0);
-    public void SetPokerus(int box, int slot, PokerusStatus status) { }
+    public void SetPokerus(int box, int slot, PokerusStatus status)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public IReadOnlyList<RibbonEntry> GetRibbons(int box, int slot) => [];
-    public void SetRibbon(int box, int slot, string id, int value) { }
+    public void SetRibbon(int box, int slot, string id, int value)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public AffixedRibbonInfo GetAffixedRibbon(int box, int slot) => new(false, -1, string.Empty, []);
-    public void SetAffixedRibbon(int box, int slot, int ribbonIndex) { }
+    public void SetAffixedRibbon(int box, int slot, int ribbonIndex)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+    }
     public IReadOnlyDictionary<string, int> GetObtainableRibbonMaxima(int box, int slot) =>
         new Dictionary<string, int>();
-    public int AwardAllObtainableRibbons(int box, int slot) => 0;
+    public int AwardAllObtainableRibbons(int box, int slot)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return 0;
+    }
     public bool SupportsLegalityAnalysis => false;
 
     public bool SupportsCompassSettings => false;
     public IReadOnlyList<CompassSetting> GetCompassSettings() => [];
-    public bool SetCompassSetting(string id, int choiceIndex) => false;
+    public bool SetCompassSetting(string id, int choiceIndex)
+    {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
+        return false;
+    }
 
     public void Dispose() => _disposed = true;
 

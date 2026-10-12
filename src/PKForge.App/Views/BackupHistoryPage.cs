@@ -213,14 +213,12 @@ public sealed class BackupHistoryPage : ContentPage, IPadHandler
     }
 
     /// <summary>
-    /// Hardcore restores can duplicate: a Pokémon moved to the Bank or another game since the
-    /// restore point would exist again in this save. The Pokémon that would reappear are
-    /// named, and the safe choice (Cancel) is the default cursor.
+    /// Restores can duplicate: a Pokémon moved to the Bank or another game since the restore
+    /// point would exist again in this save. 3DS Bank names the Pokémon that would reappear
+    /// and refuses the restore; only a restore that brings nobody back is written.
     /// </summary>
     private async Task<bool> ConfirmHardcoreRestoreAsync(BackupInfo backup)
     {
-        const string Cancel = "Cancel (keep current save)";
-        const string Anyway = "Restore anyway";
         var check = await _viewModel.CheckResurrectionAsync(backup);
         if (check is { IsSafe: true })
             return await PadMenu.ConfirmAsync(_hostGrid, "Restore this point?",
@@ -233,7 +231,7 @@ public sealed class BackupHistoryPage : ContentPage, IPadHandler
         {
             message = $"{HardcoreMode.Marker}: this restore point could not be compared with the current save. " +
                 "If any Pokémon was moved to the Bank or sent to another game after it was taken, restoring brings it back here " +
-                "and it would then exist twice - a duplication Hardcore mode does not allow.";
+                "and it would then exist twice - a duplication 3DS Bank does not allow.";
         }
         else
         {
@@ -244,12 +242,14 @@ public sealed class BackupHistoryPage : ContentPage, IPadHandler
             if (check.Elsewhere > 0) where.Add($"{check.Elsewhere} sent to another game or released");
             message = $"{HardcoreMode.Marker}: restoring would bring back {check.Reappearing.Count} Pokémon that left this save " +
                 $"after this point ({string.Join(", ", where)}): {names}. " +
-                "Any that still exist in the Bank or another game would then exist twice - a duplication Hardcore mode does not allow. " +
-                "Release or withdraw those copies yourself if you restore.";
+                "Any that still exist in the Bank or another game would then exist twice - a duplication 3DS Bank does not allow.";
         }
 
-        var choice = await PadMenu.ShowAsync(_hostGrid, "Duplication risk", message, Cancel, Anyway);
-        return choice == Anyway;
+        // 3DS Bank never lets a restore bring back a Pokémon that already left: that would be a copy.
+        await PadMenu.ShowAsync(_hostGrid, "Restore blocked",
+            message + "\n\nNothing was written. Move those Pokémon back into this save first, then try this restore point again.",
+            "OK");
+        return false;
     }
 
     private static string Describe(SlotSummary slot)

@@ -95,7 +95,7 @@ public static class CollectionCenter
     {
         if (HardcoreMode.Blocks(SaveAction.CreateMon, out var hardcoreStatus))
         {
-            await PadMenu.ShowAsync(host, "Hardcore mode", hardcoreStatus, "OK");
+            await PadMenu.ShowAsync(host, "3DS Bank", hardcoreStatus, "OK");
             return false;
         }
         var boxes = (files.Count + FileBankService.SlotsPerBox - 1) / FileBankService.SlotsPerBox;

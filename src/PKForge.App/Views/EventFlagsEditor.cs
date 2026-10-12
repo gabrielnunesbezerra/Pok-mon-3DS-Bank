@@ -186,7 +186,7 @@ public sealed class EventFlagsEditor : IPadHandler
     {
         var total = Source.Count();
         var changed = Source.Count(e => _rows[(e.Kind, e.Bank, e.Index)].Entry.Changed);
-        var mode = HardcoreMode.Guard.Allows(SaveAction.EditWorld) ? "" : " · Hardcore: view only";
+        var mode = HardcoreMode.Guard.Allows(SaveAction.EditWorld) ? "" : " · view only";
         _footer.Text = $"{_visible.Count} shown of {total} · {changed} changed since open{mode}\nLabels: {_catalog.LabelSource}";
     }
 
@@ -235,7 +235,7 @@ public sealed class EventFlagsEditor : IPadHandler
         {
             if (HardcoreMode.Blocks(SaveAction.EditWorld, out var blocked))
             {
-                await EditorMenu.ShowAsync(_host, "Hardcore mode", $"{blocked}\nFlags stay viewable.", "OK");
+                await EditorMenu.ShowAsync(_host, "3DS Bank", $"{blocked}\nFlags stay viewable.", "OK");
                 return;
             }
             var entry = row.Entry;

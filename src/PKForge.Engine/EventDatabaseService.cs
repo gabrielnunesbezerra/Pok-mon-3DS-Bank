@@ -229,6 +229,7 @@ public sealed class EventDatabaseService : IEventDatabaseService
 
     public GenerationOutcome Receive(ISaveEngineSession session, int giftId, int box, int slot)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -248,6 +249,7 @@ public sealed class EventDatabaseService : IEventDatabaseService
 
     public GenerationOutcome ReceiveItems(ISaveEngineSession session, int giftId)
     {
+        if (ThreeDsBankPolicy.EditingLocked) return ThreeDsBankPolicy.Refused;
         if (session is not SaveEngineSession engineSession)
             return new GenerationOutcome(false, "Unsupported session type.");
         var save = engineSession.SaveFile;
@@ -294,6 +296,7 @@ public sealed class EventDatabaseService : IEventDatabaseService
 
     public SlotExport? ExportEntity(ISaveEngineSession session, int giftId)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         if (session is not SaveEngineSession engineSession) return null;
         var save = engineSession.SaveFile;
         var gifts = GetRawGifts(save);

@@ -119,7 +119,7 @@ public sealed class GameHeroBackdrop : Grid
     public void SetGame(DetectedSave game)
     {
         _title.Text = game.GameLabel;
-        _meta.Text = "PKForge game library";
+        _meta.Text = "3DS Bank game library";
         _ = LoadLogoAsync(game);
     }
 

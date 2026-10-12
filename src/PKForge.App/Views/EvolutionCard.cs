@@ -197,7 +197,7 @@ public sealed class EvolutionCard : IPadHandler
         {
             _ when CanMeet(option) => ($"Not met yet: {option.BlockedReason} Meet & evolve takes care of it.", UiTokens.RedOrange),
             { Available: false } => (option.BlockedReason ?? "Not possible right now.", UiTokens.GiftRed),
-            { IsTrade: true } => ("No second console needed: PKForge performs the link trade for you.", UiTokens.Ink1),
+            { IsTrade: true } => ("No second console needed: 3DS Bank performs the link trade for you.", UiTokens.Ink1),
             { ConditionMet: false } => ("HaX: the game's requirement is not met; evolving anyway.", UiTokens.RedOrange),
             _ => ("The requirement is met.", UiTokens.Green),
         };

@@ -61,6 +61,7 @@ public static class ClockRepairService
     /// clock from a clean start. Berries and daily events resume from the next in-game minute.</summary>
     public static Gen3ClockState ResetClocks(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (_, small) = Require(session);
         small.ClockInitial = Write(small.ClockInitial, default);
         small.ClockElapsed = Write(small.ClockElapsed, default);
@@ -71,6 +72,7 @@ public static class ClockRepairService
     /// bug threshold (never backwards).</summary>
     public static Gen3ClockState ApplyBerryFix(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (_, small) = Require(session);
         var elapsed = Read(small.ClockElapsed);
         small.ClockElapsed = Write(small.ClockElapsed, elapsed with { Day = Math.Max(BerryFixDay, elapsed.Day) });
@@ -82,6 +84,7 @@ public static class ClockRepairService
     /// the player set the time again.</summary>
     public static Gen3ClockState ArmInGameReset(ISaveEngineSession session)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         Require(session);
         ((SaveEngineSession)session).RepairRTC();
         return GetState(session);
@@ -90,6 +93,7 @@ public static class ClockRepairService
     /// <summary>Writes both values, clamped to SAV_RTC3's input ranges (day 0-65535, 23:59:59).</summary>
     public static Gen3ClockState SetClocks(ISaveEngineSession session, Gen3Clock initial, Gen3Clock elapsed)
     {
+        ThreeDsBankPolicy.ThrowIfEditingLocked();
         var (_, small) = Require(session);
         small.ClockInitial = Write(small.ClockInitial, Clamp(initial));
         small.ClockElapsed = Write(small.ClockElapsed, Clamp(elapsed));

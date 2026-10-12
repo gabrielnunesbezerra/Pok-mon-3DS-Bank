@@ -26,7 +26,7 @@ public sealed class HomePage : ContentPage, IPadHandler
     {
         _viewModel = viewModel;
         BindingContext = viewModel;
-        Title = "PKForge";
+        Title = "3DS Bank";
         BackgroundColor = UiTokens.Housing;
         NavigationPage.SetHasNavigationBar(this, false);
 
@@ -126,7 +126,7 @@ public sealed class HomePage : ContentPage, IPadHandler
         var root = new Grid
         {
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("PKForge", "Offline"), bodyHost, footer },
+            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("3DS Bank", "Offline"), bodyHost, footer },
         };
         Grid.SetRow((View)root.Children[1], 1);
         Grid.SetRow(bodyHost, 2);
@@ -289,10 +289,10 @@ public sealed class HomePage : ContentPage, IPadHandler
             {
                 // First run plays like a Pokémon intro: a professor-style dialogue, then the choices.
                 await DialogueBox.ShowSequenceAsync(_hostGrid,
-                    "Hello! Welcome to PKForge!",
-                    "This is a place where your Pokémon from every game can live together, safely.",
-                    "I can edit them, keep them in the Bank, and make sure each one is legal.",
-                    "And every change is backed up before it is written, so nothing is ever lost.",
+                    "Hello! Welcome to 3DS Bank!",
+                    "This is a place where your Pokémon from Generation 1 to 7 can live together, safely.",
+                    "I keep them in the Bank and move them between your games, exactly as you caught them. Nothing here edits a Pokémon.",
+                    "And every move is backed up before it is written, so nothing is ever lost.",
                     "Now then... let's find your games!");
 
                 var choice = await PadMenu.ShowAsync(_hostGrid, "Get started", null,
@@ -495,7 +495,7 @@ public sealed class HomePage : ContentPage, IPadHandler
         var options = editions.Select(c => new PadOption(c.Label, IconPath: "game"))
             .Append(new PadOption(later, IconPath: "close")).ToArray();
         var choice = await PadMenu.ShowAsync(_hostGrid, "Which version is this?",
-            "Both versions write the same save file, so PKForge cannot tell them apart. " +
+            "Both versions write the same save file, so 3DS Bank cannot tell them apart. " +
             "Pick yours once; you can change it later from the save's menu (long-press).", options);
         if (choice is null) return false;
         if (choice == later)
@@ -605,11 +605,11 @@ public sealed class HomePage : ContentPage, IPadHandler
             new PadOption(scheme, IconPath: "palette", Detail: "The app's colors: the default blues or a theme for each type."),
             new PadOption(background, IconPath: "box", Detail: "How each PC box shows the wallpaper the game gives it."),
             new PadOption("Restore points", IconPath: "history", Detail: "The backups made before each write, to put a save back as it was."),
-            new PadOption("About PKForge", IconPath: "info"),
+            new PadOption("About 3DS Bank", IconPath: "info"),
             new PadOption("Check for update", IconPath: "update"),
             new PadOption("Music", IconPath: "music", Detail: "Play your own audio files in the background."),
-            new PadOption("Misc", IconPath: "gears", Detail: "Sprite pack, rescan, logs, screen and editing modes."),
-            new PadOption("Quit PKForge", IconPath: "quit"),
+            new PadOption("Misc", IconPath: "gears", Detail: "Sprite pack, rescan, logs and the second screen."),
+            new PadOption("Quit 3DS Bank", IconPath: "quit"),
         ]);
         var choice = await PadMenu.ShowAsync(_hostGrid, "Settings", null, [.. options]);
         if (choice == hiddenOption) { await ShowHiddenSavesAsync(); return; }
@@ -621,12 +621,12 @@ public sealed class HomePage : ContentPage, IPadHandler
             case "Manage linked storage": await ShowManageLinkedStorageAsync(); break;
             case "Open a save file": await LinkFileAsync(); break;
             case "Restore points": await PushAsync<BackupHistoryPage>(); break;
-            case "About PKForge": await AboutPopup.ShowAsync(_hostGrid); break;
+            case "About 3DS Bank": await AboutPopup.ShowAsync(_hostGrid); break;
             case "Check for update": await CheckForUpdateAsync(automatic: false); break;
             case "Music": await ShowMusicAsync(); break;
             case "Misc": await ShowMiscAsync(); break;
-            case "Quit PKForge":
-                if (await PadMenu.ConfirmAsync(_hostGrid, "Quit PKForge?", "Unsaved edits in open menus are already backed up per write.", "Quit"))
+            case "Quit 3DS Bank":
+                if (await PadMenu.ConfirmAsync(_hostGrid, "Quit 3DS Bank?", "Unsaved edits in open menus are already backed up per write.", "Quit"))
                     Microsoft.Maui.Controls.Application.Current?.Quit();
                 break;
         }
@@ -679,7 +679,7 @@ public sealed class HomePage : ContentPage, IPadHandler
         if (choice == "Unlink all storage units")
         {
             var confirmedAll = await PadMenu.ConfirmAsync(_hostGrid, "Unlink all storage?",
-                "Every linked emulator folder will be removed from PKForge. Your files stay on the device.", "Unlink all");
+                "Every linked emulator folder will be removed from 3DS Bank. Your files stay on the device.", "Unlink all");
             if (!confirmedAll) return;
             foreach (var root in roots)
                 store.RemoveRoot(root);
@@ -691,7 +691,7 @@ public sealed class HomePage : ContentPage, IPadHandler
             if (index < 0 || index >= roots.Count) return;
             var root = roots[index];
             var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Unlink storage?",
-                $"Remove {SaveDescriptions.EmulatorName(root.Kind)} · {root.DisplayName} from PKForge? Your files stay on the device.", "Unlink");
+                $"Remove {SaveDescriptions.EmulatorName(root.Kind)} · {root.DisplayName} from 3DS Bank? Your files stay on the device.", "Unlink");
             if (!confirmed) return;
             store.RemoveRoot(root);
             _viewModel.Status = $"{SaveDescriptions.EmulatorName(root.Kind)} unlinked.";
@@ -731,7 +731,7 @@ public sealed class HomePage : ContentPage, IPadHandler
             return;
 
         var choice = await DialogueChoiceBox.ShowAsync(_hostGrid,
-            $"A new version of PKForge is available! Version {update.Version} is ready to install. Would you like to update now?",
+            $"A new version of 3DS Bank is available! Version {update.Version} is ready to install. Would you like to update now?",
             "YES", "NO", "DON'T REMIND ME");
         switch (choice)
         {
@@ -752,7 +752,7 @@ public sealed class HomePage : ContentPage, IPadHandler
     {
         var service = IPlatformApplication.Current!.Services.GetRequiredService<AppUpdateService>();
         var overlay = LoadingOverlay.Show(_hostGrid, "Downloading the update!",
-            $"PKForge {update.Version} is on its way. Android will confirm the installation.");
+            $"3DS Bank {update.Version} is on its way. Android will confirm the installation.");
         AppUpdateInstallResult result;
         try
         {
@@ -797,12 +797,12 @@ public sealed class HomePage : ContentPage, IPadHandler
 #endif
                 break;
             case AppUpdateInstallResult.ReleasePageOpened:
-                _viewModel.Status = "The PKForge release page is open.";
+                _viewModel.Status = "The 3DS Bank release page is open.";
                 break;
             case AppUpdateInstallResult.InstallPermissionRequired:
                 _pendingAuthorizedUpdate = update;
                 var permissionChoice = await DialogueChoiceBox.ShowAsync(_hostGrid,
-                    "Android needs permission to install PKForge updates. Allow install unknown apps for PKForge, then check again?",
+                    "Android needs permission to install 3DS Bank updates. Allow install unknown apps for 3DS Bank, then check again?",
                     "OPEN SETTINGS", "NOT NOW");
                 if (permissionChoice == "OPEN SETTINGS")
                     AppUpdateService.OpenInstallPermissionSettings();
@@ -842,7 +842,7 @@ public sealed class HomePage : ContentPage, IPadHandler
                 new PadOption(music.Library.Count > 0 ? "Clear library" : "-", IconPath: "delete",
                     Detail: music.Library.Count > 0 ? "Empties the list. Your audio files stay on the device." : null),
                 new PadOption($"Order: {order}", IconPath: "shuffle", Detail: "Play the library in order or shuffled."),
-                new PadOption($"Autostart: {auto}", IconPath: "settings", Detail: "ON starts the music when PKForge opens."));
+                new PadOption($"Autostart: {auto}", IconPath: "settings", Detail: "ON starts the music when 3DS Bank opens."));
             switch (choice)
             {
                 case "Play": music.Play(); break;
@@ -906,30 +906,15 @@ public sealed class HomePage : ContentPage, IPadHandler
     /// <summary>Maintenance actions: the sprite pack, the rescan, and the scan report.</summary>
     private async Task ShowMiscAsync()
     {
-        var trainerProfiles = IPlatformApplication.Current!.Services.GetRequiredService<TrainerProfileStore>();
         var choice = await PadMenu.ShowAsync(_hostGrid, "Misc", null,
-            new PadOption(trainerProfiles.UseCurrentTrainerForGeneration
-                ? "Generated Pokémon obey trainer: ON"
-                : "Generated Pokémon obey trainer: OFF", IconPath: "profile",
-                Detail: "ON makes Pokémon you create belong to the open save's trainer."),
             new PadOption($"Download full sprite pack ({SpritePackDownloader.SizeHint})", IconPath: "download", Detail: "Animated sprites, HOME pictures and item icons, to use offline."),
             new PadOption("Rescan games", IconPath: "refresh", Detail: "Look through your linked folders for saves again."),
             new PadOption("Scan report", IconPath: "report", Detail: "What the last scan found in each folder, to copy and send us."),
             new PadOption("Share logs", IconPath: "export", Detail: "Crash reports and recent activity, to send us when something goes wrong."),
             new PadOption(SecondScreenMode.UserOff ? "Second screen: OFF" : "Second screen: ON", IconPath: "compact",
-                Detail: "OFF keeps PKForge on one screen, so the other stays free (an emulator, say)."),
-            new PadOption(Services.HaXMode.IsOn ? "HaX mode: ON" : "HaX mode: OFF", IconPath: "hax",
-                Detail: "ON lets pickers offer any option, even illegal ones."),
-            new PadOption(Services.HardcoreMode.IsOn ? "Hardcore mode: ON" : "Hardcore mode: OFF", IconPath: "hardcore",
-                Detail: "ON blocks edits, new Pokémon and copies. Moving Pokémon still works."));
+                Detail: "OFF keeps 3DS Bank on one screen, so the other stays free (an emulator, say)."));
         switch (choice)
         {
-            case var ownership when ownership?.StartsWith("Generated Pokémon obey trainer:", StringComparison.Ordinal) == true:
-                trainerProfiles.SetUseCurrentTrainerForGeneration(!trainerProfiles.UseCurrentTrainerForGeneration);
-                _viewModel.Status = trainerProfiles.UseCurrentTrainerForGeneration
-                    ? "Generated Pokémon will be owned by the open save's trainer."
-                    : "Generated Pokémon may use Auto-Legality trainer data.";
-                break;
             case var pack when pack?.StartsWith("Download full sprite pack", StringComparison.Ordinal) == true:
                 await DownloadSpritePackAsync();
                 break;
@@ -937,7 +922,7 @@ public sealed class HomePage : ContentPage, IPadHandler
                 if (_viewModel.IsBusy && !_viewModel.ReleaseIfStuck())
                 {
                     await PadMenu.ShowAsync(_hostGrid, "Still busy",
-                        $"PKForge is still busy with {_viewModel.BusyWith}. Try again in a moment; if it stays stuck, close and reopen PKForge.", "OK");
+                        $"3DS Bank is still busy with {_viewModel.BusyWith}. Try again in a moment; if it stays stuck, close and reopen 3DS Bank.", "OK");
                     break;
                 }
                 // Called directly: the command refuses to start while an older run it owns is still pending.
@@ -962,7 +947,7 @@ public sealed class HomePage : ContentPage, IPadHandler
                 }
                 AppLog.Info("second", turnOff ? "Player turned the second screen off" : "Player turned the second screen on");
                 _viewModel.Status = turnOff
-                    ? "Second screen off: PKForge stays on this screen."
+                    ? "Second screen off: 3DS Bank stays on this screen."
                     : host?.IsAvailable == true ? "Second screen on." : "Second screen on, but no second display is available.";
                 break;
             }
@@ -976,27 +961,6 @@ public sealed class HomePage : ContentPage, IPadHandler
                 }
                 break;
             }
-            case "HaX mode: OFF":
-                var on = await PadMenu.ConfirmAsync(_hostGrid, "Turn on hax mode?",
-                    "Pickers will offer every option instead of the legal subset (any ability on any mon). " +
-                    "Use at your own risk: mons edited this way will show as illegal.", "Turn on");
-                if (on) { Services.HaXMode.Set(true); _viewModel.Status = "HaX mode is ON."; }
-                break;
-            case "HaX mode: ON":
-                Services.HaXMode.Set(false);
-                _viewModel.Status = "HaX mode is OFF.";
-                break;
-            case "Hardcore mode: OFF":
-                if (await PadMenu.ConfirmAsync(_hostGrid, "Turn on hardcore mode?", Services.HardcoreMode.SettingExplanation, "Turn on"))
-                {
-                    Services.HardcoreMode.Set(true);
-                    _viewModel.Status = $"{Services.HardcoreMode.Marker}: Hardcore mode is ON - moves only, no edits or copies.";
-                }
-                break;
-            case "Hardcore mode: ON":
-                Services.HardcoreMode.Set(false);
-                _viewModel.Status = "Hardcore mode is OFF.";
-                break;
         }
     }
 
@@ -1013,7 +977,7 @@ public sealed class HomePage : ContentPage, IPadHandler
                 ["scan-report.txt"] = _viewModel.ScanReport,
             }));
             AppLog.MarkCrashesSeen();
-            await Share.Default.RequestAsync(new ShareFileRequest("PKForge logs", new ShareFile(archive, "application/zip")));
+            await Share.Default.RequestAsync(new ShareFileRequest("3DS Bank logs", new ShareFile(archive, "application/zip")));
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
@@ -1028,7 +992,7 @@ public sealed class HomePage : ContentPage, IPadHandler
     private async Task OfferCrashReportAsync()
     {
         if (AppLog.UnseenCrashes().Count == 0) return;
-        var choice = await PadMenu.ShowAsync(_hostGrid, "PKForge closed unexpectedly",
+        var choice = await PadMenu.ShowAsync(_hostGrid, "3DS Bank closed unexpectedly",
             "A crash report was saved. Sharing it helps us fix it: it holds the error, your recent activity, file names and your device model, never your save data.",
             "Share report", "Not now");
         AppLog.MarkCrashesSeen();
@@ -1336,7 +1300,7 @@ public sealed class HomePage : ContentPage, IPadHandler
             var confirmed = await PadMenu.ConfirmAsync(_hostGrid,
                 "Emulated console storage",
                 $"{save.GameLabel} lives inside {save.Emulator}'s emulated storage - the delicate path. " +
-                "PKForge backs up before every write, but close the emulator first.",
+                "3DS Bank backs up before every write, but close the emulator first.",
                 "Connect");
             if (!confirmed) return;
         }
