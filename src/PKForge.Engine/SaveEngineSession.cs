@@ -1553,8 +1553,10 @@ public sealed class SaveEngineSession : ISaveEngineSession
     private string? HeavyChange(PKM before, TransferConversion conversion, byte[] fileBytes, string? format)
     {
         var after = conversion.Entity;
-        if (conversion.Backwards || after.Format < before.Format)
+        if (after.Format < before.Format)
             return "3DS Bank only moves Pokémon forward, like the official games: it cannot go back to an older generation.";
+        if (conversion.Backwards)
+            return "The official games have no way to bring it into this game, so 3DS Bank does not either.";
         if ((before is PB7) != (_save is SAV7b))
             return "Let's Go Pikachu and Eevee only exchange Pokémon with each other.";
         if (before.IsEgg && before.Format != after.Format)

@@ -1,3 +1,4 @@
+using PKForge.Domain;
 using PKHeX.Core;
 
 namespace PKForge.Engine;
@@ -20,6 +21,9 @@ public static class TransferCompatibility
     public static string? ExplainRefusal(byte[] entityBytes, string nickname, string targetFormat, int targetGeneration, string targetLabel, string? format = null)
     {
         ArgumentNullException.ThrowIfNull(entityBytes);
+        if (ThreeDsBankPolicy.EditingLocked && RadicalRed.CfruEntity.IsHackTag(targetFormat)
+            && RadicalRed.CfruEntity.Recognize(format) is null)
+            return $"{nickname} cannot go to {targetLabel}. A ROM hack only takes back its own Pokémon.";
         var context = Enum.TryParse<EntityContext>(targetFormat, out var parsed) ? parsed : EntityContext.None;
         var entity = EntityBytes.Parse(entityBytes, format, context);
         if ((entity is null || entity.Species == 0) && RadicalRed.CfruEntity.Recognize(format) is { } cfru)

@@ -146,6 +146,10 @@ internal static class CfruEntity
 
     private static readonly CfruGameProfile[] Profiles = [RadicalRedEngineSession.Profile, GsChroniclesEngineSession.Profile];
 
+    /// <summary>True when a snapshot tag names a ROM hack save (Unbound, Radical Red, GS Chronicles).</summary>
+    public static bool IsHackTag(string snapshotTag) =>
+        snapshotTag == UnboundEngineSession.SnapshotTag || Array.Exists(Profiles, p => p.SnapshotTag == snapshotTag);
+
     /// <summary>Egg flag, gender (0/1/2), PKHeX ball and held item for the Bank's sorts and
     /// filters, read through the hack's tables; null when the bytes are not a mon.</summary>
     public static (bool IsEgg, int Gender, int Ball, int HeldItem)? Facts(byte[] bytes, string format)

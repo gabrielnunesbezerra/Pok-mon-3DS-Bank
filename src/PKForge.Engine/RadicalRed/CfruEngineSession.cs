@@ -584,6 +584,8 @@ internal class CfruEngineSession : ISaveEngineSession
     {
         if (EntityBytes.Normalize(format) == _profile.EntityFormat)
             return ImportOwn(box, slot, fileBytes);
+        // 3DS Bank: a ROM hack only takes back its own Pokémon; anything else would be rewritten.
+        if (ThreeDsBankPolicy.EditingLocked) return false;
         var entity = EntityBytes.Parse(fileBytes, format);
         if (entity is null || entity.Species == 0) return false;
         if (entity is not PK3)
