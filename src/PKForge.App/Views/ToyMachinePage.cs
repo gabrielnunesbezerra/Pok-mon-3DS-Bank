@@ -370,22 +370,22 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         new(0xFF, 0x8F, 0xC7), new(0xB8, 0x6C, 0xFF), new(0xFF, 0x9A, 0x3C),
     ];
 
-    /// <summary>The capsules piled in the dome (design space: the machine is 300 by 400).</summary>
+    /// <summary>The capsules piled in the clear lower half of the ball (design space: the machine is 300 by 400).</summary>
     private void SeedCapsules()
     {
         var index = 0;
-        for (var row = 0; row < 4; row++)
-        {
-            var y = 226f - row * 29;
-            var offset = row % 2 == 0 ? 0f : 17f;
-            for (var x = 14f + offset; x <= 286; x += 34)
+        (float Y, float[] Xs)[] rows =
+        [
+            (186, [70, 100, 130, 160, 190, 220]),
+            (213, [85, 115, 145, 175, 205]),
+            (240, [120, 150, 180]),
+        ];
+        foreach (var (y, xs) in rows)
+            foreach (var x in xs)
             {
-                var distance = MathF.Sqrt((x - 150) * (x - 150) + (y - 150) * (y - 150));
-                if (distance + 18 > 97) continue;
                 _capsules.Add((x, y, CapsuleTops[index % CapsuleTops.Length], (index * 47 % 90) - 45));
                 index++;
             }
-        }
     }
 
     private void Paint(SKCanvas c, SKImageInfo info)
@@ -402,118 +402,166 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         DrawMachine(c, now, t);
         c.Restore();
         if (t >= DropEnd && _pending is { } prize)
-            DrawReveal(c, info, t, prize, new SKPoint(left + 150 * scale, top + 344 * scale), 14 * scale);
+            DrawReveal(c, info, t, prize, new SKPoint(left + 150 * scale, top + 350 * scale), 12 * scale);
     }
+
+    // The machine is a Poké Ball on a stand, like the capsule toy: the red top half and the
+    // black band with its white button, a clear bottom half full of capsules, then a red base
+    // with black and white stripes, the white dial and the silver prize door.
+    private static readonly SKColor BallRed = new(0xEE, 0x3B, 0x46);
+    private static readonly SKColor BallRedDark = new(0xB2, 0x1C, 0x29);
+    private static readonly SKColor BallBlack = new(0x15, 0x15, 0x18);
+    private static readonly SKColor BallWhite = new(0xF6, 0xF5, 0xF4);
+    private static readonly SKColor BallGrey = new(0xC4, 0xC1, 0xC2);
+    private static readonly SKPoint BallCenter = new(150, 150);
+    private const float BallRadius = 110;
+    private static readonly SKPoint Dial = new(150, 304);
+    private static readonly SKRect Door = new(116, 332, 184, 366);
 
     private void DrawMachine(SKCanvas c, long now, long t)
     {
-        // How hard the machine shakes while the handle turns.
+        // How hard the machine shakes while the dial turns.
         var shake = t is >= 0 and < CrankEnd ? MathF.Sin(MathF.PI * t / CrankEnd) : 0f;
 
-        using (var floor = new SKPaint { Color = SKColors.Black.WithAlpha(60), IsAntialias = true })
-            c.DrawOval(150, 392, 112, 8, floor);
-        using (var foot = new SKPaint { Color = new SKColor(0x6E, 0x18, 0x24), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(62, 366, 238, 390), 6, 6, foot);
+        using (var floor = new SKPaint { Color = SKColors.Black.WithAlpha(70), IsAntialias = true })
+            c.DrawOval(150, 394, 104, 7, floor);
 
-        var body = new SKRect(72, 234, 228, 372);
-        using (var paint = new SKPaint
+        // The base: red body, stripes top and bottom, the dial and the door.
+        var body = new SKRect(78, 262, 222, 390);
+        using (var path = new SKPath())
         {
-            IsAntialias = true,
-            Shader = SKShader.CreateLinearGradient(new SKPoint(0, body.Top), new SKPoint(0, body.Bottom),
-                [new SKColor(0xEE, 0x4B, 0x55), new SKColor(0xB0, 0x1F, 0x2D)], SKShaderTileMode.Clamp),
-        })
-            c.DrawRoundRect(body, 18, 18, paint);
-        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(46), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(82, 248, 92, 356), 5, 5, shine);
-        using (var edge = new SKPaint { Color = new SKColor(0x6E, 0x18, 0x24), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
-            c.DrawRoundRect(body, 18, 18, edge);
-        using (var neck = new SKPaint { Color = new SKColor(0xC4, 0x2F, 0x3B), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(98, 224, 202, 246), 6, 6, neck);
-        DrawSparkle(c, new SKPoint(100, 262), 9, new SKColor(0xFF, 0xE0, 0x7A));
-        DrawSparkle(c, new SKPoint(112, 276), 5, new SKColor(0xFF, 0xF4, 0xC2));
+            path.MoveTo(body.Left + 10, body.Top);
+            path.LineTo(body.Right - 10, body.Top);
+            path.LineTo(body.Right, body.Top + 14);
+            path.LineTo(body.Right, body.Bottom - 16);
+            path.LineTo(body.Right - 14, body.Bottom);
+            path.LineTo(body.Left + 14, body.Bottom);
+            path.LineTo(body.Left, body.Bottom - 16);
+            path.LineTo(body.Left, body.Top + 14);
+            path.Close();
+            using var red = new SKPaint
+            {
+                IsAntialias = true,
+                Shader = SKShader.CreateLinearGradient(new SKPoint(body.Left, 0), new SKPoint(body.Right, 0),
+                    new[] { BallRedDark, BallRed, BallRed, BallRedDark }, new[] { 0f, 0.3f, 0.65f, 1f }, SKShaderTileMode.Clamp),
+            };
+            c.DrawPath(path, red);
+            c.Save();
+            c.ClipPath(path, antialias: true);
+            using (var black = new SKPaint { Color = BallBlack })
+            {
+                c.DrawRect(new SKRect(body.Left, body.Top, body.Right, body.Top + 12), black);
+                c.DrawRect(new SKRect(body.Left, body.Bottom - 12, body.Right, body.Bottom), black);
+            }
+            using (var white = new SKPaint { Color = BallWhite })
+            {
+                c.DrawRect(new SKRect(body.Left, body.Top + 12, body.Right, body.Top + 16), white);
+                c.DrawRect(new SKRect(body.Left, body.Bottom - 16, body.Right, body.Bottom - 12), white);
+            }
+            c.Restore();
+            using var rim = new SKPaint { Color = BallBlack, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f };
+            c.DrawPath(path, rim);
+        }
 
-        // The ticket slot.
-        using (var slot = new SKPaint { Color = new SKColor(0x4A, 0x10, 0x18), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(188, 266, 214, 306), 5, 5, slot);
-        using (var slit = new SKPaint { Color = new SKColor(0x16, 0x04, 0x07), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(198, 272, 204, 300), 2, 2, slit);
-
-        // The handle: one full turn, slow at both ends.
+        // The dial: one full turn, slow at both ends.
         var turn = t is >= 0 and < CrankEnd ? Ease.InOutCubic(t / (float)CrankEnd) : t >= CrankEnd ? 1f : 0f;
-        var crank = new SKPoint(140, 292);
-        using (var plate = new SKPaint
+        using (var ring = new SKPaint { Color = BallGrey, IsAntialias = true })
+            c.DrawCircle(Dial, 21, ring);
+        using (var face = new SKPaint
         {
             IsAntialias = true,
-            Shader = SKShader.CreateLinearGradient(new SKPoint(crank.X, crank.Y - 26), new SKPoint(crank.X, crank.Y + 26),
-                [new SKColor(0xF2, 0xF5, 0xF8), new SKColor(0x9A, 0xA6, 0xB2)], SKShaderTileMode.Clamp),
+            Shader = SKShader.CreateRadialGradient(new SKPoint(Dial.X - 6, Dial.Y - 6), 22, [SKColors.White, BallWhite, BallGrey], SKShaderTileMode.Clamp),
         })
-            c.DrawCircle(crank, 26, plate);
-        using (var rim = new SKPaint { Color = new SKColor(0x5D, 0x66, 0x70), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f })
-            c.DrawCircle(crank, 26, rim);
+            c.DrawCircle(Dial, 18, face);
         c.Save();
-        c.RotateDegrees(turn * 360, crank.X, crank.Y);
-        using (var bar = new SKPaint { Color = new SKColor(0xE0, 0xA8, 0x1C), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(crank.X - 5, crank.Y - 22, crank.X + 5, crank.Y + 4), 5, 5, bar);
-        using (var knob = new SKPaint { Color = new SKColor(0xFF, 0xE0, 0x8A), IsAntialias = true })
-            c.DrawCircle(crank.X, crank.Y - 22, 7, knob);
+        c.RotateDegrees(turn * 360, Dial.X, Dial.Y);
+        using (var grip = new SKPaint { Color = SKColors.White, IsAntialias = true })
+            c.DrawRoundRect(new SKRect(Dial.X - 17, Dial.Y - 5, Dial.X + 17, Dial.Y + 5), 5, 5, grip);
+        using (var gripEdge = new SKPaint { Color = BallGrey, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f })
+            c.DrawRoundRect(new SKRect(Dial.X - 17, Dial.Y - 5, Dial.X + 17, Dial.Y + 5), 5, 5, gripEdge);
         c.Restore();
-        using (var hub = new SKPaint { Color = new SKColor(0x5D, 0x66, 0x70), IsAntialias = true })
-            c.DrawCircle(crank, 4, hub);
 
         // The prize door, and the capsule that drops into it.
-        var chute = new SKRect(108, 326, 192, 362);
-        using (var hole = new SKPaint { Color = new SKColor(0x3B, 0x0D, 0x14), IsAntialias = true })
-            c.DrawRoundRect(chute, 9, 9, hole);
-        using (var flap = new SKPaint { Color = new SKColor(0x5C, 0x15, 0x20), IsAntialias = true })
-            c.DrawRoundRect(SKRect.Inflate(chute, -6, -6), 6, 6, flap);
+        using (var frame = new SKPaint
+        {
+            IsAntialias = true,
+            Shader = SKShader.CreateLinearGradient(new SKPoint(0, Door.Top), new SKPoint(0, Door.Bottom),
+                [new SKColor(0xE4, 0xE6, 0xE9), new SKColor(0x9C, 0xA3, 0xAB)], SKShaderTileMode.Clamp),
+        })
+            c.DrawRoundRect(Door, 5, 5, frame);
+        var hole = SKRect.Inflate(Door, -6, -5);
+        using (var dark = new SKPaint { Color = new SKColor(0x3A, 0x3E, 0x44), IsAntialias = true })
+            c.DrawRoundRect(hole, 3, 3, dark);
         if (t is >= CrankEnd and < DropEnd && _pending is { } falling)
         {
             var p = (t - CrankEnd) / (float)(DropEnd - CrankEnd);
-            var y = 300 + (346 - 300) * Ease.OutBounce(p);
+            var y = 326 + (350 - 326) * Ease.OutBounce(p);
             c.Save();
-            c.ClipRoundRect(new SKRoundRect(chute, 9, 9), antialias: true);
-            DrawCapsule(c, new SKPoint(150, y), 14, PrizeTop(falling), falling.IsMystery, 0, 0, 1);
+            c.ClipRoundRect(new SKRoundRect(hole, 3, 3), antialias: true);
+            DrawCapsule(c, new SKPoint(150, y), 12, PrizeTop(falling), falling.IsMystery, 0, 0, 1);
             c.Restore();
         }
 
-        // The glass dome and its capsules.
-        var dome = new SKPoint(150, 140);
-        using (var glass = new SKPaint
-        {
-            IsAntialias = true,
-            Shader = SKShader.CreateRadialGradient(new SKPoint(130, 110), 120,
-                [new SKColor(0xE6, 0xF7, 0xFF, 0x70), new SKColor(0x8F, 0xC9, 0xF0, 0x90)], SKShaderTileMode.Clamp),
-        })
-            c.DrawCircle(dome, 100, glass);
+        // The collar between the ball and the base.
+        using (var collar = new SKPaint { Color = BallBlack, IsAntialias = true })
+            c.DrawRoundRect(new SKRect(96, 250, 204, 268), 6, 6, collar);
+
+        // The ball. The lower half is clear: the capsules show through it.
+        using var clip = new SKPath();
+        clip.AddCircle(BallCenter.X, BallCenter.Y, BallRadius);
         c.Save();
-        using (var clip = new SKPath())
-        {
-            clip.AddCircle(dome.X, dome.Y, 97);
-            c.ClipPath(clip, antialias: true);
-        }
+        c.ClipPath(clip, antialias: true);
+        using (var inside = new SKPaint { Color = new SKColor(0xDD, 0xEE, 0xF8, 0x48) })
+            c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y, BallCenter.X + BallRadius, BallCenter.Y + BallRadius), inside);
         for (var i = 0; i < _capsules.Count; i++)
         {
             var (x, y, color, tilt) = _capsules[i];
             var dx = shake * MathF.Sin(t * 0.045f + i * 1.7f) * 4;
-            var dy = shake * MathF.Cos(t * 0.05f + i * 2.3f) * 3 - shake * 3;
+            var dy = shake * MathF.Cos(t * 0.05f + i * 2.3f) * 3 - shake * 4;
             var idle = MathF.Sin(now / 900f + i) * 0.6f;
-            DrawCapsule(c, new SKPoint(x + dx, y + dy + idle), 17, color, false, tilt + shake * MathF.Sin(t * 0.03f + i) * 25, 0, 1);
+            DrawCapsule(c, new SKPoint(x + dx, y + dy + idle), 15, color, false, tilt + shake * MathF.Sin(t * 0.03f + i) * 25, 0, 1);
         }
+        using (var glassShade = new SKPaint
+        {
+            Shader = SKShader.CreateRadialGradient(new SKPoint(120, 190), 130,
+                [SKColors.White.WithAlpha(0x10), SKColors.White.WithAlpha(0x34)], SKShaderTileMode.Clamp),
+        })
+            c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y, BallCenter.X + BallRadius, BallCenter.Y + BallRadius), glassShade);
+        using (var top = new SKPaint
+        {
+            IsAntialias = true,
+            Shader = SKShader.CreateRadialGradient(new SKPoint(118, 82), 150, [new SKColor(0xFF, 0x6A, 0x72), BallRed, BallRedDark], SKShaderTileMode.Clamp),
+        })
+            c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y - BallRadius, BallCenter.X + BallRadius, BallCenter.Y), top);
+        using (var band = new SKPaint { Color = BallBlack })
+            c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y - 9, BallCenter.X + BallRadius, BallCenter.Y + 9), band);
         c.Restore();
-        using (var outline = new SKPaint { Color = SKColors.White.WithAlpha(200), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 4 })
-            c.DrawCircle(dome, 100, outline);
-        using (var glint = new SKPaint { Color = SKColors.White.WithAlpha(150), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 7, StrokeCap = SKStrokeCap.Round })
+        using (var outline = new SKPaint { Color = BallBlack, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
+            c.DrawCircle(BallCenter, BallRadius, outline);
+        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(120), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 8, StrokeCap = SKStrokeCap.Round })
         using (var arc = new SKPath())
         {
-            arc.AddArc(new SKRect(dome.X - 80, dome.Y - 80, dome.X + 80, dome.Y + 80), 200, 50);
+            arc.AddArc(new SKRect(BallCenter.X - 88, BallCenter.Y - 88, BallCenter.X + 88, BallCenter.Y + 88), 200, 45);
+            c.DrawPath(arc, shine);
+        }
+        using (var glint = new SKPaint { Color = SKColors.White.WithAlpha(90), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 5, StrokeCap = SKStrokeCap.Round })
+        using (var arc = new SKPath())
+        {
+            arc.AddArc(new SKRect(BallCenter.X - 92, BallCenter.Y - 92, BallCenter.X + 92, BallCenter.Y + 92), 120, 35);
             c.DrawPath(arc, glint);
         }
-        using (var dot = new SKPaint { Color = SKColors.White.WithAlpha(170), IsAntialias = true })
-            c.DrawCircle(dome.X - 52, dome.Y - 18, 4, dot);
-        using (var cap = new SKPaint { Color = new SKColor(0xEE, 0x4B, 0x55), IsAntialias = true })
-            c.DrawRoundRect(new SKRect(116, 32, 184, 52), 7, 7, cap);
-        using (var bolt = new SKPaint { Color = new SKColor(0xFF, 0xD1, 0x4A), IsAntialias = true })
-            c.DrawCircle(150, 28, 7, bolt);
+
+        // The white button on the band, as on a Poké Ball.
+        using (var buttonRing = new SKPaint { Color = BallBlack, IsAntialias = true })
+            c.DrawCircle(BallCenter, 30, buttonRing);
+        using (var buttonFace = new SKPaint
+        {
+            IsAntialias = true,
+            Shader = SKShader.CreateRadialGradient(new SKPoint(BallCenter.X - 7, BallCenter.Y - 7), 26, [SKColors.White, BallWhite, BallGrey], SKShaderTileMode.Clamp),
+        })
+            c.DrawCircle(BallCenter, 22, buttonFace);
+        using (var inner = new SKPaint { Color = BallGrey, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 })
+            c.DrawCircle(BallCenter, 13, inner);
     }
 
     private static SKColor PrizeTop(ToyPrize prize) => prize.IsMystery ? new SKColor(0x2A, 0x24, 0x40) : RarityColor(prize.Rarity);

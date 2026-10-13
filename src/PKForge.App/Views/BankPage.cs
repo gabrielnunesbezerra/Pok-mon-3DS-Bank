@@ -41,6 +41,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
     private readonly SKCanvasView _panel;
     private string _boxTitle = "";
     private Label _statusLine = null!;
+    private Label _bankTitle = null!;
 
     private int _boxIndex;
     private int _selectedSlot;
@@ -67,99 +68,146 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         _canvas.PaintSurface += Paint;
         _canvas.Touch += Touch;
 
-        // The box header over the well, as in the storage screen: the chevrons page the
-        // boxes, the banner opens the box overview.
-        _boxBar = new SKCanvasView { HeightRequest = Design(72), Margin = new Thickness(0, 0, 0, Design(28)) };
+        // The header: back, the box bar (its chevrons page the boxes, the banner opens the
+        // box overview) and the three-dot menu with the Bank's tools. No footer: the box gets
+        // the height, and the Pokémon's own buttons sit under its panel.
+        _boxBar = new SKCanvasView { HeightRequest = 42, VerticalOptions = LayoutOptions.Center };
         _boxBar.PaintSurface += PaintBoxBar;
         var boxBarTap = new TapGestureRecognizer();
         boxBarTap.Tapped += (_, args) => TapBoxBar(args.GetPosition(_boxBar)?.X ?? _boxBar.Width / 2);
         _boxBar.GestureRecognizers.Add(boxBarTap);
+        var back = HeaderButton(new Label
+        {
+            Text = "‹", FontFamily = "Rounded", FontSize = 24, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
+            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
+        }, () => _ = Navigation.PopAsync());
+        var dots = new VerticalStackLayout { Spacing = 3, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
+        for (var i = 0; i < 3; i++)
+            dots.Children.Add(new BoxView { WidthRequest = 5, HeightRequest = 5, CornerRadius = 2.5, Color = UiTokens.Ink0 });
+        var more = HeaderButton(dots, () => _ = ShowMoreMenuAsync());
+        _bankTitle = new Label
+        {
+            FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0,
+            VerticalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.TailTruncation,
+        };
 
-        // The side panel: the selected Pokémon in the editor panel's look, the Bank's tools under it.
-        _panel = new SKCanvasView { InputTransparent = true };
+        // The side panel: the selected Pokémon in the editor panel's look; a tap on it opens
+        // the summary. Under it, the last report and the selected Pokémon's buttons.
+        _panel = new SKCanvasView();
         _panel.PaintSurface += PaintPanel;
+        var panelTap = new TapGestureRecognizer();
+        panelTap.Tapped += (_, _) => OnPadButton(PadButton.Select);
+        _panel.GestureRecognizers.Add(panelTap);
         Button Tool(string text, Action action)
         {
             var button = EditorTool(text);
-            button.HeightRequest = Design(60);
-            button.FontSize = EditorText * 0.82;
-            button.Padding = new Thickness(Design(6), 0);
+            button.HeightRequest = 38;
+            button.FontSize = UiTokens.TextBody;
+            button.Padding = new Thickness(6, 0);
             button.Clicked += (_, _) => action();
             return button;
         }
-        // One compact row, so the panel above keeps room for the facts.
         var tools = new Grid
         {
-            ColumnSpacing = Design(12),
-            Margin = new Thickness(0, Design(18), 0, 0),
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(new GridLength(1.4, GridUnitType.Star)), new(GridLength.Star), new(GridLength.Star)],
+            ColumnSpacing = 8,
+            ColumnDefinitions = [new(GridLength.Star), new(new GridLength(1.3, GridUnitType.Star)), new(GridLength.Star)],
         };
-        tools.Add(Tool("Boxes", () => _ = OpenBoxOverviewAsync()), 0, 0);
-        tools.Add(Tool("Search", () => _ = OpenSearchAsync()), 1, 0);
-        tools.Add(Tool("Living dex", () => _ = OpenLivingDexAsync()), 2, 0);
-        // 3DS Bank: Export moves Pokémon out into .pk files; Import brings exactly those back.
-        tools.Add(Tool("Import", () => _ = ImportBackAsync()), 3, 0);
-        tools.Add(Tool("Export", () => _ = ExportOutAsync(null)), 4, 0);
-
-        var left = new Grid
-        {
-            RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
-            Children = { _boxBar, _canvas },
-        };
-        Grid.SetRow(_canvas, 1);
-        var right = new Grid
-        {
-            RowDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
-            Children = { _panel, tools },
-        };
-        Grid.SetRow(tools, 1);
-        var content = new Grid
-        {
-            Padding = new Thickness(Design(48), Design(32), Design(28), Design(20)),
-            ColumnSpacing = Design(32),
-            ColumnDefinitions = [new(new GridLength(1072, GridUnitType.Star)), new(new GridLength(740, GridUnitType.Star))],
-            Children = { left, right },
-        };
-        Grid.SetColumn(right, 1);
-        var bodyHost = new Grid { Children = { DsChrome.GridBackground(), content } };
+        tools.Add(Tool(HasSecondScreen ? "Page" : "Summary", () => OnPadButton(PadButton.Select)), 0, 0);
+        tools.Add(Tool("Pokémon menu", () => _ = OpenCursorMenuAsync()), 1, 0);
+        tools.Add(Tool("Mark", ToggleCursorMark), 2, 0);
 
         // The bank's own readout: the organizer's mark count and every action's report.
         // It mirrors the shared view-model status, so the vault and the boxes agree.
-        _statusLine = Kit.LcdLabel(UiTokens.TextBody);
-        _statusLine.FontFamily = DsChrome.PixelFont;
+        _statusLine = new Label
+        {
+            FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1,
+            MaxLines = 2, LineBreakMode = LineBreakMode.TailTruncation,
+        };
         _statusLine.SetBinding(Label.TextProperty, new Binding(nameof(BoxBrowserViewModel.Status), converter: Kit.TidyText));
         _statusLine.BindingContext = _boxViewModel;
-        var statusHost = Kit.LcdPanel(_statusLine, padding: 6);
-        statusHost.Margin = new Thickness(12, 0, 12, 6);
 
-        // Touch buttons: a tap selects a slot, a second tap opens its menu; the box bar's
-        // arrows turn the boxes. A dual-screen device turns the inspector's page below
-        // instead of opening the full-screen summary.
-        var footer = DsChrome.Footer(
-            ("", "Back", () => OnPadButton(PadButton.B)),
-            ("", "Pokémon menu", () => _ = OpenCursorMenuAsync()),
-            ("", HasSecondScreen ? "Page" : "Summary", () => OnPadButton(PadButton.Select)),
-            ("", "Mark", ToggleCursorMark),
-            ("", "Bank actions", () => _ = ShowBankActionsAsync()));
-
-        var root = new Grid
+        var leftHeader = new Grid
         {
-            RowDefinitions =
-            [
-                new(GridLength.Auto), new(GridLength.Auto),
-                new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto),
-            ],
-            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("Bank", "Open"), bodyHost, statusHost, footer },
+            ColumnSpacing = 10,
+            ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
+            Children = { back, _boxBar },
         };
-        Grid.SetRow((View)root.Children[1], 1);
-        Grid.SetRow(bodyHost, 2);
-        Grid.SetRow(statusHost, 3);
-        Grid.SetRow(footer, 4);
+        Grid.SetColumn(_boxBar, 1);
+        var rightHeader = new Grid
+        {
+            ColumnSpacing = 10,
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
+            Children = { _bankTitle, more },
+        };
+        Grid.SetColumn(more, 1);
+        var right = new Grid
+        {
+            RowSpacing = 6,
+            RowDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)],
+            Children = { _panel, _statusLine, tools },
+        };
+        Grid.SetRow(_statusLine, 1);
+        Grid.SetRow(tools, 2);
+        var content = new Grid
+        {
+            Padding = new Thickness(12, 8, 12, 10),
+            ColumnSpacing = 14,
+            RowSpacing = 8,
+            ColumnDefinitions = [new(new GridLength(1.5, GridUnitType.Star)), new(GridLength.Star)],
+            RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
+            Children = { leftHeader, rightHeader, _canvas, right },
+        };
+        Grid.SetColumn(rightHeader, 1);
+        Grid.SetRow(_canvas, 1);
+        Grid.SetRow(right, 1);
+        Grid.SetColumn(right, 1);
+        var root = new Grid { Children = { DsChrome.GridBackground(), content } };
 
         _hostGrid = new Grid { Children = { root } };
         Content = _hostGrid;
         UpdatePageLabel();
         UpdateStatus();
+    }
+
+    /// <summary>A square header button (back, the three-dot menu).</summary>
+    private static Border HeaderButton(View content, Action onTap)
+    {
+        var button = new Border
+        {
+            WidthRequest = 44,
+            HeightRequest = 40,
+            VerticalOptions = LayoutOptions.Center,
+            BackgroundColor = UiTokens.ButtonTop,
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = UiTokens.ControlEdge,
+            StrokeShape = new RoundRectangle { CornerRadius = 8 },
+            Content = content,
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => onTap();
+        button.GestureRecognizers.Add(tap);
+        return button;
+    }
+
+    /// <summary>The three-dot menu: the Bank's tools that used to sit in a row under the panel.</summary>
+    private async Task ShowMoreMenuAsync()
+    {
+        var choice = await PadMenu.ShowAsync(_hostGrid, "Bank", null,
+            new PadOption("Boxes", IconPath: "box", Detail: "Every box at once: open, move, add or rename them."),
+            new PadOption("Search", IconPath: "search", Detail: "Find Pokémon by species, type, game and more."),
+            new PadOption("Living dex", IconPath: "pokedex", Detail: "Which species the Bank already has, and which are missing."),
+            new PadOption("Bank actions", IconPath: "sort", Detail: "Sort, compact, release or send the marked Pokémon."),
+            new PadOption("Import", IconPath: "import", Detail: "Brings back .pk files that were exported from this Bank."),
+            new PadOption("Export", IconPath: "export", Detail: "Takes Pokémon out of the Bank as .pk files."));
+        switch (choice)
+        {
+            case "Boxes": await OpenBoxOverviewAsync(); break;
+            case "Search": await OpenSearchAsync(); break;
+            case "Living dex": await OpenLivingDexAsync(); break;
+            case "Bank actions": await ShowBankActionsAsync(); break;
+            case "Import": await ImportBackAsync(); break;
+            case "Export": await ExportOutAsync(null); break;
+        }
     }
 
     protected override void OnAppearing()
@@ -534,6 +582,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         _boxEntries = map;
         // Never keep a mark on a slot the bank no longer holds (release, move, sort).
         _marked.IntersectWith(live);
+        _bankTitle.Text = live.Count == 1 ? "Bank · 1 Pokémon" : $"Bank · {live.Count} Pokémon";
     }
 
     private BankEntry? EntryAt(int slot) => _boxEntries.GetValueOrDefault(slot);
