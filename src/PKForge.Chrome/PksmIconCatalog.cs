@@ -33,6 +33,8 @@ public static class PksmIconCatalog
         new("star", "px_star.png", "Shooting Star"),
         new("toymachine", "px_toymachine.png", "The toy machine (a prize capsule)"),
         new("ticket", "px_ticket.png", "A toy machine ticket"),
+        new("menu", "px_menu.png", "Open the side menu"),
+        new("more", "px_more.png", "More options (the three-dot menu)"),
         // Pokémon actions
         new("editor", "icon_script.png", "Edit / view a Pokémon"),
         new("evolve", "px_evolve.png", "Evolve"),

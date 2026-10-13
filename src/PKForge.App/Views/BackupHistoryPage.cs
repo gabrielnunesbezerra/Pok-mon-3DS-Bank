@@ -21,9 +21,7 @@ public sealed class BackupHistoryPage : ContentPage, IPadHandler
         BackgroundColor = UiTokens.Housing;
         NavigationPage.SetHasNavigationBar(this, false);
 
-        var back = Kit.MiniCapsule("Back", UiTokens.Ink0);
-        back.WidthRequest = 72;
-        back.Clicked += async (_, _) => await Navigation.PopAsync();
+        var back = Kit.IconButton("back", () => _ = Navigation.PopAsync());
 
         var header = Kit.HeaderBar("Restore points");
         header.VerticalOptions = LayoutOptions.Center;

@@ -1,4 +1,3 @@
-using System.Globalization;
 using PKForge.Domain;
 
 namespace PKForge.App.Services;
@@ -30,20 +29,16 @@ public static class Lang
     /// <summary>The saved choice: "pt", "en", or empty to follow the phone.</summary>
     public static string Setting => Preferences.Default.Get(Key, "");
 
-    /// <summary>True while the app shows Portuguese.</summary>
-    public static bool IsPortuguese { get; private set; } = Resolve(Preferences.Default.Get(Key, ""));
+    /// <summary>
+    /// True while the app shows Portuguese. 3DS Bank 2.3 is English only for now: the table and
+    /// this switch stay for when Portuguese comes back, but nothing turns it on.
+    /// </summary>
+    public static bool IsPortuguese { get; private set; }
 
     /// <summary>The language's own name, for the settings line.</summary>
     public static string CurrentName => IsPortuguese ? "Português" : "English";
 
-    public static void Set(string code)
-    {
-        Preferences.Default.Set(Key, code);
-        IsPortuguese = Resolve(code);
-    }
-
-    private static bool Resolve(string code) =>
-        (code.Length == 0 ? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName : code) == Portuguese;
+    public static void Set(string code) => Preferences.Default.Set(Key, code);
 
     /// <summary>The text in the current language.</summary>
     public static string T(string? text) =>

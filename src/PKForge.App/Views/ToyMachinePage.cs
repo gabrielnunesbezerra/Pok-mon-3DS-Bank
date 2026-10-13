@@ -50,9 +50,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         NavigationPage.SetHasNavigationBar(this, false);
         SeedCapsules();
 
-        var back = Kit.MiniCapsule("Back", UiTokens.Ink0);
-        back.WidthRequest = 72;
-        back.Clicked += async (_, _) => await Navigation.PopAsync();
+        var back = Kit.IconButton("back", () => _ = Navigation.PopAsync());
         var header = Kit.HeaderBar("Toy Machine");
         header.VerticalOptions = LayoutOptions.Center;
         var titleRow = new Grid
@@ -388,7 +386,32 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             }
     }
 
+    private SKSurface? _pixels;
+    private SKImageInfo _pixelsInfo;
+
+    /// <summary>
+    /// The machine is pixel art: everything is drawn without smoothing on a canvas a few times
+    /// smaller than the screen (about 240 pixels tall), then scaled up with nearest sampling.
+    /// </summary>
     private void Paint(SKCanvas c, SKImageInfo info)
+    {
+        c.Clear(SKColors.Transparent);
+        var pixel = Math.Max(2, (int)MathF.Round(info.Height / 240f));
+        var low = new SKImageInfo(Math.Max(1, info.Width / pixel), Math.Max(1, info.Height / pixel), SKColorType.Rgba8888, SKAlphaType.Premul);
+        if (_pixels is null || _pixelsInfo.Width != low.Width || _pixelsInfo.Height != low.Height)
+        {
+            _pixels?.Dispose();
+            _pixels = SKSurface.Create(low);
+            _pixelsInfo = low;
+        }
+        if (_pixels is null) return;
+        PaintScene(_pixels.Canvas, low);
+        using var image = _pixels.Snapshot();
+        using var paint = new SKPaint();
+        c.DrawImage(image, SKRect.Create(0, 0, low.Width * pixel, low.Height * pixel), new SKSamplingOptions(SKFilterMode.Nearest), paint);
+    }
+
+    private void PaintScene(SKCanvas c, SKImageInfo info)
     {
         c.Clear(SKColors.Transparent);
         var now = _clock.ElapsedMilliseconds;
@@ -423,7 +446,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         // How hard the machine shakes while the dial turns.
         var shake = t is >= 0 and < CrankEnd ? MathF.Sin(MathF.PI * t / CrankEnd) : 0f;
 
-        using (var floor = new SKPaint { Color = SKColors.Black.WithAlpha(70), IsAntialias = true })
+        using (var floor = new SKPaint { Color = SKColors.Black.WithAlpha(70), IsAntialias = false })
             c.DrawOval(150, 394, 104, 7, floor);
 
         // The base: red body, stripes top and bottom, the dial and the door.
@@ -441,7 +464,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             path.Close();
             using var red = new SKPaint
             {
-                IsAntialias = true,
+                IsAntialias = false,
                 Shader = SKShader.CreateLinearGradient(new SKPoint(body.Left, 0), new SKPoint(body.Right, 0),
                     new[] { BallRedDark, BallRed, BallRed, BallRedDark }, new[] { 0f, 0.3f, 0.65f, 1f }, SKShaderTileMode.Clamp),
             };
@@ -459,38 +482,38 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
                 c.DrawRect(new SKRect(body.Left, body.Bottom - 16, body.Right, body.Bottom - 12), white);
             }
             c.Restore();
-            using var rim = new SKPaint { Color = BallBlack, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f };
+            using var rim = new SKPaint { Color = BallBlack, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f };
             c.DrawPath(path, rim);
         }
 
         // The dial: one full turn, slow at both ends.
         var turn = t is >= 0 and < CrankEnd ? Ease.InOutCubic(t / (float)CrankEnd) : t >= CrankEnd ? 1f : 0f;
-        using (var ring = new SKPaint { Color = BallGrey, IsAntialias = true })
+        using (var ring = new SKPaint { Color = BallGrey, IsAntialias = false })
             c.DrawCircle(Dial, 21, ring);
         using (var face = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             Shader = SKShader.CreateRadialGradient(new SKPoint(Dial.X - 6, Dial.Y - 6), 22, [SKColors.White, BallWhite, BallGrey], SKShaderTileMode.Clamp),
         })
             c.DrawCircle(Dial, 18, face);
         c.Save();
         c.RotateDegrees(turn * 360, Dial.X, Dial.Y);
-        using (var grip = new SKPaint { Color = SKColors.White, IsAntialias = true })
+        using (var grip = new SKPaint { Color = SKColors.White, IsAntialias = false })
             c.DrawRoundRect(new SKRect(Dial.X - 17, Dial.Y - 5, Dial.X + 17, Dial.Y + 5), 5, 5, grip);
-        using (var gripEdge = new SKPaint { Color = BallGrey, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f })
+        using (var gripEdge = new SKPaint { Color = BallGrey, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f })
             c.DrawRoundRect(new SKRect(Dial.X - 17, Dial.Y - 5, Dial.X + 17, Dial.Y + 5), 5, 5, gripEdge);
         c.Restore();
 
         // The prize door, and the capsule that drops into it.
         using (var frame = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             Shader = SKShader.CreateLinearGradient(new SKPoint(0, Door.Top), new SKPoint(0, Door.Bottom),
                 [new SKColor(0xE4, 0xE6, 0xE9), new SKColor(0x9C, 0xA3, 0xAB)], SKShaderTileMode.Clamp),
         })
             c.DrawRoundRect(Door, 5, 5, frame);
         var hole = SKRect.Inflate(Door, -6, -5);
-        using (var dark = new SKPaint { Color = new SKColor(0x3A, 0x3E, 0x44), IsAntialias = true })
+        using (var dark = new SKPaint { Color = new SKColor(0x3A, 0x3E, 0x44), IsAntialias = false })
             c.DrawRoundRect(hole, 3, 3, dark);
         if (t is >= CrankEnd and < DropEnd && _pending is { } falling)
         {
@@ -503,7 +526,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         }
 
         // The collar between the ball and the base.
-        using (var collar = new SKPaint { Color = BallBlack, IsAntialias = true })
+        using (var collar = new SKPaint { Color = BallBlack, IsAntialias = false })
             c.DrawRoundRect(new SKRect(96, 250, 204, 268), 6, 6, collar);
 
         // The ball. The lower half is clear: the capsules show through it.
@@ -529,22 +552,22 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y, BallCenter.X + BallRadius, BallCenter.Y + BallRadius), glassShade);
         using (var top = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             Shader = SKShader.CreateRadialGradient(new SKPoint(118, 82), 150, [new SKColor(0xFF, 0x6A, 0x72), BallRed, BallRedDark], SKShaderTileMode.Clamp),
         })
             c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y - BallRadius, BallCenter.X + BallRadius, BallCenter.Y), top);
         using (var band = new SKPaint { Color = BallBlack })
             c.DrawRect(new SKRect(BallCenter.X - BallRadius, BallCenter.Y - 9, BallCenter.X + BallRadius, BallCenter.Y + 9), band);
         c.Restore();
-        using (var outline = new SKPaint { Color = BallBlack, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
+        using (var outline = new SKPaint { Color = BallBlack, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 3 })
             c.DrawCircle(BallCenter, BallRadius, outline);
-        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(120), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 8, StrokeCap = SKStrokeCap.Round })
+        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(120), IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 8, StrokeCap = SKStrokeCap.Round })
         using (var arc = new SKPath())
         {
             arc.AddArc(new SKRect(BallCenter.X - 88, BallCenter.Y - 88, BallCenter.X + 88, BallCenter.Y + 88), 200, 45);
             c.DrawPath(arc, shine);
         }
-        using (var glint = new SKPaint { Color = SKColors.White.WithAlpha(90), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 5, StrokeCap = SKStrokeCap.Round })
+        using (var glint = new SKPaint { Color = SKColors.White.WithAlpha(90), IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 5, StrokeCap = SKStrokeCap.Round })
         using (var arc = new SKPath())
         {
             arc.AddArc(new SKRect(BallCenter.X - 92, BallCenter.Y - 92, BallCenter.X + 92, BallCenter.Y + 92), 120, 35);
@@ -552,15 +575,15 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         }
 
         // The white button on the band, as on a Poké Ball.
-        using (var buttonRing = new SKPaint { Color = BallBlack, IsAntialias = true })
+        using (var buttonRing = new SKPaint { Color = BallBlack, IsAntialias = false })
             c.DrawCircle(BallCenter, 30, buttonRing);
         using (var buttonFace = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             Shader = SKShader.CreateRadialGradient(new SKPoint(BallCenter.X - 7, BallCenter.Y - 7), 26, [SKColors.White, BallWhite, BallGrey], SKShaderTileMode.Clamp),
         })
             c.DrawCircle(BallCenter, 22, buttonFace);
-        using (var inner = new SKPaint { Color = BallGrey, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 })
+        using (var inner = new SKPaint { Color = BallGrey, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 2 })
             c.DrawCircle(BallCenter, 13, inner);
     }
 
@@ -590,13 +613,13 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             // Rays and a soft glow in the tier's colour.
             using var glow = new SKPaint
             {
-                IsAntialias = true,
+                IsAntialias = false,
                 Shader = SKShader.CreateRadialGradient(center, radius * 3.2f,
                     [color.WithAlpha((byte)(150 * open)), color.WithAlpha(0)], SKShaderTileMode.Clamp),
             };
             c.DrawCircle(center, radius * 3.2f, glow);
             var rays = prize.Rarity >= ToyRarity.Legendary ? 16 : 12;
-            using var ray = new SKPaint { Color = color.WithAlpha((byte)(70 * open)), IsAntialias = true };
+            using var ray = new SKPaint { Color = color.WithAlpha((byte)(70 * open)), IsAntialias = false };
             using var path = new SKPath();
             var spin = t / 1400f;
             for (var i = 0; i < rays; i++)
@@ -655,12 +678,18 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         }
     }
 
+    /// <summary>Pixel text: the 12-pixel face at 12 or 24, never in between, with a hard one-pixel drop.</summary>
     private static void Text(SKCanvas c, string text, float x, float y, float size, SKColor color)
     {
-        using var font = PixelFont.For(text, size);
-        using var shadow = new SKPaint { Color = SKColors.Black.WithAlpha((byte)(color.Alpha * 0.6f)), IsAntialias = true };
-        using var paint = new SKPaint { Color = color, IsAntialias = true };
-        c.DrawText(text, x + size * 0.08f, y + size * 0.08f, SKTextAlign.Center, font, shadow);
+        var pixelSize = size >= 18 ? 24f : 12f;
+        using var font = PixelFont.For(text, pixelSize);
+        font.Edging = SKFontEdging.Alias;
+        font.Embolden = false;
+        using var shadow = new SKPaint { Color = SKColors.Black.WithAlpha((byte)(color.Alpha * 0.8f)) };
+        using var paint = new SKPaint { Color = color };
+        var drop = pixelSize >= 24 ? 2 : 1;
+        x = MathF.Round(x); y = MathF.Round(y);
+        c.DrawText(text, x + drop, y + drop, SKTextAlign.Center, font, shadow);
         c.DrawText(text, x, y, SKTextAlign.Center, font, paint);
     }
 
@@ -675,13 +704,13 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         c.RotateDegrees(tilt, at.X, at.Y);
         var outline = new SKColor(0x22, 0x1A, 0x2A, 150);
         var bottomRect = new SKRect(at.X - r, at.Y - r + lift * 0.5f, at.X + r, at.Y + r + lift * 0.5f);
-        using (var bottom = new SKPaint { Color = (mystery ? new SKColor(0x18, 0x14, 0x24) : new SKColor(0xF7, 0xF7, 0xF4)).WithAlpha((byte)(255 * bottomAlpha)), IsAntialias = true })
+        using (var bottom = new SKPaint { Color = (mystery ? new SKColor(0x18, 0x14, 0x24) : new SKColor(0xF7, 0xF7, 0xF4)).WithAlpha((byte)(255 * bottomAlpha)), IsAntialias = false })
             c.DrawArc(bottomRect, 0, 180, true, bottom);
-        using (var edge = new SKPaint { Color = outline.WithAlpha((byte)(150 * bottomAlpha)), IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, r * 0.08f) })
+        using (var edge = new SKPaint { Color = outline.WithAlpha((byte)(150 * bottomAlpha)), IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, r * 0.08f) })
             c.DrawArc(bottomRect, 0, 180, true, edge);
 
         var topRect = new SKRect(at.X - r, at.Y - r - lift, at.X + r, at.Y + r - lift);
-        using (var fill = new SKPaint { IsAntialias = true })
+        using (var fill = new SKPaint { IsAntialias = false })
         {
             fill.Shader = mystery
                 ? SKShader.CreateSweepGradient(new SKPoint(at.X, at.Y - lift),
@@ -690,15 +719,16 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
                     [Lighter(top), top], SKShaderTileMode.Clamp);
             c.DrawArc(topRect, 180, 180, true, fill);
         }
-        using (var edge = new SKPaint { Color = outline, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, r * 0.08f) })
+        using (var edge = new SKPaint { Color = outline, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = Math.Max(1, r * 0.08f) })
             c.DrawArc(topRect, 180, 180, true, edge);
-        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(150), IsAntialias = true })
+        using (var shine = new SKPaint { Color = SKColors.White.WithAlpha(150), IsAntialias = false })
             c.DrawOval(at.X - r * 0.38f, at.Y - lift - r * 0.52f, r * 0.22f, r * 0.13f, shine);
-        if (mystery && lift <= 0)
+        if (mystery && lift <= 0 && r >= 10)
         {
-            using var font = PixelFont.For("?", r * 0.9f);
-            using var mark = new SKPaint { Color = SKColors.White, IsAntialias = true };
-            c.DrawText("?", at.X, at.Y + r * 0.62f, SKTextAlign.Center, font, mark);
+            using var font = PixelFont.For("?", r >= 20 ? 24 : 12);
+            font.Edging = SKFontEdging.Alias;
+            using var mark = new SKPaint { Color = SKColors.White };
+            c.DrawText("?", MathF.Round(at.X), MathF.Round(at.Y + font.Size * 0.4f), SKTextAlign.Center, font, mark);
         }
         c.Restore();
     }
@@ -709,20 +739,22 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
     /// <summary>The secret prize: a dark tile with "???" on it.</summary>
     private static void DrawMystery(SKCanvas c, SKRect box)
     {
-        using (var tile = new SKPaint { Color = new SKColor(0x1E, 0x1B, 0x2E), IsAntialias = true })
+        using (var tile = new SKPaint { Color = new SKColor(0x1E, 0x1B, 0x2E), IsAntialias = false })
             c.DrawRoundRect(box, box.Width * 0.18f, box.Width * 0.18f, tile);
         using (var rim = new SKPaint
         {
-            IsAntialias = true,
+            IsAntialias = false,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = box.Width * 0.05f,
             Shader = SKShader.CreateSweepGradient(new SKPoint(box.MidX, box.MidY),
                 ToyArt.Rainbow),
         })
             c.DrawRoundRect(SKRect.Inflate(box, -box.Width * 0.03f, -box.Width * 0.03f), box.Width * 0.16f, box.Width * 0.16f, rim);
-        using var font = PixelFont.For("???", box.Width * 0.34f);
-        using var paint = new SKPaint { Color = SKColors.White, IsAntialias = true };
-        c.DrawText("???", box.MidX, box.MidY + box.Width * 0.12f, SKTextAlign.Center, font, paint);
+        using var font = PixelFont.For("???", box.Width >= 60 ? 24 : 12);
+        font.Edging = SKFontEdging.Alias;
+        font.Embolden = false;
+        using var paint = new SKPaint { Color = SKColors.White };
+        c.DrawText("???", MathF.Round(box.MidX), MathF.Round(box.MidY + font.Size * 0.4f), SKTextAlign.Center, font, paint);
     }
 
     private static void DrawSparkle(SKCanvas c, SKPoint center, float size, SKColor color)
@@ -735,7 +767,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         path.QuadTo(center.X, center.Y, center.X - size, center.Y);
         path.QuadTo(center.X, center.Y, center.X, center.Y - size);
         path.Close();
-        using var fill = new SKPaint { Color = color, IsAntialias = true };
+        using var fill = new SKPaint { Color = color, IsAntialias = false };
         c.DrawPath(path, fill);
     }
 
@@ -785,11 +817,11 @@ public static class ToyArt
             using var surface = SKSurface.Create(info);
             var c = surface.Canvas;
             c.Clear(SKColors.Transparent);
-            using (var tile = new SKPaint { Color = new SKColor(0x1E, 0x1B, 0x2E), IsAntialias = true })
+            using (var tile = new SKPaint { Color = new SKColor(0x1E, 0x1B, 0x2E), IsAntialias = false })
                 c.DrawRoundRect(new SKRect(4, 4, 44, 44), 9, 9, tile);
             using (var rim = new SKPaint
             {
-                IsAntialias = true,
+                IsAntialias = false,
                 Style = SKPaintStyle.Stroke,
                 StrokeWidth = 3,
                 Shader = SKShader.CreateSweepGradient(new SKPoint(24, 24),
@@ -797,7 +829,7 @@ public static class ToyArt
             })
                 c.DrawRoundRect(new SKRect(5.5f, 5.5f, 42.5f, 42.5f), 8, 8, rim);
             using (var font = new SKFont(SKTypeface.Default, 17) { Embolden = true, Edging = SKFontEdging.Antialias })
-            using (var paint = new SKPaint { Color = SKColors.White, IsAntialias = true })
+            using (var paint = new SKPaint { Color = SKColors.White, IsAntialias = false })
                 c.DrawText("???", 24, 30, SKTextAlign.Center, font, paint);
             using var image = surface.Snapshot();
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);

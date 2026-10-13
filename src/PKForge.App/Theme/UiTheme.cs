@@ -152,7 +152,7 @@ public static class UiTokens
     public static Color StripBottom => Themed(As(PksmPaint.Darker(Pksm.HeaderBlue, 0.1f)));
     public static Color ButtonTop => Themed(As(PksmPaint.Lighter(Pksm.LogoDeck, 0.04f)));
     public static Color ButtonBottom => Themed(As(PksmPaint.Darker(Pksm.LogoDeck, 0.05f)));
-    public static Color ButtonEdge => Themed(As(Pksm.LogoGrid));                             // cobalt
+    public static Color ButtonEdge => Themed(As(PksmPaint.Mix(Pksm.PaperEdge, Pksm.LogoDeck, 0.25f))); // the white rim, a touch softer
     public static Color Outline => Themed(As(Pksm.ButtonBlueDeep));                          // void outline
     public static Color Rim => Themed(As(Pksm.Ink).WithAlpha(0x70 / 255f));                // the pale focus rim
     public static Color RowStripe => Themed(As(Pksm.PaperShade).WithAlpha(0x90 / 255f));

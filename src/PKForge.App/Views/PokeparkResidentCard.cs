@@ -31,9 +31,10 @@ public sealed class PokeparkResidentCard : IPadHandler
         _host = host;
         _router = IPlatformApplication.Current?.Services.GetService<GamepadRouter>();
         var heading = new Grid { ColumnDefinitions = [new(GridLength.Star), new(40)], HeightRequest = 34 };
-        heading.Add(new Label { Text = "Poképark  /  resident journal", FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold,
+        heading.Add(new Label { Text = "Poképark  /  resident journal", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall,
             TextColor = UiTokens.IndigoInk, VerticalTextAlignment = TextAlignment.Center });
-        var close = new Label { Text = "×", FontFamily = "Rounded", FontSize = 26, TextColor = UiTokens.Ink0, HorizontalTextAlignment = TextAlignment.Center };
+        var close = PksmIcons.Icon("close", 22, PksmIcons.White);
+        close.HorizontalOptions = LayoutOptions.Center; close.VerticalOptions = LayoutOptions.Center;
         Tap(close, () => Close(null)); heading.Add(close); Grid.SetColumn(close, 1);
 
         var portrait = new SKCanvasView { MinimumHeightRequest = 40 };
@@ -57,10 +58,10 @@ public sealed class PokeparkResidentCard : IPadHandler
         void Repaint() => MainThread.BeginInvokeOnMainThread(() => { if (!_closed) portrait.InvalidateSurface(); });
         sprites.Warm(mon.Species, mon.Form, mon.Shiny, Repaint);
         walking.Warm(mon.Species, mon.Form, mon.Shiny, Repaint);
-        var name = new Label { Text = mon.Name + (mon.Shiny ? " ★" : ""), FontSize = 17, FontAttributes = FontAttributes.Bold,
+        var name = new Label { Text = mon.Name + (mon.Shiny ? " ★" : ""), FontFamily = DsChrome.PixelFont, FontSize = 17,
             TextColor = UiTokens.Ink0, HorizontalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.TailTruncation };
         // The mood as plain coloured text under the name (was a tinted pill).
-        var moodLabel = new Label { Text = mood, TextColor = UiTokens.TextTone(UiTokens.Green), FontSize = UiTokens.TextSmall,
+        var moodLabel = new Label { Text = mood, FontFamily = DsChrome.PixelFont, TextColor = UiTokens.TextTone(UiTokens.Green), FontSize = UiTokens.TextSmall,
             HorizontalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.TailTruncation };
         var left = new Grid { RowSpacing = 4, RowDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)],
             Children = { portrait, name, moodLabel } };
@@ -87,7 +88,7 @@ public sealed class PokeparkResidentCard : IPadHandler
             Text = care is { CanCare: true }
                 ? "It eats the berries you put in its habitat's pot. The friendship it gains is saved to the Pokémon and goes with it to its game."
                 : "Park personality is just for fun. Your Pokémon's game data stays unchanged.",
-            FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft,
+            FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft,
         });
         var journal = new ScrollView { Content = notes };
         var body = new Grid { ColumnSpacing = 14, ColumnDefinitions = [new(new GridLength(0.36, GridUnitType.Star)), new(new GridLength(0.64, GridUnitType.Star))], Children = { left, journal } };
@@ -97,7 +98,7 @@ public sealed class PokeparkResidentCard : IPadHandler
         void Action(string glyph, string caption, string key)
         {
             var tile = new Border { StrokeShape = new RoundRectangle { CornerRadius = 8 }, Padding = new Thickness(16, 5), HeightRequest = 38,
-                Content = new Label { Text = glyph + "  " + caption, FontFamily = "Rounded", FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold,
+                Content = new Label { Text = caption, FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextBody,
                     TextColor = UiTokens.Ink0, HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center } };
             Tap(tile, () => Close(key)); _actions.Add(tile); _keys.Add(key); actions.Add(tile);
         }
@@ -137,8 +138,8 @@ public sealed class PokeparkResidentCard : IPadHandler
     private static View Section(string caption, string text) => new VerticalStackLayout
     {
         Spacing = 2,
-        Children = { new Label { Text = caption, FontSize = UiTokens.TextSmall, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.IndigoInk },
-            new Label { Text = text, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink0, LineBreakMode = LineBreakMode.WordWrap } }
+        Children = { new Label { Text = caption, FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft },
+            new Label { Text = text, FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink0, LineBreakMode = LineBreakMode.WordWrap } }
     };
     private static void Tap(View view, Action action)
     {

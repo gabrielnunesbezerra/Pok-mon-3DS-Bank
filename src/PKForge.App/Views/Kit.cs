@@ -443,13 +443,43 @@ public static class Kit
     }
 
     /// <summary>
+    /// A square button with one pixel icon (back, close, the menus, the arrows): the dark key
+    /// with the white rim and a hard drop, sinking a little when tapped.
+    /// </summary>
+    public static Border IconButton(string icon, Action onTap, double width = 48, double height = 42)
+    {
+        var button = new Border
+        {
+            WidthRequest = width,
+            HeightRequest = height,
+            VerticalOptions = LayoutOptions.Center,
+            Background = new LinearGradientBrush([new GradientStop(UiTokens.ButtonTop, 0), new GradientStop(UiTokens.ButtonBottom, 1)], new Point(0, 0), new Point(0, 1)),
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 2,
+            StrokeShape = new RoundRectangle { CornerRadius = 7 },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.65f, Radius = 0, Offset = new Point(2, 3) },
+            Content = PksmIcons.Icon(icon, 24, PksmIcons.White),
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += async (_, _) =>
+        {
+            await button.TranslateToAsync(0, 2, 45, Easing.CubicOut);
+            await button.TranslateToAsync(0, 0, 70, Easing.CubicOut);
+            onTap();
+        };
+        button.GestureRecognizers.Add(tap);
+        return button;
+    }
+
+    /// <summary>
     /// The ‹ L / R › pager button (the summary's corner buttons): void body, pale 1.5 dp
     /// edge, pixel glyph. Bare "&lt;" / "&gt;" become the typographic chevrons.
     /// </summary>
     public static Button MiniCapsule(string glyph, Color accent) => new()
     {
         Text = glyph switch { "<" => "‹", ">" => "›", _ => glyph },
-        FontFamily = "Rounded",
+        // Words in the pixel voice; a lone chevron in the rounded face, which has the glyph.
+        FontFamily = glyph.Length > 1 ? DsChrome.PixelFont : "Rounded",
         BackgroundColor = UiTokens.MenuBlueDeep,
         BorderColor = UiTokens.Ink0.WithAlpha(0.85f),
         BorderWidth = UiTokens.ControlEdge,

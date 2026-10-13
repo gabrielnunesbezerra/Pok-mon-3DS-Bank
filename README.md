@@ -14,9 +14,9 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   de save. O modo Hardcore do PKForge fica ligado para sempre e o próprio motor do app recusa
   essas operações mesmo que alguma tela tente fazer. As exceções são as da versão 2.0 (abaixo)
   e o cuidado no Poképark: cada uma abre a porta só durante a própria operação.
-- **Poképark.** O habitat ocupa a tela inteira, com só um X para sair e a seta para o próximo
-  habitat; tocar no nome do habitat abre as opções do parque e tocar num Pokémon abre a ficha
-  dele. Desde a 2.2 cada habitat tem um pomar num canto: quatro canteiros e um pote. As frutas
+- **Poképark.** O habitat aparece numa tela emoldurada, com o nome no alto da moldura (tocar
+  nele abre as opções do parque) e, embaixo no centro, as setas de habitat anterior e próximo
+  e o X para sair. Tocar num Pokémon abre a ficha dele. Desde a 2.2 cada habitat tem um pomar num canto: quatro canteiros e um pote. As frutas
   saem do Armazém e cada habitat só cultiva as suas (Campo Ensolarado: Cheri, Pecha e Oran;
   Lago Cascata: Chesto, Leppa e Persim; Bosque das Brasas: Rawst, Figy e Mago; Cume do Céu:
   Aspear, Wiki e Aguav). A árvore fica madura a cada 12 horas e dá 3 frutas, que você arrasta
@@ -68,9 +68,10 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   Onde ainda precisa, a ação virou um botão na tela; o resto é tocar no próprio Pokémon, caixa
   ou item. No Bank, um toque escolhe o espaço e o segundo toque abre o menu do Pokémon.
   Um controle físico continua funcionando.
-- **Preto e vermelho (2.2).** O app tem uma cor só, preta e vermelha como uma Poké Ball, e a
-  escolha de cores saiu das Configurações. A Máquina de Brinquedos virou uma Poké Ball em cima
-  de uma base vermelha.
+- **Preto e branco, em pixel art (2.3).** O app tem uma cor só, preta com bordas e ícones
+  brancos, e a escolha de cores saiu das Configurações. Os mapas do Poképark, o pomar, a
+  Máquina de Brinquedos (uma Poké Ball em cima de uma base vermelha) e o cartucho do Bank são
+  desenhados em pixel art, e os botões novos usam ícones e a fonte pixelada.
 - **Tela inicial e Bank com mais espaço (2.2).** Na tela inicial o Bank fica junto dos jogos,
   em cartuchos maiores, e o resto (Armazém, Amigos, Poképark, Máquina de Brinquedos e
   Configurações) foi para um menu lateral que abre no botão do canto. No Bank a caixa ficou
@@ -80,9 +81,8 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   mapa, sem passar por cima de árvores ou paredes de pedra, e ficam com os pés no chão ao
   trocar de pose ou de direção.
 - **Sem Pokémon Showdown.** Exportar e importar times do Showdown e o QR de .pk saíram.
-- **Português.** O app fica em português (Brasil) ou inglês, em Configurações > Idioma ou
-  no botão da tela de login. Sem escolha, segue o idioma do celular. Golpes, itens e
-  naturezas ficam com os nomes em inglês.
+- **Só inglês por enquanto (2.3).** A opção de português saiu das Configurações e da tela de
+  login; a tabela de tradução continua no projeto para quando ele voltar.
 - **Mover, nunca copiar.** Dá para mover Pokémon entre caixas, mandar para o Bank, tirar do
   Bank e mandar para outro jogo, organizar e soltar. "Duplicar", "Copiar para o Bank" e
   "Copiar para o jogo" não existem. Restaurar um backup que traria de volta um Pokémon que já

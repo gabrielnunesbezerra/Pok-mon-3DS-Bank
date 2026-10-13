@@ -34,9 +34,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
         BackgroundColor = UiTokens.Housing;
         NavigationPage.SetHasNavigationBar(this, false);
 
-        var back = Kit.MiniCapsule("Back", UiTokens.Ink0);
-        back.WidthRequest = 72;
-        back.Clicked += async (_, _) => await Navigation.PopAsync();
+        var back = Kit.IconButton("back", () => _ = Navigation.PopAsync());
         var header = Kit.HeaderBar("Item Storage");
         header.VerticalOptions = LayoutOptions.Center;
         var titleRow = new Grid

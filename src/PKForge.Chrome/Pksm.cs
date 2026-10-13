@@ -35,7 +35,8 @@ public static class Pksm
     // ---- Panels ----
     public static SKColor Paper => T.Deck;
     public static SKColor PaperShade => T.Deep;
-    public static SKColor PaperEdge => T.Grid;
+    // The panel rims are the frame colour (white in the black-and-white scheme), not the fill grey.
+    public static SKColor PaperEdge => T.FrameEdge;
     public static SKColor PaperEdgeDeep => T.Cyan;
 
     // ---- The logo accent family ----

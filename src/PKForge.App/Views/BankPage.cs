@@ -76,15 +76,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var boxBarTap = new TapGestureRecognizer();
         boxBarTap.Tapped += (_, args) => TapBoxBar(args.GetPosition(_boxBar)?.X ?? _boxBar.Width / 2);
         _boxBar.GestureRecognizers.Add(boxBarTap);
-        var back = HeaderButton(new Label
-        {
-            Text = "‹", FontFamily = "Rounded", FontSize = 24, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
-            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
-        }, () => _ = Navigation.PopAsync());
-        var dots = new VerticalStackLayout { Spacing = 3, HorizontalOptions = LayoutOptions.Center, VerticalOptions = LayoutOptions.Center };
-        for (var i = 0; i < 3; i++)
-            dots.Children.Add(new BoxView { WidthRequest = 5, HeightRequest = 5, CornerRadius = 2.5, Color = UiTokens.Ink0 });
-        var more = HeaderButton(dots, () => _ = ShowMoreMenuAsync());
+        var back = Kit.IconButton("back", () => _ = Navigation.PopAsync());
+        var more = Kit.IconButton("more", () => _ = ShowMoreMenuAsync());
         _bankTitle = new Label
         {
             FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0,
@@ -167,26 +160,6 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         Content = _hostGrid;
         UpdatePageLabel();
         UpdateStatus();
-    }
-
-    /// <summary>A square header button (back, the three-dot menu).</summary>
-    private static Border HeaderButton(View content, Action onTap)
-    {
-        var button = new Border
-        {
-            WidthRequest = 44,
-            HeightRequest = 40,
-            VerticalOptions = LayoutOptions.Center,
-            BackgroundColor = UiTokens.ButtonTop,
-            Stroke = UiTokens.ButtonEdge,
-            StrokeThickness = UiTokens.ControlEdge,
-            StrokeShape = new RoundRectangle { CornerRadius = 8 },
-            Content = content,
-        };
-        var tap = new TapGestureRecognizer();
-        tap.Tapped += (_, _) => onTap();
-        button.GestureRecognizers.Add(tap);
-        return button;
     }
 
     /// <summary>The three-dot menu: the Bank's tools that used to sit in a row under the panel.</summary>

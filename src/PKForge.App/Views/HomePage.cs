@@ -130,27 +130,8 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
 
     // ── The side menu ────────────────────────────────────────────────────────
 
-    /// <summary>The three-line button that slides the side menu out.</summary>
-    private Border MenuButton()
-    {
-        var lines = new VerticalStackLayout { Spacing = 4, VerticalOptions = LayoutOptions.Center, HorizontalOptions = LayoutOptions.Center };
-        for (var i = 0; i < 3; i++)
-            lines.Children.Add(new BoxView { WidthRequest = 20, HeightRequest = 3, CornerRadius = 1.5, Color = UiTokens.Ink0 });
-        var button = new Border
-        {
-            WidthRequest = 44,
-            HeightRequest = 40,
-            BackgroundColor = UiTokens.ButtonTop,
-            Stroke = UiTokens.ButtonEdge,
-            StrokeThickness = UiTokens.ControlEdge,
-            StrokeShape = new RoundRectangle { CornerRadius = 8 },
-            Content = lines,
-        };
-        var tap = new TapGestureRecognizer();
-        tap.Tapped += (_, _) => _ = OpenMenuAsync();
-        button.GestureRecognizers.Add(tap);
-        return button;
-    }
+    /// <summary>The button that slides the side menu out.</summary>
+    private Border MenuButton() => Kit.IconButton("menu", () => _ = OpenMenuAsync());
 
     private Grid BuildSideMenu()
     {
@@ -273,12 +254,12 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         };
         _bankCount = new Label
         {
-            FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, HorizontalTextAlignment = TextAlignment.Center,
+            FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, HorizontalTextAlignment = TextAlignment.Center,
             WidthRequest = TileInnerWidth, LineBreakMode = LineBreakMode.TailTruncation, MaxLines = 1,
         };
         var detail = new Label
         {
-            Text = "Your vault, Gen 1 to 7", FontSize = 12, TextColor = UiTokens.InkSoft, HorizontalTextAlignment = TextAlignment.Center,
+            Text = "Your vault, Gen 1 to 7", FontFamily = DsChrome.PixelFont, FontSize = 12, TextColor = UiTokens.InkSoft, HorizontalTextAlignment = TextAlignment.Center,
             WidthRequest = TileInnerWidth, LineBreakMode = LineBreakMode.TailTruncation, MaxLines = 1,
         };
         var tile = Kit.DevicePanel(new VerticalStackLayout
@@ -835,10 +816,8 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         };
         if (hiddenCount > 0) options.Add(new PadOption(hiddenOption, IconPath: "show", Detail: "Saves you hid from Home. Pick one to show it again."));
         var background = $"Box background: {BoxBackground.Name(BoxBackground.Style)}";
-        var language = $"Language: {Lang.CurrentName}";
         options.AddRange(
         [
-            new PadOption(language, IconPath: "editor", Detail: "Português (Brasil) or English. Moves, items and natures keep their English names."),
             new PadOption(background, IconPath: "box", Detail: "How each PC box shows the wallpaper the game gives it."),
             new PadOption("Restore points", IconPath: "history", Detail: "The backups made before each write, to put a save back as it was."),
             new PadOption("About 3DS Bank", IconPath: "info"),
@@ -851,7 +830,6 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         if (choice == accountOption) { await ShowAccountMenuAsync(); return; }
         if (choice == hiddenOption) { await ShowHiddenSavesAsync(); return; }
         if (choice == background) { await ShowBoxBackgroundAsync(); return; }
-        if (choice == language) { await ShowLanguageAsync(); return; }
         switch (choice)
         {
             case "Link an emulator": await ShowLinkMenuAsync(); break;
@@ -1205,22 +1183,6 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         }
     }
 
-    /// <summary>Português or English; the screens are built again in the new language.</summary>
-    private async Task ShowLanguageAsync()
-    {
-        const string portuguese = "Português (Brasil)", english = "English", phone = "Follow the phone";
-        var picked = await PadMenu.ShowAsync(_hostGrid, "Language", null,
-            new PadOption(portuguese, Detail: "Menus, messages and the Poképark in Portuguese."),
-            new PadOption(english, Detail: "Menus, messages and the Poképark in English."),
-            new PadOption(phone, Detail: "Português when the phone is in Portuguese, English otherwise."));
-        var code = picked switch { portuguese => Lang.Portuguese, english => Lang.English, phone => "", _ => null };
-        if (code is null || code == Lang.Setting) return;
-        var wasPortuguese = Lang.IsPortuguese;
-        Lang.Set(code);
-        AppLog.Info("lang", $"Player picked language '{code}'");
-        if (Lang.IsPortuguese != wasPortuguese && Application.Current is App app) await app.ReloadForThemeAsync();
-    }
-
     /// <summary>Maintenance actions: the sprite pack, the rescan, and the scan report.</summary>
     private async Task ShowMiscAsync()
     {
@@ -1487,10 +1449,12 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         name.SetBinding(Label.TextProperty, nameof(SaveCard.ShelfTitle));
 
         var trainer = ShelfLine(UiTokens.TextSmall, UiTokens.Ink1);
+        trainer.FontFamily = DsChrome.PixelFont;
         trainer.SetBinding(Label.TextProperty, nameof(SaveCard.TrainerLine));
 
         // Emulator · folder · date: what tells two saves of one game apart at a glance.
         var detail = ShelfLine(12, UiTokens.InkSoft);
+        detail.FontFamily = DsChrome.PixelFont;
         detail.SetBinding(Label.TextProperty, nameof(SaveCard.DetailLine));
 
         // Every tile is exactly the same size: the shelf must read as a row of carts.

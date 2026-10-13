@@ -126,9 +126,9 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             HorizontalOptions = LayoutOptions.Center,
             Children =
             {
-                IconButton("back", () => SwitchEnvironment(-1)),
-                IconButton("close", () => _ = Navigation.PopAsync(), wide: true),
-                IconButton("next", () => SwitchEnvironment(1)),
+                Kit.IconButton("back", () => SwitchEnvironment(-1), 58, 44),
+                Kit.IconButton("close", () => _ = Navigation.PopAsync(), 74, 44),
+                Kit.IconButton("next", () => SwitchEnvironment(1), 58, 44),
             },
         };
         UpdateHabitatName();
@@ -163,31 +163,6 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private SecondScreenClaim? _secondClaim;
 
     private Border _frame = null!;
-
-    /// <summary>A pixel-icon button for the bar under the habitat.</summary>
-    private static Border IconButton(string icon, Action onTap, bool wide = false)
-    {
-        var button = new Border
-        {
-            WidthRequest = wide ? 72 : 56,
-            HeightRequest = 44,
-            Background = new LinearGradientBrush([new GradientStop(UiTokens.ButtonTop, 0), new GradientStop(UiTokens.ButtonBottom, 1)], new Point(0, 0), new Point(0, 1)),
-            Stroke = UiTokens.ShellEdge,
-            StrokeThickness = 2,
-            StrokeShape = new RoundRectangle { CornerRadius = 8 },
-            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.6f, Radius = 0, Offset = new Point(2, 3) },
-            Content = PksmIcons.Icon(icon, 24, PksmIcons.White),
-        };
-        var tap = new TapGestureRecognizer();
-        tap.Tapped += async (_, _) =>
-        {
-            await button.ScaleToAsync(0.92, 50, Easing.CubicOut);
-            await button.ScaleToAsync(1, 80, Easing.CubicOut);
-            onTap();
-        };
-        button.GestureRecognizers.Add(tap);
-        return button;
-    }
 
     /// <summary>Sizes the framed screen to the largest 16:9 that fits, so the habitat never letterboxes.</summary>
     private void FitFrame(Grid stage)

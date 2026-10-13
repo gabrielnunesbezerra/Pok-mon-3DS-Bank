@@ -83,15 +83,6 @@ public sealed class LoginPage : ContentPage
                 ShowStatus($"Could not open WhatsApp. Support: +{CloudSettings.SupportWhatsApp}", error: true);
         };
 
-        // Each language is offered in its own name, so it is never translated.
-        var language = Lang.Raw(Kit.Capsule(Lang.IsPortuguese ? "Switch to English" : "Mudar para Português", UiTokens.Ink1));
-        language.HorizontalOptions = LayoutOptions.Center;
-        language.Clicked += (_, _) =>
-        {
-            Lang.Set(Lang.IsPortuguese ? Lang.English : Lang.Portuguese);
-            App.ShowLoginPage();
-        };
-
         var logo = new Image
         {
             Source = ThemeLogo.Source(),
@@ -118,7 +109,6 @@ public sealed class LoginPage : ContentPage
                     FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft,
                     HorizontalTextAlignment = TextAlignment.Center, LineBreakMode = LineBreakMode.WordWrap,
                 },
-                language,
             },
         };
         var form = new VerticalStackLayout
