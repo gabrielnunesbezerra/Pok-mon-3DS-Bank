@@ -884,7 +884,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
                     $"Release {entry.Info.Nickname}? Bank releases are permanent (the bank has no restore points yet).",
                     "Release");
                 if (!confirmed) return;
-                _bank.Remove(entry.Id);
+                _boxViewModel.Status = Release([entry.Id], $"{entry.Info.Nickname} was released.");
                 RefreshBoxEntries();
                 UpdatePreview();
                 _canvas.InvalidateSurface();
@@ -1141,8 +1141,29 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
                 : $"Release all {selection.Count} selected Pokémon? Bank releases are permanent (the bank has no restore points yet).",
             selection.Count == 1 ? "Release" : "Release all");
         if (!confirmed) return;
-        var released = _bank.RemoveMany(selection.Select(e => e.Id).ToArray());
-        FinishOrganizer($"Released {released} Pokémon from the bank.");
+        FinishOrganizer(Release(selection.Select(e => e.Id).ToArray(), null));
+    }
+
+    /// <summary>
+    /// Releases Bank Pokémon for good. 3DS Bank 2.1: each one gives a ticket for the toy
+    /// machine, kept in the Storage. Returns the sentence for the status line.
+    /// </summary>
+    private string Release(IReadOnlyList<Guid> ids, string? single)
+    {
+        var storage = IPlatformApplication.Current?.Services.GetService<StorageService>();
+        if (storage is null)
+        {
+            var count = _bank.RemoveMany(ids);
+            return single ?? $"Released {count} Pokémon from the bank.";
+        }
+        var (released, tickets) = storage.ReleaseForTickets(ids);
+        var said = released == 1 && single is not null ? single : $"Released {released} Pokémon from the bank.";
+        return tickets switch
+        {
+            0 => said,
+            1 => $"{said} · +1 toy machine ticket",
+            _ => $"{said} · +{tickets} toy machine tickets",
+        };
     }
 
     /// <summary>

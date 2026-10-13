@@ -51,6 +51,20 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   no meio: a troca termina na próxima vez que o app abrir. Quem evolui por troca evolui ao
   chegar (Kadabra, Machoke, Onix segurando Metal Coat, Karrablast trocado por Shelmet...), e o
   item usado na evolução é gasto, como nos jogos. Um Everstone impede a evolução.
+- **Máquina de Brinquedos (2.1).** Cada Pokémon solto do Bank dá um ticket, e cada ticket gira
+  a manivela da máquina uma vez. Sai uma cápsula com um item que vai direto para o Armazém. A
+  raridade é sorteada primeiro e depois um item dela, todos com a mesma chance: Comum 60% (18
+  itens bobos, como Fresh Water e Poké Doll), Raro 25% (18 itens, como Revive e as pedras de
+  evolução), Épico 10% (19 itens, como Rare Candy e Leftovers), Lendário 4% (13 itens, como
+  Master Ball e Gold Bottle Cap) e Secreto 1%, que dá só um "???" sem nome e sem uso. A tela
+  da máquina mostra a chance de cada raridade e de cada item.
+- **Feito para o toque (2.1).** As dicas de botão de controle (A, B, X, Y, L, R, +, -) saíram.
+  Onde ainda precisa, a ação virou um botão na tela; o resto é tocar no próprio Pokémon, caixa
+  ou item. No Bank, um toque escolhe o espaço e o segundo toque abre o menu do Pokémon.
+  Um controle físico continua funcionando.
+- **Poképark mais certinho (2.1).** Os Pokémon andam em linha reta pelo chão de verdade de cada
+  mapa, sem passar por cima de árvores ou paredes de pedra, e ficam com os pés no chão ao
+  trocar de pose ou de direção.
 - **Sem Pokémon Showdown.** Exportar e importar times do Showdown e o QR de .pk saíram.
 - **Português.** O app fica em português (Brasil) ou inglês, em Configurações > Idioma ou
   no botão da tela de login. Sem escolha, segue o idioma do celular. Golpes, itens e

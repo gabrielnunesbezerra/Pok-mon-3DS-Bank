@@ -96,14 +96,16 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         var storage = new DsCard("storagebox", "Item Storage") { Tapped = () => _ = PushAsync<StoragePage>() };
         var friends = new DsCard("friends", "Friends") { Tapped = () => _ = OpenFriendsAsync() };
         var park = new DsCard("park", "Poképark") { Tapped = () => _ = PushParkAsync() };
+        // 2.1: the toy machine, played with the tickets released Pokémon leave behind.
+        var toys = new DsCard("toymachine", "Toy Machine") { Tapped = () => _ = PushAsync<ToyMachinePage>() };
         var settings = new DsCard("settings", "Settings") { Tapped = () => _ = ShowSettingsAsync() };
-        _cards = [bank, storage, friends, park, settings];
+        _cards = [bank, storage, friends, park, toys, settings];
         foreach (var card in _cards) BlockNativeFocus(card);
         var cards = new Grid
         {
             ColumnSpacing = 8,
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
-            Children = { bank, storage, friends, park, settings },
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
+            Children = { bank, storage, friends, park, toys, settings },
         };
         for (var i = 0; i < _cards.Length; i++) Grid.SetColumn(_cards[i], i);
 

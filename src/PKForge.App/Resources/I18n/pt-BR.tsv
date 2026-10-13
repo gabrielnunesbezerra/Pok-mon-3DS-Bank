@@ -1960,3 +1960,68 @@ The account server sent an answer the app could not read. Try again.	O servidor 
 Another account already took your username, so friends cannot find you by it. Talk to support.	Outra conta já pegou o seu nome de usuário, então os amigos não te acham por ele. Fale com o suporte.
 {0} changed the Pokémon. Look again before confirming.	{0} trocou o Pokémon. Olhe de novo antes de confirmar.
 A Pokémon changed at the last moment, so this trade cannot go through. Cancel it and start again.	Um Pokémon mudou no último instante, então esta troca não pode acontecer. Cancele e comece de novo.
+# 3DS Bank 2.1: touch buttons, the toy machine.
+Arrows change the pouch · tap an item to set its count	As setas trocam o bolso · toque num item para definir a quantidade
+Box manager - tap the side boxes to browse	Organizar caixas - toque nas caixas dos lados para navegar
+Holding box {0} - tap a side box to swap it	Segurando a caixa {0} - toque numa caixa do lado para trocar
+Marks stay while you change box.	As marcações ficam enquanto você troca de caixa.
+Pokémon menu	Menu do Pokémon
+Back to the box	Voltar para a caixa
+Move box	Mover caixa
+Mark slots to act on many at once; with nothing marked, these act on the selected slot.	Marque espaços para agir em vários de uma vez; sem nada marcado, as ações valem para o espaço selecionado.
+Bank actions	Ações do Bank
+Link a game	Vincular um jogo
+Hold a game to edit it	Segure um jogo para editar
+Found inside each game: open a game, tap Save data, then Wonder cards.	Fica dentro de cada jogo: abra um jogo, toque em Dados do save e depois em Cartões Maravilha.
+Next habitat	Próximo habitat
+MULTI-SELECT - TAP TO MARK · DRAG FOR AN AREA	SELEÇÃO MÚLTIPLA - TOQUE PARA MARCAR · ARRASTE PARA UMA ÁREA
+SUMMARY ON THE TOP SCREEN	RESUMO NA TELA DE CIMA
+Pokémon menu > Legalize this one finds the closest legal version. Its PID, nature or IVs may change.	Menu do Pokémon > Legalizar este acha a versão legal mais próxima. O PID, a natureza ou os IVs podem mudar.
+Checked: tap Continue	Conferido: toque em Continuar
+Ready. Tap Apply to write these changes.	Pronto. Toque em Aplicar para gravar essas mudanças.
+Tap Let's go to start. "How it works" opens this again any time.	Toque em Vamos lá para começar. "Como funciona" abre isto de novo a qualquer hora.
+Tap to go back to where you were.	Toque para voltar para onde você estava.
+Tap to see the updated plan.	Toque para ver o plano atualizado.
+tap to add	toque para adicionar
+tap again for its menu	toque de novo para ver o menu
+CARRYING - tap a slot to place it	CARREGANDO - toque num espaço para soltar
+Choose what to do	Escolha o que fazer
+Tap to continue	Toque para continuar
+Tap to pick: {0}	Toque para escolher: {0}
+Tap again to pick: {0}	Toque de novo para escolher: {0}
+{0}  ·  {1}/12 residents  ·  Tap a Pokémon to meet it	{0}  ·  {1}/12 moradores  ·  Toque num Pokémon para conhecer
+Pick	Escolher
+Next gen	Próxima geração
+Next generation	Próxima geração
+Next section	Próxima seção
+Ways	Formas
+Filters	Filtros
+Autopilot	Piloto automático
+Select all (gaps)	Marcar todos (lacunas)
+Toy Machine	Máquina de Brinquedos
+Release a Pokémon from the Bank to get a ticket. Each ticket turns the handle once, and the prize goes to your Item Storage.	Solte um Pokémon do Bank para ganhar um ticket. Cada ticket gira a manivela uma vez, e o prêmio vai para o seu Armazém.
+Turn the handle	Girar a manivela
+Chances and prizes	Chances e prêmios
+1 ticket	1 ticket
+{0} tickets	{0} tickets
+Handle turned {0} times · ??? found: {1}	Manivela girada {0} vezes · ??? encontrados: {1}
+Chance: {0}	Chance: {0}
+Common	Comum
+Rare	Raro
+Epic	Épico
+Secret	Secreto
+The handle would not turn.	A manivela não girou.
+Chances	Chances
+Each turn draws a tier by its chance, then one of its prizes, all equally likely.	Cada giro sorteia uma raridade pela chance dela e depois um dos prêmios dela, todos com a mesma chance.
+Only one prize: ???	Um único prêmio: ???
+{0} prizes · {1} each	{0} prêmios · {1} cada
+{0} · nobody knows what it is	{0} · ninguém sabe o que é
+Prizes: {0}	Prêmios: {0}
+Toy machine tickets: {0}	Tickets da máquina de brinquedos: {0}
+Toy machine tickets: 1	Tickets da máquina de brinquedos: 1
+It came out of the toy machine's rarest capsule. Nobody knows what it is or what it does.	Saiu da cápsula mais rara da máquina de brinquedos. Ninguém sabe o que é nem para que serve.
+{0} was released.	{0} foi solto.
++1 toy machine ticket	+1 ticket da máquina de brinquedos
++{0} toy machine tickets	+{0} tickets da máquina de brinquedos
+You have no tickets. Release a Pokémon from the Bank to get one.	Você não tem tickets. Solte um Pokémon do Bank para ganhar um.
+Your Storage is full of every prize that came out (999 each). The ticket was kept.	Seu Armazém já tem 999 de cada prêmio que saiu. O ticket foi guardado.

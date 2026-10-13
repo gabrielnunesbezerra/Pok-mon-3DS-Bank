@@ -18,6 +18,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
     private readonly Grid _host;
     private readonly Label _starTitle;
     private readonly Label _starText;
+    private readonly Label _ticketTitle;
     private readonly Label _itemsTitle;
     private readonly Label _empty;
     private readonly Label _status;
@@ -60,6 +61,21 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
         };
         Grid.SetColumn(starTexts, 1);
 
+        _ticketTitle = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center };
+        var toys = Kit.Capsule("Toy Machine", UiTokens.Green, icon: "toymachine");
+        toys.Clicked += async (_, _) =>
+        {
+            if (IPlatformApplication.Current?.Services.GetService<ToyMachinePage>() is { } page) await Navigation.PushAsync(page);
+        };
+        var ticketRow = new Grid
+        {
+            ColumnSpacing = 10,
+            ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
+            Children = { PksmIcons.Icon("ticket", 30, PksmIcons.White), _ticketTitle, toys },
+        };
+        Grid.SetColumn(_ticketTitle, 1);
+        Grid.SetColumn(toys, 2);
+
         var bring = Kit.Capsule("Bring items from a game", UiTokens.AccentInfo, icon: "bag");
         bring.Clicked += (_, _) => _ = Run(BringFromGameAsync);
         var takeOff = Kit.Capsule("Take an item off a Pokémon", UiTokens.AccentInfo, icon: "item");
@@ -90,6 +106,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
             Children =
             {
                 Kit.Panel(starRow, padding: 12),
+                Kit.Panel(ticketRow, padding: 12),
                 actions,
                 _status,
                 Kit.Panel(new VerticalStackLayout { Spacing = 8, Children = { _itemsTitle, _empty, _tiles } }, padding: 12),
@@ -161,20 +178,43 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
         _starText.Text = $"A Shooting Star falls into your Storage every time your Bank holds 60 more Pokémon. " +
                          $"Next one at {state.NextStarAt} Pokémon (your Bank has {count}). Using one makes a Bank Pokémon shiny.";
         _useStar.IsEnabled = state.Stars > 0;
+        _ticketTitle.Text = state.Tickets == 1 ? "Toy machine tickets: 1" : $"Toy machine tickets: {state.Tickets}";
         _tiles.Children.Clear();
+        if (state.Mysteries > 0) _tiles.Children.Add(MysteryTile(state.Mysteries));
         foreach (var (item, amount) in state.Items.OrderBy(pair => _storage.ItemName(pair.Key), StringComparer.OrdinalIgnoreCase))
             _tiles.Children.Add(Tile(item, amount));
-        _empty.IsVisible = state.Items.Count == 0;
-        _itemsTitle.Text = state.Items.Count == 0
+        var kinds = state.Items.Count + (state.Mysteries > 0 ? 1 : 0);
+        _empty.IsVisible = kinds == 0;
+        _itemsTitle.Text = kinds == 0
             ? "Items"
-            : $"Items · {state.Items.Count} kinds, {state.Items.Values.Sum()} in all";
+            : $"Items · {kinds} kinds, {state.Items.Values.Sum() + state.Mysteries} in all";
+    }
+
+    /// <summary>The toy machine's secret prize: only "???", which nobody can use or name.</summary>
+    private View MysteryTile(int amount)
+    {
+        var tile = TileFrame(StorageService.MysteryName, amount, ToyArt.MysteryPath());
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => _ = Run(() => PadMenu.ShowAsync(_host, StorageService.MysteryName,
+            "It came out of the toy machine's rarest capsule. Nobody knows what it is or what it does.", "OK"));
+        tile.GestureRecognizers.Add(tap);
+        return tile;
     }
 
     private View Tile(int item, int amount)
     {
-        var name = _storage.ItemName(item);
+        var tile = TileFrame(_storage.ItemName(item), amount, null);
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => _ = Run(() => ItemMenuAsync(item));
+        tile.GestureRecognizers.Add(tap);
+        return tile;
+    }
+
+    private static Border TileFrame(string name, int amount, string? iconPath)
+    {
         var icon = new Image { WidthRequest = 36, HeightRequest = 36, Aspect = Aspect.AspectFit, VerticalOptions = LayoutOptions.Center };
-        _ = LoadIconAsync(icon, name);
+        if (iconPath is not null) icon.Source = iconPath;
+        else _ = LoadIconAsync(icon, name);
         var texts = new VerticalStackLayout
         {
             Spacing = 1,
@@ -192,7 +232,7 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
             Children = { icon, texts },
         };
         Grid.SetColumn(texts, 1);
-        var tile = new Border
+        return new Border
         {
             WidthRequest = 168,
             Margin = new Thickness(0, 0, 8, 8),
@@ -203,10 +243,6 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
             StrokeShape = new RoundRectangle { CornerRadius = 8 },
             Content = row,
         };
-        var tap = new TapGestureRecognizer();
-        tap.Tapped += (_, _) => _ = Run(() => ItemMenuAsync(item));
-        tile.GestureRecognizers.Add(tap);
-        return tile;
     }
 
     private static async Task LoadIconAsync(Image icon, string name)

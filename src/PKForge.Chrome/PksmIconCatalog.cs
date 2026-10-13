@@ -31,6 +31,8 @@ public static class PksmIconCatalog
         new("friends", "px_friends.png", "Friends"),
         new("trade", "px_trade.png", "Online trade"),
         new("star", "px_star.png", "Shooting Star"),
+        new("toymachine", "px_toymachine.png", "The toy machine (a prize capsule)"),
+        new("ticket", "px_ticket.png", "A toy machine ticket"),
         // Pokémon actions
         new("editor", "icon_script.png", "Edit / view a Pokémon"),
         new("evolve", "px_evolve.png", "Evolve"),

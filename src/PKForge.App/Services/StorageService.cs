@@ -195,6 +195,37 @@ public sealed class StorageService
         }
     }
 
+    // ── The toy machine (2.1) ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Releases Bank Pokémon for good and gives one toy machine ticket for each, in one step
+    /// with the Bank. Returns how many left the Bank and how many tickets were given.
+    /// </summary>
+    public (int Released, int Tickets) ReleaseForTickets(IReadOnlyList<Guid> ids) => _bank.Change((bank, root) =>
+    {
+        var released = bank.RemoveMany(ids);
+        if (released <= 0) return (0, 0);
+        var state = Load(root);
+        var tickets = state.AddTickets(released);
+        Save(root, state);
+        return (released, tickets);
+    });
+
+    /// <summary>Turns the toy machine's handle with one ticket; the prize goes into the Storage.</summary>
+    public ToyPlay PlayToyMachine() => _bank.Change((_, root) =>
+    {
+        var state = Load(root);
+        var play = ToyMachine.Play(state, Random.Shared);
+        if (play.Prize is not null) Save(root, state);
+        return play;
+    });
+
+    /// <summary>A prize's name: the item's, or "???" for the secret one.</summary>
+    public string PrizeName(ToyPrize prize) => prize.IsMystery ? MysteryName : ItemName(prize.Item);
+
+    /// <summary>The secret prize's only name.</summary>
+    public const string MysteryName = "???";
+
     // ── A game's bag ─────────────────────────────────────────────────────────
 
     /// <summary>The games whose bag the Storage can reach: the connected one first, then the other linked saves.</summary>

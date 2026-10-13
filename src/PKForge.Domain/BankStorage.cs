@@ -2,8 +2,10 @@ namespace PKForge.Domain;
 
 /// <summary>
 /// The Bank's Storage (3DS Bank 2.0): items kept by national id, each with a count, the
-/// Shooting Stars ready to use, and the progress of the star achievement. Saved as
-/// <see cref="FileName"/> in the Bank folder, so it travels with the account like the Pokémon.
+/// Shooting Stars ready to use, and the progress of the star achievement. 2.1 adds the toy
+/// machine's tickets (one per Pokémon released from the Bank) and its secret "???" prizes.
+/// Saved as <see cref="FileName"/> in the Bank folder, so it travels with the account like
+/// the Pokémon.
 /// </summary>
 public sealed class StorageState
 {
@@ -31,6 +33,32 @@ public sealed class StorageState
     /// <summary>The most Pokémon the Bank ever held at once: taking some out and putting them
     /// back never completes the achievement twice.</summary>
     public int MostPokemon { get; set; }
+
+    /// <summary>The most toy machine tickets kept at once.</summary>
+    public const int MaxTickets = 9999;
+
+    /// <summary>Toy machine tickets ready to use.</summary>
+    public int Tickets { get; set; }
+
+    /// <summary>Tickets ever received (one per Pokémon released from the Bank).</summary>
+    public int TicketsEarned { get; set; }
+
+    /// <summary>Times the toy machine's handle was turned.</summary>
+    public int Spins { get; set; }
+
+    /// <summary>The secret prizes: "???", an item nobody can name or use.</summary>
+    public int Mysteries { get; set; }
+
+    /// <summary>Gives <paramref name="count"/> tickets (up to <see cref="MaxTickets"/>); returns how many fit.</summary>
+    public int AddTickets(int count)
+    {
+        if (count <= 0) return 0;
+        var added = Math.Min(count, MaxTickets - Tickets);
+        if (added <= 0) return 0;
+        Tickets += added;
+        TicketsEarned += added;
+        return added;
+    }
 
     /// <summary>How many of <paramref name="item"/> are kept.</summary>
     public int CountOf(int item) => Items.TryGetValue(item, out var count) ? count : 0;
@@ -94,6 +122,10 @@ public sealed class StorageState
         StarsEarned = Math.Max(0, StarsEarned);
         StarsUsed = Math.Max(0, StarsUsed);
         MostPokemon = Math.Max(0, MostPokemon);
+        Tickets = Math.Clamp(Tickets, 0, MaxTickets);
+        TicketsEarned = Math.Max(0, TicketsEarned);
+        Spins = Math.Max(0, Spins);
+        Mysteries = Math.Clamp(Mysteries, 0, MaxPerItem);
         return this;
     }
 }

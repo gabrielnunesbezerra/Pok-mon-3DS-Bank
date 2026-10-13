@@ -54,6 +54,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<SocialService>();
         builder.Services.AddTransient<StoragePage>();
         builder.Services.AddTransient<FriendsPage>();
+        builder.Services.AddTransient<ToyMachinePage>();
         builder.Services.AddSingleton<IBankService>(sp =>
         {
             var bank = sp.GetRequiredService<ReloadableBankService>();
