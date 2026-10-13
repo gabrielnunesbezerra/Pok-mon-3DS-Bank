@@ -142,7 +142,9 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
 
         _menuAccount = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, LineBreakMode = LineBreakMode.TailTruncation };
         var title = new Label { Text = "3DS Bank", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextHeading + 2, TextColor = UiTokens.Bright };
-        var header = new VerticalStackLayout { Spacing = 2, Padding = new Thickness(6, 4, 6, 10), Children = { title, _menuAccount } };
+        var logo = new Image { Source = ThemeLogo.Source(), WidthRequest = 40, HeightRequest = 40, Aspect = Aspect.AspectFit, VerticalOptions = LayoutOptions.Center };
+        var titles = new VerticalStackLayout { Spacing = 2, VerticalOptions = LayoutOptions.Center, Children = { title, _menuAccount } };
+        var header = new HorizontalStackLayout { Spacing = 10, Padding = new Thickness(6, 4, 6, 10), Children = { logo, titles } };
 
         var rows = new VerticalStackLayout { Spacing = 6 };
         rows.Children.Add(header);
