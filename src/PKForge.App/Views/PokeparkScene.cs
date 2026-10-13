@@ -8,14 +8,17 @@ namespace PKForge.App.Views;
 public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService walking)
 {
     private readonly System.Runtime.CompilerServices.ConditionalWeakTable<SKBitmap, FrameBounds> _visibleBounds = new();
-    private readonly Dictionary<string, SKBitmap?> _environment = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, SKImage> _environmentImages = new(StringComparer.Ordinal);
+    // The habitat paintings at their own pixel grid (480 by 270): a few hundred kilobytes each,
+    // drawn with nearest sampling so every pixel stays crisp. The full-size files were 16 MB
+    // apiece once decoded, and holding them all is what crashed the park on a habitat change.
+    private readonly Dictionary<string, SKImage> _environment = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Lazy<Task>> _environmentLoads = new(StringComparer.Ordinal);
     private readonly object _environmentGate = new();
     private readonly Dictionary<(string Id, int Map), ResidentRoute> _routes = new();
-    private sealed class ResidentRoute(ParkWander wander, bool animated)
+    private sealed class ResidentRoute(ParkWander? wander, bool animated)
     {
-        public ParkWander Wander { get; } = wander;
+        /// <summary>The planned stroll; null when the habitat had no room for it (a little square stroll instead).</summary>
+        public ParkWander? Wander { get; } = wander;
         public bool Animated { get; } = animated;
         public long? Started { get; set; }
     }
@@ -38,7 +41,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         set
         {
             _residents = value;
-            _routes.Clear();
+            lock (_routes) _routes.Clear();
             var ids = value.Select(mon => mon.Id).ToHashSet();
             foreach (var id in _interactions.Keys.Where(id => !ids.Contains(id)).ToArray()) _interactions.Remove(id);
         }
@@ -68,7 +71,10 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         var mon = Residents[index];
         var key = (mon.Id, EnvironmentIndex);
         var types = HabitatCatalog.TypesFor(mon.Species, mon.Form);
-        if (!_routes.TryGetValue(key, out var route))
+        ResidentRoute? route;
+        // The page's timer and the widget painter both ask; the routes are built once, under a lock.
+        lock (_routes)
+        if (!_routes.TryGetValue(key, out route))
         {
             var allowed = ParkTraversal.Land;
             if (types.Contains(ParkType.Water)) allowed |= ParkTraversal.Water;
@@ -84,13 +90,23 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
             uint seed = 2166136261;
             foreach (var letter in mon.Id) seed = (seed ^ letter) * 16777619;
             var isAnimated = walking.GetFrame(mon.Species, mon.Form, mon.Shiny, 0, 0) is not null;
-            _routes[key] = route = new(new ParkWander(ParkMap.For(EnvironmentIndex), allowed, preferred,
-                unchecked((int)(seed + (uint)EnvironmentIndex * 7919)), radius: 12), isAnimated);
+            ParkWander? wander;
+            try
+            {
+                wander = new ParkWander(ParkMap.For(EnvironmentIndex), allowed, preferred,
+                    unchecked((int)(seed + (uint)EnvironmentIndex * 7919)), radius: 12);
+            }
+            catch (ArgumentException)
+            {
+                wander = null;
+            }
+            _routes[key] = route = new(wander, isAnimated);
         }
         var animated = route.Animated;
         var motionTime = interaction?.MotionTime(time) ?? time;
         if (animated) route.Started ??= motionTime;
-        var state = route.Wander.GetState(animated ? Math.Max(0, motionTime - route.Started!.Value) : 0);
+        var elapsed = animated ? Math.Max(0, motionTime - route.Started!.Value) : 0;
+        var state = route.Wander?.GetState(elapsed) ?? ParkMotion.GetState(index, elapsed);
         if (!animated) state = state with { IsWalking = false, Activity = "Resting and enjoying the view" };
         if (ParkEnvironment.Get((ParkEnvironmentId)EnvironmentIndex).MoodBonus(types) > 0)
             state = state with { Mood = state.IsWalking ? "Playful" : "Delighted" };
@@ -163,14 +179,29 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         await using var buffer = new MemoryStream();
         await stream.CopyToAsync(buffer).ConfigureAwait(false);
         var bytes = buffer.ToArray();
-        var bitmap = await Task.Run(() => SKBitmap.Decode(bytes)).ConfigureAwait(false)
+        var image = await Task.Run(() => Shrink(bytes)).ConfigureAwait(false)
             ?? throw new InvalidDataException($"Invalid Poképark map: {asset}");
 
         lock (_environmentGate)
         {
-            if (!_environment.TryAdd(asset, bitmap))
-                bitmap.Dispose();
+            if (!_environment.TryAdd(asset, image))
+                image.Dispose();
         }
+    }
+
+    /// <summary>Brings a painting down to the map's own 480 by 270 grid with an even, mipmapped filter.</summary>
+    private static SKImage? Shrink(byte[] bytes)
+    {
+        using var full = SKImage.FromEncodedData(bytes);
+        if (full is null) return null;
+        var info = new SKImageInfo(ParkMap.Width, ParkMap.Height, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var surface = SKSurface.Create(info);
+        if (surface is null) return null;
+        surface.Canvas.Clear(SKColors.Transparent);
+        using var paint = new SKPaint();
+        surface.Canvas.DrawImage(full, SKRect.Create(0, 0, ParkMap.Width, ParkMap.Height),
+            new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), paint);
+        return surface.Snapshot();
     }
 
     // ── The garden corner (2.2) ─────────────────────────────────────────────
@@ -231,12 +262,31 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         _ => new SKColor(0xD8, 0x5A, 0x5A),
     };
 
+    private SKSurface? _layer;
+
+    /// <summary>
+    /// Draws on a transparent layer the size of the map's own pixel grid, then lays it over the
+    /// map with nearest sampling: the garden, the floaters and the dragged berries come out as
+    /// pixel art on the same grid as the painting.
+    /// </summary>
+    private void DrawLayer(SKCanvas c, Action<SKCanvas> draw)
+    {
+        _layer ??= SKSurface.Create(new SKImageInfo(ParkMap.Width, ParkMap.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
+        if (_layer is null) return;
+        var layer = _layer.Canvas;
+        layer.Clear(SKColors.Transparent);
+        draw(layer);
+        using var image = _layer.Snapshot();
+        using var paint = new SKPaint();
+        c.DrawImage(image, SKRect.Create(0, 0, ParkMap.Width, ParkMap.Height), new SKSamplingOptions(SKFilterMode.Nearest), paint);
+    }
+
     private void DrawGarden(SKCanvas c, long time, bool ambient)
     {
         if (Garden is not { } garden) return;
         var spot = ParkMap.For(EnvironmentIndex).Garden;
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        using var paint = new SKPaint { IsAntialias = true };
+        using var paint = new SKPaint { IsAntialias = false };
         for (var i = 0; i < spot.Plots.Length && i < garden.Plots.Count; i++)
         {
             var at = new SKPoint(spot.Plots[i].X, spot.Plots[i].Y);
@@ -315,19 +365,24 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         }
         if (garden.Pot.Count > 0)
         {
-            using var font = PixelFont.For("×12", 8);
-            var label = $"×{garden.Pot.Count}";
-            paint.Color = new SKColor(0xFF, 0xFA, 0xE5, 230);
-            c.DrawRoundRect(SKRect.Create(pot.X + 9, pot.Y - 6, font.MeasureText(label) + 6, 10), 3, 3, paint);
+            var label = $"x{garden.Pot.Count}";
+            using var font = PixelFont.For(label, 12);
+            font.Edging = SKFontEdging.Alias;
+            font.Embolden = false;
             paint.Color = new SKColor(0x30, 0x47, 0x39);
-            c.DrawText(label, pot.X + 12, pot.Y + 1.5f, SKTextAlign.Left, font, paint);
+            var width = font.MeasureText(label) + 6;
+            c.DrawRect(SKRect.Create(pot.X + 10, pot.Y - 9, width, 12), paint);
+            paint.Color = new SKColor(0xFF, 0xFA, 0xE5);
+            c.DrawRect(SKRect.Create(pot.X + 11, pot.Y - 8, width - 2, 10), paint);
+            paint.Color = new SKColor(0x30, 0x47, 0x39);
+            c.DrawText(label, pot.X + 13, pot.Y + 0.5f, SKTextAlign.Left, font, paint);
         }
     }
 
     private void DrawDrag(SKCanvas c)
     {
         if (DraggedBerry is not { } drag) return;
-        using var paint = new SKPaint { IsAntialias = true };
+        using var paint = new SKPaint { IsAntialias = false };
         paint.Color = new SKColor(0, 0, 0, 60); c.DrawOval(drag.At.X, drag.At.Y + 9, 5, 1.8f, paint);
         for (var k = 0; k < 3; k++)
         {
@@ -347,7 +402,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         c.ClipRect(SKRect.Create(0, 0, 480, 270));
         using var p = new SKPaint { IsAntialias = false };
         DrawMap(c, p);
-        DrawGarden(c, time, ambient);
+        DrawLayer(c, layer => DrawGarden(layer, time, ambient));
         var poses = Residents.Select((mon, i) => (mon, i, state: GetResidentState(i, ambient ? 0 : time)))
             .Where(v => IsAtHome(v.mon))
             .OrderBy(v => v.state.Y);
@@ -423,32 +478,41 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
                 c.DrawText(name, labelX, baseline, SKTextAlign.Center, font, p);
             }
         }
-        DrawFloaters(c, time, ambient);
-        DrawDrag(c);
+        if ((!ambient && _floaters.Count > 0) || DraggedBerry is not null)
+            DrawLayer(c, layer => { DrawFloaters(layer, time, ambient); DrawDrag(layer); });
         c.Restore();
     }
 
     private void DrawFloaters(SKCanvas c, long time, bool ambient)
     {
         if (ambient || _floaters.Count == 0) return;
-        _floaters.RemoveAll(f => time - f.Start > 2400 || time < f.Start);
-        using var paint = new SKPaint { IsAntialias = true };
+        _floaters.RemoveAll(f => time - f.Start > 2400);
+        using var paint = new SKPaint { IsAntialias = false };
         foreach (var (resident, start, text) in _floaters)
         {
             var index = Residents.ToList().FindIndex(mon => mon.Id == resident);
             if (index < 0 || !IsAtHome(Residents[index])) continue;
             var state = GetResidentState(index, time);
+            if (time < start) continue;
             var t = (time - start) / 2400f;
-            var y = state.Y - BodyHeight - 6 - t * 16;
+            var y = MathF.Round(state.Y - BodyHeight - 4 - t * 16);
+            var x = MathF.Round(state.X);
             var alpha = (byte)(255 * Math.Clamp(1.4f - t * 1.4f, 0, 1));
-            using var font = PixelFont.For(text, 9);
-            paint.Color = new SKColor(0xFF, 0xFA, 0xE5, (byte)(alpha * 0.9f));
-            var width = font.MeasureText(text) + 14;
-            c.DrawRoundRect(SKRect.Create(state.X - width / 2, y - 9, width, 12), 4, 4, paint);
-            paint.Color = new SKColor(0xD8, 0x4A, 0x6A, alpha);
-            c.DrawCircle(state.X - width / 2 + 5, y - 3.5f, 2.2f, paint);
+            using var font = PixelFont.For(text, 12);
+            font.Edging = SKFontEdging.Alias;
+            font.Embolden = false;
+            var width = MathF.Round(font.MeasureText(text)) + 16;
             paint.Color = new SKColor(0x30, 0x47, 0x39, alpha);
-            c.DrawText(text, state.X - width / 2 + 9, y, SKTextAlign.Left, font, paint);
+            c.DrawRect(SKRect.Create(x - width / 2, y - 11, width, 14), paint);
+            paint.Color = new SKColor(0xFF, 0xFA, 0xE5, alpha);
+            c.DrawRect(SKRect.Create(x - width / 2 + 1, y - 10, width - 2, 12), paint);
+            // A pixel heart.
+            paint.Color = new SKColor(0xD8, 0x4A, 0x6A, alpha);
+            var hx = x - width / 2 + 3; var hy = y - 8;
+            c.DrawRect(hx, hy, 2, 2, paint); c.DrawRect(hx + 3, hy, 2, 2, paint);
+            c.DrawRect(hx - 1, hy + 1, 7, 3, paint); c.DrawRect(hx, hy + 4, 5, 2, paint); c.DrawRect(hx + 1, hy + 6, 3, 1, paint);
+            paint.Color = new SKColor(0x30, 0x47, 0x39, alpha);
+            c.DrawText(text, hx + 9, y, SKTextAlign.Left, font, paint);
         }
     }
 
@@ -481,17 +545,10 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         var asset = ParkMap.For(EnvironmentIndex).Asset;
         SKImage? image;
         lock (_environmentGate)
-        {
-            if (!_environmentImages.TryGetValue(asset, out image))
-            {
-                if (!_environment.TryGetValue(asset, out var bitmap) || bitmap is null) return; // loading frame keeps paint non-blocking
-                _environmentImages[asset] = image = SKImage.FromBitmap(bitmap);
-            }
-        }
+            if (!_environment.TryGetValue(asset, out image)) return; // loading frame keeps paint non-blocking
         paint.Color = SKColors.White;
-        // The painting is several times larger than the screen: a smooth, mipmapped
-        // downscale keeps its pixel edges clean instead of shimmering.
-        canvas.DrawImage(image, new SKRect(0, 0, 480, 270), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), paint);
+        // One painting pixel per map unit, scaled up with nearest sampling: crisp pixel art.
+        canvas.DrawImage(image, new SKRect(0, 0, 480, 270), new SKSamplingOptions(SKFilterMode.Nearest), paint);
     }
 
     private void DrawActivity(SKCanvas c, SKPaint p, SKPoint pos, ParkInteraction activity, long time)

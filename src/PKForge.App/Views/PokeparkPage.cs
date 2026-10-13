@@ -58,55 +58,99 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         NavigationPage.SetHasNavigationBar(this, false);
         BackgroundColor = UiTokens.Housing;
         _canvas.EnableTouchEvents = true;
-        _canvas.Touch += (_, e) => OnTouch(e);
+        _canvas.Touch += (_, e) =>
+        {
+            try { OnTouch(e); }
+            catch (Exception error) { AppLog.Warn("park", $"Touch: {error}"); }
+        };
         _canvas.PaintSurface += (_, e) =>
         {
             lock (_renderGate)
-                _scene.Draw(e.Surface.Canvas, e.Info.Width, e.Info.Height, _clock.ElapsedMilliseconds);
+            {
+                // A frame that fails to draw is skipped and logged once, never a crash.
+                try { _scene.Draw(e.Surface.Canvas, e.Info.Width, e.Info.Height, _clock.ElapsedMilliseconds); }
+                catch (Exception error)
+                {
+                    if (!_drawFailed) AppLog.Warn("park", $"Draw: {error}");
+                    _drawFailed = true;
+                }
+            }
         };
 
-        // Only an X to leave, the arrow to the next habitat, and the habitat's name (its options).
-        var close = RoundButton(new Label
+        // The habitat in a framed screen, its name on the frame's banner (a tap opens the park's
+        // options), and under it, centred: previous habitat, leave, next habitat.
+        _habitatName = new Label
         {
-            Text = "✕", FontFamily = "Rounded", FontSize = 20, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
+            FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle + 1, TextColor = UiTokens.Bright,
             HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
-        }, () => _ = Navigation.PopAsync());
-        close.HorizontalOptions = LayoutOptions.Start;
-        close.VerticalOptions = LayoutOptions.Start;
-        close.Margin = new Thickness(12);
-        var next = RoundButton(new Label
+            LineBreakMode = LineBreakMode.TailTruncation,
+        };
+        var banner = new Border
         {
-            Text = "›", FontFamily = "Rounded", FontSize = 34, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
-            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center, Margin = new Thickness(3, 0, 0, 4),
-        }, () => SwitchEnvironment(1));
-        next.HorizontalOptions = LayoutOptions.End;
-        next.VerticalOptions = LayoutOptions.Center;
-        next.Margin = new Thickness(12);
-        _habitatName = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextLabel, TextColor = UiTokens.Ink0, VerticalTextAlignment = TextAlignment.Center };
-        var namePill = new Border
-        {
-            HorizontalOptions = LayoutOptions.Center,
-            VerticalOptions = LayoutOptions.Start,
-            Margin = new Thickness(0, 10),
-            Padding = new Thickness(14, 6),
-            BackgroundColor = UiTokens.Paper.WithAlpha(0.82f),
-            Stroke = UiTokens.ButtonEdge,
-            StrokeThickness = 1.5,
-            StrokeShape = new RoundRectangle { CornerRadius = 14 },
+            Padding = new Thickness(12, 4),
+            Background = new LinearGradientBrush([new GradientStop(UiTokens.ButtonTop, 0), new GradientStop(UiTokens.Paper, 1)], new Point(0, 0), new Point(0, 1)),
+            StrokeThickness = 0,
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8, 8, 0, 0) },
             Content = _habitatName,
         };
         var nameTap = new TapGestureRecognizer();
         nameTap.Tapped += (_, _) => _ = OptionsAsync();
-        namePill.GestureRecognizers.Add(nameTap);
+        banner.GestureRecognizers.Add(nameTap);
+        var screen = new Border
+        {
+            Padding = 0,
+            BackgroundColor = Colors.Black,
+            Stroke = UiTokens.Outline,
+            StrokeThickness = 2,
+            StrokeShape = new RoundRectangle { CornerRadius = 4 },
+            Content = _canvas,
+        };
+        _frame = new Border
+        {
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center,
+            Padding = new Thickness(7, 0, 7, 7),
+            BackgroundColor = UiTokens.Paper,
+            Stroke = UiTokens.ShellEdge,
+            StrokeThickness = 2.5,
+            StrokeShape = new RoundRectangle { CornerRadius = 10 },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.6f, Radius = 0, Offset = new Point(4, 4) },
+            Content = new VerticalStackLayout { Spacing = 6, Children = { banner, screen } },
+        };
+        var stage = new Grid { Children = { _frame } };
+        stage.SizeChanged += (_, _) => FitFrame(stage);
+
+        var bar = new HorizontalStackLayout
+        {
+            Spacing = 12,
+            HorizontalOptions = LayoutOptions.Center,
+            Children =
+            {
+                IconButton("back", () => SwitchEnvironment(-1)),
+                IconButton("close", () => _ = Navigation.PopAsync(), wide: true),
+                IconButton("next", () => SwitchEnvironment(1)),
+            },
+        };
         UpdateHabitatName();
-        _host = new Grid { BackgroundColor = UiTokens.Housing, Children = { _canvas, namePill, close, next } };
+        var layout = new Grid
+        {
+            Padding = new Thickness(12, 10, 12, 10),
+            RowSpacing = 10,
+            RowDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
+            Children = { stage, bar },
+        };
+        Grid.SetRow(bar, 1);
+        _host = new Grid { BackgroundColor = UiTokens.Housing, Children = { DsChrome.GridBackground(), layout } };
         Content = _host;
         _timer = Dispatcher.CreateTimer();
         _timer.Interval = TimeSpan.FromMilliseconds(33);
         _timer.Tick += (_, _) =>
         {
             if (_clock.ElapsedMilliseconds - _lastJournalUpdate >= 250)
-                UpdateJournal();
+            {
+                try { UpdateJournal(); }
+                catch (Exception error) { _lastJournalUpdate = _clock.ElapsedMilliseconds; AppLog.Warn("park", $"Journal: {error.Message}"); }
+            }
             if (_clock.ElapsedMilliseconds - _lastMealCheck >= 60_000)
             {
                 _lastMealCheck = _clock.ElapsedMilliseconds;
@@ -118,23 +162,44 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
 
     private SecondScreenClaim? _secondClaim;
 
-    /// <summary>A round button floating over the habitat.</summary>
-    private static Border RoundButton(View content, Action onTap)
+    private Border _frame = null!;
+
+    /// <summary>A pixel-icon button for the bar under the habitat.</summary>
+    private static Border IconButton(string icon, Action onTap, bool wide = false)
     {
         var button = new Border
         {
-            WidthRequest = 48,
-            HeightRequest = 48,
-            BackgroundColor = UiTokens.Paper.WithAlpha(0.82f),
-            Stroke = UiTokens.ButtonEdge,
-            StrokeThickness = 1.5,
-            StrokeShape = new RoundRectangle { CornerRadius = 24 },
-            Content = content,
+            WidthRequest = wide ? 72 : 56,
+            HeightRequest = 44,
+            Background = new LinearGradientBrush([new GradientStop(UiTokens.ButtonTop, 0), new GradientStop(UiTokens.ButtonBottom, 1)], new Point(0, 0), new Point(0, 1)),
+            Stroke = UiTokens.ShellEdge,
+            StrokeThickness = 2,
+            StrokeShape = new RoundRectangle { CornerRadius = 8 },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.6f, Radius = 0, Offset = new Point(2, 3) },
+            Content = PksmIcons.Icon(icon, 24, PksmIcons.White),
         };
         var tap = new TapGestureRecognizer();
-        tap.Tapped += (_, _) => onTap();
+        tap.Tapped += async (_, _) =>
+        {
+            await button.ScaleToAsync(0.92, 50, Easing.CubicOut);
+            await button.ScaleToAsync(1, 80, Easing.CubicOut);
+            onTap();
+        };
         button.GestureRecognizers.Add(tap);
         return button;
+    }
+
+    /// <summary>Sizes the framed screen to the largest 16:9 that fits, so the habitat never letterboxes.</summary>
+    private void FitFrame(Grid stage)
+    {
+        const double chromeWidth = 2 * (7 + 2.5 + 2);
+        const double chromeHeight = 7 + 2 * (2.5 + 2) + 6 + 36;
+        var width = stage.Width - chromeWidth;
+        var height = stage.Height - chromeHeight;
+        if (width <= 0 || height <= 0) return;
+        var fitted = Math.Min(width, height * ParkMap.Width / ParkMap.Height);
+        _canvas.WidthRequest = Math.Floor(fitted);
+        _canvas.HeightRequest = Math.Floor(fitted * ParkMap.Height / ParkMap.Width);
     }
 
     /// <summary>
@@ -196,7 +261,12 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private void UpdateHabitatName()
     {
         var count = Enumerable.Range(0, _scene.Residents.Count).Count(IsVisibleInHabitat);
-        _habitatName.Text = count == 0 ? $"{Lang.T(_scene.EnvironmentName)}  ▾" : $"{Lang.T(_scene.EnvironmentName)}  ·  {count}  ▾";
+        _habitatName.Text = count switch
+        {
+            0 => _scene.EnvironmentName,
+            1 => $"{_scene.EnvironmentName}  ·  1 Pokémon",
+            _ => $"{_scene.EnvironmentName}  ·  {count} Pokémon",
+        };
     }
 
     protected override void OnAppearing()
@@ -506,10 +576,23 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         await PokeparkSpeechBubble.ShowAsync(_host, mon.Name, message, mon, _sprites, _walking);
     }
 
+    private bool _drawFailed;
+
     private void SwitchEnvironment(int delta)
     {
-        _scene.EnvironmentIndex = (_scene.EnvironmentIndex + delta + 4) % 4;
-        SelectResident(0);
+        if (_menuOpen) return;
+        _scene.DraggedBerry = null;
+        _dragPlot = -1;
+        lock (_renderGate)
+            _scene.EnvironmentIndex = (_scene.EnvironmentIndex + delta + 4) % 4;
+        try
+        {
+            SelectResident(0);
+        }
+        catch (Exception error)
+        {
+            AppLog.Warn("park", $"Habitat change: {error}");
+        }
         UpdateHabitatName();
         RefreshGarden();
         MarkWidgetDirty();
@@ -561,7 +644,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private void RefreshGarden()
     {
         try { _scene.Garden = _garden.Read(_scene.EnvironmentIndex); }
-        catch (IOException error) { Debug.WriteLine($"Poképark garden: {error.Message}"); }
+        catch (Exception error) { AppLog.Warn("park", $"Garden: {error.Message}"); }
         _canvas.InvalidateSurface();
     }
 
