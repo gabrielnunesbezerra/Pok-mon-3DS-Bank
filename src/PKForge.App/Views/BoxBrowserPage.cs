@@ -266,22 +266,20 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
     // Select (-) flips between them from anywhere on the grid; the cursor colour, the
     // box bar's mark counter and this footer always say which hand is active.
 
+    // Touch only: the slots, the box bar's arrows and these buttons do everything.
     private void SetStorageFooter() => _footerHost.Content = DsChrome.Footer(
-        ("A", _viewModel.CarrySource is null ? "Grab" : "Place", null),
-        ("-", "Multi-select", EnterSelectMode),
-        ("LR", "Box", () => OnPadButton(PadButton.R)),
-        ("X", "Tools", () => _ = ShowToolsAsync()), ("Y", "Save data", () => _ = ShowSaveDataAsync()),
-        ("+", "Menu", () => OpenCursorMenu()),
-        ("B", _viewModel.CarrySource is null ? "Back" : "Cancel", () => OnPadButton(PadButton.B)));
+        ("", _viewModel.CarrySource is null ? "Back" : "Cancel", () => OnPadButton(PadButton.B)),
+        ("", "Pokémon menu", () => OpenCursorMenu()),
+        ("", "Multi-select", EnterSelectMode),
+        ("", "Tools", () => _ = ShowToolsAsync()),
+        ("", "Save data", () => _ = ShowSaveDataAsync()));
 
     private void SetSelectFooter() => _footerHost.Content = DsChrome.Footer(
-        ("A", "Mark · hold for area", () => { OnPadButton(PadButton.A); OnPadReleased(PadButton.A); }),
-        ("Y", _viewModel.CurrentBoxFullyMarked ? "Unmark box" : "Select box", () => OnPadButton(PadButton.Y)),
-        ("X", $"Actions ({_viewModel.MarkedCount})", () => _ = ShowOrganizerMenuAsync()),
-        ("+", "Boxes", EnterBoxManageMode),
-        ("LR", "Box", () => OnPadButton(PadButton.R)),
-        ("-", "Move mode", ExitSelectMode),
-        ("B", _viewModel.MarkedCount > 0 ? "Clear" : "Done", () => OnPadButton(PadButton.B)));
+        ("", _viewModel.MarkedCount > 0 ? "Clear" : "Done", () => OnPadButton(PadButton.B)),
+        ("", $"Actions ({_viewModel.MarkedCount})", () => _ = ShowOrganizerMenuAsync()),
+        ("", _viewModel.CurrentBoxFullyMarked ? "Unmark box" : "Select box", () => OnPadButton(PadButton.Y)),
+        ("", "Boxes", EnterBoxManageMode),
+        ("", "Move mode", ExitSelectMode));
 
     /// <summary>The footer for whichever mode is active; every mode change ends here.</summary>
     private void RefreshFooter()
@@ -336,17 +334,13 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
     }
 
     private void SetEditorFooter() => _footerHost.Content = DsChrome.Footer(
-        ("↑↓", "Navigate", null),
-        ("A", "Use field", () => ActivateEditorFocus()),
-        ("B", "Box", ExitEditorFocusMode),
-        ("+", "Box", ExitEditorFocusMode));
+        ("", "Back to the box", ExitEditorFocusMode));
 
     private void SetBoxManageFooter() => _footerHost.Content = DsChrome.Footer(
-        ("A", _boxHeld ? "Drop box" : "Hold box", () => OnPadButton(PadButton.A)),
-        ("B", "Done", ExitBoxManageMode),
-        ("LR", _boxHeld ? "Swap" : "Browse", null),
-        ("Y", _markedBoxes.Contains(_viewModel.BoxIndex) ? "Deselect" : "Select", ToggleMarkedBox),
-        ("X", "Box actions", () => _ = ShowBoxBulkActionsAsync()));
+        ("", "Done", ExitBoxManageMode),
+        ("", _boxHeld ? "Drop box" : "Move box", () => OnPadButton(PadButton.A)),
+        ("", _markedBoxes.Contains(_viewModel.BoxIndex) ? "Deselect" : "Select", ToggleMarkedBox),
+        ("", "Box actions", () => _ = ShowBoxBulkActionsAsync()));
 
     // ── Hardcore mode ─────────────────────────────────────────────────────────
     // One guard per surface, never a condition buried inside a flow. Allowed()/Menu()
@@ -763,7 +757,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         // Multi-select marks survive the trip: the box manager can add whole boxes to them.
         if (_selectHeld) { _selectHeld = false; _viewModel.CommitRectangle(); }
         _viewModel.CancelCarry();
-        _viewModel.Status = "Box manager - A hold · L/R browse · Y mark box · X actions";
+        _viewModel.Status = "Box manager - tap the side boxes to browse";
         _sidePanel.IsVisible = false;
         _storageContent.ColumnDefinitions[1].Width = new GridLength(0);
         _storageContent.ColumnSpacing = 0;
@@ -834,7 +828,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             _heldBox = target;
             _viewModel.BoxIndex = target;
             _viewModel.RefreshAllSlots();
-            _viewModel.Status = $"Holding box {_heldBox + 1:00} - L/R swap · A drop";
+            _viewModel.Status = $"Holding box {_heldBox + 1:00} - tap a side box to swap it";
             _canvas.InvalidateSurface();
             _boxBar.InvalidateSurface();
             _boxNeighbors.InvalidateSurface();
@@ -1179,7 +1173,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
         options.Add(new("Back to move mode", IconPath: "confirm", Detail: "Leave multi-select."));
 
         var choice = await PadMenu.ShowAsync(_hostGrid, $"Multi-select · {count} marked",
-            Note("Marks stay while you change box with L/R."), options.ToArray());
+            Note("Marks stay while you change box."), options.ToArray());
         if (await TryRunBulkAsync(choice))
         {
             _boxBar.InvalidateSurface();
@@ -2741,7 +2735,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
 
             var hint = new Label
             {
-                Text = "Left / right adjust · L / R change pouch · A opens exact count",
+                Text = "Arrows change the pouch · tap an item to set its count",
                 FontFamily = DsChrome.PixelFont,
                 FontSize = UiTokens.TextSmall,
                 TextColor = UiTokens.InkSoft,
@@ -3566,8 +3560,8 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                     _boxHeld = !_boxHeld;
                     _heldBox = _viewModel.BoxIndex;
                     _viewModel.Status = _boxHeld
-                        ? $"Holding box {_heldBox + 1:00} - L/R swap · A drop"
-                        : "Box manager - A hold · L/R browse · Y mark box · X actions";
+                        ? $"Holding box {_heldBox + 1:00} - tap a side box to swap it"
+                        : "Box manager - tap the side boxes to browse";
                     SetBoxManageFooter();
                     UpdateBoxManagePulse();
                     _boxBar.InvalidateSurface();
@@ -4685,7 +4679,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                         LineBreakMode = LineBreakMode.WordWrap,
                     },
                 },
-                Kit.WindowHints(("B", "Back", Close)),
+                Kit.WindowHints(("", "Back", Close)),
             },
         };
 
@@ -4870,7 +4864,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
                 new ScrollView { Content = tiles, MaximumHeightRequest = 260 },
                 markings.Count > 0 ? markRow : new BoxView { HeightRequest = 0 },
                 new HorizontalStackLayout { Spacing = 8, HorizontalOptions = LayoutOptions.Center, Children = { awardAll, close } },
-                Kit.WindowHints(("TAP", "Toggle ribbon", null), ("B", "Back", Close)),
+                Kit.WindowHints(("", "Back", Close)),
             },
         };
 

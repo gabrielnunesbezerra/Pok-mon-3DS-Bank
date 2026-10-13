@@ -159,10 +159,10 @@ public sealed class PickerMenu : IPadHandler
             VerticalTextAlignment = TextAlignment.Center,
             LineBreakMode = LineBreakMode.TailTruncation,
         };
-        var hintList = new List<(string, string, Action?)> { ("A", "PICK", livePreview is null ? null : PickHighlighted) };
-        if (_hasTypes) hintList.Add(("X", "Type", () => _ = ChooseTypeAsync()));
-        if (filter is not null) hintList.Add(("Y", "Filter", ToggleFilter));
-        hintList.Add(("B", "Cancel", () => Close(null)));
+        var hintList = new List<(string, string, Action?)> { ("", "Pick", livePreview is null ? null : PickHighlighted) };
+        if (_hasTypes) hintList.Add(("", "Type", () => _ = ChooseTypeAsync()));
+        if (filter is not null) hintList.Add(("", "Filter", ToggleFilter));
+        hintList.Add(("", "Cancel", () => Close(null)));
         var hints = Kit.WindowHints([.. hintList]);
         var previewBar = Kit.Well(_preview, padding: 4);
         previewBar.Padding = new Thickness(10, 4);
@@ -434,7 +434,7 @@ public sealed class PickerMenu : IPadHandler
     {
         var current = _index >= 0 && _index < _filtered.Count ? _filtered[_index] : null;
         if (current is not null)
-            _preview.Text = _livePreview is null ? $"A picks: {current.Name}" : $"A or tap again picks: {current.Name}";
+            _preview.Text = _livePreview is null ? $"Tap to pick: {current.Name}" : $"Tap again to pick: {current.Name}";
         _livePreview?.OnHighlight(current);
     }
 

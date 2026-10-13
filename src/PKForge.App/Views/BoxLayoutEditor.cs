@@ -93,7 +93,7 @@ public static class BoxLayoutEditor
                 {
                     Kit.HeaderBar(title),
                     _scroll,
-                    Kit.WindowHints(("A", "Choose", () => OnPadButton(PadButton.A)), ("B", "Cancel", () => Close(null))),
+                    Kit.WindowHints(("", "Cancel", () => Close(null))),
                 },
             };
             var window = Kit.OverlayWindow(host, content, preferredMaxWidth: 560, scroll: false);

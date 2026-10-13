@@ -16,10 +16,10 @@ namespace PKForge.App.Views;
 /// <summary>
 /// The Bank: the app's own cross-game vault in the PKSM storage world. Each box page
 /// is a saturated wallpaper flat with the dot lattice;
-/// the second screen shows the highlighted mon. A grabs/places, START opens the
-/// mon menu, L/R turn pages. Y marks slots for the organizer, X opens the bank's
-/// actions (bulk moves, releases, sorting), and the readout under the grid carries the
-/// mark count. Every write is an index write: the bank never touches a save itself.
+/// the second screen shows the highlighted mon. A tap selects a slot and a second tap
+/// opens its menu (Move picks it up); the box bar's arrows turn pages. Mark keeps slots
+/// for the organizer, Bank actions does bulk moves, releases and sorting, and the readout
+/// under the grid carries the mark count. Every write is an index write: the bank never touches a save itself.
 /// </summary>
 public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
 {
@@ -132,16 +132,15 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var statusHost = Kit.LcdPanel(_statusLine, padding: 6);
         statusHost.Margin = new Thickness(12, 0, 12, 6);
 
+        // Touch buttons: a tap selects a slot, a second tap opens its menu; the box bar's
+        // arrows turn the boxes. A dual-screen device turns the inspector's page below
+        // instead of opening the full-screen summary.
         var footer = DsChrome.Footer(
-            ("A", "Grab", () => OnPadButton(PadButton.A)),
-            ("Y", "Mark", ToggleCursorMark),
-            ("X", "Actions", () => _ = ShowBankActionsAsync()),
-            ("B", "Back", () => OnPadButton(PadButton.B)),
-            ("LR", "Box", () => OnPadButton(PadButton.R)),
-            // SELECT (-): a dual-screen device turns the inspector's page below; a single
-            // screen opens the full-screen summary instead.
-            ("-", HasSecondScreen ? "Page" : "Summary", () => OnPadButton(PadButton.Select)),
-            ("+", "Menu", () => _ = OpenCursorMenuAsync()));
+            ("", "Back", () => OnPadButton(PadButton.B)),
+            ("", "Pokémon menu", () => _ = OpenCursorMenuAsync()),
+            ("", HasSecondScreen ? "Page" : "Summary", () => OnPadButton(PadButton.Select)),
+            ("", "Mark", ToggleCursorMark),
+            ("", "Bank actions", () => _ = ShowBankActionsAsync()));
 
         var root = new Grid
         {
@@ -653,13 +652,13 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
     {
         if (_marked.Count > 0)
         {
-            _boxViewModel.Status = $"{_marked.Count} marked · X actions · B clears";
+            _boxViewModel.Status = $"{_marked.Count} marked";
             return;
         }
         var entry = EntryAt(_selectedSlot);
         _boxViewModel.Status = entry is null
-            ? $"Box {_boxIndex + 1:00} slot {_selectedSlot + 1:00} empty" + (Allowed(SaveAction.CreateMon) ? " · A adds" : "")
-            : $"{Describe(entry)} · Y mark · X actions";
+            ? $"Box {_boxIndex + 1:00} slot {_selectedSlot + 1:00} empty" + (Allowed(SaveAction.CreateMon) ? " · tap to add" : "")
+            : $"{Describe(entry)} · tap again for its menu";
     }
 
     private string Describe(BankEntry entry)
@@ -995,7 +994,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var choice = await PadMenu.ShowAsync(_hostGrid, $"Bank actions · {noun}",
             Note(_marked.Count > 0
                 ? "Marks keep across box pages. Sorting rewrites the bank's own index."
-                : "Y marks slots; with nothing marked X acts on the cursor slot."),
+                : "Mark slots to act on many at once; with nothing marked, these act on the selected slot."),
             options.ToArray());
         switch (choice)
         {
@@ -2138,7 +2137,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
 
         if (_carryId is not null) { _ = ConfirmAsync(); return; }
         if (EntryAt(slot) is null) { _ = OpenEmptySlotMenuAsync(); return; }
-        if (wasSelected) _ = ConfirmAsync(); // second tap grabs
+        if (wasSelected) _ = OpenCursorMenuAsync(); // second tap opens the Pokémon's menu
         _canvas.InvalidateSurface();
     }
 }

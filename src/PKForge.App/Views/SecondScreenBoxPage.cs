@@ -48,7 +48,7 @@ public sealed class SecondScreenBoxPage : ContentPage
         // The inspector: the Gen-6 summary surface, a light-blue world carrying white panels.
         _inspector = new MonSummaryView(sprites)
         {
-            FixHint = "Press + > Legalize this one to find the closest legal version. Its PID, nature or IVs may change.",
+            FixHint = "Pokémon menu > Legalize this one finds the closest legal version. Its PID, nature or IVs may change.",
         };
         if (state is not null)
         {
@@ -328,7 +328,7 @@ public sealed class SecondScreenBoxPage : ContentPage
         }
         canvas.Restore();
 
-        PksmPaint.CenterText(canvas, "SUMMARY ON THE TOP SCREEN  ·  L / R  NEXT POKéMON  ·  B  CLOSE",
+        PksmPaint.CenterText(canvas, "SUMMARY ON THE TOP SCREEN",
             info.Width / 2f, info.Height - hintHeight / 2, small, SKColors.White, shadow, SKTextAlign.Center);
     }
 

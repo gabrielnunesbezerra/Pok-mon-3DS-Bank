@@ -97,12 +97,11 @@ public sealed class CollectionDexPage : IPadPagingHandler
         _chips = new HorizontalStackLayout { Spacing = 5 };
 
         View hints = Kit.WindowHints(
-            ("A", "Actions", () => _ = ShowActionsAsync()),
-            ("B", "Done", () => Close()),
-            ("LR", "Generation", () => OnPadButton(PadButton.R)),
-            ("X", "Scope", () => _ = ShowScopeMenuAsync()),
-            ("Y", "Missing only", ToggleMissingOnly),
-            ("+", "Autopilot", () => _ = OpenAutopilotAsync()));
+            ("", "Done", () => Close()),
+            ("", "Next generation", () => OnPadButton(PadButton.R)),
+            ("", "Scope", () => _ = ShowScopeMenuAsync()),
+            ("", "Missing only", ToggleMissingOnly),
+            ("", "Autopilot", () => _ = OpenAutopilotAsync()));
 
         var content = new Grid
         {

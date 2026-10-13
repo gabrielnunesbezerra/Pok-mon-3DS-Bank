@@ -268,7 +268,7 @@ public static class BankEntryEditor
             content.Add(EditorRows.EditorSection("Pokémon information"));
             content.Add(body);
             Grid.SetRow(body, 1);
-            var hints = Kit.WindowHints(("A", "Open", () => OnPadButton(PadButton.A)), ("X", "Save", () => Run(SaveAsync)), ("B", "Close", RequestClose));
+            var hints = Kit.WindowHints(("", "Close", RequestClose), ("", "Save", () => Run(SaveAsync)));
             content.Add(hints);
             Grid.SetRow(hints, 2);
 

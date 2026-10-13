@@ -74,19 +74,22 @@ public sealed class EventFlagsEditor : IPadHandler
             chip.Margin = new Thickness(0, 0, 6, 6);
         _workTab.IsVisible = catalog.Work.Count != 0;
 
-        // Section pager: ◀ L  Story  R ▶, tappable halves for touch.
+        // Section pager: ‹  Story  ›, two touch buttons around the name.
         _section = new Label
         {
             FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0,
             HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
             LineBreakMode = LineBreakMode.TailTruncation,
         };
-        var next = Kit.GlyphKey("R", () => Page(1));
+        var previous = Kit.MiniCapsule("<", UiTokens.Ink0);
+        previous.Clicked += (_, _) => Page(-1);
+        var next = Kit.MiniCapsule(">", UiTokens.Ink0);
+        next.Clicked += (_, _) => Page(1);
         var pager = new Grid
         {
             ColumnSpacing = 6,
             ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { Kit.GlyphKey("L", () => Page(-1)), _section, next },
+            Children = { previous, _section, next },
         };
         Grid.SetColumn(_section, 1);
         Grid.SetColumn(next, 2);
@@ -123,8 +126,7 @@ public sealed class EventFlagsEditor : IPadHandler
             TextColor = UiTokens.InkSoft, FontSize = UiTokens.TextSmall, MaxLines = 2,
             LineBreakMode = LineBreakMode.TailTruncation, HorizontalTextAlignment = TextAlignment.Center,
         };
-        var hints = Kit.WindowHints(("A", "Change", () => { if (Current is { } row) _ = ActivateAsync(row); }),
-            ("L", "R  Section", () => Page(1)), ("B", "Close", Close));
+        var hints = Kit.WindowHints(("", "Close", Close), ("", "Change", () => { if (Current is { } row) _ = ActivateAsync(row); }));
 
         var body = new Grid { Children = { _list, _empty } };
         var content = new Grid

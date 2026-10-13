@@ -364,45 +364,68 @@ public static class PksmPaint
         c.DrawOval(new SKRect(ball.MidX - 3, ball.MidY - 3, ball.MidX + 3, ball.MidY + 3), p);
     }
 
-    /// <summary>Bottom hint rail: a device panel carrying cyan key discs and pale labels.</summary>
     /// <summary>
-    /// Where each prompt of <see cref="HintBar"/> sits (key disc and label, full bar height),
-    /// laid out exactly as it is drawn, so a canvas can make its hint bar tappable.
+    /// Where each button of <see cref="HintBar"/> sits, laid out exactly as it is drawn, so a
+    /// canvas can make its button rail tappable. The key of each prompt is ignored: the app is
+    /// played by touch, so the rail shows only the action's name.
     /// </summary>
     public static IReadOnlyList<SKRect> HintBarHitRects(SKRect bar, IReadOnlyList<(string Key, string Label)> prompts, SKFont font)
     {
-        var total = 0f;
-        foreach (var (key, label) in prompts)
-            total += Math.Max(font.Size * 1.3f, font.MeasureText(key) + font.Size * 0.9f) + 8 + font.MeasureText(label) + font.Size * 1.4f;
-        var x = bar.MidX - (total - font.Size * 1.4f) / 2;
-        var rects = new List<SKRect>(prompts.Count);
-        foreach (var (key, label) in prompts)
+        var (buttons, _) = HintBarLayout(bar, prompts, font);
+        var rects = new List<SKRect>(buttons.Count);
+        for (var i = 0; i < buttons.Count; i++)
         {
-            var kw = Math.Max(font.Size * 1.3f, font.MeasureText(key) + font.Size * 0.9f);
-            var width = kw + 8 + font.MeasureText(label);
-            // Half the gap on each side belongs to the prompt: no dead strip between two targets.
-            rects.Add(new SKRect(x - font.Size * 0.7f, bar.Top, x + width + font.Size * 0.7f, bar.Bottom));
-            x += width + font.Size * 1.4f;
+            // Half the gap on each side belongs to the button: no dead strip between two targets.
+            var left = i == 0 ? buttons[i].Left - 6 : (buttons[i - 1].Right + buttons[i].Left) / 2;
+            var right = i == buttons.Count - 1 ? buttons[i].Right + 6 : (buttons[i].Right + buttons[i + 1].Left) / 2;
+            rects.Add(new SKRect(left, bar.Top, right, bar.Bottom));
         }
         return rects;
     }
 
+    /// <summary>The bottom button rail: a device panel carrying one pill button per action.</summary>
     public static void HintBar(SKCanvas c, SKRect bar, IReadOnlyList<(string Key, string Label)> prompts, SKFont font)
     {
         Panel(c, SKRect.Inflate(bar, -3, -3));
-        var total = 0f;
-        foreach (var (key, label) in prompts)
-            total += Math.Max(font.Size * 1.3f, font.MeasureText(key) + font.Size * 0.9f) + 8 + font.MeasureText(label) + font.Size * 1.4f;
-        var x = bar.MidX - (total - font.Size * 1.4f) / 2;
-        using var disc = Paint(Pksm.LogoCyan);
-        foreach (var (key, label) in prompts)
+        var (buttons, size) = HintBarLayout(bar, prompts, font);
+        using var fitted = new SKFont(font.Typeface, size) { Edging = font.Edging, Subpixel = font.Subpixel };
+        for (var i = 0; i < buttons.Count; i++)
         {
-            var kw = Math.Max(font.Size * 1.3f, font.MeasureText(key) + font.Size * 0.9f);
-            var pill = new SKRect(x, bar.MidY - font.Size * 0.62f, x + kw, bar.MidY + font.Size * 0.62f);
-            c.DrawRoundRect(pill, pill.Height / 2, pill.Height / 2, disc);
-            CenterText(c, key, pill.MidX - 1, bar.MidY, font, Pksm.LogoVoid, SKColors.Transparent, SKTextAlign.Center);
-            CenterText(c, label, pill.Right + 8 - 2, bar.MidY, font, Pksm.Ink, SKColors.Transparent);
-            x += kw + 8 + font.MeasureText(label) + font.Size * 1.4f;
+            BlackButton(c, buttons[i], Math.Min(8, buttons[i].Height / 3));
+            CenterText(c, prompts[i].Label, buttons[i].MidX, buttons[i].MidY, fitted, Pksm.Ink, SKColors.Transparent, SKTextAlign.Center);
         }
+    }
+
+    /// <summary>One pill per prompt, centred on the rail; the text shrinks until every pill fits.</summary>
+    private static (List<SKRect> Buttons, float FontSize) HintBarLayout(SKRect bar, IReadOnlyList<(string Key, string Label)> prompts, SKFont font)
+    {
+        var size = font.Size;
+        var room = bar.Width - 16;
+        using var probe = new SKFont(font.Typeface, size);
+        float Widths(float s, List<float>? into)
+        {
+            probe.Size = s;
+            var sum = 0f;
+            foreach (var (_, label) in prompts)
+            {
+                var w = probe.MeasureText(Localize(label)) + s * 1.6f;
+                into?.Add(w);
+                sum += w;
+            }
+            return sum + Math.Max(0, prompts.Count - 1) * s * 0.7f;
+        }
+        while (size > 7 && Widths(size, null) > room) size -= 0.5f;
+        var widths = new List<float>(prompts.Count);
+        var total = Widths(size, widths);
+        var gap = size * 0.7f;
+        var height = Math.Min(bar.Height - 12, size * 2.1f);
+        var x = bar.MidX - total / 2;
+        var buttons = new List<SKRect>(prompts.Count);
+        foreach (var w in widths)
+        {
+            buttons.Add(new SKRect(x, bar.MidY - height / 2, x + w, bar.MidY + height / 2));
+            x += w + gap;
+        }
+        return (buttons, size);
     }
 }

@@ -33,8 +33,15 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         // GAMES section: the cartridge shelf (reused), labelled DS-style.
         var gamesLabel = new Label
         {
-            Text = "Games", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle,
-            TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center,
+            FontFamily = DsChrome.PixelFont, TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center,
+            FormattedText = new FormattedString
+            {
+                Spans =
+                {
+                    new Span { Text = Lang.T("Games"), FontSize = UiTokens.TextTitle },
+                    new Span { Text = "   " + Lang.T("Hold a game to edit it"), FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1 },
+                },
+            },
         };
         var filterCaption = new Label
         {
@@ -110,17 +117,11 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         Grid.SetRow(cards, 1);
         var bodyHost = new Grid { Children = { DsChrome.GridBackground(), body } };
 
+        // Touch buttons only: a game opens with a tap and its identity menu (rename, color,
+        // which game) with a hold; the filter and the settings have their own buttons above.
         var footer = DsChrome.Footer(
-            ("A", "Open", () => OnPadButton(PadButton.A)),
-            // The cartridge identity menu (rename, color, which game): B on the pad, a hold by touch.
-            ("B", "Edit game · hold", () =>
-            {
-                if ((uint)_shelfIndex < (uint)_viewModel.Groups.Count) _ = ShowSaveMenuAsync(_viewModel.Groups[_shelfIndex]);
-            }),
-            ("L", "Filter", () => _ = ShowFilterMenuAsync()),
-            ("Y", "Link", () => _ = ShowLinkMenuAsync()),
-            ("X", "File", () => _ = LinkFileAsync()),
-            ("+", "Settings", () => _ = ShowSettingsAsync()));
+            ("", "Link a game", () => _ = ShowLinkMenuAsync()),
+            ("", "Open a save file", () => _ = LinkFileAsync()));
 
         var root = new Grid
         {
@@ -1383,7 +1384,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         var choice = await PadMenu.ShowAsync(_hostGrid, "Event database", null,
             new PadOption($"Community boxes ({Services.CommunityBoxService.RepoTitle})", IconPath: "community",
                 Detail: "Event Pokémon collections shared online, to put in your Bank."),
-            new PadOption("Wonder cards", IconPath: "events", Detail: "Found inside each game: open a game, press Y, then Wonder cards."));
+            new PadOption("Wonder cards", IconPath: "events", Detail: "Found inside each game: open a game, tap Save data, then Wonder cards."));
         switch (choice)
         {
             case var boxes when boxes?.StartsWith("Community boxes", StringComparison.Ordinal) == true:

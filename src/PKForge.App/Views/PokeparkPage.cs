@@ -71,10 +71,10 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         panel.HorizontalOptions = LayoutOptions.Fill;
         panel.VerticalOptions = LayoutOptions.Start;
         var footer = DsChrome.Footer(
-            ("B", "Back", () => _ = Navigation.PopAsync()),
-            ("A", "Meet Pokémon", () => _ = DetailsAsync()),
-            ("LR", "Habitat", () => SwitchEnvironment(1)),
-            ("+", "Options", () => _ = OptionsAsync()));
+            ("", "Back", () => _ = Navigation.PopAsync()),
+            ("", "Meet Pokémon", () => _ = DetailsAsync()),
+            ("", "Next habitat", () => SwitchEnvironment(1)),
+            ("", "Options", () => _ = OptionsAsync()));
         var root = new Grid
         {
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
@@ -209,7 +209,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         SelectResident(Math.Min(_selected, _scene.Residents.Count - 1));
         _status.Text = _scene.Residents.Count == 0
             ? "Your meadow is waiting. Select a Pokémon in a box or Bank → Send to Poképark."
-            : $"{_scene.EnvironmentName}  ·  {_scene.Residents.Count}/12 residents  ·  Tap a Pokémon · A opens its card";
+            : $"{_scene.EnvironmentName}  ·  {_scene.Residents.Count}/12 residents  ·  Tap a Pokémon to meet it";
         UpdateJournal();
         foreach (var mon in _scene.Residents)
         {
@@ -405,7 +405,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     {
         _scene.EnvironmentIndex = (_scene.EnvironmentIndex + delta + 4) % 4;
         SelectResident(0);
-        _status.Text = $"{_scene.EnvironmentName}  ·  L/R switch habitats";
+        _status.Text = _scene.EnvironmentName;
         MarkWidgetDirty();
         _ = WarmCurrentEnvironmentAsync();
     }

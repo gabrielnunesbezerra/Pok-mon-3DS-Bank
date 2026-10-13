@@ -82,11 +82,10 @@ public sealed class DexEditorPage : IPadPagingHandler
         };
 
         View hints = Kit.WindowHints(
-            ("A", "Cycle", () => OnPadButton(PadButton.A)),
-            ("B", "Done", () => _ = CloseAsync()),
-            ("LR", "Generation", () => OnPadButton(PadButton.R)),
-            ("Y", "Select all (gaps)", SelectAllGaps),
-            ("X", "Actions", () => _ = ShowActionsAsync()));
+            ("", "Done", () => _ = CloseAsync()),
+            ("", "Next generation", () => OnPadButton(PadButton.R)),
+            ("", "Select all (gaps)", SelectAllGaps),
+            ("", "Actions", () => _ = ShowActionsAsync()));
 
         var search = new Entry
         {

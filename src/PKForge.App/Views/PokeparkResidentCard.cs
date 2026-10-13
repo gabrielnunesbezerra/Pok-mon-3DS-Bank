@@ -104,7 +104,7 @@ public sealed class PokeparkResidentCard : IPadHandler
             Tap(tile, () => Close(_keys[index])); _actions.Add(tile); actions.Add(tile); Grid.SetColumn(tile, i);
         }
         var bottom = new Grid { ColumnSpacing = 6, ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Auto)] };
-        bottom.Add(new Label { Text = "A  Choose    B  Back", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft, VerticalTextAlignment = TextAlignment.Center });
+        bottom.Add(new Label { Text = "Choose what to do", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft, VerticalTextAlignment = TextAlignment.Center });
         var leave = new Border { StrokeShape = new RoundRectangle { CornerRadius = 5 }, Padding = new Thickness(7, 4),
             Content = new Label { Text = "↗  Leave park", FontFamily = "Rounded", FontSize = UiTokens.TextSmall, TextColor = UiTokens.InkSoft } };
         Tap(leave, () => Close("leave")); _actions.Add(leave); bottom.Add(leave); Grid.SetColumn(leave, 1);

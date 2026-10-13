@@ -109,10 +109,8 @@ public sealed class FriendsPage : ContentPage, IPadHandler, IOverlayHost
                 Kit.Panel(new VerticalStackLayout { Spacing = 8, Children = { _friendsTitle, _friendRows } }, padding: 12),
             },
         };
-        var footer = DsChrome.Footer(
-            ("B", "Back", () => _ = Navigation.PopAsync()),
-            ("Y", "Add a friend", () => _ = Run(AddFriendAsync)),
-            ("X", "Requests", () => _ = Run(RequestsAsync)));
+        // Every action is a button on the page itself; the footer row stays empty (hidden).
+        var footer = DsChrome.Footer();
         var content = new Grid
         {
             Padding = new Thickness(14, 10),

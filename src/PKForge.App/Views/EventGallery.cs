@@ -492,12 +492,11 @@ public static class EventGallery
             Grid.SetColumn(_preview, 1);
 
             var hints = Kit.WindowHints(
-                ("A", "Open", OpenCard),
-                ("X", "Search", FocusSearch),
-                ("Y", "Filters", () => _ = ShowFilterMenuAsync()),
-                ("LR", "Section", () => OnPadButton(PadButton.R)),
-                ("+", "Sort", CycleSort),
-                ("B", "Back", () => Close(null)));
+                ("", "Back", () => Close(null)),
+                ("", "Search", FocusSearch),
+                ("", "Filters", () => _ = ShowFilterMenuAsync()),
+                ("", "Next section", () => OnPadButton(PadButton.R)),
+                ("", "Sort", CycleSort));
 
             var content = new Grid
             {

@@ -71,9 +71,9 @@ public sealed class MonSummaryScreen : IPadPagingHandler
         _view = new MonSummaryView(sprites);
         _view.SetPage(page);
 
-        var previous = Kit.MiniCapsule("‹ L", UiTokens.Ink0);
+        var previous = Kit.MiniCapsule("‹", UiTokens.Ink0);
         previous.Clicked += (_, _) => Step(-1);
-        var next = Kit.MiniCapsule("R ›", UiTokens.Ink0);
+        var next = Kit.MiniCapsule("›", UiTokens.Ink0);
         next.Clicked += (_, _) => Step(1);
         // The app's own header strip (Kit.HeaderBar), centred title.
         var header = (Border)Kit.HeaderBar("Summary");
@@ -88,13 +88,9 @@ public sealed class MonSummaryScreen : IPadPagingHandler
         Grid.SetColumn(header, 1);
         Grid.SetColumn(next, 2);
 
-        var hints = new List<(string, string, Action?)>
-        {
-            ("◀▶", "Page", () => _view.TurnPage(1)),
-            ("LR", "Pokémon", () => OnPadButton(PadButton.R)),
-        };
-        if (deck.CanEdit) hints.Add(("X", "Edit", () => Close(true)));
-        hints.Add(("B", "Close", () => Close(false)));
+        // The arrows beside the title walk the Pokémon; these buttons do the rest.
+        var hints = new List<(string, string, Action?)> { ("", "Close", () => Close(false)), ("", "Next page", () => _view.TurnPage(1)) };
+        if (deck.CanEdit) hints.Add(("", "Edit", () => Close(true)));
         var hintBar = Kit.HintBar(hints.ToArray());
 
         var surface = new Grid

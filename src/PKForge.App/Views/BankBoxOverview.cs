@@ -551,8 +551,8 @@ public sealed class BankBoxOverview : IPadPagingHandler
 
         var hintBar = new SKRect(0, info.Height - HintHeight * _density, info.Width, info.Height);
         (string Key, string Label, PadButton Button)[] hints = _held is null
-            ? [("A", "Open", PadButton.A), ("Y", "Pick up", PadButton.Y), ("X", "Box menu", PadButton.X),
-               ("+", "New box", PadButton.Start), ("R", "Page", PadButton.R), ("B", "Close", PadButton.B)]
+            ? [("", "Close", PadButton.B), ("", "Open", PadButton.A), ("", "Move box", PadButton.Y),
+               ("", "Box menu", PadButton.X), ("", "New box", PadButton.Start)]
             : [("A", "Drop here", PadButton.A), ("X", _carry == Carry.Swap ? "Move instead" : "Swap instead", PadButton.X), ("B", "Cancel", PadButton.B)];
         var prompts = hints.Select(h => (h.Key, h.Label)).ToArray();
         PksmPaint.HintBar(canvas, hintBar, prompts, small);

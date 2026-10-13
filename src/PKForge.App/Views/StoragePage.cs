@@ -96,10 +96,8 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
             },
         };
 
-        var footer = DsChrome.Footer(
-            ("B", "Back", () => _ = Navigation.PopAsync()),
-            ("Y", "Bring items", () => _ = Run(BringFromGameAsync)),
-            ("X", "Shooting Star", () => _ = Run(UseStarAsync)));
+        // Every action is a button on the page itself; the footer row stays empty (hidden).
+        var footer = DsChrome.Footer();
         var content = new Grid
         {
             Padding = new Thickness(14, 10),

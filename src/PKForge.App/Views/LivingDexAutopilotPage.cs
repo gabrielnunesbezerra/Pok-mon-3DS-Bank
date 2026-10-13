@@ -461,7 +461,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
             _stageLine = staging.Failed == 0
                 ? $"Checked: all {staging.Staged} can move safely. Nothing is written yet."
                 : $"Checked: {staging.Staged} can move, {staging.Failed} can't (they stay put). Nothing is written yet.";
-            PublishRoute("Checked: press + to continue", running: false, done: false, travelers: []);
+            PublishRoute("Checked: tap Continue", running: false, done: false, travelers: []);
         }
         catch (OperationCanceledException)
         {
@@ -588,7 +588,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 },
                 Right = open ? "Hide" : group.Kind == LivingDexGroupKind.Catch ? "See where" : "Show",
                 RightColor = Pksm.Indigo,
-                Detail = $"{group.Detail}{(group.Detail.EndsWith('.') ? "" : ".")} Press A to {(open ? "hide" : "show")} {(group.Steps.Count == 1 ? "it" : $"all {group.Steps.Count}")}.",
+                Detail = $"{group.Detail}{(group.Detail.EndsWith('.') ? "" : ".")} Tap to {(open ? "hide" : "show")} {(group.Steps.Count == 1 ? "it" : $"all {group.Steps.Count}")}.",
                 Activate = () => Toggle(key),
             });
             if (open)
@@ -633,7 +633,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 Icon = "box",
                 Right = $"Box {first}",
                 RightColor = Pksm.Indigo,
-                Detail = $"The living dex fills Bank boxes {first} to {last}. Press A to choose where it starts.",
+                Detail = $"The living dex fills Bank boxes {first} to {last}. Tap to choose where it starts.",
                 Activate = PickBankStartAsync,
             });
         }
@@ -676,7 +676,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
             Icon = on ? "ui:checkbox_on.png" : "ui:checkbox_blank.png",
             Right = on ? "On" : "Off",
             RightColor = on ? Pksm.Legal : Pksm.InkSoft,
-            Detail = $"{title}: {(on ? "on" : "off")}. {consequence} Press A to turn it {(on ? "off" : "on")}.",
+            Detail = $"{title}: {(on ? "on" : "off")}. {consequence} Tap to turn it {(on ? "off" : "on")}.",
             Activate = toggle,
         };
 
@@ -811,8 +811,8 @@ public sealed class LivingDexAutopilotPage : IPadHandler
             case Stage.Intro:
                 _lead.Text = "How the Living Dex Autopilot works";
                 _status.Text = Preferences.Default.Get(IntroSeenKey, false)
-                    ? "Press A to go back to where you were."
-                    : "Press A to start. \"How it works\" (the − button) opens this again any time.";
+                    ? "Tap to go back to where you were."
+                    : "Tap Let's go to start. \"How it works\" opens this again any time.";
                 break;
             case Stage.Destination:
                 _lead.Text = "Where should your living dex live?";
@@ -823,7 +823,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 _status.Text = _stageLine;
                 break;
             case Stage.Confirm:
-                _lead.Text = "Ready. Press + to write these changes.";
+                _lead.Text = "Ready. Tap Apply to write these changes.";
                 _status.Text = "Nothing has been written yet. B goes back to the plan.";
                 break;
             case Stage.Running:
@@ -832,7 +832,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
                 break;
             case Stage.Result:
                 _lead.Text = _run?.Committed == true ? "Done! Your living dex is updated." : "Nothing was changed.";
-                _status.Text = "Press A to see the updated plan.";
+                _status.Text = "Tap to see the updated plan.";
                 break;
         }
     }

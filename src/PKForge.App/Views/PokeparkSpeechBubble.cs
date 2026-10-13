@@ -91,7 +91,7 @@ public sealed class PokeparkSpeechBubble : IPadHandler
         _timer.Tick += (_, _) =>
         {
             if (_characters < _message.Length) _line.Text = _message[..++_characters];
-            else { _timer.Stop(); _hint.Text = "A / tap · continue"; }
+            else { _timer.Stop(); _hint.Text = "Tap to continue"; }
         };
         App.Suspended += Close;
         _host.Unloaded += HostUnloaded;
@@ -101,7 +101,7 @@ public sealed class PokeparkSpeechBubble : IPadHandler
     private void Advance()
     {
         if (_characters < _message.Length)
-        { _characters = _message.Length; _line.Text = _message; _timer.Stop(); _hint.Text = "A / tap · continue"; }
+        { _characters = _message.Length; _line.Text = _message; _timer.Stop(); _hint.Text = "Tap to continue"; }
         else Close();
     }
     public bool OnPadButton(PadButton button)

@@ -95,10 +95,8 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
                 Kit.Panel(new VerticalStackLayout { Spacing = 8, Children = { _status, _presence, buttons } }, padding: 12),
             },
         };
-        var footer = DsChrome.Footer(
-            ("A", "Confirm", () => _ = Act(ConfirmAsync)),
-            ("B", "Cancel trade", () => _ = Act(CancelAsync)),
-            ("Y", "Choose", () => _ = Act(ChooseAsync)));
+        // Every action is a button on the page itself; the footer row stays empty (hidden).
+        var footer = DsChrome.Footer();
         var content = new ScrollView { Padding = new Thickness(14, 10), Content = body };
         var root = new Grid
         {

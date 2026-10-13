@@ -619,52 +619,58 @@ public static class Kit
     }
 
     /// <summary>
-    /// The console-style bottom hint bar: round cyan key discs + pale pixel labels on the
-    /// panel, tappable for touch parity. This is where the app declares itself gamepad-first.
+    /// The bottom button bar: one touch button per action on the panel. The glyph of each
+    /// entry is ignored (the app is played by touch, not with a controller) and an entry
+    /// without an action is left out; with nothing left the bar hides itself.
     /// </summary>
-    public static Border HintBar(params (string Glyph, string Label, Action? OnTap)[] hints) => new()
+    public static Border HintBar(params (string Glyph, string Label, Action? OnTap)[] hints)
     {
-        Background = PanelBrush(),
-        Stroke = UiTokens.ShellEdge,
-        StrokeThickness = UiTokens.PanelEdge,
-        StrokeShape = new RoundRectangle { CornerRadius = UiTokens.PanelRadius },
-        Padding = new Thickness(16, 7),
-        Content = HintRow(hints),
-    };
+        var row = HintRow(hints);
+        return new Border
+        {
+            Background = PanelBrush(),
+            Stroke = UiTokens.ShellEdge,
+            StrokeThickness = UiTokens.PanelEdge,
+            StrokeShape = new RoundRectangle { CornerRadius = UiTokens.PanelRadius },
+            Padding = new Thickness(10, 6),
+            Content = row,
+            IsVisible = row.Children.Count > 0,
+        };
+    }
 
     /// <summary>
-    /// The hint row inside a window: the same key discs on the window's own panel, set off
+    /// The button row inside a window: the same buttons on the window's own panel, set off
     /// by a hairline - never a second bordered panel nested in the first.
     /// </summary>
-    public static Border WindowHints(params (string Glyph, string Label, Action? OnTap)[] hints) => new()
+    public static Border WindowHints(params (string Glyph, string Label, Action? OnTap)[] hints)
     {
-        BackgroundColor = Colors.Transparent,
-        StrokeThickness = 0,
-        Padding = new Thickness(0, 0, 0, 2),
-        Content = new VerticalStackLayout { Spacing = 7, Children = { Divider(0), HintRow(hints) } },
-    };
-
-    private static HorizontalStackLayout HintRow((string Glyph, string Label, Action? OnTap)[] hints)
-    {
-        var row = new HorizontalStackLayout { Spacing = 22, HorizontalOptions = LayoutOptions.Center };
-        foreach (var (glyph, label, onTap) in hints)
+        var row = HintRow(hints);
+        return new Border
         {
-            var item = new HorizontalStackLayout
-            {
-                Spacing = 7,
-                Children =
-                {
-                    GlyphKey(glyph),
-                    new Label { Text = Tidy(label), FontFamily = DsChrome.PixelFont, TextColor = UiTokens.Ink0, FontSize = UiTokens.TextTitle, VerticalTextAlignment = TextAlignment.Center },
-                },
-            };
-            if (onTap is not null)
-            {
-                var tap = new TapGestureRecognizer();
-                tap.Tapped += (_, _) => onTap();
-                item.GestureRecognizers.Add(tap);
-            }
-            row.Children.Add(item);
+            BackgroundColor = Colors.Transparent,
+            StrokeThickness = 0,
+            Padding = new Thickness(0, 0, 0, 2),
+            Content = new VerticalStackLayout { Spacing = 7, Children = { Divider(0), row } },
+            IsVisible = row.Children.Count > 0,
+        };
+    }
+
+    private static FlexLayout HintRow((string Glyph, string Label, Action? OnTap)[] hints)
+    {
+        var row = new FlexLayout
+        {
+            Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap,
+            Direction = Microsoft.Maui.Layouts.FlexDirection.Row,
+            JustifyContent = Microsoft.Maui.Layouts.FlexJustify.Center,
+            AlignItems = Microsoft.Maui.Layouts.FlexAlignItems.Center,
+        };
+        foreach (var (_, label, onTap) in hints)
+        {
+            if (onTap is null || string.IsNullOrWhiteSpace(label)) continue;
+            var button = Capsule(label, UiTokens.Ink1);
+            button.Margin = new Thickness(4, 3);
+            button.Clicked += (_, _) => onTap();
+            row.Children.Add(button);
         }
         return row;
     }

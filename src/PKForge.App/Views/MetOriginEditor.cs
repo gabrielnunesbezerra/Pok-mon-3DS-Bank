@@ -198,7 +198,7 @@ internal sealed class EditorMenu : IPadHandler
             });
         }
         content.Children.Add(grid);
-        content.Children.Add(Kit.WindowHints(("A", "Choose", () => OnPadButton(PadButton.A)), ("B", "Cancel", () => Close(null))));
+        content.Children.Add(Kit.WindowHints(("", "Cancel", () => Close(null))));
 
         var window = Kit.OverlayWindow(host, content, preferredMaxWidth: 460);
         _overlay = Kit.AttachOverlay(host, window, () => Close(null));

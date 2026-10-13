@@ -567,7 +567,7 @@ public partial class BoxBrowserViewModel : ObservableObject, IBoxPager
     {
         CancelCarry();
         SelectMode = true;
-        Status = "MULTI-SELECT - A MARKS · Y WHOLE BOX · X ACTIONS";
+        Status = "MULTI-SELECT - TAP TO MARK · DRAG FOR AN AREA";
         OnPropertyChanged(nameof(MarkedCount));
     }
 
@@ -802,7 +802,7 @@ public partial class BoxBrowserViewModel : ObservableObject, IBoxPager
         if (SelectedSlot >= slots.Count || slots[SelectedSlot].Species is null) return false;
         CarriedSummary = slots[SelectedSlot];
         CarrySource = (BoxIndex, SelectedSlot);
-        Status = "CARRYING - place with A, cancel with B";
+        Status = "CARRYING - tap a slot to place it";
         return true;
     }
 
