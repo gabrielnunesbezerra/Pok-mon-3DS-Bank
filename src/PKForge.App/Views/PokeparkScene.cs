@@ -205,6 +205,14 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         return -1;
     }
 
+    /// <summary>Whether a dragged berry is over the pot: a generous circle, so a drop rarely misses.</summary>
+    public bool NearPot(SKPoint at)
+    {
+        var pot = ParkMap.For(EnvironmentIndex).Garden.Pot;
+        var dx = at.X - pot.X; var dy = at.Y - (pot.Y - 6);
+        return dx * dx + dy * dy <= 24 * 24;
+    }
+
     /// <summary>A berry's colour on the trees and in the pot.</summary>
     public static SKColor BerryColor(int berry) => berry switch
     {
@@ -281,7 +289,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
 
         // The pot: a clay bowl with the berries showing over its rim.
         var pot = new SKPoint(spot.Pot.X, spot.Pot.Y);
-        var hover = DraggedBerry is { } drag && MathF.Abs(drag.At.X - pot.X) <= 14 && MathF.Abs(drag.At.Y - (pot.Y - 6)) <= 12;
+        var hover = DraggedBerry is { } drag && NearPot(drag.At);
         if (hover)
         {
             paint.Color = new SKColor(0xFF, 0xF5, 0xBC, 170); c.DrawOval(pot.X, pot.Y - 5, 15, 9, paint);

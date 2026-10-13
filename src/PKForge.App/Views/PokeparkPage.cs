@@ -184,7 +184,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         var target = _scene.HitGarden(tap);
         if (dragged >= 0 && moved)
         {
-            if (target == 4) _ = HarvestAsync(dragged);
+            if (_scene.NearPot(tap)) _ = HarvestAsync(dragged);
             return;
         }
         if (target == 4) { _ = PotAsync(); return; }
