@@ -39,8 +39,8 @@ public sealed partial record ColorTheme
 
 public static partial class ColorThemes
 {
-    /// <summary>The app's own blues.</summary>
-    public static ColorTheme Default => All[0];
+    /// <summary>The app's one scheme since 2.2: black and red (<see cref="PokeBall"/>).</summary>
+    public static ColorTheme Default => PokeBall;
 
     /// <summary>The theme stored under <paramref name="id"/>, or the default when none is.</summary>
     public static ColorTheme ById(string? id)

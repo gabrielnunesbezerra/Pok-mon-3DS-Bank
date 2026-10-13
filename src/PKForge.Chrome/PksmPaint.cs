@@ -23,7 +23,8 @@ public static class PksmPaint
         c.DrawRect(r, Paint(Pksm.Housing));
         using var line = new SKPaint
         {
-            Color = Pksm.HousingLine.WithAlpha(0xD0),
+            // A faint red trace on the black: the grid is felt, never louder than the content.
+            Color = Mix(Pksm.Housing, Pksm.HousingLine, 0.22f),
             IsAntialias = false,
             StrokeWidth = lineWidth,
         };

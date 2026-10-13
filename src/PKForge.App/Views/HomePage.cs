@@ -7,8 +7,9 @@ using PKForge.Domain;
 namespace PKForge.App.Views;
 
 /// <summary>
-/// The console home: a horizontal shelf of game cartridges, a first-run wizard when
-/// nothing is linked, and a bottom hint bar. Landscape composition for the AYN Thor.
+/// The console home: the Bank and the game cartridges on one big shelf, a first-run wizard
+/// when nothing is linked, and a side menu (the button at the top left) with every other
+/// place: the Item Storage, Friends, the Poképark, the Toy Machine and Settings.
 /// </summary>
 public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
 {
@@ -16,9 +17,17 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
     private ScrollView _shelf = null!;
     private HorizontalStackLayout _shelfItems = null!;
     private int _shelfIndex = -1;
-    private DsCard[] _cards = [];
-    private int _zone;       // 0 = game shelf, 1 = the destination cards
-    private int _cardIndex;
+    private readonly List<(Border Row, Action Open)> _menuRows = [];
+    private int _menuIndex = -1;
+    private Grid _menuLayer = null!;
+    private Border _menu = null!;
+    private BoxView _menuScrim = null!;
+    private Label _menuTickets = null!;
+    private Label _menuAccount = null!;
+    private Label _bankCount = null!;
+    private Border _bankTile = null!;
+    private bool _bankFocused;
+    private const double MenuWidth = 250;
     private PokeparkPage? _parkPage;
     private int _parkNavigationPending;
 
@@ -30,7 +39,8 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         BackgroundColor = UiTokens.Housing;
         NavigationPage.SetHasNavigationBar(this, false);
 
-        // GAMES section: the cartridge shelf (reused), labelled DS-style.
+        // The header: the side menu's button, the shelf's caption and the filter.
+        var menuButton = MenuButton();
         var gamesLabel = new Label
         {
             FontFamily = DsChrome.PixelFont, TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center,
@@ -38,7 +48,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             {
                 Spans =
                 {
-                    new Span { Text = Lang.T("Games"), FontSize = UiTokens.TextTitle },
+                    new Span { Text = Lang.T("Games"), FontSize = UiTokens.TextTitle + 1 },
                     new Span { Text = "   " + Lang.T("Hold a game to edit it"), FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1 },
                 },
             },
@@ -55,87 +65,292 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         filterChip.Content = filterCaption;
         Kit.SetTab(filterChip, false);
         filterCaption.TextColor = UiTokens.Ink0;
-        filterChip.Padding = new Thickness(12, 4);
+        filterChip.Padding = new Thickness(12, 5);
         filterChip.HorizontalOptions = LayoutOptions.End;
+        filterChip.VerticalOptions = LayoutOptions.Center;
         var filterTap = new TapGestureRecognizer();
         filterTap.Tapped += (_, _) => _ = ShowFilterMenuAsync();
         filterChip.GestureRecognizers.Add(filterTap);
         var headerRow = new Grid
         {
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
-            Children = { gamesLabel, filterChip },
+            ColumnSpacing = 12,
+            ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
+            Children = { menuButton, gamesLabel, filterChip },
         };
+        Grid.SetColumn(gamesLabel, 1);
+        Grid.SetColumn(filterChip, 2);
+
+        // The shelf: the Bank first (it lives with the saves), the games, then a tile to add one.
         _shelfItems = new HorizontalStackLayout
         {
-            Spacing = 12,
+            Spacing = 14,
             VerticalOptions = LayoutOptions.Center,
         };
         BindableLayout.SetItemsSource(_shelfItems, _viewModel.Groups);
         BindableLayout.SetItemTemplate(_shelfItems, new DataTemplate(BuildCartridgeTile));
+        _bankTile = BuildBankTile();
+        var shelfRow = new HorizontalStackLayout
+        {
+            Spacing = 14,
+            Padding = new Thickness(2, 6),
+            VerticalOptions = LayoutOptions.Center,
+            Children = { _bankTile, _shelfItems, BuildAddTile() },
+        };
         _shelf = new ScrollView
         {
             Orientation = ScrollOrientation.Horizontal,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Never,
             VerticalScrollBarVisibility = ScrollBarVisibility.Never,
             VerticalOptions = LayoutOptions.Center,
-            Content = _shelfItems,
+            Content = shelfRow,
         };
-        var shelfArea = new Grid
+        BlockNativeFocus(_shelf);
+
+        var body = new Grid
         {
-            RowSpacing = 6,
+            Padding = new Thickness(14, 10, 14, 12),
+            RowSpacing = 8,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
             Children = { headerRow, _shelf },
         };
         Grid.SetRow(_shelf, 1);
-        BlockNativeFocus(_shelf);
-
-        // The destinations as PKSM tiles with bundled pixel icons.
-        // 3DS Bank: the Dex Autopilot (it evolves Pokémon) and the event database (it hands
-        // out Pokémon) are not part of this app. 2.0 adds the Storage and Friends.
-        var bank = new DsCard("bank", "Bank") { Tapped = () => _ = PushAsync<BankPage>() };
-        var storage = new DsCard("storagebox", "Item Storage") { Tapped = () => _ = PushAsync<StoragePage>() };
-        var friends = new DsCard("friends", "Friends") { Tapped = () => _ = OpenFriendsAsync() };
-        var park = new DsCard("park", "Poképark") { Tapped = () => _ = PushParkAsync() };
-        // 2.1: the toy machine, played with the tickets released Pokémon leave behind.
-        var toys = new DsCard("toymachine", "Toy Machine") { Tapped = () => _ = PushAsync<ToyMachinePage>() };
-        var settings = new DsCard("settings", "Settings") { Tapped = () => _ = ShowSettingsAsync() };
-        _cards = [bank, storage, friends, park, toys, settings];
-        foreach (var card in _cards) BlockNativeFocus(card);
-        var cards = new Grid
-        {
-            ColumnSpacing = 8,
-            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)],
-            Children = { bank, storage, friends, park, toys, settings },
-        };
-        for (var i = 0; i < _cards.Length; i++) Grid.SetColumn(_cards[i], i);
-
-        var body = new Grid
-        {
-            Padding = new Thickness(14, 10),
-            RowSpacing = 10,
-            RowDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
-            Children = { shelfArea, cards },
-        };
-        Grid.SetRow(cards, 1);
         var bodyHost = new Grid { Children = { DsChrome.GridBackground(), body } };
-
-        // Touch buttons only: a game opens with a tap and its identity menu (rename, color,
-        // which game) with a hold; the filter and the settings have their own buttons above.
-        var footer = DsChrome.Footer(
-            ("", "Link a game", () => _ = ShowLinkMenuAsync()),
-            ("", "Open a save file", () => _ = LinkFileAsync()));
 
         var root = new Grid
         {
-            RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip("3DS Bank", SignedInName() ?? "Offline"), bodyHost, footer },
+            RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
+            Children = { DsChrome.TitleBar(), bodyHost },
         };
-        Grid.SetRow((View)root.Children[1], 1);
-        Grid.SetRow(bodyHost, 2);
-        Grid.SetRow(footer, 3);
+        Grid.SetRow(bodyHost, 1);
 
-        _hostGrid = new Grid { Children = { root } };
+        _menuLayer = BuildSideMenu();
+        _hostGrid = new Grid { Children = { root, _menuLayer } };
         Content = _hostGrid;
+    }
+
+    // ── The side menu ────────────────────────────────────────────────────────
+
+    /// <summary>The three-line button that slides the side menu out.</summary>
+    private Border MenuButton()
+    {
+        var lines = new VerticalStackLayout { Spacing = 4, VerticalOptions = LayoutOptions.Center, HorizontalOptions = LayoutOptions.Center };
+        for (var i = 0; i < 3; i++)
+            lines.Children.Add(new BoxView { WidthRequest = 20, HeightRequest = 3, CornerRadius = 1.5, Color = UiTokens.Ink0 });
+        var button = new Border
+        {
+            WidthRequest = 44,
+            HeightRequest = 40,
+            BackgroundColor = UiTokens.ButtonTop,
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = UiTokens.ControlEdge,
+            StrokeShape = new RoundRectangle { CornerRadius = 8 },
+            Content = lines,
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => _ = OpenMenuAsync();
+        button.GestureRecognizers.Add(tap);
+        return button;
+    }
+
+    private Grid BuildSideMenu()
+    {
+        _menuScrim = new BoxView { Color = Colors.Black, Opacity = 0 };
+        var scrimTap = new TapGestureRecognizer();
+        scrimTap.Tapped += (_, _) => _ = CloseMenuAsync();
+        _menuScrim.GestureRecognizers.Add(scrimTap);
+
+        _menuAccount = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, LineBreakMode = LineBreakMode.TailTruncation };
+        var title = new Label { Text = "3DS Bank", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextHeading + 2, TextColor = UiTokens.Bright };
+        var header = new VerticalStackLayout { Spacing = 2, Padding = new Thickness(6, 4, 6, 10), Children = { title, _menuAccount } };
+
+        var rows = new VerticalStackLayout { Spacing = 6 };
+        rows.Children.Add(header);
+        rows.Children.Add(new BoxView { HeightRequest = 2, Color = UiTokens.ButtonEdge, Margin = new Thickness(0, 0, 0, 6) });
+        _menuTickets = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, VerticalOptions = LayoutOptions.Center };
+        void Add(string icon, string label, Action open, Label? badge = null)
+        {
+            var text = new Label { Text = label, FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center };
+            var line = new Grid
+            {
+                ColumnSpacing = 12,
+                ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
+                Children = { PksmIcons.Icon(icon, 28, PksmIcons.White), text },
+            };
+            Grid.SetColumn(text, 1);
+            if (badge is not null) { line.Children.Add(badge); Grid.SetColumn(badge, 2); }
+            var row = new Border
+            {
+                Padding = new Thickness(12, 9),
+                BackgroundColor = Colors.Transparent,
+                StrokeThickness = 0,
+                StrokeShape = new RoundRectangle { CornerRadius = 8 },
+                Content = line,
+            };
+            var tap = new TapGestureRecognizer();
+            tap.Tapped += async (_, _) =>
+            {
+                await CloseMenuAsync();
+                open();
+            };
+            row.GestureRecognizers.Add(tap);
+            _menuRows.Add((row, open));
+            rows.Children.Add(row);
+        }
+        Add("storagebox", "Item Storage", () => _ = PushAsync<StoragePage>());
+        Add("friends", "Friends", () => _ = OpenFriendsAsync());
+        Add("park", "Poképark", () => _ = PushParkAsync());
+        Add("toymachine", "Toy Machine", () => _ = PushAsync<ToyMachinePage>(), _menuTickets);
+        Add("settings", "Settings", () => _ = ShowSettingsAsync());
+
+        _menu = new Border
+        {
+            WidthRequest = MenuWidth,
+            HorizontalOptions = LayoutOptions.Start,
+            Padding = new Thickness(12, 14),
+            BackgroundColor = UiTokens.Paper,
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 2,
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(0, 14, 0, 14) },
+            TranslationX = -MenuWidth - 10,
+            Content = new ScrollView { Content = rows },
+        };
+        var swipe = new SwipeGestureRecognizer { Direction = SwipeDirection.Left };
+        swipe.Swiped += (_, _) => _ = CloseMenuAsync();
+        _menu.GestureRecognizers.Add(swipe);
+        return new Grid { IsVisible = false, Children = { _menuScrim, _menu } };
+    }
+
+    private bool MenuOpen => _menuLayer.IsVisible;
+
+    protected override bool OnBackButtonPressed()
+    {
+        if (!MenuOpen) return base.OnBackButtonPressed();
+        _ = CloseMenuAsync();
+        return true;
+    }
+
+    private async Task OpenMenuAsync()
+    {
+        if (MenuOpen) return;
+        var storage = IPlatformApplication.Current?.Services.GetService<StorageService>();
+        var tickets = storage?.Read().Tickets ?? 0;
+        _menuTickets.Text = tickets > 0 ? $"×{tickets}" : "";
+        _menuAccount.Text = SignedInName() is { } name ? $"@{name}" : Lang.T("Offline");
+        SetMenuFocus(-1);
+        _menuLayer.IsVisible = true;
+        await Task.WhenAll(
+            _menuScrim.FadeToAsync(0.55, 160, Easing.CubicOut),
+            _menu.TranslateToAsync(0, 0, 220, Easing.CubicOut));
+    }
+
+    private async Task CloseMenuAsync()
+    {
+        if (!MenuOpen) return;
+        await Task.WhenAll(
+            _menuScrim.FadeToAsync(0, 140, Easing.CubicIn),
+            _menu.TranslateToAsync(-MenuWidth - 10, 0, 180, Easing.CubicIn));
+        _menuLayer.IsVisible = false;
+    }
+
+    private void SetMenuFocus(int index)
+    {
+        _menuIndex = index;
+        for (var i = 0; i < _menuRows.Count; i++)
+            _menuRows[i].Row.BackgroundColor = i == index ? UiTokens.SelectFill : Colors.Transparent;
+    }
+
+    // ── The Bank and add tiles on the shelf ──────────────────────────────────
+
+    /// <summary>The Bank, first on the shelf: a Poké Ball cartridge with the number of Pokémon it keeps.</summary>
+    private Border BuildBankTile()
+    {
+        var art = new SkiaSharp.Views.Maui.Controls.SKCanvasView { WidthRequest = CartWidth + 20, HeightRequest = CartHeight, HorizontalOptions = LayoutOptions.Center, InputTransparent = true };
+        art.PaintSurface += (_, e) => BankCartArt.Paint(e.Surface.Canvas, e.Info);
+        var name = new Label
+        {
+            Text = "Bank", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle + 1, TextColor = UiTokens.Ink0,
+            HorizontalTextAlignment = TextAlignment.Center, WidthRequest = TileInnerWidth,
+        };
+        _bankCount = new Label
+        {
+            FontSize = UiTokens.TextSmall, TextColor = UiTokens.Ink1, HorizontalTextAlignment = TextAlignment.Center,
+            WidthRequest = TileInnerWidth, LineBreakMode = LineBreakMode.TailTruncation, MaxLines = 1,
+        };
+        var detail = new Label
+        {
+            Text = "Your vault, Gen 1 to 7", FontSize = 12, TextColor = UiTokens.InkSoft, HorizontalTextAlignment = TextAlignment.Center,
+            WidthRequest = TileInnerWidth, LineBreakMode = LineBreakMode.TailTruncation, MaxLines = 1,
+        };
+        var tile = Kit.DevicePanel(new VerticalStackLayout
+        {
+            Spacing = 4,
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Center,
+            Children = { art, name, _bankCount, detail },
+        }, padding: TilePadding);
+        tile.WidthRequest = TileInnerWidth + 2 * TilePadding;
+        tile.HeightRequest = TileHeight;
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => _ = PushAsync<BankPage>();
+        tile.GestureRecognizers.Add(tap);
+        BlockNativeFocus(tile);
+        return tile;
+    }
+
+    /// <summary>The last tile: link an emulator folder or open one save file.</summary>
+    private Border BuildAddTile()
+    {
+        var plus = new Label
+        {
+            Text = "+", FontFamily = DsChrome.PixelFont, FontSize = 46, TextColor = UiTokens.Ink1,
+            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
+        };
+        var label = new Label
+        {
+            Text = "Add a game", FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink1,
+            HorizontalTextAlignment = TextAlignment.Center,
+        };
+        var tile = new Border
+        {
+            WidthRequest = TileInnerWidth + 2 * TilePadding,
+            HeightRequest = TileHeight,
+            BackgroundColor = Colors.Transparent,
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 2,
+            StrokeDashArray = new DoubleCollection { 5, 4 },
+            StrokeShape = new RoundRectangle { CornerRadius = UiTokens.PanelRadius },
+            Content = new VerticalStackLayout { Spacing = 6, VerticalOptions = LayoutOptions.Center, Children = { plus, label } },
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => _ = ShowLinkMenuAsync();
+        tile.GestureRecognizers.Add(tap);
+        BlockNativeFocus(tile);
+        return tile;
+    }
+
+    private void RefreshBankTile()
+    {
+        var bank = IPlatformApplication.Current?.Services.GetService<IBankService>();
+        var count = bank?.GetAll().Count ?? 0;
+        _bankCount.Text = count == 1 ? "1 Pokémon" : $"{count} Pokémon";
+    }
+
+    private Brush? _bankTileBackground;
+    private Brush? _bankTileStroke;
+
+    private void SetBankFocus(bool focused)
+    {
+        _bankFocused = focused;
+        _bankTileBackground ??= _bankTile.Background;
+        _bankTileStroke ??= _bankTile.Stroke;
+        _bankTile.Background = focused ? new SolidColorBrush(UiTokens.SelectFill) : _bankTileBackground!;
+        _bankTile.Stroke = focused ? new SolidColorBrush(UiTokens.Ink0.WithAlpha(0.85f)) : _bankTileStroke!;
+        if (focused)
+        {
+            foreach (var group in _viewModel.Groups) group.IsSelected = false;
+            _shelfIndex = -1;
+            _ = _shelf.ScrollToAsync(0, 0, true);
+        }
     }
 
     private Grid _hostGrid = null!;
@@ -261,8 +476,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             _viewModel.LinkReported += OnLinkReported;
             _eventsSubscribed = true;
         }
-        _zone = 0;
-        ClearCardFocus();
+        RefreshBankTile();
         IPlatformApplication.Current?.Services.GetService<GamepadRouter>()?.Push(this);
         // Scan once per launch; coming back from the box must not trigger a re-walk.
         if (!_scannedOnce)
@@ -373,16 +587,26 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
     {
         switch (button)
         {
-            case PadButton.Down when _zone == 0: _zone = 1; return FocusCard(0);
-            case PadButton.Up when _zone == 1: _zone = 0; ClearCardFocus(); return true;
-            case PadButton.Left: return _zone == 0 ? MoveShelf(-1) : FocusCard(_cardIndex - 1);
-            case PadButton.Right: return _zone == 0 ? MoveShelf(1) : FocusCard(_cardIndex + 1);
+            // The side menu, while it is out.
+            case PadButton.Up when MenuOpen: SetMenuFocus(Math.Max(0, _menuIndex - 1)); return true;
+            case PadButton.Down when MenuOpen: SetMenuFocus(Math.Min(_menuRows.Count - 1, _menuIndex + 1)); return true;
+            case PadButton.A when MenuOpen:
+                if (_menuIndex >= 0) { var open = _menuRows[_menuIndex].Open; _ = CloseMenuAsync(); open(); }
+                return true;
+            case PadButton.B when MenuOpen: _ = CloseMenuAsync(); return true;
+            case PadButton.Select: _ = MenuOpen ? CloseMenuAsync() : OpenMenuAsync(); return true;
+            // The shelf: the Bank, then the games.
+            case PadButton.Left when _bankFocused: return true;
+            case PadButton.Left when _shelfIndex <= 0: SetBankFocus(true); return true;
+            case PadButton.Right when _bankFocused: SetBankFocus(false); _shelfIndex = -1; return MoveShelf(0);
+            case PadButton.Left: return MoveShelf(-1);
+            case PadButton.Right: return MoveShelf(1);
+            case PadButton.A when _bankFocused: _ = PushAsync<BankPage>(); return true;
             case PadButton.A:
-                if (_zone == 1) { _cards[_cardIndex].Tapped?.Invoke(); return true; }
                 return OpenShelfSelection();
             case PadButton.L: _ = ShowFilterMenuAsync(); return true;
             // B on a highlighted cartridge: its identity menu (rename, color, set game).
-            case PadButton.B when _zone == 0 && _shelfIndex >= 0 && _shelfIndex < _viewModel.Groups.Count:
+            case PadButton.B when _shelfIndex >= 0 && _shelfIndex < _viewModel.Groups.Count:
                 _ = ShowSaveMenuAsync(_viewModel.Groups[_shelfIndex]);
                 return true;
             case PadButton.X: _ = LinkFileAsync(); return true;
@@ -393,30 +617,17 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         }
     }
 
-    /// <summary>Move the cursor among the Bank/Events/Settings cards (the second focus zone).</summary>
-    private bool FocusCard(int index)
-    {
-        if (_cards.Length == 0) return false;
-        _cardIndex = Math.Clamp(index, 0, _cards.Length - 1);
-        for (var i = 0; i < _cards.Length; i++) _cards[i].Selected = i == _cardIndex;
-        return true;
-    }
-
-    private void ClearCardFocus()
-    {
-        foreach (var card in _cards) card.Selected = false;
-    }
-
     private bool MoveShelf(int delta)
     {
         if (_viewModel.Groups.Count == 0) return false;
+        if (_bankFocused) SetBankFocus(false);
         _shelfIndex = Math.Clamp(_shelfIndex < 0 ? 0 : _shelfIndex + delta, 0, _viewModel.Groups.Count - 1);
         var selected = _viewModel.Groups[_shelfIndex];
         for (var i = 0; i < _viewModel.Groups.Count; i++)
             _viewModel.Groups[i].IsSelected = i == _shelfIndex;
         if (_shelfIndex < _shelfItems.Children.Count && _shelfItems.Children[_shelfIndex] is View selectedView)
         {
-            var centeredX = Math.Max(0, selectedView.X - Math.Max(0, (_shelf.Width - selectedView.Width) / 2));
+            var centeredX = Math.Max(0, _shelfItems.X + selectedView.X - Math.Max(0, (_shelf.Width - selectedView.Width) / 2));
             // Smooth scroll for single steps; snap while the pad repeats fast. Overlapping
             // animated scrolls during held navigation made the shelf teleport.
             var snap = Environment.TickCount64 - _lastShelfMoveMs < 200;
@@ -623,13 +834,11 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             new("Open a save file", IconPath: "file", Detail: "Pick one save file instead of a whole emulator folder."),
         };
         if (hiddenCount > 0) options.Add(new PadOption(hiddenOption, IconPath: "show", Detail: "Saves you hid from Home. Pick one to show it again."));
-        var scheme = $"Color scheme: {PKForge.Chrome.ColorTheme.Current.Name}";
         var background = $"Box background: {BoxBackground.Name(BoxBackground.Style)}";
         var language = $"Language: {Lang.CurrentName}";
         options.AddRange(
         [
             new PadOption(language, IconPath: "editor", Detail: "Português (Brasil) or English. Moves, items and natures keep their English names."),
-            new PadOption(scheme, IconPath: "palette", Detail: "The app's colors: the default blues or a theme for each type."),
             new PadOption(background, IconPath: "box", Detail: "How each PC box shows the wallpaper the game gives it."),
             new PadOption("Restore points", IconPath: "history", Detail: "The backups made before each write, to put a save back as it was."),
             new PadOption("About 3DS Bank", IconPath: "info"),
@@ -641,7 +850,6 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         var choice = await PadMenu.ShowAsync(_hostGrid, "Settings", null, [.. options]);
         if (choice == accountOption) { await ShowAccountMenuAsync(); return; }
         if (choice == hiddenOption) { await ShowHiddenSavesAsync(); return; }
-        if (choice == scheme) { await ShowColorSchemeAsync(); return; }
         if (choice == background) { await ShowBoxBackgroundAsync(); return; }
         if (choice == language) { await ShowLanguageAsync(); return; }
         switch (choice)
@@ -1013,16 +1221,6 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         if (Lang.IsPortuguese != wasPortuguese && Application.Current is App app) await app.ReloadForThemeAsync();
     }
 
-    /// <summary>The color scheme picker; a new scheme rebuilds Home and the lower screen in its colors.</summary>
-    private async Task ShowColorSchemeAsync()
-    {
-        var theme = await ThemePicker.ShowAsync(_hostGrid);
-        if (theme is null || theme.Id == PKForge.Chrome.ColorTheme.Current.Id) return;
-        ColorThemeSetting.Set(theme);
-        AppLog.Info("theme", $"Player picked the {theme.Id} color scheme");
-        if (Application.Current is App app) await app.ReloadForThemeAsync();
-    }
-
     /// <summary>Maintenance actions: the sprite pack, the rescan, and the scan report.</summary>
     private async Task ShowMiscAsync()
     {
@@ -1163,13 +1361,17 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
     /// A game as an actual cartridge: fixed uniform size, dark contact strip on top,
     /// and the game art as the cart's label sticker (era-colored plastic behind it).
     /// </summary>
-    private const double TilePadding = 8;
-    private const double TileInnerWidth = 128;
+    // 2.2: the shelf has the whole screen now, so the tiles are bigger.
+    private const double TilePadding = 10;
+    private const double TileInnerWidth = 156;
+    private const double TileHeight = 214;
+    private const double CartWidth = 100;
+    private const double CartHeight = 112;
 
     private View BuildCartridgeTile()
     {
-        const double cartWidth = 76;
-        const double cartHeight = 84;
+        const double cartWidth = CartWidth;
+        const double cartHeight = CartHeight;
 
         var contactStrip = new BoxView { HeightRequest = 9, Color = UiTokens.MaroonDeep };
 
@@ -1280,7 +1482,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             Padding = new Thickness(3, 0),
         };
 
-        var name = ShelfLine(UiTokens.TextLabel, UiTokens.Ink0);
+        var name = ShelfLine(UiTokens.TextTitle + 1, UiTokens.Ink0);
         name.FontFamily = DsChrome.PixelFont;
         name.SetBinding(Label.TextProperty, nameof(SaveCard.ShelfTitle));
 
@@ -1329,7 +1531,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             Children = { iconHost, name, trainer, detail },
         }, padding: TilePadding);
         card.WidthRequest = TileInnerWidth + 2 * TilePadding;
-        card.HeightRequest = 166;
+        card.HeightRequest = TileHeight;
 
         card.Triggers.Add(new DataTrigger(typeof(Border))
         {
