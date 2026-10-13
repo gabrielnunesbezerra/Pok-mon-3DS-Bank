@@ -5,12 +5,26 @@ using PKForge.Domain;
 using SkiaSharp;
 using SkiaSharp.Views.Maui.Controls;
 using SkiaSharp.Views.Maui;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace PKForge.App.Views;
 
+/// <summary>
+/// The Poképark: the whole screen is the habitat. An X leaves, the arrow goes to the next
+/// habitat, and the habitat's name opens the park's options. A tap on a Pokémon meets it.
+/// Each habitat has a garden corner (2.2): four plots for the habitat's own berries from the
+/// Item Storage, ripe every twelve hours, and a pot the berries are dragged to; the residents
+/// eat from it and gain friendship.
+/// </summary>
 public sealed class PokeparkPage : ContentPage, IPadHandler
 {
     private readonly PokeparkService _park;
+    private readonly ParkGardenService _garden;
+    private readonly StorageService _storage;
+    private readonly Label _habitatName;
+    private int _dragPlot = -1;
+    private SKPoint? _pressAt;
+    private long _lastMealCheck = -60_000;
     private readonly PokeparkCareService _care;
     private readonly ISpriteService _sprites;
     private readonly PokeparkSpriteService _walking;
@@ -20,7 +34,6 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private readonly PokeparkScene _scene;
     private readonly SKCanvasView _canvas = new();
     private readonly Grid _host;
-    private readonly Label _status;
     private readonly IDispatcherTimer _timer;
     private readonly Stopwatch _clock = new();
     private readonly SemaphoreSlim _widgetPublishGate = new(1, 1);
@@ -36,52 +49,57 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
 
     public PokeparkPage(PokeparkService park, ISpriteService sprites, PokeparkSpriteService walking,
         PokeparkNarrativeMemory narrativeMemory, PokeparkSocialService social,
-        ParkOfflineJournalService offlineJournal, PokeparkCareService care)
+        ParkOfflineJournalService offlineJournal, PokeparkCareService care, ParkGardenService garden, StorageService storage)
     {
-        _park = park; _care = care; _sprites = sprites; _walking = walking;
+        _park = park; _care = care; _sprites = sprites; _walking = walking; _garden = garden; _storage = storage;
         _narrativeMemory = narrativeMemory; _social = social; _offlineJournal = offlineJournal;
         _scene = new(sprites, walking);
         Title = "Poképark";
         NavigationPage.SetHasNavigationBar(this, false);
         BackgroundColor = UiTokens.Housing;
-        _status = new Label { TextColor = UiTokens.Ink1, FontSize = UiTokens.TextBody, Margin = new Thickness(14, 4) };
         _canvas.EnableTouchEvents = true;
-        _canvas.HorizontalOptions = LayoutOptions.Fill;
-        _canvas.VerticalOptions = LayoutOptions.Start;
-        _canvas.SizeChanged += (_, _) =>
-        {
-            if (_canvas.Width > 0)
-                _canvas.HeightRequest = _canvas.Width * ParkMap.Height / (double)ParkMap.Width;
-        };
-        _canvas.Touch += (_, e) =>
-        {
-            if (e.ActionType == SKTouchAction.Pressed) { e.Handled = true; return; }
-            if (e.ActionType != SKTouchAction.Released || _menuOpen) return;
-            var index = _scene.HitTest(e.Location.X / _canvas.CanvasSize.Width, e.Location.Y / _canvas.CanvasSize.Height, _clock.ElapsedMilliseconds);
-            if (index >= 0) { SelectResident(index); _ = DetailsAsync(); }
-            e.Handled = true;
-        };
+        _canvas.Touch += (_, e) => OnTouch(e);
         _canvas.PaintSurface += (_, e) =>
         {
             lock (_renderGate)
                 _scene.Draw(e.Surface.Canvas, e.Info.Width, e.Info.Height, _clock.ElapsedMilliseconds);
         };
-        var panel = Kit.LcdPanel(_canvas, padding: 0);
-        panel.Margin = new Thickness(12, 4, 12, 0);
-        panel.HorizontalOptions = LayoutOptions.Fill;
-        panel.VerticalOptions = LayoutOptions.Start;
-        var footer = DsChrome.Footer(
-            ("", "Back", () => _ = Navigation.PopAsync()),
-            ("", "Meet Pokémon", () => _ = DetailsAsync()),
-            ("", "Next habitat", () => SwitchEnvironment(1)),
-            ("", "Options", () => _ = OptionsAsync()));
-        var root = new Grid
+
+        // Only an X to leave, the arrow to the next habitat, and the habitat's name (its options).
+        var close = RoundButton(new Label
         {
-            RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), _status, panel, footer }
+            Text = "✕", FontFamily = "Rounded", FontSize = 20, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
+            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
+        }, () => _ = Navigation.PopAsync());
+        close.HorizontalOptions = LayoutOptions.Start;
+        close.VerticalOptions = LayoutOptions.Start;
+        close.Margin = new Thickness(12);
+        var next = RoundButton(new Label
+        {
+            Text = "›", FontFamily = "Rounded", FontSize = 34, FontAttributes = FontAttributes.Bold, TextColor = UiTokens.Ink0,
+            HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center, Margin = new Thickness(3, 0, 0, 4),
+        }, () => SwitchEnvironment(1));
+        next.HorizontalOptions = LayoutOptions.End;
+        next.VerticalOptions = LayoutOptions.Center;
+        next.Margin = new Thickness(12);
+        _habitatName = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextLabel, TextColor = UiTokens.Ink0, VerticalTextAlignment = TextAlignment.Center };
+        var namePill = new Border
+        {
+            HorizontalOptions = LayoutOptions.Center,
+            VerticalOptions = LayoutOptions.Start,
+            Margin = new Thickness(0, 10),
+            Padding = new Thickness(14, 6),
+            BackgroundColor = UiTokens.Paper.WithAlpha(0.82f),
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 1.5,
+            StrokeShape = new RoundRectangle { CornerRadius = 14 },
+            Content = _habitatName,
         };
-        Grid.SetRow(_status, 1); Grid.SetRow(panel, 2); Grid.SetRow(footer, 3);
-        _host = new Grid { Children = { DsChrome.GridBackground(), root } };
+        var nameTap = new TapGestureRecognizer();
+        nameTap.Tapped += (_, _) => _ = OptionsAsync();
+        namePill.GestureRecognizers.Add(nameTap);
+        UpdateHabitatName();
+        _host = new Grid { BackgroundColor = UiTokens.Housing, Children = { _canvas, namePill, close, next } };
         Content = _host;
         _timer = Dispatcher.CreateTimer();
         _timer.Interval = TimeSpan.FromMilliseconds(33);
@@ -89,11 +107,97 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         {
             if (_clock.ElapsedMilliseconds - _lastJournalUpdate >= 250)
                 UpdateJournal();
+            if (_clock.ElapsedMilliseconds - _lastMealCheck >= 60_000)
+            {
+                _lastMealCheck = _clock.ElapsedMilliseconds;
+                _ = FeedAsync();
+            }
             _canvas.InvalidateSurface();
         };
     }
 
     private SecondScreenClaim? _secondClaim;
+
+    /// <summary>A round button floating over the habitat.</summary>
+    private static Border RoundButton(View content, Action onTap)
+    {
+        var button = new Border
+        {
+            WidthRequest = 48,
+            HeightRequest = 48,
+            BackgroundColor = UiTokens.Paper.WithAlpha(0.82f),
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 1.5,
+            StrokeShape = new RoundRectangle { CornerRadius = 24 },
+            Content = content,
+        };
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => onTap();
+        button.GestureRecognizers.Add(tap);
+        return button;
+    }
+
+    /// <summary>
+    /// Touch on the habitat: a ripe tree's berries follow the finger and drop into the pot; a
+    /// tap on a plot or the pot tells about it; a tap on a Pokémon meets it.
+    /// </summary>
+    private void OnTouch(SKTouchEventArgs e)
+    {
+        e.Handled = true;
+        if (_menuOpen) return;
+        var size = _canvas.CanvasSize;
+        if (size.Width <= 0 || size.Height <= 0) return;
+        var map = _scene.ToMap(e.Location.X / size.Width, e.Location.Y / size.Height);
+        if (e.ActionType == SKTouchAction.Pressed)
+        {
+            _pressAt = e.Location;
+            _dragPlot = -1;
+            if (map is not { } pressed || _scene.Garden is not { } garden) return;
+            var hit = _scene.HitGarden(pressed);
+            if (hit is < 0 or > 3) return;
+            var view = ParkGardenRules.View(garden.Plots[hit], DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            if (view.Stage != PlotStage.Ripe) return;
+            _dragPlot = hit;
+            _scene.DraggedBerry = (view.Berry, pressed);
+            return;
+        }
+        if (e.ActionType == SKTouchAction.Moved)
+        {
+            if (_dragPlot >= 0 && map is { } point && _scene.DraggedBerry is { } drag)
+                _scene.DraggedBerry = (drag.Berry, point);
+            return;
+        }
+        if (e.ActionType == SKTouchAction.Cancelled)
+        {
+            _dragPlot = -1;
+            _scene.DraggedBerry = null;
+            _pressAt = null;
+            return;
+        }
+        if (e.ActionType != SKTouchAction.Released) return;
+        var dragged = _dragPlot;
+        var moved = _pressAt is { } start && Math.Abs(start.X - e.Location.X) + Math.Abs(start.Y - e.Location.Y) > 24;
+        _dragPlot = -1;
+        _scene.DraggedBerry = null;
+        _pressAt = null;
+        if (map is not { } tap) return;
+        var target = _scene.HitGarden(tap);
+        if (dragged >= 0 && moved)
+        {
+            if (target == 4) _ = HarvestAsync(dragged);
+            return;
+        }
+        if (target == 4) { _ = PotAsync(); return; }
+        if (target >= 0) { _ = PlotAsync(target); return; }
+        var index = _scene.HitTest(e.Location.X / size.Width, e.Location.Y / size.Height, _clock.ElapsedMilliseconds);
+        if (index >= 0) { SelectResident(index); _ = DetailsAsync(); }
+    }
+
+    private void UpdateHabitatName()
+    {
+        var count = Enumerable.Range(0, _scene.Residents.Count).Count(IsVisibleInHabitat);
+        _habitatName.Text = count == 0 ? $"{Lang.T(_scene.EnvironmentName)}  ▾" : $"{Lang.T(_scene.EnvironmentName)}  ·  {count}  ▾";
+    }
 
     protected override void OnAppearing()
     {
@@ -104,6 +208,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         IPlatformApplication.Current?.Services.GetService<GamepadRouter>()?.Push(this);
         App.Resumed += Resume; App.Suspended += Suspend;
         _clock.Start(); _timer.Start();
+        _lastMealCheck = _clock.ElapsedMilliseconds - 60_000;
         // The persisted roster is cheap and gives the first paint immediately.
         // Initialization only scans on first use and refreshes this view afterwards.
         Reload();
@@ -207,9 +312,8 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     {
         _scene.Residents = _park.LoadRoster();
         SelectResident(Math.Min(_selected, _scene.Residents.Count - 1));
-        _status.Text = _scene.Residents.Count == 0
-            ? "Your meadow is waiting. Select a Pokémon in a box or Bank → Send to Poképark."
-            : $"{_scene.EnvironmentName}  ·  {_scene.Residents.Count}/12 residents  ·  Tap a Pokémon to meet it";
+        UpdateHabitatName();
+        RefreshGarden();
         UpdateJournal();
         foreach (var mon in _scene.Residents)
         {
@@ -305,7 +409,11 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 _ => "Save + Bank"
             };
             var choice = await PadMenu.ShowAsync(_host, "Poképark options", $"Auto-fill: {current}. Existing residents are never moved or replaced.",
-                "Park journal", "Auto-fill mode", "Invite Pokémon", "Empty park", "Widget help", "Sprite credits");
+                "How the garden works", "Park journal", "Auto-fill mode", "Invite Pokémon", "Empty park", "Widget help", "Sprite credits");
+            if (choice == "How the garden works")
+                await PokeparkSpeechBubble.ShowAsync(_host, "The garden",
+                    $"Every habitat has a corner with four plots and a pot. Plant berries from your Item Storage; this habitat grows {BerryList(_scene.EnvironmentIndex)}. "
+                    + $"A tree is ripe every 12 hours: drag its berries to the pot. The Bank Pokémon living here eat one berry every hour and gain friendship (+{ParkGardenRules.FriendshipPerBerry}), saved to the Pokémon.");
             if (choice == "Park journal")
                 await ShowJournalAsync();
             if (choice == "Auto-fill mode")
@@ -364,8 +472,6 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 await ChangeNatureAsync(mon, care);
                 return;
             }
-            // 3DS Bank: a berry or a game grants (or misses) a Bank resident's wish.
-            var careMessage = action is "snack" or "play" ? _care.Care(mon, action) : "";
             if (action == "leave")
             {
                 if (await PadMenu.ConfirmAsync(_host, "Leave the park?", $"Remove {mon.Name} from this meadow? Its original stays in its box. You can invite it again anytime.", "Leave park"))
@@ -381,8 +487,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 _narrativeMemory.Recent(mon.Id));
             _narrativeMemory.Remember(mon.Id, dialogue.Id);
             _scene.Interact(_selected, _clock.ElapsedMilliseconds, action);
-            await PokeparkSpeechBubble.ShowAsync(_host, mon.Name,
-                careMessage.Length > 0 ? $"{dialogue.Text}\n\n{careMessage}" : dialogue.Text, mon, _sprites, _walking);
+            await PokeparkSpeechBubble.ShowAsync(_host, mon.Name, dialogue.Text, mon, _sprites, _walking);
         }
         finally { _menuOpen = false; }
     }
@@ -405,7 +510,8 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     {
         _scene.EnvironmentIndex = (_scene.EnvironmentIndex + delta + 4) % 4;
         SelectResident(0);
-        _status.Text = _scene.EnvironmentName;
+        UpdateHabitatName();
+        RefreshGarden();
         MarkWidgetDirty();
         _ = WarmCurrentEnvironmentAsync();
     }
@@ -441,23 +547,140 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         };
     }
 
-    private async Task PicnicAsync()
+    // ── The garden corner ────────────────────────────────────────────────────
+
+    private string BerryName(int berry) => _storage.ItemName(berry);
+
+    private string BerryList(int habitat)
+    {
+        var names = ParkGardenRules.BerriesFor(habitat).Select(BerryName).ToArray();
+        return names.Length == 3 ? $"{names[0]}, {names[1]} and {names[2]}" : string.Join(", ", names);
+    }
+
+    /// <summary>The garden of the habitat on screen, read again (after every change, and each minute).</summary>
+    private void RefreshGarden()
+    {
+        try { _scene.Garden = _garden.Read(_scene.EnvironmentIndex); }
+        catch (IOException error) { Debug.WriteLine($"Poképark garden: {error.Message}"); }
+        _canvas.InvalidateSurface();
+    }
+
+    /// <summary>The residents that live in a habitat (the commons is everyone's).</summary>
+    private IReadOnlyList<ParkPokemon> ResidentsOf(int habitat) => habitat == 0
+        ? _scene.Residents
+        : _scene.Residents.Where(mon =>
+        {
+            var types = HabitatCatalog.TypesFor(mon.Species, mon.Form);
+            return habitat switch
+            {
+                1 => types.Contains(ParkType.Water),
+                2 => types.Contains(ParkType.Fire) || types.Contains(ParkType.Ground) || types.Contains(ParkType.Rock),
+                _ => types.Contains(ParkType.Flying) || types.Contains(ParkType.Ice),
+            };
+        }).ToList();
+
+    /// <summary>Every habitat's residents eat what is due from its pot; the ones on screen show it.</summary>
+    private async Task FeedAsync()
+    {
+        var residents = Enumerable.Range(0, ParkGardenRules.Habitats).Select(ResidentsOf).ToArray();
+        var meals = await Task.Run(() => Enumerable.Range(0, ParkGardenRules.Habitats)
+            .Select(habitat => (Habitat: habitat, Meals: _garden.Feed(habitat, residents[habitat]))).ToArray());
+        if (!_active) return;
+        foreach (var (habitat, eaten) in meals)
+        {
+            if (habitat != _scene.EnvironmentIndex) continue;
+            // Several meals while away show once each, a little apart, on whoever ate.
+            var delay = 0L;
+            foreach (var meal in eaten.TakeLast(4))
+            {
+                _scene.ShowFloater(meal.Eater.Id, _clock.ElapsedMilliseconds + delay, meal.Friendship >= 0 ? $"+{ParkGardenRules.FriendshipPerBerry}" : "♪");
+                delay += 700;
+            }
+        }
+        if (meals.Any(m => m.Meals.Count > 0)) RefreshGarden();
+    }
+
+    private async Task HarvestAsync(int plot)
+    {
+        var refusal = _garden.Harvest(_scene.EnvironmentIndex, plot);
+        RefreshGarden();
+        if (refusal is not null) await Say("Garden", refusal);
+    }
+
+    private async Task PlotAsync(int plot)
+    {
+        if (_scene.Garden is not { } garden || _menuOpen) return;
+        var habitat = _scene.EnvironmentIndex;
+        var view = ParkGardenRules.View(garden.Plots[plot], DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (view.Stage == PlotStage.Empty)
+        {
+            var seeds = _garden.SeedsFor(habitat).Where(seed => seed.Count > 0).ToArray();
+            if (seeds.Length == 0)
+            {
+                await Say("Garden", $"This soil grows {BerryList(habitat)}. Your Item Storage has none of them: they come from the Toy Machine or from a game's bag.");
+                return;
+            }
+            _menuOpen = true;
+            string? choice;
+            try
+            {
+                choice = await PadMenu.ShowAsync(_host, "Plant a berry",
+                    $"It grows into a tree that gives {ParkGardenRules.BerriesPerHarvest} berries every 12 hours.",
+                    [.. seeds.Select(seed => new PadOption($"{BerryName(seed.Berry)} ×{seed.Count}", IconPath: "item")), new PadOption("Close", IconPath: "close")]);
+            }
+            finally { _menuOpen = false; }
+            var picked = seeds.FirstOrDefault(seed => choice == $"{BerryName(seed.Berry)} ×{seed.Count}");
+            if (picked.Berry <= 0) return;
+            var refusal = _garden.Plant(habitat, plot, picked.Berry);
+            RefreshGarden();
+            if (refusal is not null) await Say("Garden", refusal);
+            return;
+        }
+        var name = BerryName(view.Berry);
+        var state = view.Stage == PlotStage.Ripe
+            ? $"Ripe! Drag its berries to the pot so the Pokémon can eat them."
+            : $"Ripe in {Duration(view.Left)}. It gives {ParkGardenRules.BerriesPerHarvest} berries every 12 hours.";
+        _menuOpen = true;
+        string? action;
+        try
+        {
+            var options = new List<PadOption>();
+            if (view.Stage == PlotStage.Ripe) options.Add(new PadOption("Put the berries in the pot", IconPath: "item"));
+            options.Add(new PadOption("Dig it up", IconPath: "release", Detail: "The tree is gone for good and the plot is free again."));
+            options.Add(new PadOption("Close", IconPath: "close"));
+            action = await PadMenu.ShowAsync(_host, $"{name} tree", state, [.. options]);
+        }
+        finally { _menuOpen = false; }
+        if (action == "Put the berries in the pot") await HarvestAsync(plot);
+        else if (action == "Dig it up" && await PadMenu.ConfirmAsync(_host, "Dig it up?", $"The {name} tree goes away for good.", "Dig it up"))
+        {
+            _garden.DigUp(habitat, plot);
+            RefreshGarden();
+        }
+    }
+
+    private async Task PotAsync()
+    {
+        var count = _scene.Garden?.Pot.Count ?? 0;
+        var eaters = ResidentsOf(_scene.EnvironmentIndex).Count(mon => PokeparkCareService.BankIdOf(mon) is not null);
+        var who = eaters == 0
+            ? "No Bank Pokémon lives here yet, so the berries wait."
+            : $"The Bank Pokémon living here eat one every hour and gain friendship (+{ParkGardenRules.FriendshipPerBerry} each).";
+        await Say("The pot", count == 0
+            ? $"It is empty. Drag the berries of a ripe tree here. {who}"
+            : $"{count} of {ParkGardenRules.PotCapacity} berries. {who}");
+    }
+
+    private async Task Say(string title, string message)
     {
         if (_menuOpen) return;
         _menuOpen = true;
-        try
-        {
-            if (_scene.Residents.Count == 0)
-            {
-                await PokeparkSpeechBubble.ShowAsync(_host, "Picnic time", "A picnic is better with company! Invite a Pokémon from your boxes or Bank first.");
-                return;
-            }
-            for (var i = 0; i < _scene.Residents.Count; i++)
-                _scene.Interact(i, _clock.ElapsedMilliseconds, "snack");
-            await PokeparkSpeechBubble.ShowAsync(_host, "Picnic time!", "You share a basket of berries with everyone. Happy little sounds drift across the meadow. There’s enough for every resident!");
-        }
+        try { await PadMenu.ShowAsync(_host, title, message, "OK"); }
         finally { _menuOpen = false; }
     }
+
+    private static string Duration(TimeSpan time) =>
+        time.TotalHours >= 1 ? $"{(int)time.TotalHours} h {time.Minutes:00} min" : $"{Math.Max(1, (int)Math.Ceiling(time.TotalMinutes))} min";
 
     private static (string Trait, string Likes, string Story, string Greeting) Personality(ParkPokemon mon)
     {
@@ -580,7 +803,6 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             case PadButton.B: _ = Navigation.PopAsync(); return true;
             case PadButton.A:
             case PadButton.X: _ = DetailsAsync(); return true;
-            case PadButton.Y: _ = PicnicAsync(); return true;
             case PadButton.L: SwitchEnvironment(-1); return true;
             case PadButton.R: SwitchEnvironment(1); return true;
             case PadButton.Left: SelectResident(_selected - 1); return true;

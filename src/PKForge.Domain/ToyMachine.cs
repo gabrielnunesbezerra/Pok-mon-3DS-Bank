@@ -38,10 +38,13 @@ public static class ToyMachine
     private static readonly int[] Common =
     [
         30, 31, 32, 33,      // Fresh Water, Soda Pop, Lemonade, Moomoo Milk
-        17, 18, 43, 42,      // Potion, Antidote, Berry Juice, Lava Cookie
-        155, 151, 94, 86,    // Oran Berry, Pecha Berry, Honey, Tiny Mushroom
-        63, 64, 571,         // Poké Doll, Fluffy Tail, Pretty Feather
-        78, 79, 4,           // Escape Rope, Repel, Poké Ball
+        17, 18, 42, 94,      // Potion, Antidote, Lava Cookie, Honey
+        86, 63, 571, 4,      // Tiny Mushroom, Poké Doll, Pretty Feather, Poké Ball
+        // The Poképark gardens' twelve berries (2.2), three for each habitat.
+        149, 151, 155,       // Cheri, Pecha, Oran
+        150, 154, 156,       // Chesto, Leppa, Persim
+        152, 159, 161,       // Rawst, Figy, Mago
+        153, 160, 162,       // Aspear, Wiki, Aguav
     ];
 
     private static readonly int[] Rare =

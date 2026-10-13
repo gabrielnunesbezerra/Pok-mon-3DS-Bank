@@ -6,16 +6,16 @@ namespace PKForge.App.Services;
 
 /// <summary>What the resident journal shows about caring for a resident.</summary>
 /// <param name="CanCare">True for Bank residents that can gain friendship here.</param>
-/// <param name="Wish">"snack" or "play": what it wants right now.</param>
+/// <param name="Wish">Unused since 2.2 (the garden's pot replaced the wishes); always empty.</param>
 /// <param name="NatureReady">The once-only nature change is available now.</param>
 /// <param name="Nature">Its nature id, or -1 when its game has none.</param>
 public sealed record ParkCareInfo(bool CanCare, string Wish, string Summary, int Friendship, bool NatureReady, int Nature, string NatureLine);
 
 /// <summary>
-/// The Poképark's care: a Bank resident asks for a berry or a game; granting the wish raises
-/// its friendship (once per wish), saved into the Pokémon so its game sees it. After three hours
-/// in the park it may change its nature, once in its life. Save residents only visit: their
-/// Pokémon live in a game, so the park never writes there.
+/// The Poképark's care: a Bank resident's friendship (it grows with the berries it eats from its
+/// habitat's pot, see <see cref="ParkGardenService"/>) and, after three hours in the park, its
+/// once-in-a-life nature change. Save residents only visit: their Pokémon live in a game, so
+/// the park never writes there.
 /// </summary>
 public sealed class PokeparkCareService(ReloadableBankService bank)
 {
@@ -41,12 +41,7 @@ public sealed class PokeparkCareService(ReloadableBankService bank)
             return new ParkCareInfo(false, "", why, 0, false, -1, "");
         }
 
-        var wish = ParkCareRules.WishOf(mon.Id, ParkCareRules.WishWindow(now));
-        var rewarded = Store.WasRewarded(mon.Id, ParkCareRules.WishWindow(now));
-        var minutes = Math.Max(1, (int)Math.Ceiling((ParkCareRules.WishEnds(now) - now).TotalMinutes));
-        var summary = rewarded
-            ? $"Happy for now. It will want something new in {minutes} min."
-            : wish == ParkWish.Snack ? "It is asking for a berry." : "It wants to play.";
+        const string summary = "It eats the berries in its habitat's pot.";
 
         var joined = Store.JoinedOrNow(mon.Id, now);
         var wait = ParkCareRules.NatureWait(joined, now);
@@ -57,31 +52,7 @@ public sealed class PokeparkCareService(ReloadableBankService bank)
         else if (wait > TimeSpan.Zero) natureLine = $"It can change its nature after {Duration(wait)} more in the park.";
         else { natureLine = "It feels at home: it can change its nature once."; ready = true; }
 
-        return new ParkCareInfo(true, ParkCareRules.ActionFor(wish), summary, facts.Friendship, ready, facts.Nature, natureLine);
-    }
-
-    /// <summary>Grants (or misses) the resident's wish; returns what happened, in words.</summary>
-    public string Care(ParkPokemon mon, string action)
-    {
-        var now = DateTimeOffset.UtcNow;
-        if (Entry(mon) is not { } entry)
-            return BankIdOf(mon) is null ? "" : $"{mon.Name} is no longer in the Bank.";
-        var window = ParkCareRules.WishWindow(now);
-        if (Store.WasRewarded(mon.Id, window))
-            return $"{mon.Name} already got what it wanted. Come back when it asks for something new.";
-        var wish = ParkCareRules.ActionFor(ParkCareRules.WishOf(mon.Id, window));
-        if (!string.Equals(action, wish, StringComparison.Ordinal))
-            return wish == "snack" ? $"{mon.Name} wanted a berry, not a game." : $"{mon.Name} wanted to play, not to eat.";
-
-        var data = bank.GetData(entry.Id);
-        var updated = ParkCareEngine.AddFriendship(data, entry.Info.Format, ParkCareRules.FriendshipPerCare, out var friendship);
-        if (updated is null) return $"{mon.Name} cannot gain friendship here.";
-        using (ThreeDsBankPolicy.AllowParkCare())
-            bank.Replace(entry.Id, updated, entry.Info);
-        Store.MarkRewarded(mon.Id, window);
-        return friendship >= ParkCareRules.MaxFriendship
-            ? $"{mon.Name} adores you! Friendship is at its maximum."
-            : $"{mon.Name} loved it! Friendship +{ParkCareRules.FriendshipPerCare} ({friendship}/255).";
+        return new ParkCareInfo(true, "", summary, facts.Friendship, ready, facts.Nature, natureLine);
     }
 
     /// <summary>The once-only nature change; returns what happened, in words.</summary>

@@ -173,9 +173,164 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         }
     }
 
+    // ── The garden corner (2.2) ─────────────────────────────────────────────
+
+    /// <summary>The current habitat's garden, as the page last read it.</summary>
+    public HabitatGarden? Garden { get; set; }
+
+    /// <summary>A berry being dragged from a ripe tree to the pot (map units).</summary>
+    public (int Berry, SKPoint At)? DraggedBerry { get; set; }
+
+    private readonly List<(string Resident, long Start, string Text)> _floaters = [];
+
+    /// <summary>A little "+5 ♥" rising over a resident (a berry it just ate).</summary>
+    public void ShowFloater(string residentId, long time, string text) => _floaters.Add((residentId, time, text));
+
+    /// <summary>A touch on the canvas in map units, or null outside the map.</summary>
+    public SKPoint? ToMap(float normalizedX, float normalizedY)
+    {
+        var view = Viewport(_drawWidth, _drawHeight);
+        var x = normalizedX * _drawWidth; var y = normalizedY * _drawHeight;
+        if (!view.Contains(x, y) || view.Width <= 0) return null;
+        return new SKPoint((x - view.Left) * ParkMap.Width / view.Width, (y - view.Top) * ParkMap.Height / view.Height);
+    }
+
+    /// <summary>The plot (0 to 3) or the pot (4) under a map point, or -1.</summary>
+    public int HitGarden(SKPoint at)
+    {
+        var spot = ParkMap.For(EnvironmentIndex).Garden;
+        if (MathF.Abs(at.X - spot.Pot.X) <= 14 && at.Y >= spot.Pot.Y - 18 && at.Y <= spot.Pot.Y + 6) return 4;
+        for (var i = 0; i < spot.Plots.Length; i++)
+            if (MathF.Abs(at.X - spot.Plots[i].X) <= 12 && at.Y >= spot.Plots[i].Y - 28 && at.Y <= spot.Plots[i].Y + 6) return i;
+        return -1;
+    }
+
+    /// <summary>A berry's colour on the trees and in the pot.</summary>
+    public static SKColor BerryColor(int berry) => berry switch
+    {
+        149 => new SKColor(0xE5, 0x3B, 0x3B), // Cheri
+        150 => new SKColor(0x5B, 0x5B, 0xD6), // Chesto
+        151 => new SKColor(0xF7, 0xA1, 0xC4), // Pecha
+        152 => new SKColor(0x3F, 0xB9, 0x8B), // Rawst
+        153 => new SKColor(0xF2, 0xD3, 0x43), // Aspear
+        154 => new SKColor(0xEE, 0x6B, 0x3A), // Leppa
+        155 => new SKColor(0x3E, 0x7B, 0xE0), // Oran
+        156 => new SKColor(0xEA, 0x7B, 0x8E), // Persim
+        159 => new SKColor(0xD9, 0x53, 0x3F), // Figy
+        160 => new SKColor(0xA0, 0x6B, 0xD8), // Wiki
+        161 => new SKColor(0xF2, 0x8B, 0xB8), // Mago
+        162 => new SKColor(0x6B, 0xC2, 0x4C), // Aguav
+        _ => new SKColor(0xD8, 0x5A, 0x5A),
+    };
+
+    private void DrawGarden(SKCanvas c, long time, bool ambient)
+    {
+        if (Garden is not { } garden) return;
+        var spot = ParkMap.For(EnvironmentIndex).Garden;
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        using var paint = new SKPaint { IsAntialias = true };
+        for (var i = 0; i < spot.Plots.Length && i < garden.Plots.Count; i++)
+        {
+            var at = new SKPoint(spot.Plots[i].X, spot.Plots[i].Y);
+            // Tilled soil with three furrows.
+            paint.Color = new SKColor(0x6B, 0x45, 0x2A); c.DrawOval(at.X, at.Y, 11, 4.5f, paint);
+            paint.Color = new SKColor(0x8A, 0x5B, 0x37); c.DrawOval(at.X, at.Y - 0.6f, 9.5f, 3.4f, paint);
+            paint.Color = new SKColor(0x5A, 0x38, 0x22);
+            for (var f = -1; f <= 1; f++) c.DrawRect(at.X - 6, at.Y - 0.8f + f * 1.6f, 12, 0.7f, paint);
+            var view = ParkGardenRules.View(garden.Plots[i], now);
+            if (view.Stage == PlotStage.Empty) continue;
+            var berry = BerryColor(view.Berry);
+            var dark = new SKColor(0x2F, 0x7A, 0x3A); var light = new SKColor(0x58, 0xB0, 0x52);
+            switch (view.Stage)
+            {
+                case PlotStage.Sprout:
+                    paint.Color = dark; c.DrawRect(at.X - 0.6f, at.Y - 6, 1.2f, 5, paint);
+                    paint.Color = light; c.DrawOval(at.X - 2.6f, at.Y - 6, 2.6f, 1.4f, paint); c.DrawOval(at.X + 2.6f, at.Y - 6.5f, 2.6f, 1.4f, paint);
+                    break;
+                case PlotStage.Sapling:
+                    paint.Color = new SKColor(0x7A, 0x52, 0x32); c.DrawRect(at.X - 1, at.Y - 9, 2, 8, paint);
+                    paint.Color = dark; c.DrawCircle(at.X, at.Y - 12, 6, paint);
+                    paint.Color = light; c.DrawCircle(at.X - 1.5f, at.Y - 13.5f, 3.6f, paint);
+                    break;
+                default:
+                    var sway = ambient ? 0 : MathF.Sin(time / 900f + i) * 0.6f;
+                    paint.Color = new SKColor(0x7A, 0x52, 0x32); c.DrawRect(at.X - 1.6f, at.Y - 12, 3.2f, 11, paint);
+                    paint.Color = dark; c.DrawCircle(at.X + sway, at.Y - 18, 10, paint);
+                    paint.Color = light; c.DrawCircle(at.X - 2.5f + sway, at.Y - 20.5f, 6.5f, paint);
+                    if (view.Stage == PlotStage.Tree)
+                    {
+                        // Flowers in the berry's colour, pale: the fruit is on its way.
+                        paint.Color = new SKColor((byte)((berry.Red + 510) / 3), (byte)((berry.Green + 510) / 3), (byte)((berry.Blue + 510) / 3));
+                        c.DrawCircle(at.X - 5 + sway, at.Y - 16, 1.3f, paint); c.DrawCircle(at.X + 4 + sway, at.Y - 22, 1.3f, paint); c.DrawCircle(at.X + 5 + sway, at.Y - 14, 1.3f, paint);
+                        break;
+                    }
+                    (float X, float Y)[] fruit = [(-5, -15), (4, -21), (5, -13), (-3, -23), (0, -17)];
+                    foreach (var (fx, fy) in fruit)
+                    {
+                        paint.Color = berry; c.DrawCircle(at.X + fx + sway, at.Y + fy, 2.4f, paint);
+                        paint.Color = SKColors.White.WithAlpha(170); c.DrawCircle(at.X + fx - 0.7f + sway, at.Y + fy - 0.7f, 0.7f, paint);
+                    }
+                    if (!ambient && (time / 600 + i) % 4 == 0)
+                    {
+                        paint.Color = SKColors.White.WithAlpha(220);
+                        c.DrawRect(at.X + 8, at.Y - 28, 1, 4, paint); c.DrawRect(at.X + 6.5f, at.Y - 26.5f, 4, 1, paint);
+                    }
+                    break;
+            }
+        }
+
+        // The pot: a clay bowl with the berries showing over its rim.
+        var pot = new SKPoint(spot.Pot.X, spot.Pot.Y);
+        var hover = DraggedBerry is { } drag && MathF.Abs(drag.At.X - pot.X) <= 14 && MathF.Abs(drag.At.Y - (pot.Y - 6)) <= 12;
+        if (hover)
+        {
+            paint.Color = new SKColor(0xFF, 0xF5, 0xBC, 170); c.DrawOval(pot.X, pot.Y - 5, 15, 9, paint);
+        }
+        paint.Color = new SKColor(0x35, 0x5B, 0x41, 60); c.DrawOval(pot.X, pot.Y + 1, 11, 3, paint);
+        using (var body = new SKPath())
+        {
+            body.MoveTo(pot.X - 10, pot.Y - 8);
+            body.LineTo(pot.X + 10, pot.Y - 8);
+            body.LineTo(pot.X + 6.5f, pot.Y);
+            body.LineTo(pot.X - 6.5f, pot.Y);
+            body.Close();
+            paint.Color = new SKColor(0xB4, 0x65, 0x2F); c.DrawPath(body, paint);
+        }
+        paint.Color = new SKColor(0x8E, 0x4B, 0x22); c.DrawRect(pot.X - 7.5f, pot.Y - 3, 15, 1.2f, paint);
+        paint.Color = new SKColor(0xC9, 0x7A, 0x41); c.DrawOval(pot.X, pot.Y - 8, 10.5f, 2.6f, paint);
+        paint.Color = new SKColor(0x4A, 0x2A, 0x16); c.DrawOval(pot.X, pot.Y - 8, 8.5f, 1.8f, paint);
+        var shown = garden.Pot.TakeLast(6).ToArray();
+        for (var k = 0; k < shown.Length; k++)
+        {
+            var bx = pot.X - 6 + (k % 3) * 6; var by = pot.Y - 9 - (k / 3) * 2.4f;
+            paint.Color = BerryColor(shown[k]); c.DrawCircle(bx, by, 2.2f, paint);
+        }
+        if (garden.Pot.Count > 0)
+        {
+            using var font = PixelFont.For("×12", 8);
+            var label = $"×{garden.Pot.Count}";
+            paint.Color = new SKColor(0xFF, 0xFA, 0xE5, 230);
+            c.DrawRoundRect(SKRect.Create(pot.X + 9, pot.Y - 6, font.MeasureText(label) + 6, 10), 3, 3, paint);
+            paint.Color = new SKColor(0x30, 0x47, 0x39);
+            c.DrawText(label, pot.X + 12, pot.Y + 1.5f, SKTextAlign.Left, font, paint);
+        }
+    }
+
+    private void DrawDrag(SKCanvas c)
+    {
+        if (DraggedBerry is not { } drag) return;
+        using var paint = new SKPaint { IsAntialias = true };
+        paint.Color = new SKColor(0, 0, 0, 60); c.DrawOval(drag.At.X, drag.At.Y + 9, 5, 1.8f, paint);
+        for (var k = 0; k < 3; k++)
+        {
+            paint.Color = BerryColor(drag.Berry); c.DrawCircle(drag.At.X - 4 + k * 4, drag.At.Y - (k == 1 ? 2 : 0), 3.6f, paint);
+            paint.Color = SKColors.White.WithAlpha(180); c.DrawCircle(drag.At.X - 5 + k * 4, drag.At.Y - 1 - (k == 1 ? 2 : 0), 1, paint);
+        }
+    }
+
     public void Draw(SKCanvas c, int width, int height, long time, bool labels = true, bool ambient = false)
     {
-        c.Clear(SKColor.Parse("#233a39"));
+        c.Clear(PKForge.Chrome.Pksm.Housing);
         var view = Viewport(width, height);
         if (labels) { _drawWidth = width; _drawHeight = height; }
         c.Save();
@@ -184,6 +339,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         c.ClipRect(SKRect.Create(0, 0, 480, 270));
         using var p = new SKPaint { IsAntialias = false };
         DrawMap(c, p);
+        DrawGarden(c, time, ambient);
         var poses = Residents.Select((mon, i) => (mon, i, state: GetResidentState(i, ambient ? 0 : time)))
             .Where(v => IsAtHome(v.mon))
             .OrderBy(v => v.state.Y);
@@ -259,7 +415,33 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
                 c.DrawText(name, labelX, baseline, SKTextAlign.Center, font, p);
             }
         }
+        DrawFloaters(c, time, ambient);
+        DrawDrag(c);
         c.Restore();
+    }
+
+    private void DrawFloaters(SKCanvas c, long time, bool ambient)
+    {
+        if (ambient || _floaters.Count == 0) return;
+        _floaters.RemoveAll(f => time - f.Start > 2400 || time < f.Start);
+        using var paint = new SKPaint { IsAntialias = true };
+        foreach (var (resident, start, text) in _floaters)
+        {
+            var index = Residents.ToList().FindIndex(mon => mon.Id == resident);
+            if (index < 0 || !IsAtHome(Residents[index])) continue;
+            var state = GetResidentState(index, time);
+            var t = (time - start) / 2400f;
+            var y = state.Y - BodyHeight - 6 - t * 16;
+            var alpha = (byte)(255 * Math.Clamp(1.4f - t * 1.4f, 0, 1));
+            using var font = PixelFont.For(text, 9);
+            paint.Color = new SKColor(0xFF, 0xFA, 0xE5, (byte)(alpha * 0.9f));
+            var width = font.MeasureText(text) + 14;
+            c.DrawRoundRect(SKRect.Create(state.X - width / 2, y - 9, width, 12), 4, 4, paint);
+            paint.Color = new SKColor(0xD8, 0x4A, 0x6A, alpha);
+            c.DrawCircle(state.X - width / 2 + 5, y - 3.5f, 2.2f, paint);
+            paint.Color = new SKColor(0x30, 0x47, 0x39, alpha);
+            c.DrawText(text, state.X - width / 2 + 9, y, SKTextAlign.Left, font, paint);
+        }
     }
 
     // Every resident is drawn about this tall (map units, the map is 480 by 270), scaled

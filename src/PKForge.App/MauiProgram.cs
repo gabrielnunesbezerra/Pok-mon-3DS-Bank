@@ -85,6 +85,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IEvolutionService, EvolutionService>();
         builder.Services.AddSingleton<ISpriteService, SpriteService>();
         builder.Services.AddSingleton<PokeparkCareService>();
+        builder.Services.AddSingleton<ParkGardenService>();
         builder.Services.AddSingleton<PokeparkService>();
         builder.Services.AddSingleton<PokeparkJournalState>();
         builder.Services.AddSingleton<PokeparkSpriteService>();

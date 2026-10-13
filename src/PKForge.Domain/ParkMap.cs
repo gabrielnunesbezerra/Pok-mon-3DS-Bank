@@ -4,6 +4,19 @@ namespace PKForge.Domain;
 public enum ParkTraversal { Land = 1, Water = 2, Lava = 4, Air = 8 }
 public enum ParkTerrain { Blocked, Land, Water, Lava, Air }
 public readonly record struct ParkPoint(float X, float Y);
+/// <summary>A habitat's garden corner: where its four berry plots and its pot stand (map units).</summary>
+public sealed record ParkGardenSpot(ParkPoint[] Plots, ParkPoint Pot)
+{
+    /// <summary>The ground the garden covers: nobody walks through it.</summary>
+    public ParkRegion Fence()
+    {
+        var xs = Plots.Select(p => p.X).Append(Pot.X).ToArray();
+        var ys = Plots.Select(p => p.Y).Append(Pot.Y).ToArray();
+        float left = xs.Min() - 16, right = xs.Max() + 16, top = ys.Min() - 30, bottom = ys.Max() + 10;
+        return new ParkRegion(ParkTerrain.Blocked, [new(left, top), new(right, top), new(right, bottom), new(left, bottom)]);
+    }
+}
+
 public sealed record ParkRegion(ParkTerrain Terrain, ParkPoint[] Points)
 {
     public bool Contains(float x, float y)
@@ -20,12 +33,13 @@ public sealed record ParkRegion(ParkTerrain Terrain, ParkPoint[] Points)
 
 /// <summary>Collision tracing of the approved paintings in the same 480×270 coordinates as rendering.
 /// Regions are layered; later shapes override earlier ones. Unmapped pixels are never walkable.</summary>
-public sealed class ParkMap(string asset, ParkRegion[] regions)
+public sealed class ParkMap(string asset, ParkGardenSpot garden, ParkRegion[] regions)
 {
     public const int Width = 480, Height = 270;
     public string Asset { get; } = asset;
-    public IReadOnlyList<ParkRegion> Regions { get; } = regions;
-    private readonly ParkTerrain[] _terrain = Rasterize(regions);
+    public ParkGardenSpot Garden { get; } = garden;
+    public IReadOnlyList<ParkRegion> Regions { get; } = [.. regions, garden.Fence()];
+    private readonly ParkTerrain[] _terrain = Rasterize([.. regions, garden.Fence()]);
     private static ParkTerrain[] Rasterize(ParkRegion[] regions)
     {
         var pixels = new ParkTerrain[Width * Height];
@@ -76,11 +90,13 @@ public sealed class ParkMap(string asset, ParkRegion[] regions)
     public static ParkMap For(int environmentIndex) => Maps[Math.Clamp(environmentIndex, 0, 3)];
     private static ParkRegion Poly(ParkTerrain terrain, params float[] xy) => new(terrain,
         Enumerable.Range(0, xy.Length / 2).Select(i => new ParkPoint(xy[i * 2], xy[i * 2 + 1])).ToArray());
+    private static ParkGardenSpot Garden((float X, float Y) a, (float X, float Y) b, (float X, float Y) c, (float X, float Y) d, (float X, float Y) pot) =>
+        new([new(a.X, a.Y), new(b.X, b.Y), new(c.X, c.Y), new(d.X, d.Y)], new(pot.X, pot.Y));
     private static ParkRegion Obstacle(float x, float y, float rx, float ry) => new(ParkTerrain.Blocked,
         Enumerable.Range(0, 24).Select(i => new ParkPoint(x + rx * MathF.Cos(i * MathF.PI / 12), y + ry * MathF.Sin(i * MathF.PI / 12))).ToArray());
     private static readonly ParkMap[] Maps =
     [
-        new("commons.png", [
+        new("commons.png", Garden((372, 124), (398, 124), (372, 150), (398, 150), pot: (430, 146)), [
             // The meadow, the path between its trees and the pond's sandy shore. The tree line
             // around the edges is left unmapped, so no one walks over a crown.
             Poly(ParkTerrain.Land, 28,36, 160,36, 165,46, 180,46, 185,36, 250,36, 262,46, 318,46, 318,22, 452,22,
@@ -93,7 +109,7 @@ public sealed class ParkMap(string asset, ParkRegion[] regions)
             Obstacle(326,121,19,24), Obstacle(344,143,16,19),
             Obstacle(166,102,8,8), Obstacle(177,107,4,4), Obstacle(78,212,10,7)
         ]),
-        new("water.png", [
+        new("water.png", Garden((34, 64), (58, 64), (34, 88), (58, 88), pot: (66, 46)), [
             Poly(ParkTerrain.Water, 128,27, 480,27, 480,270, 0,270, 0,176, 28,163, 47,145, 46,124, 57,117, 61,85, 69,70, 99,61, 102,44, 125,40),
             Poly(ParkTerrain.Land, 0,38, 78,38, 91,28, 121,26, 120,38, 99,44, 98,59, 65,67, 57,84, 54,116, 44,124, 44,141, 31,159, 0,174),
             Obstacle(7,67,17,25), Obstacle(74,17,30,22), Obstacle(18,19,35,22), Obstacle(10,105,14,18),
@@ -101,7 +117,7 @@ public sealed class ParkMap(string asset, ParkRegion[] regions)
             // Cliff toes and waterfall splash face remain scenery, not swimming cells.
             Poly(ParkTerrain.Blocked, 112,0, 480,0, 480,44, 467,38, 458,25, 439,25, 426,30, 410,24, 400,31, 388,31, 384,24, 360,25, 353,31, 342,28, 325,27, 319,32, 304,32, 300,26, 276,25, 270,35, 223,35, 216,26, 200,27, 197,32, 183,32, 181,25, 128,25)
         ]),
-        new("fire.png", [
+        new("fire.png", Garden((36, 104), (60, 104), (36, 128), (60, 128), pot: (86, 124)), [
             // The dirt plain stops at the rock walls; the grass pocket behind them opens to it on the east.
             Poly(ParkTerrain.Land, 33,32, 108,32, 108,0, 145,0, 147,34, 249,34, 248,60, 268,77, 305,80, 304,98, 290,110, 275,119, 268,148, 296,167, 322,176, 346,197, 369,204, 384,224, 385,243, 400,257, 400,266, 152,266, 150,246, 108,244, 107,207, 90,186, 66,165, 64,150, 18,150, 22,130, 27,125, 18,96, 25,72),
             Poly(ParkTerrain.Land, 20,174, 45,172, 64,166, 88,186, 106,207, 108,244, 62,246, 58,262, 30,266, 22,250, 18,190),
@@ -110,7 +126,7 @@ public sealed class ParkMap(string asset, ParkRegion[] regions)
             Obstacle(63,188,19,19), Obstacle(12,222,20,42),
             Poly(ParkTerrain.Blocked, 235,17, 311,14, 345,39, 327,52, 327,65, 279,70, 248,58)
         ]),
-        new("sky.png", [
+        new("sky.png", Garden((304, 72), (326, 72), (304, 96), (326, 96), pot: (354, 96)), [
             Poly(ParkTerrain.Air, 0,0, 480,0, 480,270, 0,270),
             // The painted cliff silhouette is blocked even to fliers; air routes go around it.
             Poly(ParkTerrain.Blocked, 82,76, 108,48, 139,29, 151,0, 192,0, 214,38, 264,27, 280,8, 317,14, 326,23, 373,22, 397,49, 408,79, 408,98, 395,120, 389,161, 365,187, 327,213, 280,234, 267,251, 276,270, 202,270, 215,246, 213,238, 174,233, 137,218, 114,195, 97,181, 93,153, 78,141, 72,115),
