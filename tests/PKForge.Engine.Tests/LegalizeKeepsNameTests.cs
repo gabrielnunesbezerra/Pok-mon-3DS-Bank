@@ -60,18 +60,27 @@ public sealed class LegalizeKeepsNameTests
         Assert.Equal("Sparky", LegalizerService.KeepName(renamed, original).Nickname);
     }
 
+    private static string CorpusPath(string file)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "PKForge.sln")))
+            directory = directory.Parent;
+        Assert.NotNull(directory);
+        return Path.Combine(directory!.FullName, "external", "PKHeX", "Tests", "PKHeX.Core.Tests", "TestData", file);
+    }
+
     [Fact]
     public void LegalizeKeepsTheNameOfARepairedMon()
     {
-        using var session = Legal(7, 25);
-        var before = session.SaveFile.GetBoxSlotAtIndex(0, 0);
+        using var session = new SaveEngineSession(File.ReadAllBytes(CorpusPath("SM Project 802.main")));
+        var before = session.SaveFile.GetPartySlotAtIndex(0);
 
         // An impossible ball makes it illegal without touching its name.
-        session.ApplyEdit(0, 0, new EntityEdit(Ball: 999));
-        var outcome = new LegalizerService().LegalizeSlot(session, 0, 0);
+        session.ApplyEdit(-1, 0, new EntityEdit(Ball: 999));
+        var outcome = new LegalizerService().LegalizeSlot(session, -1, 0);
 
         Assert.True(outcome.Success, outcome.Message);
-        var after = session.SaveFile.GetBoxSlotAtIndex(0, 0);
+        var after = session.SaveFile.GetPartySlotAtIndex(0);
         Assert.Equal(before.Nickname, after.Nickname);
         Assert.Equal(before.Language, after.Language);
     }
