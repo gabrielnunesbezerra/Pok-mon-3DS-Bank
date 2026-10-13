@@ -9,6 +9,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
 {
     private readonly System.Runtime.CompilerServices.ConditionalWeakTable<SKBitmap, FrameBounds> _visibleBounds = new();
     private readonly Dictionary<string, SKBitmap?> _environment = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SKImage> _environmentImages = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Lazy<Task>> _environmentLoads = new(StringComparer.Ordinal);
     private readonly object _environmentGate = new();
     private readonly Dictionary<(string Id, int Map), ResidentRoute> _routes = new();
@@ -115,7 +116,7 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         {
             if (!IsAtHome(Residents[i])) continue;
             var state = GetResidentState(i, time);
-            var d = MathF.Pow(state.X - x, 2) + MathF.Pow(state.Y - 15 - y, 2);
+            var d = MathF.Pow(state.X - x, 2) + MathF.Pow(state.Y - BodyHeight / 2 - y, 2);
             if (d < distance) { distance = d; closest = i; }
         }
         return closest;
@@ -194,46 +195,56 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
             var hop = active && interaction!.Action == "Play"
                 ? -MathF.Abs(MathF.Sin(interaction.Elapsed(time) / 260f)) * 5 : 0;
             var ground = pos;
-
-            if (i == SelectedIndex && labels)
-            {
-                p.Color = new SKColor(255, 245, 188, 180);
-                c.DrawOval(pos.X, pos.Y + 2, 13, 4, p);
-            }
-            p.Color = new SKColor(53, 91, 65, 45);
-            c.DrawOval(pos.X, pos.Y + 2, 9, 3, p);
             pos.Y += hop;
             var moving = state.IsWalking && !ambient;
-            var frame = walking.GetFrame(mon.Species, mon.Form, mon.Shiny, ambient ? 0 : state.Facing, time + i * 173, moving);
+            var animationTime = moving ? (long)((time + i * 173) * WalkTempo) : time + i * 173;
+            var frame = walking.GetFrame(mon.Species, mon.Form, mon.Shiny, ambient ? 0 : state.Facing, animationTime, moving);
             var bitmap = frame?.Bitmap ?? sprites.GetSprite(mon.Species, mon.Form, mon.Shiny);
+            var bodyWidth = 18f; var bodyHeight = 26f;
+            SKRect? dest = null;
             if (bitmap is not null)
             {
                 var source = frame?.Source ?? new SKRect(0, 0, bitmap.Width, bitmap.Height);
-                p.Color = SKColors.White;
                 if (frame is not null)
                 {
-                    // PMD animation cells share a centered origin. Cropping each
-                    // frame to its alpha bounds destroys that anchor and causes jitter.
-                    var scale = Math.Min(2.8f, Math.Min(42 / source.Width, 42 / source.Height)) * SizeFactor(mon.Species);
+                    // One scale and one anchor for every frame of both animations: the envelope
+                    // of all poses (relative to the cell's centre) decides the size, and its lowest
+                    // pixel stands on the ground. Switching pose or direction never moves the feet.
+                    var bounds = frame.Bounds;
+                    var scale = Math.Min(MaxScale, BodyHeight / Math.Max(1, Math.Max(bounds.Width, bounds.Height))) * SizeFactor(mon.Species);
                     var w = source.Width * scale; var h = source.Height * scale;
-                    c.DrawBitmap(bitmap, source, new SKRect(pos.X - w / 2, pos.Y - h, pos.X + w / 2, pos.Y), p);
+                    var centerY = pos.Y - bounds.Bottom * scale;
+                    dest = new SKRect(pos.X - w / 2, centerY - h / 2, pos.X + w / 2, centerY + h / 2);
+                    bodyWidth = bounds.Width * scale; bodyHeight = bounds.Height * scale;
                 }
                 else
                 {
                     source = VisibleBounds(bitmap, source);
-                    var scale = Math.Min(2.8f, Math.Min(42 / source.Width, 42 / source.Height)) * SizeFactor(mon.Species);
+                    var scale = Math.Min(MaxScale, BodyHeight / Math.Max(1, Math.Max(source.Width, source.Height))) * SizeFactor(mon.Species);
                     var w = source.Width * scale; var h = source.Height * scale;
-                    var bob = moving ? (float)Math.Sin(time / 140d + i) * 1.2f : 0;
-                    c.DrawBitmap(bitmap, source, new SKRect(pos.X - w / 2, pos.Y - h + bob, pos.X + w / 2, pos.Y + bob), p);
+                    dest = new SKRect(pos.X - w / 2, pos.Y - h, pos.X + w / 2, pos.Y);
+                    bodyWidth = w; bodyHeight = h;
                 }
+                var shadow = Math.Clamp(bodyWidth * 0.34f, 6, 18);
+                if (i == SelectedIndex && labels)
+                {
+                    p.Color = new SKColor(255, 245, 188, 180);
+                    c.DrawOval(ground.X, ground.Y + 1, shadow + 4, shadow * 0.36f + 1.5f, p);
+                }
+                p.Color = new SKColor(53, 91, 65, 60);
+                c.DrawOval(ground.X, ground.Y + 1, shadow, shadow * 0.36f, p);
+                p.Color = SKColors.White;
+                c.DrawBitmap(bitmap, source, dest.Value, p);
             }
             else
             {
+                p.Color = new SKColor(53, 91, 65, 60); c.DrawOval(ground.X, ground.Y + 1, 9, 3, p);
                 p.Color = SKColor.Parse("#f8efcf"); c.DrawCircle(pos.X, pos.Y - 13, 9, p);
                 p.Color = SKColor.Parse("#65855e"); c.DrawCircle(pos.X - 3, pos.Y - 15, 1, p); c.DrawCircle(pos.X + 3, pos.Y - 15, 1, p);
             }
+            var head = pos.Y - bodyHeight;
             if (active) DrawActivity(c, p, ground, interaction!, time);
-            if (!active && (time / 1000 + i * 3) % 13 < 3) DrawEmote(c, p, pos.X + 12, pos.Y - 33, state.Mood == "Delighted" ? 1 : (int)(time / 13000 + i) % 3);
+            if (!active && (time / 1000 + i * 3) % 13 < 3) DrawEmote(c, p, pos.X + bodyWidth * 0.4f + 4, head - 4, state.Mood == "Delighted" ? 1 : (int)(time / 13000 + i) % 3);
             if (labels && i == SelectedIndex)
             {
                 using var font = PixelFont.For(mon.Name, 9);
@@ -250,6 +261,10 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
         }
         c.Restore();
     }
+
+    // Every resident is drawn about this tall (map units, the map is 480 by 270), scaled
+    // by SizeFactor; the walk cycle plays a little slower so the feet match the ground.
+    private const float BodyHeight = 36, MaxScale = 2.4f, WalkTempo = 0.8f;
 
     private bool IsAtHome(ParkPokemon mon)
     {
@@ -274,11 +289,19 @@ public sealed class PokeparkScene(ISpriteService sprites, PokeparkSpriteService 
     private void DrawMap(SKCanvas canvas, SKPaint paint)
     {
         var asset = ParkMap.For(EnvironmentIndex).Asset;
-        SKBitmap? bitmap;
-        lock (_environmentGate) _environment.TryGetValue(asset, out bitmap);
-        if (bitmap is null) return; // loading frame keeps paint non-blocking
+        SKImage? image;
+        lock (_environmentGate)
+        {
+            if (!_environmentImages.TryGetValue(asset, out image))
+            {
+                if (!_environment.TryGetValue(asset, out var bitmap) || bitmap is null) return; // loading frame keeps paint non-blocking
+                _environmentImages[asset] = image = SKImage.FromBitmap(bitmap);
+            }
+        }
         paint.Color = SKColors.White;
-        canvas.DrawBitmap(bitmap, new SKRect(0, 0, 480, 270), paint);
+        // The painting is several times larger than the screen: a smooth, mipmapped
+        // downscale keeps its pixel edges clean instead of shimmering.
+        canvas.DrawImage(image, new SKRect(0, 0, 480, 270), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), paint);
     }
 
     private void DrawActivity(SKCanvas c, SKPaint p, SKPoint pos, ParkInteraction activity, long time)

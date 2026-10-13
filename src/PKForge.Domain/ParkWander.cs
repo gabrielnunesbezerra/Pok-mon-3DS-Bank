@@ -1,7 +1,9 @@
 namespace PKForge.Domain;
 
 /// <summary>A precomputed, closed stroll through reachable terrain. Sampling is allocation-free
-/// and independent of frame rate or the order in which timestamps are requested.</summary>
+/// and independent of frame rate or the order in which timestamps are requested. Routes are
+/// planned on an 8-unit grid and then pulled straight wherever the whole body fits, so a
+/// resident walks in long, steady lines instead of zigzagging from cell to cell.</summary>
 public sealed class ParkWander
 {
     private const int Cell = 8;
@@ -10,6 +12,9 @@ public sealed class ParkWander
     private readonly long _duration;
     private readonly long _offset;
     private readonly ParkMap _map;
+
+    /// <summary>Walking pace, in map units per second (the map is 480 wide).</summary>
+    public const float MinSpeed = 17, MaxSpeed = 23;
 
     public ParkWander(ParkMap map, ParkTraversal allowed, ParkTerrain preferredTerrain, int seed, float radius = 8)
     {
@@ -63,8 +68,6 @@ public sealed class ParkWander
             }
         }
 
-        var spawnPool = preferred.Count > 0 ? preferred : candidates;
-        var start = spawnPool[random.Next(spawnPool.Count)];
         var parents = new int[points.Length];
         var queue = new Queue<int>();
         void Search(int origin)
@@ -76,36 +79,97 @@ public sealed class ParkWander
                 foreach (var next in edges[i])
                     if (parents[next] == -1) { parents[next] = i; queue.Enqueue(next); }
         }
-        Search(start);
-        candidates.RemoveAll(i => parents[i] == -1);
-        preferred.RemoveAll(i => parents[i] == -1);
+
+        // Live in the largest open area: a resident never starts in a pocket between trees it
+        // could not leave, and its preferred terrain only counts where it can get to it.
+        var component = new int[points.Length];
+        Array.Fill(component, -1);
+        var sizes = new List<int>();
+        foreach (var cell in candidates)
+        {
+            if (component[cell] != -1) continue;
+            var id = sizes.Count;
+            var size = 0;
+            component[cell] = id;
+            queue.Clear(); queue.Enqueue(cell);
+            while (queue.TryDequeue(out var i))
+            {
+                size++;
+                foreach (var next in edges[i])
+                    if (component[next] == -1) { component[next] = id; queue.Enqueue(next); }
+            }
+            sizes.Add(size);
+        }
+        var preferredSize = new int[sizes.Count];
+        foreach (var cell in preferred) preferredSize[component[cell]]++;
+        // The home area: the biggest one holding some preferred terrain, else the biggest.
+        var home = Enumerable.Range(0, sizes.Count)
+            .OrderByDescending(c => preferredSize[c] > 0 ? 1 : 0).ThenByDescending(c => sizes[c]).First();
+        if (preferredSize[home] > 0 && sizes[home] * 4 < sizes.Max())
+            home = Enumerable.Range(0, sizes.Count).OrderByDescending(c => sizes[c]).First();
+        candidates.RemoveAll(i => component[i] != home);
+        preferred.RemoveAll(i => component[i] != home);
+
+        var spawnPool = preferred.Count > 0 ? preferred : candidates;
+        var start = spawnPool[random.Next(spawnPool.Count)];
         var legs = new List<Leg>();
         long clock = 0;
         var current = start;
         var facing = random.Next(8);
-        var speed = 7f + (float)random.NextDouble() * 2;
+        var speed = MinSpeed + (float)random.NextDouble() * (MaxSpeed - MinSpeed);
         for (var stop = 0; stop < 9; stop++)
         {
             var p = points[current];
-            var rest = random.Next(3000, 10001);
+            var rest = random.Next(2500, 8001);
             legs.Add(new(p, p, clock, rest, facing)); clock += rest;
             var pool = preferred.Count > 1 && random.Next(5) != 0 ? preferred : candidates;
             var target = stop == 8 ? start : pool[random.Next(pool.Count)];
             // Encourage meaningful trips rather than frequently picking adjacent cells.
-            for (var attempt = 0; stop < 8 && attempt < 12 && Distance(points[current], points[target]) < 48; attempt++)
+            for (var attempt = 0; stop < 8 && attempt < 12 && Distance(points[current], points[target]) < 64; attempt++)
                 target = pool[random.Next(pool.Count)];
+            if (target == current) continue;
             Search(current);
             var route = new List<int>();
             for (var step = target; step != current; step = parents[step]) route.Add(step);
             route.Reverse();
-            foreach (var next in route)
+            foreach (var next in Straighten(current, route))
             {
                 var from = points[current]; var to = points[next];
                 facing = ParkMotion.Facing(to.X - from.X, to.Y - from.Y);
-                var duration = (long)Math.Ceiling(Distance(from, to) / speed * 1000);
+                var duration = Math.Max(1, (long)Math.Ceiling(Distance(from, to) / speed * 1000));
                 legs.Add(new(from, to, clock, duration, facing)); clock += duration;
                 current = next;
             }
+        }
+
+        // String pulling: from each corner, go straight to the farthest later cell of the
+        // route that the whole body can reach in a line.
+        List<int> Straighten(int origin, List<int> route)
+        {
+            var corners = new List<int>();
+            var anchor = origin;
+            var k = 0;
+            while (k < route.Count)
+            {
+                var best = k;
+                for (var j = route.Count - 1; j > k; j--)
+                    if (Clear(points[anchor], points[route[j]])) { best = j; break; }
+                corners.Add(route[best]);
+                anchor = route[best];
+                k = best + 1;
+            }
+            return corners;
+        }
+
+        bool Clear(ParkPoint a, ParkPoint b)
+        {
+            var steps = Math.Max(1, (int)MathF.Ceiling(Distance(a, b) / 2));
+            for (var step = 1; step < steps; step++)
+            {
+                var t = step / (float)steps;
+                if (!map.CanOccupy(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t, allowed, radius)) return false;
+            }
+            return true;
         }
         _legs = legs.ToArray(); _duration = clock;
         _offset = (long)(random.NextDouble() * clock);
