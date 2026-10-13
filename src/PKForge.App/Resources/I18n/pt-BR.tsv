@@ -2025,3 +2025,48 @@ It came out of the toy machine's rarest capsule. Nobody knows what it is or what
 +{0} toy machine tickets	+{0} tickets da máquina de brinquedos
 You have no tickets. Release a Pokémon from the Bank to get one.	Você não tem tickets. Solte um Pokémon do Bank para ganhar um.
 Your Storage is full of every prize that came out (999 each). The ticket was kept.	Seu Armazém já tem 999 de cada prêmio que saiu. O ticket foi guardado.
+# 3DS Bank 2.2: Home menu, Bank menu, Poképark garden.
+Add a game	Adicionar jogo
+Your vault, Gen 1 to 7	Seu cofre, Gen 1 a 7
+1 Pokémon	1 Pokémon
+{0} Pokémon	{0} Pokémon
+Bank · 1 Pokémon	Banco · 1 Pokémon
+Bank · {0} Pokémon	Banco · {0} Pokémon
+Living dex	Living dex
+Every box at once: open, move, add or rename them.	Todas as caixas de uma vez: abrir, mover, criar ou renomear.
+Find Pokémon by species, type, game and more.	Ache Pokémon por espécie, tipo, jogo e mais.
+Which species the Bank already has, and which are missing.	Quais espécies o Banco já tem e quais faltam.
+Sort, compact, release or send the marked Pokémon.	Ordenar, compactar, soltar ou enviar os Pokémon marcados.
+Brings back .pk files that were exported from this Bank.	Traz de volta arquivos .pk que saíram deste Banco.
+Takes Pokémon out of the Bank as .pk files.	Tira Pokémon do Banco como arquivos .pk.
+Sunlit Commons	Campo Ensolarado
+Change nature	Mudar natureza
+How the garden works	Como funciona o pomar
+The garden	O pomar
+Garden	Pomar
+Every habitat has a corner with four plots and a pot. Plant berries from your Item Storage; this habitat grows {0}. A tree is ripe every 12 hours: drag its berries to the pot. The Bank Pokémon living here eat one berry every hour and gain friendship (+{1}), saved to the Pokémon.	Cada habitat tem um canto com quatro canteiros e um pote. Plante frutas do seu Armazém; este habitat cultiva {0}. A árvore fica madura a cada 12 horas: arraste as frutas dela até o pote. Os Pokémon do Banco que moram aqui comem uma fruta por hora e ganham amizade (+{1}), salva no Pokémon.
+This soil grows {0}. Your Item Storage has none of them: they come from the Toy Machine or from a game's bag.	Este solo cultiva {0}. Seu Armazém não tem nenhuma delas: elas vêm da Máquina de Brinquedos ou da mochila de um jogo.
+Plant a berry	Plantar uma fruta
+It grows into a tree that gives {0} berries every 12 hours.	Ela vira uma árvore que dá {0} frutas a cada 12 horas.
+Ripe! Drag its berries to the pot so the Pokémon can eat them.	Madura! Arraste as frutas até o pote para os Pokémon comerem.
+Ripe in {0}. It gives {1} berries every 12 hours.	Madura em {0}. Ela dá {1} frutas a cada 12 horas.
+Put the berries in the pot	Pôr as frutas no pote
+Dig it up	Arrancar
+The tree is gone for good and the plot is free again.	A árvore some para sempre e o canteiro fica livre.
+{0} tree	Árvore de {0}
+Dig it up?	Arrancar?
+The {0} tree goes away for good.	A árvore de {0} vai embora para sempre.
+The pot	O pote
+No Bank Pokémon lives here yet, so the berries wait.	Nenhum Pokémon do Banco mora aqui ainda, então as frutas esperam.
+The Bank Pokémon living here eat one every hour and gain friendship (+{0} each).	Os Pokémon do Banco que moram aqui comem uma por hora e ganham amizade (+{0} cada).
+It is empty. Drag the berries of a ripe tree here. {0}	Está vazio. Arraste até aqui as frutas de uma árvore madura. {0}
+{0} of {1} berries. {2}	{0} de {1} frutas. {2}
+There is no such plot.	Esse canteiro não existe.
+That berry does not grow in this habitat.	Essa fruta não cresce neste habitat.
+Something already grows there.	Já tem algo crescendo aí.
+Nothing grows there yet.	Nada cresce aí ainda.
+Its berries are not ripe yet.	As frutas ainda não estão maduras.
+The pot is too full. Let the Pokémon eat a little first.	O pote está cheio demais. Deixe os Pokémon comerem um pouco antes.
+Your Item Storage has none of that berry.	Seu Armazém não tem essa fruta.
+The garden could not be saved: {0}	O pomar não pôde ser salvo: {0}
+It eats the berries you put in its habitat's pot. The friendship it gains is saved to the Pokémon and goes with it to its game.	Ele come as frutas que você põe no pote do habitat dele. A amizade que ele ganha fica salva no Pokémon e vai junto para o jogo.

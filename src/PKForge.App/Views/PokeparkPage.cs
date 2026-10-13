@@ -554,7 +554,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private string BerryList(int habitat)
     {
         var names = ParkGardenRules.BerriesFor(habitat).Select(BerryName).ToArray();
-        return names.Length == 3 ? $"{names[0]}, {names[1]} and {names[2]}" : string.Join(", ", names);
+        return names.Length == 3 ? $"{names[0]}, {names[1]}{(Lang.IsPortuguese ? " e " : " and ")}{names[2]}" : string.Join(", ", names);
     }
 
     /// <summary>The garden of the habitat on screen, read again (after every change, and each minute).</summary>

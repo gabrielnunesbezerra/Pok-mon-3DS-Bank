@@ -14,11 +14,17 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   de save. O modo Hardcore do PKForge fica ligado para sempre e o próprio motor do app recusa
   essas operações mesmo que alguma tela tente fazer. As exceções são as da versão 2.0 (abaixo)
   e o cuidado no Poképark: cada uma abre a porta só durante a própria operação.
-- **Poképark.** Cada Pokémon do Bank que mora no parque pede uma fruta ou uma brincadeira, e
-  o pedido muda a cada 30 minutos. Atender o pedido dá +10 de amizade uma vez por pedido, e
-  a amizade fica salva no Pokémon e vai junto para o jogo. Depois de 3 horas no parque ele
-  pode mudar de natureza uma única vez na vida. Se a nova natureza deixaria o Pokémon ilegal
-  (na Geração 3 e 4 a natureza depende de como ele foi encontrado), a troca é recusada.
+- **Poképark.** O habitat ocupa a tela inteira, com só um X para sair e a seta para o próximo
+  habitat; tocar no nome do habitat abre as opções do parque e tocar num Pokémon abre a ficha
+  dele. Desde a 2.2 cada habitat tem um pomar num canto: quatro canteiros e um pote. As frutas
+  saem do Armazém e cada habitat só cultiva as suas (Campo Ensolarado: Cheri, Pecha e Oran;
+  Lago Cascata: Chesto, Leppa e Persim; Bosque das Brasas: Rawst, Figy e Mago; Cume do Céu:
+  Aspear, Wiki e Aguav). A árvore fica madura a cada 12 horas e dá 3 frutas, que você arrasta
+  até o pote (cabem 12). Os Pokémon do Bank que moram no habitat comem uma fruta por hora, um
+  de cada vez, e cada fruta dá +5 de amizade, salva no Pokémon e levada junto para o jogo.
+  Depois de 3 horas no parque o Pokémon pode mudar de natureza uma única vez na vida. Se a
+  nova natureza deixaria o Pokémon ilegal (na Geração 3 e 4 a natureza depende de como ele foi
+  encontrado), a troca é recusada.
 - **Voltar para gerações antigas (2.0).** Um Pokémon pode ir da Geração 7 para trás, até a
   Geração 1. No caminho ele é ajustado só no que o jogo antigo não tem: golpes que ainda não
   existiam saem (e no lugar entram golpes que ele aprende por nível nesse jogo), o jogo e o
@@ -53,15 +59,23 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   item usado na evolução é gasto, como nos jogos. Um Everstone impede a evolução.
 - **Máquina de Brinquedos (2.1).** Cada Pokémon solto do Bank dá um ticket, e cada ticket gira
   a manivela da máquina uma vez. Sai uma cápsula com um item que vai direto para o Armazém. A
-  raridade é sorteada primeiro e depois um item dela, todos com a mesma chance: Comum 60% (18
-  itens bobos, como Fresh Water e Poké Doll), Raro 25% (18 itens, como Revive e as pedras de
-  evolução), Épico 10% (19 itens, como Rare Candy e Leftovers), Lendário 4% (13 itens, como
+  raridade é sorteada primeiro e depois um item dela, todos com a mesma chance: Comum 60% (24
+  itens: 12 bobos, como Fresh Water e Poké Doll, e as 12 frutas do pomar do Poképark), Raro 25%
+  (18 itens, como Revive e as pedras de evolução), Épico 10% (19 itens, como Rare Candy e Leftovers), Lendário 4% (13 itens, como
   Master Ball e Gold Bottle Cap) e Secreto 1%, que dá só um "???" sem nome e sem uso. A tela
   da máquina mostra a chance de cada raridade e de cada item.
 - **Feito para o toque (2.1).** As dicas de botão de controle (A, B, X, Y, L, R, +, -) saíram.
   Onde ainda precisa, a ação virou um botão na tela; o resto é tocar no próprio Pokémon, caixa
   ou item. No Bank, um toque escolhe o espaço e o segundo toque abre o menu do Pokémon.
   Um controle físico continua funcionando.
+- **Preto e vermelho (2.2).** O app tem uma cor só, preta e vermelha como uma Poké Ball, e a
+  escolha de cores saiu das Configurações. A Máquina de Brinquedos virou uma Poké Ball em cima
+  de uma base vermelha.
+- **Tela inicial e Bank com mais espaço (2.2).** Na tela inicial o Bank fica junto dos jogos,
+  em cartuchos maiores, e o resto (Armazém, Amigos, Poképark, Máquina de Brinquedos e
+  Configurações) foi para um menu lateral que abre no botão do canto. No Bank a caixa ficou
+  maior: Caixas, Busca, Living dex, Ações do Bank, Importar e Exportar estão no menu de três
+  pontinhos, e Resumo, Menu do Pokémon e Marcar ficam embaixo do painel do Pokémon.
 - **Poképark mais certinho (2.1).** Os Pokémon andam em linha reta pelo chão de verdade de cada
   mapa, sem passar por cima de árvores ou paredes de pedra, e ficam com os pés no chão ao
   trocar de pose ou de direção.
