@@ -78,8 +78,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         _ticket = new SKCanvasView { WidthRequest = 148, HeightRequest = 66, HorizontalOptions = LayoutOptions.Start };
         _ticket.PaintSurface += (_, e) => PaintTicket(e.Surface.Canvas, e.Info, _ticketCount);
         var ticketTap = new TapGestureRecognizer();
-        ticketTap.Tapped += (_, _) => _ = Run(() => PadMenu.ShowAsync(_host, "Tickets",
-            "Release a Pokémon from the Bank to get a ticket. Each ticket turns the handle once, and the prize goes to your Item Storage.", "OK"));
+        ticketTap.Tapped += (_, _) => _ = Run(ShowTicketHelpAsync);
         _ticket.GestureRecognizers.Add(ticketTap);
         _roll = RollButton(() => _ = TurnAsync());
         _stats = Small();
@@ -215,6 +214,9 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         };
         view.GestureRecognizers.Add(tap);
     }
+
+    private Task ShowTicketHelpAsync() => PadMenu.ShowAsync(_host, "Tickets",
+        "Release a Pokémon from the Bank to get a ticket. Each ticket turns the handle once, and the prize goes to your Item Storage.", "OK");
 
     private void SetRollReady(bool ready) => _roll.Opacity = ready ? 1 : 0.5;
 
