@@ -67,7 +67,7 @@ public sealed class BackupHistoryPage : ContentPage, IPadHandler
             Children = { titleRow, panel },
         };
         Grid.SetRow(panel, 1);
-        _hostGrid = new Grid { Children = { DsChrome.GridBackground(), root } };
+        _hostGrid = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { DsChrome.GridBackground(), root } };
         Content = _hostGrid;
     }
 

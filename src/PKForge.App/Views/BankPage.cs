@@ -154,9 +154,9 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         Grid.SetRow(_canvas, 1);
         Grid.SetRow(right, 1);
         Grid.SetColumn(right, 1);
-        var root = new Grid { Children = { DsChrome.GridBackground(), content } };
+        var root = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { DsChrome.GridBackground(), content } };
 
-        _hostGrid = new Grid { Children = { root } };
+        _hostGrid = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { root } };
         Content = _hostGrid;
         UpdatePageLabel();
         UpdateStatus();

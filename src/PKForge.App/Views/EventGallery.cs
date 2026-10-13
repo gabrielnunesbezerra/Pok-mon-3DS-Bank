@@ -526,7 +526,7 @@ public static class EventGallery
             };
 
             var scrim = new BoxView { Color = UiTokens.Scrim };
-            _overlay = new Grid { Children = { scrim, window } };
+            _overlay = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { scrim, window } };
             host.Add(_overlay);
             Grid.SetRowSpan(_overlay, Math.Max(1, host.RowDefinitions.Count));
             Grid.SetColumnSpan(_overlay, Math.Max(1, host.ColumnDefinitions.Count));
@@ -1261,7 +1261,7 @@ public static class EventGallery
             var scrimTap = new TapGestureRecognizer();
             scrimTap.Tapped += (_, _) => Close(null);
             scrim.GestureRecognizers.Add(scrimTap);
-            _overlay = new Grid { Children = { scrim, window } };
+            _overlay = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { scrim, window } };
             host.Add(_overlay);
             Grid.SetRowSpan(_overlay, Math.Max(1, host.RowDefinitions.Count));
             Grid.SetColumnSpan(_overlay, Math.Max(1, host.ColumnDefinitions.Count));

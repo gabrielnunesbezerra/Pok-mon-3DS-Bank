@@ -396,6 +396,7 @@ public static class DsChrome
     {
         var bar = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             HeightRequest = 28,
             BackgroundColor = UiTokens.MaroonDeep,
             Padding = new Thickness(14, 0),
@@ -434,17 +435,38 @@ public static class DsChrome
         };
         var grid = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             BackgroundColor = UiTokens.Paper, Padding = new Thickness(12, 4),
             ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto)],
-            Children = { row, batt },
+            Children = { row, ClearOfCutout(batt) },
         };
-        Grid.SetColumn(batt, 1);
+        Grid.SetColumn((View)grid.Children[1], 1);
         return grid;
     }
 
     /// <summary>Hint footer — the shared PKSM hint bar (blue key discs + pixel labels).</summary>
     public static View Footer(params (string Button, string Label, Action? OnTap)[] hints)
         => Kit.HintBar(hints);
+
+    /// <summary>
+    /// Lets a layout reach every edge of the screen, under a phone's camera cutout too, so no
+    /// dark band is left beside it. The layouts inside still keep their content clear of the
+    /// camera: each is padded by as much as it overlaps the cutout.
+    /// </summary>
+    public static T FullBleed<T>(T layout) where T : Layout
+    {
+        layout.SafeAreaEdges = SafeAreaEdges.None;
+        return layout;
+    }
+
+    /// <summary>Keeps a view that is not a layout (a framed panel, a canvas) out from under the camera cutout.</summary>
+    public static Grid ClearOfCutout(View view) => new()
+    {
+        SafeAreaEdges = new SafeAreaEdges(SafeAreaRegions.Container),
+        HorizontalOptions = view.HorizontalOptions,
+        VerticalOptions = view.VerticalOptions,
+        Children = { view },
+    };
 
     /// <summary>The logo's navy/cobalt grid behind every global menu body.</summary>
     public static SKCanvasView GridBackground()

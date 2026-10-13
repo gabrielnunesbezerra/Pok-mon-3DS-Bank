@@ -178,7 +178,7 @@ public sealed class LivingDexAutopilotPage : IPadHandler
         var window = Kit.DevicePanel(rows, padding: 10);
         window.Margin = new Thickness(24, 12);
         var scrim = new BoxView { Color = UiTokens.Scrim };
-        _overlay = new Grid { Children = { scrim, window } };
+        _overlay = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { scrim, window } };
         _host.Add(_overlay);
         Grid.SetRowSpan(_overlay, Math.Max(1, _host.RowDefinitions.Count));
         Grid.SetColumnSpan(_overlay, Math.Max(1, _host.ColumnDefinitions.Count));

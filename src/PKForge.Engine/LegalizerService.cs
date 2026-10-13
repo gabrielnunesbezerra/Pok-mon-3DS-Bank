@@ -148,6 +148,8 @@ public sealed class LegalizerService : ILegalizerService
         var repaired = LegalizeKeepingOrigin(save, current);
         if (repaired.Species != current.Species || !new LegalityAnalysis(repaired).Valid)
             return new GenerationOutcome(false, "Could not find a legal repair for this mon.");
+        if (RenamedIntoAsianScript(current, repaired))
+            return new GenerationOutcome(false, "Its only legal version would rename it in Japanese, Korean or Chinese, so it was left as it was.");
 
         if (box == -1)
             save.SetPartySlotAtIndex(repaired, slot, EntityImportSettings.None);
@@ -171,7 +173,56 @@ public sealed class LegalizerService : ILegalizerService
     private static readonly EncounterTypeGroup[] CatchesFirst =
         [EncounterTypeGroup.Slot, EncounterTypeGroup.Static, EncounterTypeGroup.Egg, EncounterTypeGroup.Mystery, EncounterTypeGroup.Trade];
 
-    internal static PKM LegalizeKeepingOrigin(SaveFile save, PKM current, Shiny shinyKind = Shiny.Always)
+    internal static PKM LegalizeKeepingOrigin(SaveFile save, PKM current, Shiny shinyKind = Shiny.Always) =>
+        KeepName(Rebuild(save, current, shinyKind), current);
+
+    /// <summary>
+    /// The legalizer may rebuild a Pokémon from an encounter in another language (a Japanese
+    /// event, a trainer from its own list), and one without a nickname then shows its species
+    /// name in that script. Puts back the language it had and its name as it was (its nickname,
+    /// or the species name in its language) wherever that stays legal; when the language cannot
+    /// come back, the old name is kept as a nickname if that is legal.
+    /// </summary>
+    internal static PKM KeepName(PKM made, PKM current)
+    {
+        if (current.IsEgg || made.IsEgg || made.Species != current.Species) return made;
+        if (made.Language != current.Language && current.Language > 0)
+            made = TryKeep(made, pk =>
+            {
+                pk.Language = current.Language;
+                if (current.IsNicknamed) pk.SetNickname(current.Nickname); else pk.ClearNickname();
+            });
+        if (current.IsNicknamed && made.Nickname != current.Nickname)
+            made = TryKeep(made, pk => pk.SetNickname(current.Nickname));
+        else if (!current.IsNicknamed && made.IsNicknamed)
+            made = TryKeep(made, pk => pk.ClearNickname());
+        if (RenamedIntoAsianScript(current, made))
+            made = TryKeep(made, pk => pk.SetNickname(current.Nickname));
+        return made;
+    }
+
+    /// <summary>True when the repair would show a Japanese, Korean or Chinese name the Pokémon did not have.</summary>
+    public static bool RenamedIntoAsianScript(PKM before, PKM after) =>
+        !before.IsEgg && !after.IsEgg && HasAsianScript(after.Nickname) && !HasAsianScript(before.Nickname);
+
+    /// <summary>Whether the text has kana, Chinese characters or Hangul.</summary>
+    public static bool HasAsianScript(string text)
+    {
+        foreach (var c in text)
+        {
+            if (c is >= '぀' and <= 'ヿ' // hiragana and katakana
+                or >= '㐀' and <= '䶿' // CJK extension A
+                or >= '一' and <= '鿿' // CJK ideographs
+                or >= 'ᄀ' and <= 'ᇿ' // Hangul jamo
+                or >= '㄰' and <= '㆏' // Hangul compatibility jamo
+                or >= '가' and <= '힯' // Hangul syllables
+                or >= 'ｦ' and <= 'ﾟ') // half-width katakana
+                return true;
+        }
+        return false;
+    }
+
+    private static PKM Rebuild(SaveFile save, PKM current, Shiny shinyKind)
     {
         var analysis = new LegalityAnalysis(current);
         if (current.IsEgg || current.WasEgg)
@@ -311,7 +362,7 @@ public sealed class LegalizerService : ILegalizerService
             if (current.Species != 0 && !new LegalityAnalysis(current).Valid)
             {
                 var candidate = LegalizeKeepingOrigin(save, current);
-                if (candidate.Species == current.Species && new LegalityAnalysis(candidate).Valid)
+                if (candidate.Species == current.Species && new LegalityAnalysis(candidate).Valid && !RenamedIntoAsianScript(current, candidate))
                 {
                     if (box == -1)
                         save.SetPartySlotAtIndex(candidate, slot, EntityImportSettings.None);
@@ -330,9 +381,9 @@ public sealed class LegalizerService : ILegalizerService
         return repaired switch
         {
             > 0 => new GenerationOutcome(true, $"Legalized {repaired} Pokémon." +
-                (stuck > 0 ? $" {stuck} had no legal repair and were left untouched." : string.Empty)),
+                (stuck > 0 ? $" {stuck} had no legal repair that keeps their name and were left untouched." : string.Empty)),
             0 when stuck > 0 => new GenerationOutcome(false,
-                $"None of the {stuck} flagged Pokémon had a legal repair; nothing was written."),
+                $"None of the {stuck} flagged Pokémon had a legal repair that keeps their name; nothing was written."),
             _ => new GenerationOutcome(false, "Nothing to legalize."),
         };
     }

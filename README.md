@@ -24,7 +24,10 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   de cada vez, e cada fruta dá +5 de amizade, salva no Pokémon e levada junto para o jogo.
   Depois de 3 horas no parque o Pokémon pode mudar de natureza uma única vez na vida. Se a
   nova natureza deixaria o Pokémon ilegal (na Geração 3 e 4 a natureza depende de como ele foi
-  encontrado), a troca é recusada.
+  encontrado), a troca é recusada. Desde a 2.4 o espaço dos lados da moldura mostra, à
+  esquerda, os Pokémon que moram no habitat com a amizade de cada um e, à direita, os quatro
+  canteiros (a fruta plantada e quanto falta para amadurecer) e quantas frutas tem no pote.
+  Tocar numa linha abre o Pokémon, o canteiro ou o pote.
 - **Voltar para gerações antigas (2.0).** Um Pokémon pode ir da Geração 7 para trás, até a
   Geração 1. No caminho ele é ajustado só no que o jogo antigo não tem: golpes que ainda não
   existiam saem (e no lugar entram golpes que ele aprende por nível nesse jogo), o jogo e o
@@ -63,7 +66,15 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   itens: 12 bobos, como Fresh Water e Poké Doll, e as 12 frutas do pomar do Poképark), Raro 25%
   (18 itens, como Revive e as pedras de evolução), Épico 10% (19 itens, como Rare Candy e Leftovers), Lendário 4% (13 itens, como
   Master Ball e Gold Bottle Cap) e Secreto 1%, que dá só um "???" sem nome e sem uso. A tela
-  da máquina mostra a chance de cada raridade e de cada item.
+  da máquina mostra a chance de cada raridade e de cada item. Desde a 2.4 o ticket laranja com
+  a quantidade fica no canto de cima, o botão verde Roll embaixo dele, a máquina no meio e o
+  quadrado branco com "%" à direita abre as chances.
+- **Tela inteira em qualquer celular (2.4).** Em celular com câmera na tela (furo ou notch), o
+  app ocupa a tela toda em vez de deixar uma faixa escura do lado da câmera: o fundo vai até a
+  borda e os botões e textos ficam fora da área da câmera, dos dois lados da tela.
+- **Legalizar mantém o nome (2.4).** Legalizar um Pokémon não troca mais o nome dele por um em
+  japonês, coreano ou chinês. O idioma e o apelido voltam a ser os que ele tinha; se a única
+  versão legal teria o nome nessas escritas, o Pokémon fica como estava e o app avisa.
 - **Feito para o toque (2.1).** As dicas de botão de controle (A, B, X, Y, L, R, +, -) saíram.
   Onde ainda precisa, a ação virou um botão na tela; o resto é tocar no próprio Pokémon, caixa
   ou item. No Bank, um toque escolhe o espaço e o segundo toque abre o menu do Pokémon.

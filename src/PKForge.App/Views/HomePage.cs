@@ -114,17 +114,18 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             Children = { headerRow, _shelf },
         };
         Grid.SetRow(_shelf, 1);
-        var bodyHost = new Grid { Children = { DsChrome.GridBackground(), body } };
+        var bodyHost = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { DsChrome.GridBackground(), body } };
 
         var root = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
             Children = { DsChrome.TitleBar(), bodyHost },
         };
         Grid.SetRow(bodyHost, 1);
 
         _menuLayer = BuildSideMenu();
-        _hostGrid = new Grid { Children = { root, _menuLayer } };
+        _hostGrid = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { root, _menuLayer } };
         Content = _hostGrid;
     }
 
@@ -195,15 +196,20 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             StrokeThickness = 2,
             StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(0, 14, 0, 14) },
             TranslationX = -MenuWidth - 10,
-            Content = new ScrollView { Content = rows },
+            // The menu's panel reaches the screen edge; its rows stay clear of a camera cutout there.
+            Content = DsChrome.ClearOfCutout(new ScrollView { Content = rows }),
         };
         var swipe = new SwipeGestureRecognizer { Direction = SwipeDirection.Left };
         swipe.Swiped += (_, _) => _ = CloseMenuAsync();
         _menu.GestureRecognizers.Add(swipe);
-        return new Grid { IsVisible = false, Children = { _menuScrim, _menu } };
+        // Always laid out (only hidden off screen and let through) so the cutout padding of its
+        // rows is worked out before it first slides in.
+        return new Grid { SafeAreaEdges = SafeAreaEdges.None, InputTransparent = true, Children = { _menuScrim, _menu } };
     }
 
-    private bool MenuOpen => _menuLayer.IsVisible;
+    private bool _menuOpen;
+
+    private bool MenuOpen => _menuOpen;
 
     protected override bool OnBackButtonPressed()
     {
@@ -220,7 +226,8 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         _menuTickets.Text = tickets > 0 ? $"×{tickets}" : "";
         _menuAccount.Text = SignedInName() is { } name ? $"@{name}" : Lang.T("Offline");
         SetMenuFocus(-1);
-        _menuLayer.IsVisible = true;
+        _menuOpen = true;
+        _menuLayer.InputTransparent = false;
         await Task.WhenAll(
             _menuScrim.FadeToAsync(0.55, 160, Easing.CubicOut),
             _menu.TranslateToAsync(0, 0, 220, Easing.CubicOut));
@@ -229,10 +236,11 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
     private async Task CloseMenuAsync()
     {
         if (!MenuOpen) return;
+        _menuOpen = false;
+        _menuLayer.InputTransparent = true;
         await Task.WhenAll(
             _menuScrim.FadeToAsync(0, 140, Easing.CubicIn),
             _menu.TranslateToAsync(-MenuWidth - 10, 0, 180, Easing.CubicIn));
-        _menuLayer.IsVisible = false;
     }
 
     private void SetMenuFocus(int index)

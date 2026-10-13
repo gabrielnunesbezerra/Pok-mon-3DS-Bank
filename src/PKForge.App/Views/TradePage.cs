@@ -100,12 +100,13 @@ public sealed class TradePage : ContentPage, IPadHandler, IOverlayHost
         var content = new ScrollView { Padding = new Thickness(14, 10), Content = body };
         var root = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), new Grid { Children = { DsChrome.GridBackground(), content } }, footer },
+            Children = { DsChrome.TitleBar(), DsChrome.FullBleed(new Grid { Children = { DsChrome.GridBackground(), content } }), DsChrome.ClearOfCutout(footer) },
         };
         Grid.SetRow((View)root.Children[1], 1);
-        Grid.SetRow(footer, 2);
-        _host = new Grid { Children = { root } };
+        Grid.SetRow((View)root.Children[2], 2);
+        _host = DsChrome.FullBleed(new Grid { Children = { root } });
         Content = _host;
         Render(null);
     }

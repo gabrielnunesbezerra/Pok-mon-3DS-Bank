@@ -137,7 +137,7 @@ public sealed class DexEditorPage : IPadPagingHandler
         var scrimTap = new TapGestureRecognizer();
         scrimTap.Tapped += (_, _) => _ = CloseAsync();
         scrim.GestureRecognizers.Add(scrimTap);
-        _overlay = new Grid { Children = { scrim, window } };
+        _overlay = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { scrim, window } };
         _host.Add(_overlay);
         Grid.SetRowSpan(_overlay, Math.Max(1, _host.RowDefinitions.Count));
         Grid.SetColumnSpan(_overlay, Math.Max(1, _host.ColumnDefinitions.Count));

@@ -803,7 +803,7 @@ public static class Kit
             tap.Tapped += (_, _) => onScrimTap();
             scrim.GestureRecognizers.Add(tap);
         }
-        var overlay = new Grid { Children = { scrim, window } };
+        var overlay = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { scrim, window } };
         host.Add(overlay);
         Grid.SetRowSpan(overlay, Math.Max(1, host.RowDefinitions.Count));
         Grid.SetColumnSpan(overlay, Math.Max(1, host.ColumnDefinitions.Count));

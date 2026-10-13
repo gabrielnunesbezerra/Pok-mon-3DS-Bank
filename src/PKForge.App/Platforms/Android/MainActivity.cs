@@ -23,7 +23,25 @@ public sealed class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        UseWholeScreen();
         if (savedInstanceState is null) MoveToMainScreenIfLaunchedBelow();
+    }
+
+    /// <summary>
+    /// Phones with a camera hole or notch: in landscape Android kept the app out of the strip
+    /// beside the camera and left a dark band there. The window now covers the whole screen;
+    /// the pages keep their content clear of the camera themselves (DsChrome.FullBleed).
+    /// </summary>
+    private void UseWholeScreen()
+    {
+        if (Window is not { Attributes: { } attributes } window) return;
+        if (OperatingSystem.IsAndroidVersionAtLeast(30))
+            attributes.LayoutInDisplayCutoutMode = LayoutInDisplayCutoutMode.Always;
+        else if (OperatingSystem.IsAndroidVersionAtLeast(28))
+            attributes.LayoutInDisplayCutoutMode = LayoutInDisplayCutoutMode.ShortEdges;
+        else
+            return;
+        window.Attributes = attributes;
     }
 
     /// <summary>

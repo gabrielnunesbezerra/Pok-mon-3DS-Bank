@@ -147,10 +147,12 @@ public sealed class LoginPage : ContentPage
 
         var body = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             Children = { DsChrome.GridBackground(), new ScrollView { Content = panel } },
         };
         var root = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
             Children = { DsChrome.TitleBar(), body },
         };

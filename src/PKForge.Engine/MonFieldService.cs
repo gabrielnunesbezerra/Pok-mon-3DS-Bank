@@ -334,6 +334,7 @@ public static class MonFieldService
             var rebuilt = LegalizerService.LegalizeKeepingOrigin(engine.SaveFile, pk, shiny);
             if (rebuilt.Species == original.Species && rebuilt.ID32 == original.ID32
                 && rebuilt.MetLocation == original.MetLocation && rebuilt.WasEgg == original.WasEgg
+                && !LegalizerService.RenamedIntoAsianScript(original, rebuilt)
                 && rebuilt.IsShiny == (kind != ShinyKind.None) && new LegalityAnalysis(rebuilt).Valid)
                 pk = rebuilt;
         }

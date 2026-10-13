@@ -47,7 +47,8 @@ public static class BulkBoxActions
                 var rebuilt = LegalizerService.LegalizeKeepingOrigin(save, candidate);
                 var sameMon = rebuilt.Species == pk.Species && rebuilt.ID32 == pk.ID32
                     && rebuilt.OriginalTrainerName == pk.OriginalTrainerName
-                    && rebuilt.WasEgg == pk.WasEgg && rebuilt.MetLocation == pk.MetLocation;
+                    && rebuilt.WasEgg == pk.WasEgg && rebuilt.MetLocation == pk.MetLocation
+                    && !LegalizerService.RenamedIntoAsianScript(pk, rebuilt);
                 candidate = sameMon && rebuilt.IsShiny == shiny && new LegalityAnalysis(rebuilt).Valid ? rebuilt : null;
             }
             if (candidate is null || candidate.IsShiny != shiny)

@@ -126,7 +126,7 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             Children = { screen, _sidePanel },
         };
         Grid.SetColumn(_sidePanel, 1);
-        var bodyHost = new Grid { Children = { DsChrome.GridBackground(), _storageContent } };
+        var bodyHost = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { DsChrome.GridBackground(), _storageContent } };
 
         var title = string.IsNullOrEmpty(_viewModel.ConnectedName) ? "Storage" : _viewModel.ConnectedName;
         _footerHost = new ContentView();
@@ -134,14 +134,15 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
 
         var root = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
-            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip(title, "Connected"), bodyHost, _footerHost },
+            Children = { DsChrome.TitleBar(), DsChrome.StatusStrip(title, "Connected"), bodyHost, DsChrome.ClearOfCutout(_footerHost) },
         };
         Grid.SetRow((View)root.Children[1], 1);
         Grid.SetRow(bodyHost, 2);
-        Grid.SetRow(_footerHost, 3);
+        Grid.SetRow((View)root.Children[3], 3);
 
-        _hostGrid = new Grid { Children = { root } };
+        _hostGrid = new Grid { SafeAreaEdges = SafeAreaEdges.None, Children = { root } };
         Content = _hostGrid;
 
         viewModel.PropertyChanged += (_, args) =>

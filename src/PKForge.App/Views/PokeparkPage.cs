@@ -14,7 +14,8 @@ namespace PKForge.App.Views;
 /// habitat, and the habitat's name opens the park's options. A tap on a Pokémon meets it.
 /// Each habitat has a garden corner (2.2): four plots for the habitat's own berries from the
 /// Item Storage, ripe every twelve hours, and a pot the berries are dragged to; the residents
-/// eat from it and gain friendship.
+/// eat from it and gain friendship. Beside the framed habitat (2.4): on the left who lives
+/// there and their friendship, on the right the garden's plots and the pot.
 /// </summary>
 public sealed class PokeparkPage : ContentPage, IPadHandler
 {
@@ -46,6 +47,11 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     private int _publishedWidgetRevision;
     private bool _loading;
     private int _selected;
+    private readonly PokeparkResidentsPanel _residentsPanel;
+    private readonly PokeparkGardenPanel _gardenPanel;
+    private IReadOnlyDictionary<string, int> _friendships = new Dictionary<string, int>();
+    private long _lastPanelTick;
+    private const double PanelGap = 10, PanelMin = 128, PanelMax = 240;
 
     public PokeparkPage(PokeparkService park, ISpriteService sprites, PokeparkSpriteService walking,
         PokeparkNarrativeMemory narrativeMemory, PokeparkSocialService social,
@@ -117,7 +123,18 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.6f, Radius = 0, Offset = new Point(4, 4) },
             Content = new VerticalStackLayout { Spacing = 6, Children = { banner, screen } },
         };
-        var stage = new Grid { Children = { _frame } };
+        _residentsPanel = new PokeparkResidentsPanel(sprites, walking);
+        _gardenPanel = new PokeparkGardenPanel(storage, plot => _ = PlotAsync(plot), () => _ = PotAsync());
+        _residentsPanel.Panel.HorizontalOptions = LayoutOptions.End;
+        _gardenPanel.Panel.HorizontalOptions = LayoutOptions.Start;
+        var stage = new Grid
+        {
+            ColumnSpacing = PanelGap,
+            ColumnDefinitions = [new(GridLength.Star), new(GridLength.Auto), new(GridLength.Star)],
+            Children = { _residentsPanel.Panel, _frame, _gardenPanel.Panel },
+        };
+        Grid.SetColumn(_frame, 1);
+        Grid.SetColumn(_gardenPanel.Panel, 2);
         stage.SizeChanged += (_, _) => FitFrame(stage);
 
         var bar = new HorizontalStackLayout
@@ -140,7 +157,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             Children = { stage, bar },
         };
         Grid.SetRow(bar, 1);
-        _host = new Grid { BackgroundColor = UiTokens.Housing, Children = { DsChrome.GridBackground(), layout } };
+        _host = new Grid { SafeAreaEdges = SafeAreaEdges.None, BackgroundColor = UiTokens.Housing, Children = { DsChrome.GridBackground(), layout } };
         Content = _host;
         _timer = Dispatcher.CreateTimer();
         _timer.Interval = TimeSpan.FromMilliseconds(33);
@@ -150,6 +167,11 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
             {
                 try { UpdateJournal(); }
                 catch (Exception error) { _lastJournalUpdate = _clock.ElapsedMilliseconds; AppLog.Warn("park", $"Journal: {error.Message}"); }
+            }
+            if (_clock.ElapsedMilliseconds - _lastPanelTick >= 30_000)
+            {
+                _lastPanelTick = _clock.ElapsedMilliseconds;
+                _gardenPanel.Show(_scene.Garden);
             }
             if (_clock.ElapsedMilliseconds - _lastMealCheck >= 60_000)
             {
@@ -164,17 +186,32 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
 
     private Border _frame = null!;
 
-    /// <summary>Sizes the framed screen to the largest 16:9 that fits, so the habitat never letterboxes.</summary>
+    /// <summary>
+    /// Sizes the framed screen to the largest 16:9 that fits, so the habitat never letterboxes,
+    /// and gives the side panels the room left beside it (never narrower than they can be read;
+    /// on a screen too narrow for both, the habitat takes it all and the panels step aside).
+    /// </summary>
     private void FitFrame(Grid stage)
     {
         const double chromeWidth = 2 * (7 + 2.5 + 2);
         const double chromeHeight = 7 + 2 * (2.5 + 2) + 6 + 36;
-        var width = stage.Width - chromeWidth;
         var height = stage.Height - chromeHeight;
-        if (width <= 0 || height <= 0) return;
-        var fitted = Math.Min(width, height * ParkMap.Width / ParkMap.Height);
+        if (stage.Width <= 0 || height <= 0) return;
+        var tallest = height * ParkMap.Width / ParkMap.Height;
+        var withPanels = Math.Min(tallest, stage.Width - chromeWidth - 2 * (PanelMin + PanelGap));
+        var panels = withPanels >= 240;
+        var fitted = panels ? withPanels : Math.Min(tallest, stage.Width - chromeWidth);
         _canvas.WidthRequest = Math.Floor(fitted);
         _canvas.HeightRequest = Math.Floor(fitted * ParkMap.Height / ParkMap.Width);
+        var side = Math.Clamp((stage.Width - Math.Floor(fitted) - chromeWidth) / 2 - PanelGap, 0, PanelMax);
+        foreach (var panel in new[] { _residentsPanel.Panel, _gardenPanel.Panel })
+        {
+            panel.IsVisible = panels;
+            panel.WidthRequest = Math.Floor(side);
+            // As tall as the habitat's frame, so the three line up.
+            panel.HeightRequest = Math.Floor(_canvas.HeightRequest + chromeHeight);
+            panel.VerticalOptions = LayoutOptions.Center;
+        }
     }
 
     /// <summary>
@@ -359,6 +396,8 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         SelectResident(Math.Min(_selected, _scene.Residents.Count - 1));
         UpdateHabitatName();
         RefreshGarden();
+        RefreshResidentsPanel();
+        _ = LoadFriendshipsAsync();
         UpdateJournal();
         foreach (var mon in _scene.Residents)
         {
@@ -570,6 +609,7 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
         }
         UpdateHabitatName();
         RefreshGarden();
+        RefreshResidentsPanel();
         MarkWidgetDirty();
         _ = WarmCurrentEnvironmentAsync();
     }
@@ -620,7 +660,42 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
     {
         try { _scene.Garden = _garden.Read(_scene.EnvironmentIndex); }
         catch (Exception error) { AppLog.Warn("park", $"Garden: {error.Message}"); }
+        _gardenPanel.Show(_scene.Garden);
         _canvas.InvalidateSurface();
+    }
+
+    /// <summary>The left panel: who lives in the habitat on screen, with the friendship last read.</summary>
+    private void RefreshResidentsPanel()
+    {
+        var shown = Enumerable.Range(0, _scene.Residents.Count).Where(IsVisibleInHabitat)
+            .Select(index =>
+            {
+                var mon = _scene.Residents[index];
+                return (Index: index, Mon: mon, Friendship: _friendships.TryGetValue(mon.Id, out var friendship) ? friendship : -1);
+            })
+            .ToList();
+        _residentsPanel.Show(shown, index =>
+        {
+            if (_menuOpen) return;
+            SelectResident(index);
+            _ = DetailsAsync();
+        });
+    }
+
+    /// <summary>Reads the Bank residents' friendship off the main thread, then shows it.</summary>
+    private async Task LoadFriendshipsAsync()
+    {
+        var residents = _scene.Residents.ToList();
+        try
+        {
+            _friendships = await Task.Run(() => _care.Friendships(residents));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            AppLog.Warn("park", $"Friendship: {error.Message}");
+            return;
+        }
+        if (_active) RefreshResidentsPanel();
     }
 
     /// <summary>The residents that live in a habitat (the commons is everyone's).</summary>
@@ -655,7 +730,11 @@ public sealed class PokeparkPage : ContentPage, IPadHandler
                 delay += 700;
             }
         }
-        if (meals.Any(m => m.Meals.Count > 0)) RefreshGarden();
+        if (meals.Any(m => m.Meals.Count > 0))
+        {
+            RefreshGarden();
+            _ = LoadFriendshipsAsync();
+        }
     }
 
     private async Task HarvestAsync(int plot)

@@ -29,6 +29,25 @@ public sealed class PokeparkCareService(ReloadableBankService bank)
     public void SyncResidents(IEnumerable<ParkPokemon> roster) =>
         Store.SyncResidents(roster.Where(p => BankIdOf(p) is not null).Select(p => p.Id), DateTimeOffset.UtcNow);
 
+    /// <summary>
+    /// The friendship of every Bank resident that keeps one, by resident id, read in one pass for
+    /// the park's side panel. Save residents and games without friendship are left out.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Friendships(IEnumerable<ParkPokemon> residents)
+    {
+        var result = new Dictionary<string, int>();
+        var wanted = residents.Where(mon => BankIdOf(mon) is not null).ToList();
+        if (wanted.Count == 0) return result;
+        var entries = bank.GetAll().GroupBy(entry => entry.Id).ToDictionary(group => group.Key, group => group.First());
+        foreach (var mon in wanted)
+        {
+            if (!entries.TryGetValue(BankIdOf(mon)!.Value, out var entry)) continue;
+            if (ParkCareEngine.Read(bank.GetData(entry.Id), entry.Info.Format) is { SupportsFriendship: true } facts)
+                result[mon.Id] = facts.Friendship;
+        }
+        return result;
+    }
+
     public ParkCareInfo Describe(ParkPokemon mon)
     {
         var now = DateTimeOffset.UtcNow;

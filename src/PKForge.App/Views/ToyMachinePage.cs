@@ -15,6 +15,8 @@ namespace PKForge.App.Views;
 /// ticket turns the handle once. A capsule drops out and opens on the prize, from silly common
 /// items to legendary ones, or the secret "???". The prize is in the Storage before the capsule
 /// even falls, so closing the app halfway loses nothing. The odds are on the screen.
+/// The page (2.4): the ticket and its count top left with the green Roll button under it,
+/// the machine in the middle, and the "%" box on the right for the chances.
 /// </summary>
 public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
 {
@@ -24,14 +26,16 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
     private readonly StorageService _storage;
     private readonly Grid _host;
     private readonly SKCanvasView _canvas;
-    private readonly Label _tickets;
+    private readonly SKCanvasView _ticket;
+    private int _ticketCount;
     private readonly Label _stats;
     private readonly Label _prizeRarity;
     private readonly Label _prizeName;
     private readonly Label _prizeChance;
     private readonly Image _prizeIcon;
     private readonly Border _prizeCard;
-    private readonly Button _turn;
+    private readonly Border _roll;
+    private readonly VerticalStackLayout _lastPrize;
     private readonly IDispatcherTimer _timer;
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly List<(float X, float Y, SKColor Top, float Tilt)> _capsules = [];
@@ -69,55 +73,56 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             if (e.ActionType == SKTouchAction.Released) Tapped();
         };
 
-        _tickets = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle + 3, TextColor = UiTokens.Ink0, VerticalOptions = LayoutOptions.Center };
-        var ticketRow = new HorizontalStackLayout { Spacing = 8, Children = { PksmIcons.Icon("ticket", 30, PksmIcons.White), _tickets } };
-        var howTo = Small("Release a Pokémon from the Bank to get a ticket. Each ticket turns the handle once, and the prize goes to your Item Storage.");
-        _turn = Kit.Capsule("Turn the handle", UiTokens.Green, primary: true, icon: "toymachine");
-        _turn.Clicked += (_, _) => _ = TurnAsync();
-        var chances = Kit.Capsule("Chances and prizes", UiTokens.AccentInfo, icon: "stats");
-        chances.Clicked += (_, _) => _ = Run(ShowChancesAsync);
-        var buttons = new FlexLayout
-        {
-            Wrap = Microsoft.Maui.Layouts.FlexWrap.Wrap,
-            Direction = Microsoft.Maui.Layouts.FlexDirection.Row,
-            Children = { _turn, chances },
-        };
-        _turn.Margin = new Thickness(0, 0, 8, 6);
-        chances.Margin = new Thickness(0, 0, 8, 6);
+        // Top left: the ticket with how many there are (a tap says how to get more), and the
+        // green Roll button under it; the last prize and the counters below.
+        _ticket = new SKCanvasView { WidthRequest = 148, HeightRequest = 66, HorizontalOptions = LayoutOptions.Start };
+        _ticket.PaintSurface += (_, e) => PaintTicket(e.Surface.Canvas, e.Info, _ticketCount);
+        var ticketTap = new TapGestureRecognizer();
+        ticketTap.Tapped += (_, _) => _ = Run(() => PadMenu.ShowAsync(_host, "Tickets",
+            "Release a Pokémon from the Bank to get a ticket. Each ticket turns the handle once, and the prize goes to your Item Storage.", "OK"));
+        _ticket.GestureRecognizers.Add(ticketTap);
+        _roll = RollButton(() => _ = TurnAsync());
+        _stats = Small();
 
-        _prizeIcon = new Image { WidthRequest = 48, HeightRequest = 48, Aspect = Aspect.AspectFit, VerticalOptions = LayoutOptions.Center };
-        _prizeRarity = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextLabel, TextColor = UiTokens.Ink0 };
-        _prizeName = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextTitle, TextColor = UiTokens.Ink0, LineBreakMode = LineBreakMode.TailTruncation };
+        // On the right: the chances, a white "%" box.
+        var chances = ChancesButton(() => _ = Run(ShowChancesAsync));
+
+        _prizeIcon = new Image { WidthRequest = 40, HeightRequest = 40, Aspect = Aspect.AspectFit, VerticalOptions = LayoutOptions.Center };
+        _prizeRarity = new Label { FontFamily = DsChrome.PixelFont, FontSize = 12, TextColor = UiTokens.Ink0 };
+        _prizeName = new Label { FontFamily = DsChrome.PixelFont, FontSize = UiTokens.TextBody, TextColor = UiTokens.Ink0, LineBreakMode = LineBreakMode.TailTruncation };
         _prizeChance = Small();
         var prizeTexts = new VerticalStackLayout { Spacing = 2, VerticalOptions = LayoutOptions.Center, Children = { _prizeRarity, _prizeName, _prizeChance } };
-        var prizeRow = new Grid { ColumnSpacing = 10, ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star)], Children = { _prizeIcon, prizeTexts } };
+        var prizeRow = new Grid { ColumnSpacing = 8, ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star)], Children = { _prizeIcon, prizeTexts } };
         Grid.SetColumn(prizeTexts, 1);
         _prizeCard = new Border
         {
-            Padding = new Thickness(10, 8),
+            Padding = new Thickness(8, 6),
             BackgroundColor = UiTokens.Well,
             Stroke = UiTokens.ShellEdge,
             StrokeThickness = 1.5,
             StrokeShape = new RoundRectangle { CornerRadius = 8 },
             Content = prizeRow,
-            IsVisible = false,
         };
-        _stats = Small();
+        _lastPrize = new VerticalStackLayout { Spacing = 4, IsVisible = false, Children = { Small("Last prize"), _prizeCard } };
 
-        var panel = Kit.Panel(new VerticalStackLayout
+        var left = new VerticalStackLayout { Spacing = 14, WidthRequest = SideWidth, Children = { _ticket, _roll, _stats } };
+        var right = new VerticalStackLayout
         {
-            Spacing = 10,
-            Children = { ticketRow, howTo, buttons, _prizeCard, _stats },
-        }, padding: 12);
-
+            Spacing = 14,
+            WidthRequest = SideWidth,
+            // Level with the middle of the ticket and the Roll button, as on the sketch.
+            Padding = new Thickness(0, 26, 0, 0),
+            Children = { chances, _lastPrize },
+        };
         var machineHost = new Grid { Children = { _canvas } };
         var body = new Grid
         {
-            ColumnSpacing = 12,
-            ColumnDefinitions = [new(new GridLength(1.05, GridUnitType.Star)), new(GridLength.Star)],
-            Children = { machineHost, new ScrollView { Content = panel } },
+            ColumnSpacing = 14,
+            ColumnDefinitions = [new(GridLength.Auto), new(GridLength.Star), new(GridLength.Auto)],
+            Children = { new ScrollView { Content = left }, machineHost, new ScrollView { Content = right } },
         };
-        Grid.SetColumn((View)body.Children[1], 1);
+        Grid.SetColumn(machineHost, 1);
+        Grid.SetColumn((View)body.Children[2], 2);
         var content = new Grid
         {
             Padding = new Thickness(14, 10),
@@ -128,11 +133,12 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
         Grid.SetRow(body, 1);
         var root = new Grid
         {
+            SafeAreaEdges = SafeAreaEdges.None,
             RowDefinitions = [new(GridLength.Auto), new(GridLength.Star)],
-            Children = { DsChrome.TitleBar(), new Grid { Children = { DsChrome.GridBackground(), content } } },
+            Children = { DsChrome.TitleBar(), DsChrome.FullBleed(new Grid { Children = { DsChrome.GridBackground(), content } }) },
         };
         Grid.SetRow((View)root.Children[1], 1);
-        _host = new Grid { Children = { root } };
+        _host = DsChrome.FullBleed(new Grid { Children = { root } });
         Content = _host;
 
         _timer = Dispatcher.CreateTimer();
@@ -145,6 +151,144 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
     }
 
     public Grid OverlayHost => _host;
+
+    private const double SideWidth = 168;
+
+    /// <summary>The big green Roll button: it turns the handle (dimmed while there is no ticket or a capsule is out).</summary>
+    private static Border RollButton(Action onTap)
+    {
+        var button = new Border
+        {
+            WidthRequest = 148,
+            HeightRequest = 58,
+            HorizontalOptions = LayoutOptions.Start,
+            Background = new LinearGradientBrush([new GradientStop(Color.FromRgb(0x6C, 0xDD, 0x84), 0), new GradientStop(Color.FromRgb(0x2B, 0x9A, 0x4C), 1)], new Point(0, 0), new Point(0, 1)),
+            Stroke = UiTokens.ButtonEdge,
+            StrokeThickness = 2.5,
+            StrokeShape = new RoundRectangle { CornerRadius = 12 },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.65f, Radius = 0, Offset = new Point(3, 4) },
+            Content = new Label
+            {
+                Text = "Roll", FontFamily = DsChrome.PixelFont, FontSize = 24, TextColor = Colors.White,
+                HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
+            },
+        };
+        PressOnTap(button, onTap);
+        return button;
+    }
+
+    /// <summary>The white "%" box: a tap shows every tier's chance and its prizes.</summary>
+    private static View ChancesButton(Action onTap)
+    {
+        var box = new Border
+        {
+            WidthRequest = 84,
+            HeightRequest = 84,
+            HorizontalOptions = LayoutOptions.Start,
+            BackgroundColor = Color.FromRgb(0xF4, 0xF4, 0xF6),
+            Stroke = Color.FromRgb(0x15, 0x15, 0x18),
+            StrokeThickness = 3,
+            StrokeShape = new RoundRectangle { CornerRadius = 6 },
+            Shadow = new Shadow { Brush = new SolidColorBrush(Colors.Black), Opacity = 0.65f, Radius = 0, Offset = new Point(3, 4) },
+            Content = new Label
+            {
+                Text = "%", FontFamily = DsChrome.PixelFont, FontSize = 48, TextColor = Color.FromRgb(0x15, 0x15, 0x18),
+                HorizontalTextAlignment = TextAlignment.Center, VerticalTextAlignment = TextAlignment.Center,
+            },
+        };
+        PressOnTap(box, onTap);
+        var caption = Small("Chances");
+        caption.HorizontalTextAlignment = TextAlignment.Center;
+        caption.WidthRequest = 84;
+        caption.HorizontalOptions = LayoutOptions.Start;
+        return new VerticalStackLayout { Spacing = 5, Children = { box, caption } };
+    }
+
+    private static void PressOnTap(View view, Action onTap)
+    {
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += async (_, _) =>
+        {
+            await view.TranslateToAsync(0, 3, 45, Easing.CubicOut);
+            await view.TranslateToAsync(0, 0, 70, Easing.CubicOut);
+            onTap();
+        };
+        view.GestureRecognizers.Add(tap);
+    }
+
+    private void SetRollReady(bool ready) => _roll.Opacity = ready ? 1 : 0.5;
+
+    // The orange ticket, pixel art: drawn at 74 by 33 and scaled up whole, with the count on it.
+    private const int TicketWidth = 74, TicketHeight = 33;
+    private static readonly SKColor TicketOrange = new(0xFF, 0x9A, 0x3C);
+    private static readonly SKColor TicketLight = new(0xFF, 0xC6, 0x7E);
+    private static readonly SKColor TicketDark = new(0xB8, 0x58, 0x14);
+    private static readonly SKColor TicketInk = new(0x4A, 0x22, 0x06);
+
+    private static void PaintTicket(SKCanvas c, SKImageInfo info, int count)
+    {
+        c.Clear(SKColors.Transparent);
+        var pixel = Math.Max(1, (int)Math.Floor(Math.Min(info.Width / (float)TicketWidth, info.Height / (float)TicketHeight)));
+        using var surface = SKSurface.Create(new SKImageInfo(TicketWidth, TicketHeight, SKColorType.Rgba8888, SKAlphaType.Premul));
+        if (surface is null) return;
+        var t = surface.Canvas;
+        t.Clear(SKColors.Transparent);
+        // The body, with the round notches of a ticket stub on both short sides.
+        using (var body = new SKPath())
+        {
+            body.AddRect(new SKRect(1, 1, TicketWidth - 1, TicketHeight - 1));
+            using var notches = new SKPath();
+            notches.AddCircle(1, TicketHeight / 2f, 5);
+            notches.AddCircle(TicketWidth - 1, TicketHeight / 2f, 5);
+            using var shape = body.Op(notches, SKPathOp.Difference);
+            if (shape is not null)
+            {
+                using (var fill = new SKPaint { Color = TicketOrange, IsAntialias = false })
+                    t.DrawPath(shape, fill);
+                using (var top = new SKPaint { Color = TicketLight, IsAntialias = false })
+                {
+                    t.Save();
+                    t.ClipPath(shape, antialias: false);
+                    t.DrawRect(new SKRect(1, 1, TicketWidth - 1, 4), top);
+                    t.Restore();
+                }
+                using var edge = new SKPaint { Color = TicketDark, IsAntialias = false, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
+                t.DrawPath(shape, edge);
+            }
+        }
+        // The perforation, and a star on the stub.
+        using (var dots = new SKPaint { Color = TicketDark, IsAntialias = false })
+        {
+            for (var y = 4; y < TicketHeight - 3; y += 3) t.DrawRect(new SKRect(20, y, 21, y + 1), dots);
+            using var star = new SKPath();
+            for (var i = 0; i < 10; i++)
+            {
+                var a = -MathF.PI / 2 + i * MathF.PI / 5;
+                var r = i % 2 == 0 ? 6f : 2.6f;
+                var point = new SKPoint(11.5f + MathF.Cos(a) * r, TicketHeight / 2f + MathF.Sin(a) * r);
+                if (i == 0) star.MoveTo(point); else star.LineTo(point);
+            }
+            star.Close();
+            using var starPaint = new SKPaint { Color = TicketInk, IsAntialias = false };
+            t.DrawPath(star, starPaint);
+        }
+        var text = "x" + count.ToString(CultureInfo.InvariantCulture);
+        using (var font = PixelFont.For(text, 12))
+        {
+            font.Edging = SKFontEdging.Alias;
+            font.Embolden = false;
+            using var shade = new SKPaint { Color = TicketLight };
+            using var ink = new SKPaint { Color = TicketInk };
+            var x = (21 + TicketWidth - 2) / 2f;
+            var y = TicketHeight / 2f + 5;
+            t.DrawText(text, x + 1, y + 1, SKTextAlign.Center, font, shade);
+            t.DrawText(text, x, y, SKTextAlign.Center, font, ink);
+        }
+        using var image = surface.Snapshot();
+        var dest = SKRect.Create(0, (info.Height - TicketHeight * pixel) / 2, TicketWidth * pixel, TicketHeight * pixel);
+        using var paint = new SKPaint { Color = SKColors.White.WithAlpha(count > 0 ? (byte)255 : (byte)150) };
+        c.DrawImage(image, dest, new SKSamplingOptions(SKFilterMode.Nearest), paint);
+    }
 
     protected override void OnAppearing()
     {
@@ -192,11 +336,14 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
     private void Refresh()
     {
         var state = _storage.Read();
-        _tickets.Text = state.Tickets == 1 ? "1 ticket" : $"{state.Tickets} tickets";
-        _turn.IsEnabled = state.Tickets > 0 && _spinStart < 0;
-        _stats.Text = $"Handle turned {state.Spins} times · ??? found: {state.Mysteries}";
+        _ticketCount = state.Tickets;
+        _ticket.InvalidateSurface();
+        SetRollReady(state.Tickets > 0 && _spinStart < 0);
+        _stats.Text = state.Tickets > 0
+            ? $"Handle turned {state.Spins} times · ??? found: {state.Mysteries}"
+            : $"No tickets. Release a Pokémon from the Bank to get one. Handle turned {state.Spins} times.";
         if (_shown is not { } prize) return;
-        _prizeCard.IsVisible = true;
+        _lastPrize.IsVisible = true;
         _prizeRarity.Text = RarityName(prize.Rarity);
         _prizeRarity.TextColor = RarityColor(prize.Rarity).ToMauiColor();
         _prizeName.Text = _storage.PrizeName(prize);
@@ -238,7 +385,7 @@ public sealed class ToyMachinePage : ContentPage, IPadHandler, IOverlayHost
             _prizeArt = null;
             _ = LoadArtAsync(prize);
             _spinStart = _clock.ElapsedMilliseconds;
-            _turn.IsEnabled = false;
+            SetRollReady(false);
             try { HapticFeedback.Default.Perform(HapticFeedbackType.Click); }
             catch { /* no vibrator, or turned off */ }
         }
