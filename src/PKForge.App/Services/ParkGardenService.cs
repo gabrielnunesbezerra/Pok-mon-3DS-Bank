@@ -32,7 +32,7 @@ public sealed class ParkGardenService(ReloadableBankService bank, ISaveEngine en
     }
 
     /// <summary>Plants one berry from the Item Storage; the refusal, or null when it went in.</summary>
-    public string? Plant(int habitat, int plot, int berry) => Guard(() => bank.Change((_, root) =>
+    public string? Plant(int habitat, int plot, int berry) => Guard(() => bank.Change<string?>((_, root) =>
     {
         var storage = BankSideFiles.Load<StorageState>(root, StorageState.FileName).Normalized();
         if (storage.CountOf(berry) <= 0) return "Your Item Storage has none of that berry.";
@@ -45,7 +45,7 @@ public sealed class ParkGardenService(ReloadableBankService bank, ISaveEngine en
     }));
 
     /// <summary>Picks a ripe tree into the pot; the refusal, or null when it was picked.</summary>
-    public string? Harvest(int habitat, int plot) => Guard(() => bank.Change((_, root) =>
+    public string? Harvest(int habitat, int plot) => Guard(() => bank.Change<string?>((_, root) =>
     {
         var gardens = Load(root);
         if (ParkGardenRules.Harvest(gardens.For(habitat), plot, Now) is { } refusal) return refusal;
@@ -54,7 +54,7 @@ public sealed class ParkGardenService(ReloadableBankService bank, ISaveEngine en
     }));
 
     /// <summary>Clears a plot for another berry.</summary>
-    public string? DigUp(int habitat, int plot) => Guard(() => bank.Change((_, root) =>
+    public string? DigUp(int habitat, int plot) => Guard(() => bank.Change<string?>((_, root) =>
     {
         var gardens = Load(root);
         ParkGardenRules.DigUp(gardens.For(habitat), plot);
