@@ -3809,7 +3809,10 @@ public sealed partial class BoxBrowserPage : ContentPage, IPadPagingHandler, IPa
             new PadOption("Summary", IconPath: "info"),
             Allowed(SaveAction.EditMon, new("Edit", IconPath: "editor")),
             Allowed(SaveAction.EditMon, new("Evolve…", IconPath: "evolve")),
-            new PadOption("Send to Poképark", IconPath: "park", Detail: "Adds it to the Poképark visitors. The save is not changed."),
+            // 3DS Bank 2.5: only the admin has a Poképark.
+            IPlatformApplication.Current?.Services.GetService<AccountService>()?.IsAdmin == true
+                ? new PadOption("Send to Poképark", IconPath: "park", Detail: "Adds it to the Poképark visitors. The save is not changed.")
+                : null,
             new PadOption("Move", IconPath: "move", Detail: "Pick it up and carry it to another slot."),
             Allowed(SaveAction.Duplicate, new("Duplicate", IconPath: "copy", Detail: "Clone it into the next empty slot here.")),
             new PadOption("Send to Bank", IconPath: "bank", Detail: "It leaves this save and is stored in the Bank."),

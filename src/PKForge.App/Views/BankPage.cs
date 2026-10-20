@@ -271,156 +271,6 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
 
     private static bool Allowed(SaveAction action) => HardcoreMode.Guard.Allows(action);
 
-    private async Task ExportArchiveAsync()
-    {
-        var format = await PadMenu.ShowAsync(_hostGrid, "Export",
-            "A .pk folder is read by PKHeX and 3DS Bank; a PKSM bank goes back to your 3DS.",
-            new PadOption("Folder of .pk files", IconPath: "folder", Detail: "One .pk file per Pokémon, readable by PKHeX and 3DS Bank."),
-            new PadOption("PKSM bank for the 3DS (.bnk)", IconPath: "bank", Detail: "One bank file to copy back to PKSM on your 3DS."));
-        if (format is null) return;
-        if (format.StartsWith("PKSM", StringComparison.Ordinal))
-        {
-            await ExportPksmAsync(null);
-            return;
-        }
-        var choice = await PadMenu.ShowAsync(_hostGrid, "Export archive",
-            "A folder of .pk files plus a manifest — readable by PKHeX and 3DS Bank alike.",
-            new PadOption("Whole bank", IconPath: "bank"),
-            new PadOption("This box only", IconPath: "box"));
-        if (choice is null) return;
-
-        var candidates = choice == "This box only"
-            ? _bank.GetAll().Where(e => e.Box == _boxIndex).ToArray()
-            : null;
-        if (candidates is { Length: 0 })
-        {
-            _boxViewModel.Status = "Nothing to export — this box is empty.";
-            return;
-        }
-        await ExportToFolderAsync(candidates, choice == "This box only" ? "this box" : "the whole bank");
-    }
-
-    /// <summary>Writes .pk files plus the manifest into a picked folder - the archive path
-    /// shared by the strip's EXPORT and the organizer's bulk export. Null candidates = the bank.</summary>
-    private async Task ExportToFolderAsync(IReadOnlyList<BankEntry>? candidates, string label)
-    {
-        var services = IPlatformApplication.Current?.Services;
-        var picker = services?.GetService<IFolderPicker>();
-        var files = services?.GetService<IFolderFileAccess>();
-        if (picker is null || files is null) return;
-
-        var folder = await picker.PickFolderAsync();
-        if (folder is null) return;
-        var overlay = LoadingOverlay.Show(_hostGrid, "Packing the archive…", $"Writing .pk files to {folder.DisplayName}.");
-        try
-        {
-            var exported = await Task.Run(() => BankArchive.ExportAsync(_bank, files, folder.TreeId, candidates));
-            _boxViewModel.Status = exported == 0
-                ? "Nothing to export — the bank is empty."
-                : $"Archive written: {exported} Pokémon from {label} → {folder.DisplayName}.";
-        }
-        catch (Exception error)
-        {
-            _boxViewModel.Status = $"Export failed: {error.Message}";
-        }
-        finally
-        {
-            overlay.Close();
-        }
-    }
-
-    /// <summary>PKSM bank export: the whole bank or this box keep their layout; a selection is packed.</summary>
-    private async Task ExportPksmAsync(List<BankEntry>? selection)
-    {
-        IReadOnlyList<BankEntry> entries;
-        PksmExportLayout layout;
-        string label;
-        if (selection is not null)
-        {
-            (entries, layout, label) = (selection, PksmExportLayout.Pack, $"{selection.Count} selected");
-        }
-        else
-        {
-            var scope = await PadMenu.ShowAsync(_hostGrid, "Export PKSM bank",
-                "Box layout and box names are kept. Gen 9, BDSP and Legends mons have no PKSM slot and are left out.",
-                new PadOption("Whole bank", IconPath: "bank"),
-                new PadOption("This box only", IconPath: "box"));
-            if (scope is null) return;
-            var box = scope == "This box only";
-            entries = box ? _bank.GetAll().Where(e => e.Box == _boxIndex).ToArray() : _bank.GetAll();
-            (layout, label) = (PksmExportLayout.KeepPositions, box ? $"box {_boxIndex + 1:00}" : "the whole bank");
-        }
-        var status = await PksmTransferFlow.ExportAsync(_hostGrid, _bank, entries, layout, label);
-        if (status is not null) _boxViewModel.Status = status;
-    }
-
-    /// <summary>PKSM import (.bnk/.json, dumps zip, loose .pk) with a preview before any write.</summary>
-    private async Task ImportPksmAsync()
-    {
-        var status = await PksmTransferFlow.ImportAsync(_hostGrid, _bank);
-        if (status is not null) _boxViewModel.Status = status;
-        RefreshBoxEntries();
-        UpdatePageLabel();
-        UpdatePreview();
-        _canvas.InvalidateSurface();
-    }
-
-    private async Task ImportArchiveAsync()
-    {
-        var format = await PadMenu.ShowAsync(_hostGrid, "Import",
-            "From a 3DS: copy /3ds/PKSM/banks/ (or /3ds/PKSM/dumps/) off the SD card to this device, then pick the files.",
-            new PadOption("PKSM bank, dumps zip or .pk files", IconPath: "bank", Detail: "Files copied off your 3DS; you see a preview before anything is added."),
-            new PadOption("Folder of .pk files", IconPath: "folder", Detail: "Every .pk file in a folder joins the bank; exact copies are skipped."));
-        if (format is null) return;
-        if (format.StartsWith("PKSM", StringComparison.Ordinal))
-        {
-            await ImportPksmAsync();
-            return;
-        }
-        var services = IPlatformApplication.Current?.Services;
-        var picker = services?.GetService<IFolderPicker>();
-        var files = services?.GetService<IFolderFileAccess>();
-        var engine = services?.GetService<ISaveEngine>();
-        if (picker is null || files is null || engine is null) return;
-
-        // Importing files fabricates bank entries from outside data: creation, not a move.
-        if (await DeniedAsync(SaveAction.CreateMon)) return;
-        var folder = await picker.PickFolderAsync();
-        if (folder is null) return;
-        var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Import from folder?",
-            $"Every recognized .pk file in {folder.DisplayName} joins the bank. Exact copies of mons already stored are skipped.",
-            "Import");
-        if (!confirmed) return;
-
-        var overlay = LoadingOverlay.Show(_hostGrid, "Reading the archive…", $"Scanning {folder.DisplayName}.");
-        try
-        {
-            var summary = await Task.Run(() => BankArchive.ImportAsync(_bank,
-                (bytes, name) => engine.TryDescribeEntity(bytes, name, name), // the extension names the format
-                files, folder.TreeId, (done, total) => overlay.Report(done, total), overlay.Cancellation.Token));
-            _boxViewModel.Status = summary.Imported == 0 && summary.SkippedDuplicates == 0
-                ? "No recognizable Pokémon in that folder."
-                : $"{summary.Imported} imported · {summary.SkippedDuplicates} duplicate(s) skipped"
-                  + (summary.Rejected > 0 ? $" · {summary.Rejected} unreadable" : "") + ".";
-        }
-        catch (OperationCanceledException)
-        {
-            _boxViewModel.Status = "Import cancelled.";
-        }
-        catch (Exception error)
-        {
-            _boxViewModel.Status = $"Import failed: {error.Message}";
-        }
-        finally
-        {
-            overlay.Close();
-            RefreshBoxEntries();
-            UpdatePageLabel();
-            _canvas.InvalidateSurface();
-        }
-    }
-
-
     private static string BankRoot => System.IO.Path.Combine(FileSystem.AppDataDirectory, "bank");
 
     /// <summary>
@@ -461,15 +311,35 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var services = IPlatformApplication.Current?.Services;
         var picker = services?.GetService<IFolderPicker>();
         var files = services?.GetService<IFolderFileAccess>();
-        if (picker is null || files is null) return;
+        var exits = services?.GetService<Services.BankExitService>();
+        if (picker is null || files is null || exits is null) return;
         var folder = await picker.PickFolderAsync();
         if (folder is null) return;
         var overlay = LoadingOverlay.Show(_hostGrid, "Exporting…", $"Writing .pk files to {folder.DisplayName}.");
         try
         {
-            var moved = await Task.Run(() => BankCheckout.CheckOutAsync(_bank, new BankOutbox(BankRoot), files, folder.TreeId, entries));
+            // 3DS Bank 2.5: they leave the Bank (and the account knows) before a file is written.
+            var (hold, refusal) = await exits.HoldAsync(entries.Select(entry => entry.Id).ToArray(), $"files in {folder.DisplayName}");
+            if (hold is null)
+            {
+                FinishOrganizer(refusal ?? "Nothing was exported.");
+                return;
+            }
+            var leaving = hold.Mons.Select(mon => (Entry: new BankEntry(Guid.NewGuid(), mon.Box, mon.Slot, mon.Info, DateTimeOffset.UtcNow), Data: mon.Bytes)).ToList();
+            try
+            {
+                await Task.Run(() => BankArchive.ExportAsync(leaving, files, folder.TreeId));
+            }
+            catch (Exception error)
+            {
+                exits.Return(hold);
+                FinishOrganizer($"Export failed: {error.Message} They are back in the Bank.");
+                return;
+            }
+            new BankOutbox(BankRoot).AddRange(leaving.Select(mon => BankCheckout.Sha256Hex(mon.Data)));
+            exits.Deliver(hold);
             _marked.Clear();
-            FinishOrganizer($"{moved} Pokémon exported to {folder.DisplayName} and removed from the Bank.");
+            FinishOrganizer($"{leaving.Count} Pokémon exported to {folder.DisplayName} and removed from the Bank.");
         }
         catch (Exception error)
         {
@@ -836,7 +706,13 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             options.Add(new PadOption("Edit", IconPath: "editor"));
             options.Add(new PadOption("Evolve…", IconPath: "evolve", Detail: "Evolves it right here in the bank."));
         }
-        options.Add(new PadOption("Send to Poképark", IconPath: "park", Detail: "It joins the Poképark visitors. The bank is not changed."));
+        // 3DS Bank 2.5: the Poképark is the admin's. The admin puts Bank Pokémon in it; everyone
+        // else sends theirs to the admin, who takes care of them and sends them back.
+        var admin = IPlatformApplication.Current?.Services.GetService<AccountService>()?.IsAdmin == true;
+        if (admin)
+            options.Add(new PadOption("Send to Poképark", IconPath: "park", Detail: "It joins the Poképark visitors. The bank is not changed."));
+        else if (PKForge.Engine.EntityBytes.RomHackGame(entry.Info.Format) is null)
+            options.Add(new PadOption("Visit the Poképark", IconPath: "park", Detail: "The admin takes care of it in the Poképark and sends it back."));
         // 3DS Bank 2.0: held items through the Storage, and the Shooting Star.
         var storage = IPlatformApplication.Current?.Services.GetService<StorageService>();
         if (storage is not null && entry.Info.Generation >= 2 && entry.Info.Format is not "PB7"
@@ -845,9 +721,7 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         if (storage is not null && !entry.Info.Shiny && storage.Read().Stars > 0
             && PKForge.Engine.EntityBytes.RomHackGame(entry.Info.Format) is null)
             options.Add(new PadOption("Use a Shooting Star", IconPath: "shiny", Detail: "It becomes shiny for good. One Shooting Star is used up."));
-        if (Allowed(SaveAction.Duplicate)) options.Add(new PadOption("Duplicate", IconPath: "copy", Detail: "An exact copy goes into the first free bank slot."));
         options.Add(new PadOption("Send to game…", IconPath: "send", Detail: "Moves it into a game's boxes and out of the bank."));
-        if (Allowed(SaveAction.Duplicate)) options.Add(new PadOption("Copy to game…", IconPath: "copy", Detail: "Puts a copy in a game's boxes; this one stays in the bank."));
         options.Add(new PadOption("Move (carry)", IconPath: "move", Detail: "Pick it up and drop it in another slot."));
         options.Add(new PadOption("Export .pk file", IconPath: "export", Detail: "It leaves the Bank as a .pk file; Import brings it back."));
         options.Add(new PadOption("Release from bank", IconPath: "release", Detail: "Removes it from the bank for good; there is no undo."));
@@ -867,6 +741,9 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
                 _boxViewModel.Status = IPlatformApplication.Current!.Services.GetRequiredService<PokeparkService>().AddBankVisitor(entry.Id);
                 await PadMenu.ShowAsync(_hostGrid, "Poképark", _boxViewModel.Status, new PadOption("OK"));
                 return;
+            case "Visit the Poképark":
+                await VisitParkAsync(entry);
+                return;
             case "Summary":
                 await OpenSummaryAsync();
                 return;
@@ -876,23 +753,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             case "Evolve…":
                 await EvolveEntryAsync(entry);
                 return;
-            case "Duplicate":
-                if (await DeniedAsync(SaveAction.Duplicate)) return;
-                var clone = _bank.Add(_bank.GetData(entry.Id), entry.Info);
-                _boxIndex = clone.Box;
-                _selectedSlot = clone.Slot;
-                RefreshBoxEntries();
-                UpdatePageLabel();
-                UpdatePreview();
-                _boxViewModel.Status = $"{entry.Info.Nickname} cloned in the bank.";
-                _canvas.InvalidateSurface();
-                return;
             case "Send to game…":
                 await SendToGamePickerAsync(entry);
-                return;
-            case "Copy to game…":
-                if (await DeniedAsync(SaveAction.Duplicate)) return;
-                await SendToGamePickerAsync(entry, keepOriginal: true);
                 return;
             case "Move (carry)":
                 _carryId = entry.Id;
@@ -912,6 +774,39 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
                 _canvas.InvalidateSurface();
                 return;
         }
+    }
+
+    /// <summary>
+    /// 3DS Bank 2.5: sends a Bank Pokémon to the admin's Poképark. It leaves the Bank now and
+    /// comes back on its own when the admin sends it home.
+    /// </summary>
+    private async Task VisitParkAsync(BankEntry entry)
+    {
+        var visits = IPlatformApplication.Current?.Services.GetService<ParkVisitService>();
+        if (visits is null) return;
+        var there = 0;
+        try { there = (await visits.GetMineAsync()).Count; }
+        catch (Exception error) when (error is PKForge.Infrastructure.CloudAccountException or IOException) { /* the count is only a note */ }
+        var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Visit the Poképark?",
+            $"{entry.Info.Nickname} leaves your Bank and goes to the admin's Poképark, where it plays, eats berries and makes friends. " +
+            "When the admin sends it home it comes back into your Bank on its own." +
+            (there > 0 ? $"\n\nYou have {there} Pokémon at the Poképark now." : ""), "Send");
+        if (!confirmed) return;
+        var overlay = LoadingOverlay.Show(_hostGrid, "Poképark", $"Sending {entry.Info.Nickname}…");
+        (bool Sent, string Message) result;
+        try
+        {
+            result = await visits.SendAsync(entry);
+        }
+        finally
+        {
+            overlay.Close();
+        }
+        _boxViewModel.Status = result.Message;
+        RefreshBoxEntries();
+        UpdatePreview();
+        _canvas.InvalidateSurface();
+        await PadMenu.ShowAsync(_hostGrid, "Poképark", result.Message, new PadOption("OK", IconPath: "confirm"));
     }
 
     /// <summary>The same slot holds a changed Pokémon (an item, the Shooting Star): every view reads it again.</summary>
@@ -990,8 +885,6 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         {
             options.Add(new PadOption("Move to another box…", IconPath: "move", Detail: "They fill a box's empty slots, in order."));
             options.Add(new PadOption("Move to a position…", IconPath: "move", Detail: "They land from a slot you pick; what is there slides back."));
-            if (Allowed(SaveAction.Duplicate))
-                options.Add(new PadOption(selection.Count == 1 ? "Duplicate" : "Duplicate all", IconPath: "copy", Detail: "Each copy goes into the first free bank slot."));
             options.Add(new PadOption(selection.Count == 1 ? "Export .pk file" : "Export .pk files", IconPath: "export", Detail: "They leave the Bank as .pk files in a folder you pick; Import brings them back."));
             if (targets.ConnectedLabel is not null || targets.Detected.Length > 0)
                 options.Add(new PadOption("Send to a game…", IconPath: "send", Detail: "Moves them into a game; only those that arrive leave the bank."));
@@ -1028,15 +921,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             case "Move to a position…":
                 await MoveSelectionToPositionAsync(selection);
                 return;
-            case "Duplicate" or "Duplicate all":
-                if (await DeniedAsync(SaveAction.Duplicate)) return;
-                DuplicateSelection(selection);
-                return;
             case "Export .pk file" or "Export .pk files":
                 await ExportOutAsync(selection);
-                return;
-            case "Export as a PKSM bank":
-                await ExportPksmAsync(selection);
                 return;
             case "Send to a game…":
                 await SendSelectionToGameAsync(selection);
@@ -1140,21 +1026,6 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             + (landed < selection.Count ? $" · {selection.Count - landed} had no room." : "."));
     }
 
-    /// <summary>Keepsakes: the selection is copied, each copy landing in the first gap.</summary>
-    private void DuplicateSelection(List<BankEntry> selection)
-    {
-        // One index write: every copy lands, or none does.
-        try { _bank.AddMany([.. selection.Select(e => new BankDeposit(_bank.GetData(e.Id), e.Info))]); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            _boxViewModel.Status = $"Nothing was cloned: {error.Message}";
-            return;
-        }
-        FinishOrganizer(selection.Count == 1
-            ? $"{selection[0].Info.Nickname} cloned in the bank."
-            : $"{selection.Count} Pokémon cloned in the bank.");
-    }
-
     private async Task ReleaseSelectionAsync(List<BankEntry> selection)
     {
         var confirmed = await PadMenu.ConfirmAsync(_hostGrid, "Release from the bank?",
@@ -1173,7 +1044,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
     private string Release(IReadOnlyList<Guid> ids, string? single)
     {
         var storage = IPlatformApplication.Current?.Services.GetService<StorageService>();
-        if (storage is null)
+        // 3DS Bank 2.5: the Toy Machine is the admin's, so only the admin's releases give tickets.
+        if (storage is null || IPlatformApplication.Current?.Services.GetService<AccountService>()?.IsAdmin != true)
         {
             var count = _bank.RemoveMany(ids);
             return single ?? $"Released {count} Pokémon from the bank.";
@@ -1198,7 +1070,8 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
     {
         var services = IPlatformApplication.Current?.Services;
         var transfer = services?.GetService<Services.TransferService>();
-        if (transfer is null) return;
+        var exits = services?.GetService<Services.BankExitService>();
+        if (transfer is null || exits is null) return;
 
         var picked = await PickDestinationAsync($"{selection.Count} selected → pick the destination");
         if (picked is not { } destinationPick) return;
@@ -1224,8 +1097,17 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, connectedPreview, subject, destination))
                 return;
             var rooms = open.Take(items.Length).ToArray();
-            outcome = await PKForge.Engine.BankTransfers.WithdrawAsync(_bank, ids, destination,
-                async () => await _boxViewModel.RunMutationAsync(session =>
+            // 3DS Bank 2.5: they leave the Bank (and the account knows) before the game gets them.
+            var (hold, holdRefusal) = await HoldWithOverlayAsync(() => exits.HoldAsync(ids, destination));
+            if (hold is null)
+            {
+                _boxViewModel.Status = holdRefusal ?? "Nothing was sent.";
+                return;
+            }
+            bool written;
+            try
+            {
+                written = await _boxViewModel.RunMutationAsync(session =>
                     PKForge.Engine.BankTransfers.ImportAll(session, items, rooms, out var refusal, Fresh(returned)) is var failed and >= 0
                         ? new GenerationOutcome(false, failed >= items.Length
                             ? $"the connected game has room for {rooms.Length} of {items.Length} Pokémon."
@@ -1233,12 +1115,14 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
                                 ? Services.TransferService.Refusal(items[failed].Data, items[failed].Nickname, session.Snapshot, destination, items[failed].Format)
                                 : $"{items[failed].Nickname} cannot go to {destination}. {refusal}")
                         : new GenerationOutcome(true, $"{subject} joined the game."),
-                    Math.Max(0, _selectedSlot), refreshSlot: false, action: SaveAction.Move) ? null : _boxViewModel.Status,
-                async () => await _boxViewModel.RunMutationAsync(session =>
-                {
-                    foreach (var room in rooms) session.ReleaseSlot(room.Box, room.Slot);
-                    return new GenerationOutcome(true, $"{subject} went back to the bank.");
-                }, Math.Max(0, _selectedSlot), refreshSlot: false, action: SaveAction.Move) ? null : _boxViewModel.Status);
+                    Math.Max(0, _selectedSlot), refreshSlot: false, action: SaveAction.Move);
+            }
+            catch (Exception error)
+            {
+                _boxViewModel.Status = error.Message;
+                written = false;
+            }
+            outcome = Finish(hold, written, destination, _boxViewModel.Status);
         }
         else
         {
@@ -1246,27 +1130,52 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             var preview = await transfer.PreviewAsync(items[0].Data, items[0].Nickname, target, format: items[0].Format);
             if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, preview, subject, target.GameLabel))
                 return;
-            IReadOnlyList<SlotRef> landed = [];
-            outcome = await PKForge.Engine.BankTransfers.WithdrawAsync(_bank, ids, target.GameLabel,
-                async () =>
-                {
-                    (var refusal, landed) = await transfer.SendManyToGameAsync(items, target, $"{subject} arrived from the bank",
-                        returnedItems: Fresh(returned));
-                    return refusal;
-                },
-                async () =>
-                {
-                    await transfer.ReleaseFromGameAsync(target, landed, $"{subject} went back to the bank");
-                    return null;
-                });
+            var (hold, holdRefusal) = await HoldWithOverlayAsync(() => exits.HoldAsync(ids, target.GameLabel));
+            if (hold is null)
+            {
+                _boxViewModel.Status = holdRefusal ?? "Nothing was sent.";
+                return;
+            }
+            string? refusal;
+            try
+            {
+                (refusal, _) = await transfer.SendManyToGameAsync(items, target, $"{subject} arrived from the bank", returnedItems: Fresh(returned));
+            }
+            catch (Exception error)
+            {
+                refusal = error.Message;
+            }
+            outcome = Finish(hold, refusal is null, target.GameLabel, refusal);
         }
 
-        if (outcome.Success || outcome.Duplicated)
+        RefreshBoxEntries();
+        UpdatePreview();
+        _canvas.InvalidateSurface();
+        if (outcome.Success)
         {
             FinishOrganizer(outcome.Message);
             await KeepReturnedItemsAsync(returned);
         }
         else _boxViewModel.Status = outcome.Message;
+
+        PKForge.Engine.BatchTransferOutcome Finish(Services.BankHold hold, bool arrived, string where, string? why)
+        {
+            if (arrived)
+            {
+                exits.Deliver(hold);
+                return new PKForge.Engine.BatchTransferOutcome(true, $"Moved {(ids.Length == 1 ? "1 Pokémon" : $"{ids.Length} Pokémon")} to {where}.");
+            }
+            exits.Return(hold);
+            return new PKForge.Engine.BatchTransferOutcome(false, $"Nothing was sent: {why ?? "the game could not take them."} They are back in the Bank.");
+        }
+    }
+
+    /// <summary>A hold (3DS Bank 2.5) waits for the account to save; the player sees why it takes a moment.</summary>
+    private async Task<(Services.BankHold? Hold, string? Refusal)> HoldWithOverlayAsync(Func<Task<(Services.BankHold? Hold, string? Refusal)>> hold)
+    {
+        var overlay = LoadingOverlay.Show(_hostGrid, "Saving…", "Your account learns the Pokémon left the Bank.");
+        try { return await hold(); }
+        finally { overlay.Close(); }
     }
 
     /// <summary>The list emptied for a fresh attempt (a retried step must not count items twice).</summary>
@@ -1744,15 +1653,14 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
     }
 
     /// <summary>Withdraw into ANY detected game: pick the destination, the transfer service
-    /// converts the format, backs up, and writes. No need to connect the save first.</summary>
-    private async Task SendToGamePickerAsync(BankEntry entry, bool keepOriginal = false)
+    /// converts the format, backs up, and writes. No need to connect the save first.
+    /// 3DS Bank 2.5: the Pokémon leaves the Bank (and the account knows) before the game gets it.</summary>
+    private async Task SendToGamePickerAsync(BankEntry entry)
     {
-        // A send leaves the bank (a move); keeping the original is a copy, which Hardcore refuses
-        // here as well - the transfer service writes other games without the save-side guard.
-        if (keepOriginal && await DeniedAsync(SaveAction.Duplicate)) return;
         var services = IPlatformApplication.Current?.Services;
         var transfer = services?.GetService<Services.TransferService>();
-        if (transfer is null) return;
+        var exits = services?.GetService<Services.BankExitService>();
+        if (transfer is null || exits is null) return;
 
         var picked = await PickDestinationAsync($"{entry.Info.Nickname} → pick the destination");
         if (picked is not { } destination) return;
@@ -1761,6 +1669,9 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
         var nickname = entry.Info.Nickname;
         var format = entry.Info.Format;
         var returnedItems = new List<int>();
+        Services.BankHold? hold;
+        string? holdRefusal;
+        bool arrived;
 
         if (destination.Other is null)
         {
@@ -1773,50 +1684,59 @@ public sealed class BankPage : ContentPage, IPadPagingHandler, IOverlayHost
             }
             var connectedPreview = transfer.PreviewIntoConnected(bytes, nickname, landing.Box, landing.Slot, format);
             if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, connectedPreview, nickname, "the connected game")) return;
+            (hold, holdRefusal) = await HoldWithOverlayAsync(() => exits.HoldAsync([entry.Id], "the connected game"));
+            if (hold is null)
+            {
+                _boxViewModel.Status = holdRefusal ?? "Nothing was sent.";
+                return;
+            }
             var returnedItem = 0;
-            var ok = await _boxViewModel.RunMutationAsync(session =>
-                PKForge.Engine.BankTransfers.TryImport(session, landing.Box, landing.Slot, bytes, out var refusal, out returnedItem, format)
-                    ? new GenerationOutcome(true, $"{nickname} joined the game (box {landing.Box + 1}).")
-                    : new GenerationOutcome(false, refusal ?? Services.TransferService.Refusal(bytes, nickname, session.Snapshot, "this game", format)), landing.Slot,
-                action: keepOriginal ? SaveAction.Duplicate : SaveAction.Move);
-            if (!ok) return;
-            returnedItems.Add(returnedItem);
+            try
+            {
+                arrived = await _boxViewModel.RunMutationAsync(session =>
+                    PKForge.Engine.BankTransfers.TryImport(session, landing.Box, landing.Slot, bytes, out var refusal, out returnedItem, format)
+                        ? new GenerationOutcome(true, $"{nickname} joined the game (box {landing.Box + 1}).")
+                        : new GenerationOutcome(false, refusal ?? Services.TransferService.Refusal(bytes, nickname, session.Snapshot, "this game", format)), landing.Slot,
+                    action: SaveAction.Move);
+            }
+            catch (Exception error)
+            {
+                _boxViewModel.Status = $"{nickname} could not go to the game: {error.Message}";
+                arrived = false;
+            }
+            if (arrived) returnedItems.Add(returnedItem);
         }
         else
         {
             var target = destination.Other;
             var preview = await transfer.PreviewAsync(bytes, nickname, target, format: format);
             if (!await Services.TransferPreviewPrompt.ConfirmAsync(_hostGrid, preview, nickname, target.GameLabel)) return;
-            var outcome = await transfer.SendToGameAsync(bytes, nickname, target, format: format);
-            _boxViewModel.Status = outcome.Message;
-            if (!outcome.Success) return;
-            returnedItems.Add(outcome.ReturnedItem);
+            (hold, holdRefusal) = await HoldWithOverlayAsync(() => exits.HoldAsync([entry.Id], target.GameLabel));
+            if (hold is null)
+            {
+                _boxViewModel.Status = holdRefusal ?? "Nothing was sent.";
+                return;
+            }
+            try
+            {
+                var outcome = await transfer.SendToGameAsync(bytes, nickname, target, format: format);
+                _boxViewModel.Status = outcome.Message;
+                arrived = outcome.Success;
+                if (arrived) returnedItems.Add(outcome.ReturnedItem);
+            }
+            catch (Exception error)
+            {
+                _boxViewModel.Status = $"{nickname} could not go to {target.GameLabel}: {error.Message}";
+                arrived = false;
+            }
         }
 
-        if (!keepOriginal)
-        {
-            _bank.Remove(entry.Id);
-            RefreshBoxEntries();
-            UpdatePreview();
-        }
+        if (arrived) exits.Deliver(hold);
+        else if (exits.Return(hold)) _boxViewModel.Status += $" {nickname} is back in the Bank.";
+        RefreshBoxEntries();
+        UpdatePreview();
         _canvas.InvalidateSurface();
         await KeepReturnedItemsAsync(returnedItems.Where(item => item > 0).ToList());
-    }
-
-    private async Task ExportAsync(BankEntry entry)
-    {
-        try
-        {
-            var bytes = _bank.GetData(entry.Id);
-            var name = $"{entry.Info.Species:000} - {entry.Info.Nickname}{BankEntryFiles.ExtensionFor(entry.Info)}";
-            var path = System.IO.Path.Combine(FileSystem.CacheDirectory, name);
-            await File.WriteAllBytesAsync(path, bytes);
-            await Share.Default.RequestAsync(new ShareFileRequest { Title = name, File = new ShareFile(path) });
-        }
-        catch (Exception error)
-        {
-            _boxViewModel.Status = $"Export failed: {error.Message}";
-        }
     }
 
     // ── Rendering: the shared storage world ─────────────────────────────────

@@ -53,12 +53,21 @@ public static class BankArchive
         CancellationToken cancellationToken = default)
     {
         var list = entries ?? bank.GetAll();
+        return await ExportAsync(list.Select(entry => (entry, bank.GetData(entry.Id))).ToList(), files, treeId, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Writes Pokémon that already left the Bank (their bytes in hand) as .pk files plus the manifest.</summary>
+    public static async Task<int> ExportAsync(
+        IReadOnlyList<(BankEntry Entry, byte[] Data)> list,
+        IFolderFileAccess files,
+        string treeId,
+        CancellationToken cancellationToken = default)
+    {
         var manifestEntries = new BankArchiveEntry[list.Count];
         for (var i = 0; i < list.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var entry = list[i];
-            var bytes = bank.GetData(entry.Id);
+            var (entry, bytes) = list[i];
             var name = FileNameFor(entry);
             await files.WriteFileAsync(treeId, name, bytes, cancellationToken).ConfigureAwait(false);
             manifestEntries[i] = new BankArchiveEntry(

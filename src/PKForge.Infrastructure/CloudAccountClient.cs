@@ -12,16 +12,32 @@ namespace PKForge.Infrastructure;
 /// <param name="DatabaseUrl">The Realtime Database address, e.g. https://name-default-rtdb.firebaseio.com.</param>
 public sealed record CloudConfig(string ApiKey, string DatabaseUrl)
 {
-    public bool IsConfigured => ApiKey.Length > 0 && DatabaseUrl.StartsWith("https://", StringComparison.Ordinal);
+    public bool IsConfigured => ApiKey.Length > 0 && (DatabaseUrl.StartsWith("https://", StringComparison.Ordinal)
+        // The Firebase emulator on this computer, for the tests.
+        || DatabaseUrl.StartsWith("http://localhost:", StringComparison.Ordinal));
 }
 
 /// <summary>A signed-in account: who, and the tokens that prove it.</summary>
-public sealed record CloudSession(string UserId, string Username, string IdToken, string RefreshToken, DateTimeOffset ExpiresUtc);
+public sealed record CloudSession(string UserId, string Username, string IdToken, string RefreshToken, DateTimeOffset ExpiresUtc)
+{
+    /// <summary>
+    /// Whether this is the 3DS Bank admin. Read from the ID token itself (the address Firebase
+    /// signed into it), the same thing the database rules check, so a username alone proves nothing.
+    /// </summary>
+    public bool IsAdmin => string.Equals(CloudAccountClient.EmailInToken(IdToken), CloudAccountClient.AdminEmail, StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>An account's Bank as stored online.</summary>
 /// <param name="Revision">Upload time in Unix milliseconds; the newest copy wins.</param>
 /// <param name="Snapshot">The packed Bank folder (<see cref="BankSnapshot"/>).</param>
 public sealed record CloudBank(long Revision, byte[] Snapshot);
+
+/// <summary>The account's Bank changed online since this phone last saw it (another phone, or the admin).</summary>
+public sealed class CloudBankConflictException(long? online) : CloudAccountException("The Bank changed online since this phone last saw it.")
+{
+    /// <summary>The revision that is online now.</summary>
+    public long? Online { get; } = online;
+}
 
 /// <summary>A refusal the player can read (wrong password, name taken, no internet...).</summary>
 public class CloudAccountException(string message, Exception? inner = null) : Exception(message, inner);
@@ -57,6 +73,15 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
     public const string EmailDomain = "users.3dsbank.app";
 
     public const int MinPasswordLength = 6;
+
+    /// <summary>
+    /// The admin's username (3DS Bank 2.5). It signs in like an account made before 2.0, so its
+    /// sign-in address is <see cref="AdminEmail"/>; the password lives only in Firebase.
+    /// </summary>
+    public const string AdminUsername = "adminbielz";
+
+    /// <summary>The address the admin account signs in with; the database rules give it the admin powers.</summary>
+    public const string AdminEmail = AdminUsername + "@" + EmailDomain;
 
     private const string WrongCredentials = "Wrong username or password.";
 
@@ -104,6 +129,7 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
         EnsureConfigured();
         var name = NormalizeUsername(username)
             ?? throw new CloudAccountException("Usernames have 3 to 20 letters, numbers, dots or underscores, with no spaces.");
+        if (name == AdminUsername) throw new CloudAccountException("That username is taken. Pick another one.");
         var mail = NormalizeEmail(email)
             ?? throw new CloudAccountException("Type a valid e-mail. If you ever forget your password, the link to make a new one goes there.");
         if (password.Length < MinPasswordLength)
@@ -175,9 +201,59 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
             var auth = await AuthenticateAsync("accounts:signInWithPassword", $"{username}@{EmailDomain}", password, cancellationToken).ConfigureAwait(false);
             return ToSession(auth, username);
         }
+        catch (CloudAuthException error) when (IsWrongCredentials(error.Code) && username == AdminUsername)
+        {
+            return await CreateAdminAsync(password, error, cancellationToken).ConfigureAwait(false);
+        }
         catch (CloudAuthException error) when (IsWrongCredentials(error.Code))
         {
             throw new CloudAccountException(WrongCredentials + " If you added an e-mail to your account, sign in with the e-mail.", error);
+        }
+    }
+
+    /// <summary>
+    /// The admin's first sign-in makes the admin account with the password typed (it can also be
+    /// made by hand in Firebase Authentication). If it already exists the password was wrong.
+    /// </summary>
+    private async Task<CloudSession> CreateAdminAsync(string password, CloudAuthException signInError, CancellationToken cancellationToken)
+    {
+        AuthResponse auth;
+        try
+        {
+            auth = await AuthenticateAsync("accounts:signUp", AdminEmail, password, cancellationToken).ConfigureAwait(false);
+        }
+        catch (CloudAuthException error) when (error.Code is "EMAIL_EXISTS" or "OPERATION_NOT_ALLOWED" or "ADMIN_ONLY_OPERATION")
+        {
+            throw new CloudAccountException(WrongCredentials, signInError);
+        }
+        var session = ToSession(auth, AdminUsername);
+        try
+        {
+            await ClaimUsernameAsync(session, cancellationToken).ConfigureAwait(false);
+        }
+        catch (CloudAccountException)
+        {
+            // The rules may still be the old ones; the username is claimed again on every launch.
+        }
+        return session;
+    }
+
+    /// <summary>The e-mail Firebase signed into an ID token (its payload is plain base64url JSON), or null.</summary>
+    public static string? EmailInToken(string? idToken)
+    {
+        var parts = (idToken ?? "").Split('.');
+        if (parts.Length < 2) return null;
+        try
+        {
+            var payload = parts[1].Replace('-', '+').Replace('_', '/');
+            payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+            using var document = JsonDocument.Parse(Convert.FromBase64String(payload));
+            return document.RootElement.TryGetProperty("email", out var email) && email.ValueKind == JsonValueKind.String
+                ? email.GetString() : null;
+        }
+        catch (Exception error) when (error is FormatException or JsonException or ArgumentException)
+        {
+            return null;
         }
     }
 
@@ -350,9 +426,16 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
     }
 
     /// <summary>The account's Bank, or null when it has never uploaded one.</summary>
-    public async Task<CloudBank?> GetBankAsync(CloudSession session, CancellationToken cancellationToken = default)
+    public Task<CloudBank?> GetBankAsync(CloudSession session, CancellationToken cancellationToken = default) =>
+        GetBankOfAsync(session, session.UserId, cancellationToken);
+
+    /// <summary>
+    /// Any account's Bank, or null when it has none. Only the owner's own and, for the admin,
+    /// everyone's: the database rules refuse the rest.
+    /// </summary>
+    public async Task<CloudBank?> GetBankOfAsync(CloudSession session, string uid, CancellationToken cancellationToken = default)
     {
-        using var response = await SendAsync(() => http.GetAsync(BankUrl(session), cancellationToken), cancellationToken).ConfigureAwait(false);
+        using var response = await SendAsync(() => http.GetAsync(BankUrl(session, uid), cancellationToken), cancellationToken).ConfigureAwait(false);
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
             throw new CloudAccountException(ExplainDatabase(response.StatusCode, json));
@@ -362,9 +445,14 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
     }
 
     /// <summary>Only the revision of the account's Bank (cheap: tells whether another phone changed it).</summary>
-    public async Task<long?> GetRevisionAsync(CloudSession session, CancellationToken cancellationToken = default)
+    public Task<long?> GetRevisionAsync(CloudSession session, CancellationToken cancellationToken = default) =>
+        GetRevisionOfAsync(session, session.UserId, cancellationToken);
+
+    /// <summary>Only the revision of an account's Bank, or null when it has none.</summary>
+    public async Task<long?> GetRevisionOfAsync(CloudSession session, string uid, CancellationToken cancellationToken = default)
     {
-        var url = $"{config.DatabaseUrl.TrimEnd('/')}/banks/{Uri.EscapeDataString(session.UserId)}/revision.json?auth={Uri.EscapeDataString(session.IdToken)}";
+        EnsureConfigured();
+        var url = $"{config.DatabaseUrl.TrimEnd('/')}/banks/{Uri.EscapeDataString(uid)}/revision.json?auth={Uri.EscapeDataString(session.IdToken)}";
         using var response = await SendAsync(() => http.GetAsync(url, cancellationToken), cancellationToken).ConfigureAwait(false);
         var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode)
@@ -372,23 +460,39 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
         return JsonSerializer.Deserialize<long?>(json);
     }
 
-    /// <summary>Uploads the account's Bank, replacing the previous copy.</summary>
-    public async Task PutBankAsync(CloudSession session, CloudBank bank, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Uploads the account's Bank, replacing the copy whose revision is <paramref name="baseRevision"/>.
+    /// Since 2.5 the database rules refuse an upload made from an older copy, so a phone that
+    /// missed a change (another phone took a Pokémon out, the admin removed a copy) can never
+    /// put the old Bank back: it gets a <see cref="CloudBankConflictException"/> and merges first.
+    /// </summary>
+    public Task PutBankAsync(CloudSession session, CloudBank bank, long? baseRevision, CancellationToken cancellationToken = default) =>
+        PutBankOfAsync(session, session.UserId, bank, baseRevision, cancellationToken);
+
+    /// <summary><see cref="PutBankAsync"/> for any account (the admin cleaning a Bank).</summary>
+    public async Task PutBankOfAsync(CloudSession session, string uid, CloudBank bank, long? baseRevision, CancellationToken cancellationToken = default)
     {
-        var stored = new StoredBank(bank.Revision, Convert.ToBase64String(bank.Snapshot), session.Username, DateTimeOffset.UtcNow.ToString("O"));
+        var stored = new StoredBank(bank.Revision, Convert.ToBase64String(bank.Snapshot), uid == session.UserId ? session.Username : null,
+            DateTimeOffset.UtcNow.ToString("O"), baseRevision);
         using var content = new StringContent(JsonSerializer.Serialize(stored, Json), Encoding.UTF8, "application/json");
-        using var response = await SendAsync(() => http.PutAsync(BankUrl(session), content, cancellationToken), cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
+        using var response = await SendAsync(() => http.PutAsync(BankUrl(session, uid), content, cancellationToken), cancellationToken).ConfigureAwait(false);
+        if (response.IsSuccessStatusCode) return;
+        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {
-            var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            throw new CloudAccountException(ExplainDatabase(response.StatusCode, json));
+            // Refused: either the copy online moved on (merge and try again) or no access at all.
+            long? online;
+            try { online = await GetRevisionOfAsync(session, uid, cancellationToken).ConfigureAwait(false); }
+            catch (CloudAccountException) { online = null; }
+            if (online != baseRevision) throw new CloudBankConflictException(online);
         }
+        throw new CloudAccountException(ExplainDatabase(response.StatusCode, json));
     }
 
-    private string BankUrl(CloudSession session)
+    private string BankUrl(CloudSession session, string uid)
     {
         EnsureConfigured();
-        return $"{config.DatabaseUrl.TrimEnd('/')}/banks/{Uri.EscapeDataString(session.UserId)}.json?auth={Uri.EscapeDataString(session.IdToken)}";
+        return $"{config.DatabaseUrl.TrimEnd('/')}/banks/{Uri.EscapeDataString(uid)}.json?auth={Uri.EscapeDataString(session.IdToken)}";
     }
 
     private void EnsureConfigured()
@@ -470,5 +574,6 @@ public sealed partial class CloudAccountClient(CloudConfig config, HttpClient ht
         [property: JsonPropertyName("refresh_token")] string RefreshToken,
         [property: JsonPropertyName("expires_in")] string? ExpiresIn);
 
-    private sealed record StoredBank(long Revision, string Snapshot, string? Username, string? Updated);
+    /// <param name="Base">The revision this upload was made from; the rules accept it only while that is still the one online.</param>
+    private sealed record StoredBank(long Revision, string Snapshot, string? Username, string? Updated, long? Base = null);
 }

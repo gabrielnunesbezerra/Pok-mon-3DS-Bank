@@ -26,14 +26,17 @@ public sealed class SocialService
     private readonly ReloadableBankService _bank;
     private readonly ISaveEngine _engine;
     private readonly StorageService _storage;
+    private readonly CloudBankSync _sync;
     private readonly SemaphoreSlim _tradeGate = new(1, 1);
     private readonly HashSet<string> _seenInvites = new(StringComparer.Ordinal);
     private CancellationTokenSource? _loop;
     private long _serverOffsetMs;
     private volatile bool _foreground = true;
 
-    public SocialService(AccountService account, CloudSocialClient cloud, ReloadableBankService bank, ISaveEngine engine, StorageService storage)
+    public SocialService(AccountService account, CloudSocialClient cloud, ReloadableBankService bank, ISaveEngine engine, StorageService storage,
+        CloudBankSync sync)
     {
+        _sync = sync;
         _account = account;
         _cloud = cloud;
         _bank = bank;
@@ -85,6 +88,8 @@ public sealed class SocialService
                 {
                     if (tick % 3 == 0) await BeatAsync(token);
                     await PollInvitesAsync(token);
+                    // 3DS Bank 2.5: Pokémon coming back from the admin's Poképark, about once a minute.
+                    if (tick % 6 == 5) await SettleParkAsync(token);
                 }
                 tick++;
                 try { await Task.Delay(Tick, token); }
@@ -107,9 +112,16 @@ public sealed class SocialService
         await Safely(async () => await _account.EnsureUsernameAsync(token));
         await Safely(async () => await EnsureProfileAsync(token));
         await Safely(async () => await RecoverTradesAsync(token));
+        await SettleParkAsync(token);
         _storage.CheckAchievement();
         await Safely(async () => await PublishNumbersAsync(token));
     }
+
+    private async Task SettleParkAsync(CancellationToken token) => await Safely(async () =>
+    {
+        if (IPlatformApplication.Current?.Services.GetService<ParkVisitService>() is { } visits)
+            await visits.SettleAsync(token);
+    });
 
     private async Task BeatAsync(CancellationToken token) => await Safely(async () =>
     {
@@ -352,6 +364,14 @@ public sealed class SocialService
             });
             if (!held) throw new CloudAccountException("The Pokémon you offered is no longer in your Bank. Pick it again.");
 
+            // 3DS Bank 2.5: the account learns the Pokémon left the boxes before the server hears
+            // our "yes", so wiping the app can never bring back a Pokémon that is on its way out.
+            if (await _sync.CommitAsync(token) is { } offline)
+            {
+                RestoreEscrow(tradeId);
+                throw new CloudAccountException(offline);
+            }
+
             try
             {
                 await _cloud.ConfirmAsync(session, tradeId, view.Theirs, token);
@@ -410,6 +430,10 @@ public sealed class SocialService
                     received = true;
                     await Safely(async () => await PublishNumbersAsync(token));
                 }
+                // The new Pokémon is in the account before the trade is crossed off, so a phone
+                // wiped in between gets it again from the trade, and only once.
+                if (await _sync.CommitAsync(token) is not null)
+                    return new TradeStep(trade, TradeRules.View(trade, me), message ?? "The trade went through. Your Bank is saved online as soon as the internet is back.", received);
                 if (!trade.Done.Contains(me))
                 {
                     await _cloud.MarkDoneAsync(session, tradeId, token);

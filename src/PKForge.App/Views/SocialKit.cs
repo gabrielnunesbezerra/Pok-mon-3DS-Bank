@@ -286,6 +286,8 @@ public static class GlobalPrompts
             social.InviteArrived += invite => Post(host => AskInviteAsync(host, invite));
         if (storage is not null)
             storage.StarsEarned += count => Post(host => StarEarnedAsync(host, count));
+        if (services.GetService<ParkVisitService>() is { } visits)
+            visits.Returned += text => Post(host => PadMenu.ShowAsync(host, "Poképark", text, new PadOption("OK", IconPath: "confirm")));
     }
 
     /// <summary>Called by hosting pages when they appear: shows what waited.</summary>
@@ -316,7 +318,7 @@ public static class GlobalPrompts
     {
         var page = Application.Current?.Windows.FirstOrDefault()?.Page;
         if (page is NavigationPage navigation) page = navigation.CurrentPage;
-        return page is IOverlayHost host and not TradePage ? host.OverlayHost : null;
+        return page is IOverlayHost host and not TradePage and not ArenaPage ? host.OverlayHost : null;
     }
 
     private static async Task AskInviteAsync(Grid host, TradeInvite invite)

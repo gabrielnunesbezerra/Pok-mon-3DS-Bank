@@ -165,6 +165,12 @@ public sealed class ReloadableBankService : IBankService
         lock (_sync) return BankSnapshot.Pack(Root);
     }
 
+    /// <summary>The packed folder and the entry ids it holds, taken at the same moment.</summary>
+    public (byte[] Snapshot, HashSet<Guid> Ids) SnapshotWithIds()
+    {
+        lock (_sync) return (BankSnapshot.Pack(Root), _inner.GetAll().Select(entry => entry.Id).ToHashSet());
+    }
+
     /// <summary>Swaps in another Bank (an account's) and reloads it.</summary>
     public void ReplaceContents(byte[] snapshot)
     {

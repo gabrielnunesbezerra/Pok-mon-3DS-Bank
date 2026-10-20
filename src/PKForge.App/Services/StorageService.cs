@@ -195,6 +195,30 @@ public sealed class StorageService
         }
     }
 
+    // ── The Arena's prizes (2.5) ─────────────────────────────────────────────
+
+    /// <summary>Puts an Arena event's prizes in the Storage (items up to 999 each, Shooting Stars). Returns what went in.</summary>
+    public string GiveArenaPrizes(IReadOnlyList<ArenaReward> rewards)
+    {
+        var given = new List<string>();
+        _bank.Change((_, root) =>
+        {
+            var state = Load(root);
+            foreach (var reward in rewards)
+            {
+                if (reward.Item > 0 && reward.Count > 0 && state.Add(reward.Item, reward.Count) > 0) given.Add(reward.Name);
+                if (reward.Stars > 0)
+                {
+                    state.Stars += reward.Stars;
+                    if (reward.Item <= 0) given.Add(reward.Name);
+                }
+            }
+            Save(root, state);
+            return 0;
+        });
+        return given.Count == 0 ? "Your Storage had no room for the prizes." : $"{string.Join(", ", given)} went to your Item Storage!";
+    }
+
     // ── The toy machine (2.1) ────────────────────────────────────────────────
 
     /// <summary>
@@ -309,6 +333,18 @@ public sealed class StorageService
             return new StorageOutcome(true, "");
         }));
         if (!reserved.Success) return reserved;
+        // 3DS Bank 2.5: like Pokémon, items leave the Storage online before a game gets them.
+        if (_services.GetService<CloudBankSync>() is { } sync && await sync.CommitAsync() is { } offline)
+        {
+            Guard(() => _bank.Change((_, root) =>
+            {
+                var state = Load(root);
+                state.Add(national, count);
+                Save(root, state);
+                return new StorageOutcome(true, "");
+            }));
+            return new StorageOutcome(false, offline.Replace("Taking Pokémon out of the Bank", "Taking items out of the Storage", StringComparison.Ordinal));
+        }
 
         var added = 0;
         string? refusal;

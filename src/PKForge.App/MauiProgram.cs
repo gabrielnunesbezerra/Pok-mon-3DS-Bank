@@ -46,12 +46,20 @@ public static class MauiProgram
         builder.Services.AddSingleton(_ => new CloudAccountClient(CloudSettings.Config, new HttpClient { Timeout = TimeSpan.FromSeconds(60) }));
         builder.Services.AddSingleton<AccountService>();
         builder.Services.AddSingleton<CloudBankSync>();
+        builder.Services.AddSingleton<BankExitService>();
         builder.Services.AddTransient<LoginPage>();
         // 3DS Bank 2.0: the Storage (items and Shooting Stars), friends and online trades.
         builder.Services.AddSingleton(sp => new StorageService(sp.GetRequiredService<ReloadableBankService>(),
             sp.GetRequiredService<ISaveEngine>(), sp.GetRequiredService<IGameDataService>(), sp));
         builder.Services.AddSingleton(sp => new CloudSocialClient(sp.GetRequiredService<CloudAccountClient>()));
         builder.Services.AddSingleton<SocialService>();
+        // 3DS Bank 2.5: the admin, the visits to the admin's Poképark and the Arena event.
+        builder.Services.AddSingleton(sp => new CloudEventsClient(sp.GetRequiredService<CloudAccountClient>()));
+        builder.Services.AddSingleton<AdminService>();
+        builder.Services.AddSingleton<ParkVisitService>();
+        builder.Services.AddSingleton<ArenaService>();
+        builder.Services.AddTransient<AdminPage>();
+        builder.Services.AddTransient<ArenaPage>();
         builder.Services.AddTransient<StoragePage>();
         builder.Services.AddTransient<FriendsPage>();
         builder.Services.AddTransient<ToyMachinePage>();

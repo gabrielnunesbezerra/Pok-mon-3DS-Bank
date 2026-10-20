@@ -62,6 +62,12 @@ public sealed class AccountService
 
     public string? UserId => _session?.UserId;
 
+    /// <summary>
+    /// Whether the 3DS Bank admin is signed in (3DS Bank 2.5): only they see the Poképark, the
+    /// Toy Machine and the admin screen. The database rules check the same thing on every write.
+    /// </summary>
+    public bool IsAdmin => _session?.IsAdmin == true;
+
     private const string KeyLastLogin = "account_last_login";
 
     /// <summary>What was last typed to sign in on this phone (username or e-mail), to fill the field again.</summary>

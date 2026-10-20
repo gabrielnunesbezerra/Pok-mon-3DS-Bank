@@ -98,13 +98,16 @@ public sealed class StoragePage : ContentPage, IPadHandler, IOverlayHost
         _status = Small();
         _status.TextColor = UiTokens.Ink0;
 
+        // 3DS Bank 2.5: the Toy Machine and its tickets are the admin's.
+        var ticketPanel = Kit.Panel(ticketRow, padding: 12);
+        ticketPanel.IsVisible = IPlatformApplication.Current?.Services.GetService<AccountService>()?.IsAdmin == true;
         var body = new VerticalStackLayout
         {
             Spacing = 10,
             Children =
             {
                 Kit.Panel(starRow, padding: 12),
-                Kit.Panel(ticketRow, padding: 12),
+                ticketPanel,
                 actions,
                 _status,
                 Kit.Panel(new VerticalStackLayout { Spacing = 8, Children = { _itemsTitle, _empty, _tiles } }, padding: 12),

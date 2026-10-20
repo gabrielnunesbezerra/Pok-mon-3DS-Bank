@@ -9,7 +9,8 @@ namespace PKForge.App.Views;
 /// <summary>
 /// The console home: the Bank and the game cartridges on one big shelf, a first-run wizard
 /// when nothing is linked, and a side menu (the button at the top left) with every other
-/// place: the Item Storage, Friends, the Poképark, the Toy Machine and Settings.
+/// place: the Item Storage, Friends, the Arena, Settings and, for the admin, the Poképark,
+/// the Toy Machine and the admin screen.
 /// </summary>
 public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
 {
@@ -182,8 +183,15 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         }
         Add("storagebox", "Item Storage", () => _ = PushAsync<StoragePage>());
         Add("friends", "Friends", () => _ = OpenFriendsAsync());
-        Add("park", "Poképark", () => _ = PushParkAsync());
-        Add("toymachine", "Toy Machine", () => _ = PushAsync<ToyMachinePage>(), _menuTickets);
+        Add("battle", "Arena", () => _ = OpenArenaAsync());
+        // 3DS Bank 2.5: the Poképark and the Toy Machine are the admin's; players send Pokémon
+        // to the admin's Poképark from the Bank instead.
+        if (IsAdmin)
+        {
+            Add("park", "Poképark", () => _ = PushParkAsync());
+            Add("toymachine", "Toy Machine", () => _ = PushAsync<ToyMachinePage>(), _menuTickets);
+            Add("key", "Admin", () => _ = PushAsync<AdminPage>());
+        }
         Add("settings", "Settings", () => _ = ShowSettingsAsync());
 
         _menu = new Border
@@ -349,6 +357,21 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
     /// <summary>Invitations and new stars show over Home.</summary>
     public Grid OverlayHost => _hostGrid;
 
+    /// <summary>Whether the admin is signed in on this phone (3DS Bank 2.5).</summary>
+    private static bool IsAdmin => IPlatformApplication.Current?.Services.GetService<AccountService>()?.IsAdmin == true;
+
+    /// <summary>The Arena needs an account: the event and the leaderboard are online.</summary>
+    private async Task OpenArenaAsync()
+    {
+        var account = IPlatformApplication.Current?.Services.GetService<AccountService>();
+        if (account?.IsSignedIn != true)
+        {
+            await PadMenu.ShowAsync(_hostGrid, "Arena", "Sign in to fight in the Arena.", "OK");
+            return;
+        }
+        await PushAsync<ArenaPage>();
+    }
+
     /// <summary>Friends need an account that is online; offline players are told why.</summary>
     private async Task OpenFriendsAsync()
     {
@@ -473,7 +496,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
         if (!_scannedOnce)
         {
             _scannedOnce = true;
-            var park = IPlatformApplication.Current?.Services.GetService<PokeparkService>();
+            var park = IsAdmin ? IPlatformApplication.Current?.Services.GetService<PokeparkService>() : null;
             if (park is not null)
             {
                 _ = Task.Run(() =>
@@ -490,7 +513,7 @@ public sealed class HomePage : ContentPage, IPadHandler, IOverlayHost
             try { _ = host.ShowAsync(); }
             catch { }
         }
-        if (_parkPage is null)
+        if (_parkPage is null && IsAdmin)
         {
             Dispatcher.DispatchDelayed(TimeSpan.FromMilliseconds(250), () =>
             {

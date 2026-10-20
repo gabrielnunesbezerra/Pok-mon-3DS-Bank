@@ -14,6 +14,42 @@ de sofianeelhor (versão 3.1, licença GPLv3). Modificado em outubro de 2026.
   de save. O modo Hardcore do PKForge fica ligado para sempre e o próprio motor do app recusa
   essas operações mesmo que alguma tela tente fazer. As exceções são as da versão 2.0 (abaixo)
   e o cuidado no Poképark: cada uma abre a porta só durante a própria operação.
+- **Nenhum Pokémon duplicado pela nuvem (2.5).** Até a 2.4, o Bank ia para a conta alguns
+  segundos depois de cada mudança. Quem tirava um Pokémon do Bank (para um jogo, numa troca ou
+  exportando) e apagava os dados do app antes desse envio recebia a cópia antiga de volta ao
+  entrar de novo, e assim um Pokémon virava dois. Agora um Pokémon só sai do Bank depois que a
+  conta confirmou a saída: ele vai primeiro para uma lista de "em viagem" que fica junto do Bank
+  na conta, e só então chega ao jogo, ao arquivo, à troca ou ao Poképark. Se não chegar, volta
+  para a caixa. Por isso tirar Pokémon do Bank precisa de internet (guardar continua funcionando
+  sem). E o servidor recusa um envio feito a partir de uma cópia velha do Bank (outro celular,
+  ou um app antigo): o app baixa o Bank da conta e coloca por cima só o que ele mesmo mudou,
+  Pokémon por Pokémon, então o que saiu em outro lugar não volta. As opções escondidas de
+  duplicar e copiar para o jogo saíram do código.
+- **Administrador (2.5).** A conta `adminbielz` é a do administrador. Ela entra pelo nome de
+  usuário, como as contas de antes da 2.0, e só ela vê a tela Admin no menu lateral: a lista de
+  jogadores, o Bank de qualquer um (com os Pokémon repetidos marcados, e um botão que deixa uma
+  cópia só de cada), os Pokémon que ficaram "em viagem" porque o app fechou no meio (dá para
+  devolver para as caixas), uma busca de duplicados em todos os Banks ao mesmo tempo (acha um
+  Pokémon copiado que foi dado para os amigos) e o evento da Arena. Quem é administrador é
+  decidido pelo e-mail que o Firebase assina na conta, e as regras do banco checam a mesma coisa:
+  mudar o app não dá esse poder a ninguém. A senha não fica no código; ela existe só no Firebase.
+- **Poképark e Máquina de Brinquedos só do administrador (2.5).** Para os outros jogadores as
+  duas saíram do menu. No lugar, o menu de um Pokémon do Bank tem "Visit the Poképark": ele sai
+  do Bank e vai para o Poképark do administrador, que recebe na tela Admin, cuida dele (ele mora
+  no Poképark, come frutas, ganha amizade) e manda de volta com um recado. O Pokémon volta
+  sozinho para o Bank do dono. Soltar Pokémon só dá ticket para o administrador.
+- **Arena (2.5).** Um evento que o administrador monta na tela Admin: o Campeão (um Pokémon do
+  Bank dele), até 6 Pokémon com que os jogadores lutam, os prêmios (Master Ball, Estrela Cadente,
+  Rare Candy, Gold Bottle Cap e outros) e quanto tempo dura. A batalha é em tempo real vista de
+  cima: o polegar esquerdo anda (o direcional aparece onde tocar) e o direito usa os quatro golpes
+  do Pokémon e a esquiva. Cada golpe funciona pelo tipo e pela categoria (físico vai em investida,
+  especial vira disparo, os mais fortes viram um raio carregado, Terremoto vira uma onda no chão,
+  Lança-chamas vira um jato) e causa dano pela fórmula dos jogos (nível, poder, ataque contra
+  defesa, bônus do mesmo tipo, vantagem de tipo e crítico). Todos lutam no nível 50, como nos
+  campeonatos. O Campeão é controlado pelo app e, com a "aura" ligada, nunca perde: ele chega
+  quase no fim da vida, se levanta uma vez, fica mais forte com o tempo e o relógio acabando conta
+  como vitória dele. Desligar a aura deixa as lutas justas, e quem vencer recebe os prêmios no
+  Armazém. O placar mostra quantas vezes cada um lutou e quanto da vida do Campeão tirou.
 - **Poképark.** O habitat aparece numa tela emoldurada, com o nome no alto da moldura (tocar
   nele abre as opções do parque) e, embaixo no centro, as setas de habitat anterior e próximo
   e o X para sair. Tocar num Pokémon abre a ficha dele. Desde a 2.2 cada habitat tem um pomar num canto: quatro canteiros e um pote. As frutas
@@ -154,9 +190,26 @@ precisa da mesma chave para atualizar por cima do anterior.
 Para compilar localmente: .NET 10 SDK, `dotnet workload install maui-android`, depois
 `dotnet build src/PKForge.App/PKForge.App.csproj -c Release -f net10.0-android`.
 
+Os testes das regras do Firebase rodam contra o emulador do Realtime Database: com ele aberto
+(`java -jar firebase-database-emulator.jar --port 9000`) e as regras carregadas no namespace
+`fake-server`, defina `FIREBASE_DATABASE_EMULATOR=localhost:9000` antes do `dotnet test`. Sem a
+variável esses testes passam direto.
+
 As regras do 3DS Bank ficam em `src/PKForge.Domain/ThreeDsBankPolicy.cs`. As contas usam um
 projeto Firebase (Authentication por e-mail/senha e Realtime Database); a chave e o endereço
 ficam em `src/PKForge.App/Services/AccountService.cs` (`CloudSettings`).
+
+### Firebase para a versão 2.5
+
+1. **Regras novas.** Cole de novo o [`firebase/database.rules.json`](firebase/database.rules.json)
+   em Realtime Database > Regras e publique. Elas trazem o administrador, as visitas ao Poképark,
+   a Arena e a regra que recusa um Bank enviado de uma cópia velha. Depois disso o app 2.4 não
+   consegue mais salvar o Bank na conta, então todo mundo precisa atualizar para a 2.5.
+2. **Conta do administrador.** Logo depois de publicar as regras, entre no app com o usuário
+   `adminbielz` e a senha que você escolheu. Se a conta ainda não existe, esse primeiro login cria
+   ela com essa senha. Faça isso antes de mandar o APK para os outros, para ninguém criar antes.
+   Também dá para criar em Authentication > Usuários > Adicionar usuário, com o e-mail
+   `adminbielz@users.3dsbank.app`.
 
 ### Firebase para a versão 2.0
 
