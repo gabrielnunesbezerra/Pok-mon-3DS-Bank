@@ -19,6 +19,10 @@ Batalha de Pokémon em tempo real numa arena 2D vista de cima, inspirada no "Pok
 
 O APK é compilado pelo GitHub Actions a cada atualização e fica na página **Releases** do repositório (release `arena-apk`). Baixe o `ArenaChampion.apk` no celular, abra e permita instalar de fontes desconhecidas.
 
+## Repositório próprio
+
+Esta pasta já funciona como raiz de um repositório separado (por exemplo `ARENA-2D-CAHMPION`): copie o conteúdo dela para a raiz do outro repositório e o workflow `.github/workflows/apk.yml` passa a compilar o APK e publicar na release `apk` a cada push.
+
 ## Como rodar no computador
 
 ```bash

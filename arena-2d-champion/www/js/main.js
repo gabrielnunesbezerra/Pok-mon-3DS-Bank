@@ -40,6 +40,11 @@ class App {
     window.addEventListener('resize', () => this.resize());
     document.addEventListener('visibilitychange', () => { if (document.hidden && this.battle && !this.battle.over) this.pause(); });
     // o áudio só pode começar depois de um toque
+    // Botão "voltar" do Android: pausa a batalha ou volta ao menu (no menu inicial, sai do app)
+    history.pushState({ arena: 1 }, '');
+    window.addEventListener('popstate', () => {
+      if (this.onBack()) history.pushState({ arena: 1 }, '');
+    });
     const unlock = () => { this.sound.unlock(); };
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
@@ -54,6 +59,17 @@ class App {
     this.resize();
     UI.showTitle(this);
     requestAnimationFrame(t => this.loop(t));
+  }
+
+  onBack() {
+    if (this.battle && !this.battle.over) {
+      if (this.paused) this.resume(); else this.pause();
+      return true;
+    }
+    if (this.battle) { this.stopBattle(); UI.showTitle(this); return true; }
+    if (document.querySelector('.title')) return false;
+    UI.showTitle(this);
+    return true;
   }
 
   resize() {
