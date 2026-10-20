@@ -27,8 +27,7 @@ export function drawHud(g, R, b, ui) {
   for (let i = 0; i < 2; i++) {
     const S = L.sides[i];
     if (!S?.panel) continue;
-    withRotation(g, S.panel, S.panel.rotated, () => drawPanel(g, R, b, i, S.panel, u));
-    // o time fica onde o toque procura (fora da rotação do painel)
+    drawPanel(g, R, b, i, S.panel, u);
     drawTeam(g, R, b, i, S.panel, u);
   }
   drawClock(g, b, L, u, ui);
@@ -38,17 +37,6 @@ export function drawHud(g, R, b, ui) {
   if (b.clash) drawClash(g, R, b, L, ui);
   drawCinematic(g, R, b, L, ui);
   if (ui.net) drawNet(g, b, L, ui);
-  g.restore();
-}
-
-function withRotation(g, rect, rotated, fn) {
-  if (!rotated) return fn();
-  g.save();
-  const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
-  g.translate(cx, cy);
-  g.rotate(Math.PI);
-  g.translate(-cx, -cy);
-  fn();
   g.restore();
 }
 
@@ -160,16 +148,10 @@ function drawPanel(g, R, b, i, P, u) {
     outlined(g, side.name, tx, P.y + P.h / 2, '#fff');
     return;
   }
+  // todos lutam no nível 50, então o espaço fica todo para o nome (Mega Charizard Y é comprido)
   const gender = m.gender === 'M' ? ' ♂' : m.gender === 'F' ? ' ♀' : '';
-  g.font = `${Math.round(1.6 * u)}px ${FONT}`;
-  const lvW = g.measureText('Nv50').width;
-  fitFont(g, m.name + gender, 2.3 * u, tw - lvW - 1.5 * u);
+  fitFont(g, m.name + gender, 2.3 * u, tw);
   outlined(g, m.name + gender, tx, P.y + 3 * u, '#ffffff');
-  g.font = `${Math.round(1.6 * u)}px ${FONT}`;
-  g.textAlign = 'right';
-  g.fillStyle = '#c9cbe0';
-  g.fillText('Nv50', tx + tw, P.y + 3.1 * u);
-  g.textAlign = 'left';
   // PS com a parte vermelha descendo devagar
   const frac = m.hp / m.maxhp;
   R.hudHp ||= new Map();
@@ -312,8 +294,6 @@ function drawTeam(g, R, b, i, P, u) {
   const w = g.measureText(name.toUpperCase()).width + 2 * u;
   const y = icons[0].y + 0.6 * u;
   const x = P.flip ? P.x + P.w - w : P.x;
-  g.save();
-  if (P.rotated) { g.translate(x + w / 2, y + 1.7 * u); g.rotate(Math.PI); g.translate(-(x + w / 2), -(y + 1.7 * u)); }
   roundRect(g, x, y, w, 3.4 * u, 0.8 * u);
   g.fillStyle = SIDE_DARK[i];
   g.fill();
@@ -321,7 +301,6 @@ function drawTeam(g, R, b, i, P, u) {
   g.fillStyle = '#ffffff';
   g.textAlign = 'left';
   g.fillText(name.toUpperCase(), x + u, y + 1.8 * u);
-  g.restore();
 }
 
 // ---------------------------------------------------------------- relógio e clima
@@ -330,7 +309,6 @@ function drawClock(g, b, L, u, ui) {
   const mm = Math.floor(left / 60), ss = Math.floor(left % 60);
   const { x, y } = L.clock;
   g.save();
-  if (L.mode === '2p') { g.translate(x, y); g.rotate(-Math.PI / 2); g.translate(-x, -y); }
   const txt = `${mm}:${String(ss).padStart(2, '0')}`;
   g.font = `${Math.round(3 * u)}px ${FONT}`;
   const w = g.measureText(txt).width + 4 * u;
@@ -481,7 +459,6 @@ function drawControls(g, R, b, i, L, ui) {
   const u = L.u;
   const m = b.sides[i].active;
   const ctl = ui.controls;
-  const rot = S.rot;
   const time = R.time;
   // joystick
   const j = ctl.joy[i];
@@ -498,8 +475,8 @@ function drawControls(g, R, b, i, L, ui) {
     g.beginPath(); g.arc(j.bx + dx * k, j.by + dy * k, S.joyR * 0.45, 0, TAU); g.fill();
   } else if (ui.touchHints) {
     const z = S.joyZone;
-    const cx = i === 0 || L.mode !== '2p' ? z.x + S.joyR * 1.6 : z.x + z.w - S.joyR * 1.6;
-    const cy = i === 0 || L.mode !== '2p' ? z.y + z.h - S.joyR * 1.6 : z.y + S.joyR * 1.6;
+    const cx = z.x + S.joyR * 1.6;
+    const cy = z.y + z.h - S.joyR * 1.6;
     g.strokeStyle = 'rgba(255,255,255,0.15)'; g.lineWidth = 2;
     g.beginPath(); g.arc(cx, cy, S.joyR, 0, TAU); g.stroke();
     g.fillStyle = 'rgba(255,255,255,0.12)';
@@ -511,7 +488,6 @@ function drawControls(g, R, b, i, L, ui) {
   if (beamIncoming && m.moves.some((_, k) => shapeFor(slotMove(m, k)).kind === 'beam' && !slotBlock(b, m, k))) {
     g.save();
     g.translate(S.dodge.x - 22 * u, S.dodge.y - 36 * u);
-    g.rotate(rot);
     g.font = `${Math.round(2.2 * u)}px ${FONT}`;
     g.textAlign = 'center';
     outlined(g, 'RESPONDA COM UM RAIO!', 0, 0, '#ffe14a', '#000', 4);
@@ -521,7 +497,6 @@ function drawControls(g, R, b, i, L, ui) {
     const c = S.moves[k];
     g.save();
     g.translate(c.x, c.y);
-    g.rotate(rot);
     drawMoveButton(g, b, m, k, c, ctl, i, beamIncoming, u, time);
     g.restore();
   }
@@ -529,7 +504,6 @@ function drawControls(g, R, b, i, L, ui) {
   const d = S.dodge;
   g.save();
   g.translate(d.x, d.y);
-  g.rotate(rot);
   const ready = m.dodgeCd <= 0 && m.stamina >= DODGE.cost;
   g.fillStyle = 'rgba(0,0,0,0.45)';
   g.beginPath(); g.arc(0, 0.3 * u, d.r + 0.5 * u, 0, TAU); g.fill();
@@ -565,7 +539,6 @@ function drawControls(g, R, b, i, L, ui) {
   if (hasMega) {
     g.save();
     g.translate(M.x, M.y);
-    g.rotate(rot);
     const live = can || respond;
     const pulse = live ? 1 + 0.08 * Math.sin(time * 11) : 1;
     g.globalAlpha = live ? 1 : 0.6;
@@ -602,7 +575,7 @@ function drawControls(g, R, b, i, L, ui) {
     if (txt) {
       g.save();
       const cx = S.dodge.x - 20 * u, cy = S.dodge.y - 30 * u;
-      g.translate(cx, cy); g.rotate(rot);
+      g.translate(cx, cy);
       g.font = `${Math.round(2.2 * u)}px ${FONT}`;
       g.textAlign = 'center';
       const w = g.measureText(txt).width + 3 * u;
@@ -633,7 +606,7 @@ function drawClash(g, R, b, L, ui) {
   const u = L.u;
   const W = L.W;
   const bw = W * 0.5, bh = 3.5 * u;
-  const x = (W - bw) / 2, y = L.mode === '2p' ? L.H / 2 - 10 * u : 24 * u;
+  const x = (W - bw) / 2, y = 24 * u;
   const k = (c.meter + 1) / 2;
   roundRect(g, x - u, y - u, bw + 2 * u, bh + 2 * u, u);
   g.fillStyle = 'rgba(0,0,0,0.7)';
@@ -660,7 +633,6 @@ function drawClash(g, R, b, L, ui) {
       if (!mb) continue;
       g.save();
       g.translate(mb.x, mb.y);
-      g.rotate(S.rot);
       g.scale(pulse, pulse);
       g.fillStyle = SIDE_COLOR[i];
       g.globalAlpha = 0.9;

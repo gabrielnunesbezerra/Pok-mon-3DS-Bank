@@ -131,12 +131,12 @@ export class Fx {
       g.globalAlpha = a;
       switch (d.kind) {
         case 'scorch': {
-          const gr = g.createRadialGradient(0, 0, 2, 0, 0, d.r);
-          gr.addColorStop(0, 'rgba(30,18,10,0.75)');
-          gr.addColorStop(0.7, 'rgba(50,30,15,0.45)');
-          gr.addColorStop(1, 'rgba(50,30,15,0)');
-          g.fillStyle = gr;
+          // mancha queimada em pixel art: borda clara e miolo escuro, meio torta
+          g.fillStyle = 'rgba(90,60,25,0.35)';
           g.beginPath(); g.ellipse(0, 0, d.r, d.r * 0.7, 0, 0, Math.PI * 2); g.fill();
+          g.beginPath(); g.ellipse(d.r * 0.35, d.r * 0.1, d.r * 0.6, d.r * 0.45, 0, 0, Math.PI * 2); g.fill();
+          g.fillStyle = 'rgba(45,28,12,0.55)';
+          g.beginPath(); g.ellipse(-d.r * 0.1, 0, d.r * 0.55, d.r * 0.38, 0, 0, Math.PI * 2); g.fill();
           break;
         }
         case 'puddle': {
@@ -206,11 +206,11 @@ export class Fx {
           break;
         }
         case 'glow': {
-          const gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, s);
-          gr.addColorStop(0, p.color);
-          gr.addColorStop(1, 'rgba(0,0,0,0)');
-          g.fillStyle = gr;
-          g.fillRect(p.x - s, p.y - s, s * 2, s * 2);
+          // brilho em pixel art: discos chapados um dentro do outro
+          for (const [k, al] of [[1, 0.35], [0.66, 0.7], [0.36, 1]]) {
+            g.globalAlpha = Math.max(0, a) * al;
+            g.beginPath(); g.arc(p.x, p.y, s * k, 0, Math.PI * 2); g.fill();
+          }
           break;
         }
         case 'flake': g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillRect(-s, -0.6, s * 2, 1.2); g.fillRect(-0.6, -s, 1.2, s * 2); g.restore(); break;

@@ -35,7 +35,7 @@ class App {
     this.timeLimit = load('timeLimit', 240);
     this.trainerPick = [load('trainer0', 'red'), load('trainer1', 'random')];
     this.settings = { music: 0.25, sfx: 0.6, vibrate: true, log: true, touchHints: true, ...load('settings', {}) };
-    this.teams = [load('team0', null) || BASE_SPECIES.slice(0, 3).map(sp => UI.defaultSet(sp)), load('team1', null) || UI.randomTeam(3)];
+    this.teams = [load('team0', null) || BASE_SPECIES.slice(0, 3).map(sp => UI.defaultSet(sp))];
     this.battle = null;
     this.paused = false;
     this.acc = 0;
@@ -94,10 +94,9 @@ class App {
     if (this.renderer) this.renderer.vibrate = s.vibrate;
   }
   saveSettings() { save('settings', this.settings); }
-  saveTeams() { save('team0', this.teams[0]); save('team1', this.teams[1]); }
+  saveTeams() { save('team0', this.teams[0]); }
 
   rivalTeam() {
-    if (this.mode === '2p') return this.teams[1];
     if (this.rivalMode === 'mirror') return JSON.parse(JSON.stringify(this.teams[0]));
     if (this.rivalMode === 'presets') return BASE_SPECIES.slice(1, 4).map(sp => UI.defaultSet(sp, 1));
     return UI.randomTeam(Math.max(1, this.teams[0].length));
@@ -118,7 +117,7 @@ class App {
   startBattle() {
     save('difficulty', this.difficulty); save('rivalMode', this.rivalMode); save('timeLimit', this.timeLimit);
     save('trainer0', this.trainerPick[0]); save('trainer1', this.trainerPick[1]);
-    const humans = this.mode === '2p' ? [true, true] : [true, false];
+    const humans = [true, false];
     const trainers = this.resolveTrainers();
     const teams = [this.teams[0], this.rivalTeam()].map(t => JSON.parse(JSON.stringify(t)));
     const battle = new Battle({ teams, names: this.sideNames(trainers), cpu: humans.map(x => !x), difficulty: this.difficulty, timeLimit: this.timeLimit });
@@ -127,7 +126,7 @@ class App {
 
   beginBattle(battle, { humans, trainers, me }) {
     this.battle = battle;
-    this.controls.setup(this.mode, humans, battle.sides.map(s => s.mons.length), me);
+    this.controls.setup(humans, battle.sides.map(s => s.mons.length), me);
     this.controls.resize(window.innerWidth, window.innerHeight);
     this.controls.enabled = true;
     this.renderer.setBattle(battle, { trainers, humans });

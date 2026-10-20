@@ -1,10 +1,13 @@
 // Desenha a batalha: estádio, câmera que acompanha a luta, treinadores, Pokémon, golpes, marcas no
 // chão, clima e animações especiais (Mega, choque de Megas, choque de raios).
+// Os efeitos (golpes, partículas, marcas no chão) passam por duas camadas em pixel art (pixel.js):
+// uma embaixo dos Pokémon e outra por cima.
 import { WORLD_W, WORLD_H, FIELD } from '../engine/constants.js';
 import { BODY, TYPE_COLOR, MOVES, displayName } from '../data/dex.js';
 import { buildArena, drawArena } from './arena.js';
 import { Fx, palette } from './fx.js';
 import { drawHud } from './hud.js';
+import { PixelLayer } from './pixel.js';
 
 const TAU = Math.PI * 2;
 const SIDE_COLOR = ['#e8433f', '#3f7fe8'];
@@ -28,6 +31,8 @@ export class Renderer {
     this.arena = null;
     this.vibrate = true;
     this.cam = { x: WORLD_W / 2, y: FIELD.y + FIELD.h / 2, z: 0.5 };
+    this.under = new PixelLayer();
+    this.over = new PixelLayer({ light: true });
     this.resize();
   }
 
@@ -83,7 +88,7 @@ export class Renderer {
         case 'explode': {
           const r = e.r || 60;
           fx.burst(e.x, e.y, e.type, e.big ? 70 : 32, e.big ? 520 : 300, { size: e.big ? 6 : 4.5, life: 0.7 });
-          fx.glow(e.x, e.y, '#fff3b0', r * 1.4, 0.35);
+          fx.glow(e.x, e.y, '#fff3b0', Math.min(160, r * 0.5), 0.3);
           fx.smoke(e.x, e.y - 10, e.big ? 9 : 5, 'rgba(150,140,135,0.28)', e.big ? 34 : 18);
           if (e.big) for (let i = 0; i < 26; i++) {
             const a = Math.random() * TAU, sp = 120 + Math.random() * 320;
@@ -91,7 +96,7 @@ export class Renderer {
           }
           fx.shake = Math.max(fx.shake, e.big ? 18 : 7);
           if (e.big) { fx.flash = 0.8; fx.flashColor = '#fff6d0'; }
-          fx.decal(e.x, e.y, DECAL_FOR[e.type] || 'scorch', Math.min(140, r * 0.45), 9);
+          fx.decal(e.x, e.y, DECAL_FOR[e.type] || 'scorch', Math.min(90, r * 0.3), 9);
           this.sound.play('explode');
           break;
         }
@@ -246,18 +251,31 @@ export class Renderer {
     this.updateCamera(dt, b);
     g.save();
     const sh = this.fx.shake;
-    g.translate(this.W / 2 + (sh ? (Math.random() - 0.5) * sh * this.cam.z * 2 : 0), this.H / 2 + (sh ? (Math.random() - 0.5) * sh * this.cam.z * 2 : 0));
+    const sx = sh ? (Math.random() - 0.5) * sh * this.cam.z * 2 : 0, sy = sh ? (Math.random() - 0.5) * sh * this.cam.z * 2 : 0;
+    g.translate(this.W / 2 + sx, this.H / 2 + sy);
     g.scale(this.cam.z, this.cam.z);
     g.translate(-this.cam.x, -this.cam.y);
     const excited = b.clash || b.cinematic?.type?.startsWith('mega');
     drawArena(g, this.arena, Math.floor(this.time / (excited ? 0.12 : 0.4)) % 2);
-    this.fx.drawDecals(g);
-    this.drawField(g, b);
+    // chão: marcas, zonas, avisos de área, sombras e auras (pixel art, embaixo dos Pokémon)
+    const lg = this.under.begin(this, sx, sy);
+    this.fx.drawDecals(lg);
+    this.drawField(lg, b);
+    this.drawGround(lg, b);
+    this.under.end(g);
     this.drawWorld(g, b, dt);
-    this.fx.draw(g);
+    if (b.clash) this.dimView(g, 0.3);
+    // golpes e partículas (pixel art, por cima)
+    const tg = this.over.begin(this, sx, sy);
+    this.drawEffects(tg, b);
+    // na Mega as partículas vão junto com a energia, por cima do escurecido
+    const megaShow = b.cinematic?.type === 'mega' || b.cinematic?.type === 'megaclash';
+    if (!megaShow) this.fx.draw(tg);
+    this.over.end(g);
+    this.drawAim(g, b);
     this.drawWeatherWorld(g, b, dt);
     this.drawTexts(g, b);
-    this.drawCinematicWorld(g, b);
+    this.drawMegaCinematic(g, b, sx, sy);
     g.restore();
 
     this.drawWeatherScreen(g, b);
@@ -383,18 +401,30 @@ export class Renderer {
     for (const a of this.afterimages) {
       this.bank.draw(g, a.key, a.anim, a.at, a.facing, a.x, a.y, a.scale, { silhouette: true, alpha: 1 - a.t / a.life });
     }
-    const items = [];
+    const mons = b.sides.map(s => s.active).filter(m => m && (m.onField || m.action?.type === 'fainting'));
+    mons.sort((a, c) => a.y - c.y);
+    for (const m of mons) this.drawMon(g, b, m, dt);
+  }
+
+  // camada de baixo: sombras e o que fica no chão em volta de cada Pokémon
+  drawGround(g, b) {
     for (const s of b.sides) {
       const m = s.active;
-      if (m && (m.onField || m.action?.type === 'fainting')) items.push({ y: m.y, draw: () => this.drawMon(g, b, m, dt) });
+      if (!m || !(m.onField || m.action?.type === 'fainting')) continue;
+      if (m.onField) this.shadow(g, m);
+      this.drawMonUnder(g, m);
     }
+  }
+
+  // camada de cima: golpes (ordenados por profundidade), raios, ondas, proteções e o choque de raios
+  drawEffects(g, b) {
+    const items = [];
     for (const e of b.ents) {
       if (e.kind === 'proj') items.push({ y: e.y, draw: () => this.drawProj(g, e) });
       else if (e.kind === 'slashfx') items.push({ y: e.y + 1, draw: () => this.drawSlash(g, e) });
       else if (e.kind === 'shock') items.push({ y: e.y - 1, draw: () => this.drawShock(g, e) });
       else if (e.kind === 'area') items.push({ y: e.y + 2, draw: () => this.drawArea(g, e) });
     }
-    for (const s of b.sides) { const m = s.active; if (m && m.onField) this.shadow(g, m); }
     items.sort((a, c) => a.y - c.y);
     for (const it of items) it.draw();
     for (const e of b.ents) {
@@ -407,6 +437,17 @@ export class Renderer {
       else if (e.kind === 'zone' && e.zone === 'steam') this.drawSteam(g, e);
     }
     if (this.bolts) for (const bo of this.bolts) this.drawBolt(g, bo);
+    for (const s of b.sides) { const m = s.active; if (m && m.onField) this.drawMonOver(g, m); }
+    if (b.clash) this.drawClashFx(g, b);
+  }
+
+  dimView(g, alpha) {
+    const v = this.view();
+    g.fillStyle = `rgba(0,0,0,${alpha})`;
+    g.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+  }
+
+  drawAim(g, b) {
     const aim = this.ui?.controls?.aim;
     if (aim) for (let i = 0; i < 2; i++) {
       const a = aim[i];
@@ -435,34 +476,92 @@ export class Renderer {
     return body.bw ? body.scale * 1.25 : body.scale * 1.25;
   }
 
-  drawMon(g, b, m, dt) {
-    const scale = this.scaleOf(m);
+  // altura em que o sprite é desenhado (voo, flutuação, desmaio)
+  monY(m) {
     const a = m.action;
-    let alpha = 1, y = m.y, extra = 1;
+    let y = m.y;
+    if (a?.type === 'fainting') y += a.t * 22;
+    if (m.semiInv === 'fly') y -= 150;
+    const hover = m.hover ? m.hover + Math.sin(this.time * 4 + m.uid) * 4 : 0;
+    return y - hover - (m.z || 0);
+  }
+
+  // no chão, embaixo do Pokémon (camada de baixo): buraco do Dig, ondas do Dive, aura de carga, brilho da Mega
+  drawMonUnder(g, m) {
+    const a = m.action;
     const t = this.time;
-    if (a?.type === 'fainting') { alpha = Math.max(0, 1 - a.t / a.dur); y += a.t * 22; }
-    if (a?.type === 'switching') { extra = Math.max(0.05, 1 - a.t / a.dur); alpha = extra; }
-    if (a?.type === 'entering') extra = Math.min(1, 0.2 + a.t / a.dur);
-    if (m.iframes > 0) alpha *= 0.55 + 0.25 * Math.sin(t * 60);
     if (m.semiInv === 'dig') {
-      g.fillStyle = '#7a5a2a';
-      g.beginPath(); g.ellipse(m.x, m.y, 22, 10, 0, 0, TAU); g.fill();
-      if (Math.random() < 0.5) this.fx.trail(m.x, m.y, 'Ground', 18, 4);
+      g.fillStyle = '#5a3f1c';
+      g.beginPath(); g.ellipse(m.x, m.y, 24, 11, 0, 0, TAU); g.fill();
+      g.fillStyle = '#9a7642';
+      g.beginPath(); g.ellipse(m.x, m.y - 3, 16, 6, 0, 0, TAU); g.fill();
       return;
     }
     if (m.semiInv === 'dive') {
-      g.strokeStyle = 'rgba(200,235,255,0.85)';
-      g.lineWidth = 3;
+      g.strokeStyle = '#d8f2ff';
+      g.lineWidth = 4;
       for (let i = 0; i < 2; i++) { const r = 12 + ((t * 34 + i * 14) % 28); g.beginPath(); g.ellipse(m.x, m.y, r, r * 0.5, 0, 0, TAU); g.stroke(); }
       return;
     }
-    if (m.semiInv === 'phantom') {
-      if (Math.random() < 0.4) this.fx.trail(m.x, m.y - 20, 'Ghost', 30, 4);
-      return;
+    if (m.semiInv === 'phantom') return;
+    const y = this.monY(m);
+    if (a?.type === 'charge' || a?.type === 'stance' || (a?.type === 'windup' && MOVES[a.id] && MOVES[a.id].bp >= 100)) {
+      const type = MOVES[a.id || (a.mode === 'bide' ? 'bide' : a.mode)]?.type || 'Normal';
+      const pal = palette(type);
+      const pulse = 1 + 0.12 * Math.sin(t * 16);
+      const R = m.radius * 2.2 * pulse;
+      // aura em anéis de cor chapada
+      for (const [k, col] of [[1, pal[3]], [0.72, pal[2]], [0.45, pal[1]]]) {
+        g.fillStyle = col;
+        g.globalAlpha = 0.85;
+        g.beginPath(); g.ellipse(m.x, y - 28, R * k, R * k * 1.1, 0, 0, TAU); g.fill();
+      }
+      g.globalAlpha = 1;
     }
-    if (m.semiInv === 'fly') { y -= 150; alpha *= 0.9; }
-    const hover = m.hover ? m.hover + Math.sin(t * 4 + m.uid) * 4 : 0;
-    y -= hover + (m.z || 0);
+    if (m.isMega) {
+      g.fillStyle = `hsl(${Math.floor((t * 120) / 30) * 30 % 360},90%,60%)`;
+      g.globalAlpha = 0.45;
+      g.beginPath(); g.ellipse(m.x, m.y, m.radius * 1.6, m.radius * 0.6, 0, 0, TAU); g.fill();
+      g.globalAlpha = 1;
+    }
+    if (m.vol.magnetrise || m.vol.telekinesis) { g.strokeStyle = '#fff07a'; g.lineWidth = 3; g.beginPath(); g.ellipse(m.x, m.y, m.radius * 1.4, m.radius * 0.5, 0, 0, TAU); g.stroke(); }
+  }
+
+  // por cima do Pokémon (camada de cima): Protect
+  drawMonOver(g, m) {
+    if (!(m.vol.protect || m.vol.wideguard) || m.semiInv) return;
+    const y = this.monY(m);
+    const t = this.time;
+    const r = m.radius * 2;
+    g.fillStyle = 'rgba(120,255,160,0.35)';
+    g.beginPath(); g.arc(m.x, y - 28, r, 0, TAU); g.fill();
+    g.strokeStyle = '#7dffa8';
+    g.lineWidth = 4;
+    g.stroke();
+    // hexágonos girando no escudo
+    g.lineWidth = 3;
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * TAU + t;
+      g.beginPath(); g.moveTo(m.x, y - 28); g.lineTo(m.x + Math.cos(ang) * r, y - 28 + Math.sin(ang) * r); g.stroke();
+    }
+    g.fillStyle = '#ffffff';
+    g.fillRect(m.x - r * 0.5, y - 28 - r * 0.6, 6, 6);
+  }
+
+  drawMon(g, b, m, dt) {
+    const scale = this.scaleOf(m);
+    const a = m.action;
+    let alpha = 1, extra = 1;
+    const t = this.time;
+    if (a?.type === 'fainting') alpha = Math.max(0, 1 - a.t / a.dur);
+    if (a?.type === 'switching') { extra = Math.max(0.05, 1 - a.t / a.dur); alpha = extra; }
+    if (a?.type === 'entering') extra = Math.min(1, 0.2 + a.t / a.dur);
+    if (m.iframes > 0) alpha *= 0.55 + 0.25 * Math.sin(t * 60);
+    if (m.semiInv === 'dig') { if (Math.random() < 0.5) this.fx.trail(m.x, m.y, 'Ground', 18, 4); return; }
+    if (m.semiInv === 'dive') return;
+    if (m.semiInv === 'phantom') { if (Math.random() < 0.4) this.fx.trail(m.x, m.y - 20, 'Ghost', 30, 4); return; }
+    if (m.semiInv === 'fly') alpha *= 0.9;
+    const y = this.monY(m);
     const flash = this.flashes.has(m.uid) ? Math.max(0, 1 - (t - this.flashes.get(m.uid)) / 0.16) : 0;
     const anim = a?.type === 'dash' || a?.type === 'grab' ? 'Attack' : m.anim.name;
     const at = a?.type === 'dash' ? Math.min(m.anim.t, 0.2) : m.anim.t;
@@ -472,31 +571,15 @@ export class Renderer {
       this.afterimages.push({ key: m.species, anim, at, facing: m.facing, x: m.x, y, scale, t: 0, life: 0.22 });
       if (Math.random() < 0.6) this.fx.add({ x: m.x + (Math.random() - 0.5) * 20, y: m.y, vx: -Math.cos(m.facing) * 80, vy: -10, size: 6, grow: 20, life: 0.35, color: 'rgba(230,230,215,0.45)', shape: 'circle' });
     }
-    // aura de carga / postura
+    // partículas puxadas para dentro durante a carga
     if (a?.type === 'charge' || a?.type === 'stance' || (a?.type === 'windup' && MOVES[a.id] && MOVES[a.id].bp >= 100)) {
       const type = MOVES[a.id || (a.mode === 'bide' ? 'bide' : a.mode)]?.type || 'Normal';
-      const col = TYPE_COLOR[type];
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      const gr = g.createRadialGradient(m.x, y - 28, 4, m.x, y - 28, m.radius * 2.4);
-      gr.addColorStop(0, col);
-      gr.addColorStop(1, 'rgba(0,0,0,0)');
-      g.globalAlpha = 0.45 + 0.25 * Math.sin(t * 16);
-      g.fillStyle = gr;
-      g.beginPath(); g.arc(m.x, y - 28, m.radius * 2.4, 0, TAU); g.fill();
-      g.restore();
       for (let i = 0; i < 2; i++) {
         const ang = Math.random() * TAU, r = 60 + Math.random() * 30;
         this.fx.add({ x: m.x + Math.cos(ang) * r, y: y - 28 + Math.sin(ang) * r * 0.7, vx: -Math.cos(ang) * r * 3, vy: -Math.sin(ang) * r * 2, size: 3, life: 0.3, color: palette(type)[1], shape: 'streak', blend: 'lighter' });
       }
     }
     if (m.isMega) {
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      g.globalAlpha = 0.18 + 0.08 * Math.sin(t * 5);
-      g.fillStyle = `hsl(${(t * 120) % 360},90%,60%)`;
-      g.beginPath(); g.ellipse(m.x, m.y, m.radius * 1.6, m.radius * 0.6, 0, 0, TAU); g.fill();
-      g.restore();
       if (Math.random() < 0.12) this.fx.add({ x: m.x + (Math.random() - 0.5) * 50, y: m.y - Math.random() * 70, vy: -40, size: 2.5, life: 0.6, color: `hsl(${Math.random() * 360},100%,70%)`, shape: 'spark', blend: 'lighter' });
     }
     if (a?.type === 'dash' && a.trail) for (let i = 0; i < 2; i++) this.fx.trail(m.x, y - 18, a.trail, 26, 5);
@@ -512,23 +595,12 @@ export class Renderer {
     }
     g.restore();
 
-    if (m.vol.protect || m.vol.wideguard) {
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      g.strokeStyle = 'rgba(120,255,160,0.9)';
-      g.fillStyle = 'rgba(120,255,160,0.14)';
-      g.lineWidth = 3;
-      g.beginPath(); g.arc(m.x, y - 28, m.radius * 2, 0, TAU); g.fill(); g.stroke();
-      for (let i = 0; i < 6; i++) { const ang = (i / 6) * TAU + t; g.beginPath(); g.moveTo(m.x, y - 28); g.lineTo(m.x + Math.cos(ang) * m.radius * 2, y - 28 + Math.sin(ang) * m.radius * 2); g.stroke(); }
-      g.restore();
-    }
     if (m.vol.partiallytrapped) {
       const type = MOVES[m.vol.partiallytrapped.move]?.type || 'Normal';
       for (let i = 0; i < 3; i++) this.fx.trail(m.x + Math.cos(t * 8 + i * 2) * 34, y - 12 + Math.sin(t * 8 + i * 2) * 12, type, 5, 4);
     }
     if (m.vol.leechseed && Math.random() < 0.1) this.fx.trail(m.x, y - 20, 'Grass', 24, 4);
     if (m.vol.curse && Math.random() < 0.15) this.fx.trail(m.x, y - 40, 'Ghost', 24, 4);
-    if (m.vol.magnetrise || m.vol.telekinesis) { g.strokeStyle = 'rgba(255,240,120,0.6)'; g.lineWidth = 2; g.beginPath(); g.ellipse(m.x, m.y, m.radius * 1.4, m.radius * 0.5, 0, 0, TAU); g.stroke(); }
     const top = y - this.bank.height(m.species, scale) - 8;
     if (m.status === 'slp') { g.fillStyle = '#fff'; g.font = '12px "Press Start 2P"'; g.fillText('z', m.x + 18 + Math.sin(t * 2) * 3, top - ((t * 10) % 14)); g.fillText('Z', m.x + 28, top - 12 - ((t * 10 + 7) % 14)); }
     if (m.status === 'brn' && Math.random() < 0.3) this.fx.trail(m.x, y - 14, 'Fire', 24, 4);
@@ -625,7 +697,7 @@ export class Renderer {
     g.globalCompositeOperation = 'lighter';
     const gr = g.createRadialGradient(x, y, 0, x, y, s * 2.6);
     gr.addColorStop(0, hexA(col, 0.55));
-    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    gr.addColorStop(1, hexA(col, 0));
     g.fillStyle = gr;
     g.beginPath(); g.arc(x, y, s * 2.6, 0, TAU); g.fill();
     g.restore();
@@ -771,13 +843,9 @@ export class Renderer {
     g.rotate(e.angle);
     g.globalAlpha = fade;
     g.globalCompositeOperation = 'lighter';
-    // brilho largo
-    const glow = g.createLinearGradient(0, -w * 1.6, 0, w * 1.6);
-    glow.addColorStop(0, 'rgba(0,0,0,0)');
-    glow.addColorStop(0.5, hexA(style === 'solar' ? '#f6ff9a' : TYPE_COLOR[e.type], 0.55));
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
-    g.fillStyle = glow;
-    g.fillRect(0, -w * 1.6, len, w * 3.2);
+    // borda de brilho: uma faixa chapada um pouco mais larga, com as pontas arredondadas
+    g.fillStyle = hexA(style === 'solar' ? '#f6ff9a' : TYPE_COLOR[e.type], 0.45);
+    g.beginPath(); g.moveTo(0, -w * 0.9); g.lineTo(len, -w * 0.9); g.arc(len, 0, w * 0.9, -Math.PI / 2, Math.PI / 2); g.lineTo(0, w * 0.9); g.arc(0, 0, w * 0.9, Math.PI / 2, Math.PI * 1.5); g.fill();
     if (style === 'fire') {
       for (let d = 0; d < len; d += 10) {
         const k = d / Math.max(1, len);
@@ -848,7 +916,7 @@ export class Renderer {
     const grad = g.createRadialGradient(0, 0, 10, 0, 0, r);
     grad.addColorStop(0, pal[0]);
     grad.addColorStop(0.5, hexA(pal[1], 0.7));
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, hexA(pal[2], 0));
     g.fillStyle = grad;
     g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, e.angle - e.half, e.angle + e.half); g.closePath(); g.fill();
     g.restore();
@@ -902,7 +970,7 @@ export class Renderer {
         for (let xx = -e.thickness * 2.4; xx < 0; xx += 12) g.lineTo(xx, yy + Math.sin(xx * 0.12 + this.time * 16 + yy) * 5);
         g.stroke();
       }
-      if (Math.random() < 0.3) this.fx.decal(e.x - e.dx * 30 + (Math.random() - 0.5) * e.width * -e.dy, e.y - e.dy * 30 + (Math.random() - 0.5) * e.width * e.dx, 'scorch', 18, 4);
+      if (Math.random() < 0.06) this.fx.decal(e.x - e.dx * 30 + (Math.random() - 0.5) * e.width * -e.dy, e.y - e.dy * 30 + (Math.random() - 0.5) * e.width * e.dx, 'scorch', 18, 4);
     } else {
       // Surf / Muddy Water: paredão de água com espuma na crista
       const deep = e.id === 'muddywater' ? ['rgba(90,65,30,0)', 'rgba(110,80,40,0.75)', '#8a6a3c', '#d9c49a'] : ['rgba(40,110,210,0)', 'rgba(50,130,230,0.75)', '#3a8fe8', '#e9f7ff'];
@@ -1024,7 +1092,7 @@ export class Renderer {
         const grd = g.createRadialGradient(e.x, e.y - 20, 4, e.x, e.y - 20, rr);
         grd.addColorStop(0, '#ffffff');
         grd.addColorStop(0.35, pal[1]);
-        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        grd.addColorStop(1, hexA(pal[2], 0));
         g.fillStyle = grd;
         g.beginPath(); g.arc(e.x, e.y - 20, rr, 0, TAU); g.fill();
       }
@@ -1072,7 +1140,7 @@ export class Renderer {
       grd.addColorStop(0, '#ffffff');
       grd.addColorStop(0.3, pal[1]);
       grd.addColorStop(0.7, pal[3]);
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      grd.addColorStop(1, hexA(pal[3], 0));
       g.fillStyle = grd;
       g.beginPath(); g.ellipse(e.x, e.y - 20, rr, rr * 0.8, 0, 0, TAU); g.fill();
       // anel de choque correndo pelo chão
@@ -1212,72 +1280,68 @@ export class Renderer {
   }
 
   // ------------------------------------------------------------ animações especiais (no mundo)
-  drawCinematicWorld(g, b) {
+  // choque de raios: os dois raios empurrando e a bola de energia no meio (camada de cima)
+  drawClashFx(g, b) {
+    const cl = b.clash;
+    for (const beam of [cl.a, cl.b]) this.drawBeam(g, beam);
+    const r = 34 + Math.sin(this.time * 30) * 8;
+    const pa = palette(cl.a.type), pb = palette(cl.b.type);
+    for (const [k, col] of [[2.4, pa[3]], [1.9, pb[2]], [1.4, pa[1]], [0.9, '#ffffff']]) {
+      g.fillStyle = col;
+      g.beginPath(); g.arc(cl.x, cl.y - 10, r * k * 0.6, 0, TAU); g.fill();
+    }
+    for (let i = 0; i < 3; i++) { this.fx.trail(cl.x, cl.y - 10, cl.a.type, 50, 5); this.fx.trail(cl.x, cl.y - 10, cl.b.type, 50, 5); }
+    if (Math.random() < 0.5) this.fx.sparks(cl.x, cl.y - 10, '#ffffff', 4, 500);
+    this.fx.shake = Math.max(this.fx.shake, 3);
+  }
+
+  // Mega Evolução e choque de Megas: escurece, desenha a energia em pixel art e o Pokémon por cima
+  drawMegaCinematic(g, b, sx, sy) {
     const c = b.cinematic;
-    if (b.clash) {
-      const cl = b.clash;
-      const v = this.view();
-      g.fillStyle = 'rgba(0,0,0,0.3)';
-      g.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
-      for (const beam of [cl.a, cl.b]) this.drawBeam(g, beam);
-      const r = 34 + Math.sin(this.time * 30) * 8;
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      const grd = g.createRadialGradient(cl.x, cl.y - 10, 2, cl.x, cl.y - 10, r * 2.5);
-      grd.addColorStop(0, '#ffffff');
-      grd.addColorStop(0.4, hexA(TYPE_COLOR[cl.a.type], 0.8));
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = grd;
-      g.beginPath(); g.arc(cl.x, cl.y - 10, r * 2.5, 0, TAU); g.fill();
-      g.restore();
-      for (let i = 0; i < 3; i++) { this.fx.trail(cl.x, cl.y - 10, cl.a.type, 50, 5); this.fx.trail(cl.x, cl.y - 10, cl.b.type, 50, 5); }
-      if (Math.random() < 0.5) this.fx.sparks(cl.x, cl.y - 10, '#ffffff', 4, 500);
-      this.fx.shake = Math.max(this.fx.shake, 3);
-    }
-    if (!c) return;
-    if (c.type === 'mega' || c.type === 'megaclash') {
-      const k = c.t / c.dur;
-      const v = this.view();
-      g.fillStyle = `rgba(10,0,30,${0.6 * Math.min(1, c.t * 3)})`;
-      g.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
-      for (const i of c.sides) {
-        const m = b.sides[i].active;
-        if (!m) continue;
-        const r = 30 + k * 110;
-        const hue = (this.time * 300 + i * 180) % 360;
-        g.save();
-        g.globalCompositeOperation = 'lighter';
-        const grd = g.createRadialGradient(m.x, m.y - 40, 4, m.x, m.y - 40, r);
-        grd.addColorStop(0, `hsla(${hue},100%,90%,${0.4 + k * 0.5})`);
-        grd.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = grd;
-        g.beginPath(); g.arc(m.x, m.y - 40, r, 0, TAU); g.fill();
-        g.strokeStyle = `hsl(${hue},100%,75%)`;
-        g.lineWidth = 5;
-        g.beginPath(); g.arc(m.x, m.y - 40, r * 0.9, 0, TAU); g.stroke();
-        g.translate(m.x, m.y - 40);
-        g.rotate(this.time * 3);
-        g.strokeStyle = '#ffffff'; g.lineWidth = 4;
-        g.beginPath(); g.arc(0, 0, 24, 0.3, Math.PI - 0.3); g.stroke();
-        g.beginPath(); g.arc(0, 0, 24, Math.PI + 0.3, TAU - 0.3); g.stroke();
-        g.restore();
-        this.drawMon(g, b, m, 0);
-        if (Math.random() < 0.9) this.fx.add({ x: m.x + (Math.random() - 0.5) * r * 2, y: m.y - 40 + (Math.random() - 0.5) * r * 2, size: 3, life: 0.5, color: `hsl(${Math.random() * 360},100%,70%)`, shape: 'spark', blend: 'lighter' });
+    if (!c || (c.type !== 'mega' && c.type !== 'megaclash')) return;
+    const k = c.t / c.dur;
+    const v = this.view();
+    g.fillStyle = `rgba(10,0,30,${0.6 * Math.min(1, c.t * 3)})`;
+    g.fillRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
+    const mons = c.sides.map(i => b.sides[i].active).filter(Boolean);
+    const lg = this.over.begin(this, sx, sy);
+    mons.forEach((m, n) => {
+      const r = 30 + k * 110;
+      const hue = Math.floor(((this.time * 300 + n * 180) % 360) / 45) * 45;
+      // esfera de energia em anéis chapados
+      for (const [f, l] of [[1, 55], [0.75, 70], [0.5, 85], [0.28, 96]]) {
+        lg.fillStyle = `hsl(${hue},100%,${l}%)`;
+        lg.globalAlpha = 0.55 + k * 0.4;
+        lg.beginPath(); lg.arc(m.x, m.y - 40, r * f, 0, TAU); lg.fill();
       }
-      if (c.type === 'megaclash' && c.sides.length === 2) {
-        const [m1, m2] = c.sides.map(i => b.sides[i].active);
-        if (m1 && m2) {
-          g.save();
-          g.globalCompositeOperation = 'lighter';
-          g.strokeStyle = `rgba(255,255,255,${0.5 + Math.random() * 0.5})`;
-          g.lineWidth = 5;
-          g.beginPath(); g.moveTo(m1.x, m1.y - 40);
-          for (let i = 1; i <= 10; i++) g.lineTo(m1.x + ((m2.x - m1.x) * i) / 10 + (Math.random() - 0.5) * 50, m1.y - 40 + ((m2.y - m1.y) * i) / 10 + (Math.random() - 0.5) * 50);
-          g.stroke();
-          g.restore();
-        }
+      lg.globalAlpha = 1;
+      lg.strokeStyle = `hsl(${(hue + 180) % 360},100%,75%)`;
+      lg.lineWidth = 5;
+      lg.beginPath(); lg.arc(m.x, m.y - 40, r * 1.1, 0, TAU); lg.stroke();
+      // símbolo da Mega girando
+      lg.save();
+      lg.translate(m.x, m.y - 40);
+      lg.rotate(Math.floor(this.time * 12) / 4);
+      lg.strokeStyle = '#ffffff';
+      lg.lineWidth = 5;
+      lg.beginPath(); lg.arc(0, 0, 26, 0.3, Math.PI - 0.3); lg.stroke();
+      lg.beginPath(); lg.arc(0, 0, 26, Math.PI + 0.3, TAU - 0.3); lg.stroke();
+      lg.restore();
+      if (Math.random() < 0.9) this.fx.add({ x: m.x + (Math.random() - 0.5) * r * 2, y: m.y - 40 + (Math.random() - 0.5) * r * 2, size: 3, life: 0.5, color: `hsl(${Math.random() * 360},100%,70%)`, shape: 'spark' });
+    });
+    if (c.type === 'megaclash' && mons.length === 2) {
+      const [m1, m2] = mons;
+      for (const [w, col] of [[10, '#ff6fd8'], [4, '#ffffff']]) {
+        lg.strokeStyle = col;
+        lg.lineWidth = w;
+        lg.beginPath(); lg.moveTo(m1.x, m1.y - 40);
+        for (let i = 1; i <= 10; i++) lg.lineTo(m1.x + ((m2.x - m1.x) * i) / 10 + (Math.random() - 0.5) * 50, m1.y - 40 + ((m2.y - m1.y) * i) / 10 + (Math.random() - 0.5) * 50);
+        lg.stroke();
       }
     }
+    this.fx.draw(lg);
+    this.over.end(g);
+    for (const m of mons) this.drawMon(g, b, m, 0);
   }
 }
 

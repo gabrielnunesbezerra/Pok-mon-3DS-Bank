@@ -54,9 +54,8 @@ export function showTitle(app) {
       h('div', { class: 'top' }, 'CHAMPION'),
       h('div', { class: 'sub' }, 'Batalha Pokémon em tempo real')),
     h('div', { class: 'menu' },
-      h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app, 0); } }, 'CONTRA A CPU'),
-      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = 'online'; showTeamBuilder(app, 0); } }, 'ONLINE'),
-      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = '2p'; showTeamBuilder(app, 0); } }, '2 NO MESMO CELULAR')),
+      h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app); } }, 'CONTRA A CPU'),
+      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = 'online'; showTeamBuilder(app); } }, 'ONLINE')),
     h('div', { class: 'menu sub' },
       h('button', { class: 'gold small', onclick: () => { sfx(app); showDex(app); } }, 'GOLPEDEX'),
       h('button', { class: 'small', onclick: () => { sfx(app); showHelp(app, () => showTitle(app)); } }, 'COMO JOGAR'),
@@ -93,9 +92,9 @@ export function randomTeam(size = 3) {
   });
 }
 
-export function showTeamBuilder(app, player) {
-  const team = app.teams[player];
-  const tag = app.mode === '2p' ? `JOGADOR ${player + 1}` : 'SEU TIME';
+export function showTeamBuilder(app) {
+  const team = app.teams[0];
+
   const body = h('div', { class: 'team' });
   const render = () => {
     body.innerHTML = '';
@@ -106,16 +105,15 @@ export function showTeamBuilder(app, player) {
     if (!team.length) return;
     app.saveTeams();
     sfx(app, 'select');
-    if (app.mode === '2p' && player === 0) showTeamBuilder(app, 1);
-    else if (app.mode === 'online') showOnline(app);
+    if (app.mode === 'online') showOnline(app);
     else showSetup(app);
   };
   mount(h('div', { class: 'screen' },
     h('div', { class: 'topbar' },
-      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); player === 1 ? showTeamBuilder(app, 0) : showTitle(app); } }, '< VOLTAR'),
-      h('h2', { class: player === 0 ? 'p1' : 'p2' }, `${tag} (até 3 Pokémon)`),
-      h('button', { class: 'small', onclick: () => { sfx(app); app.teams[player] = BASE_SPECIES.slice(0, 3).map(sp => defaultSet(sp)); showTeamBuilder(app, player); } }, 'SUGERIDO'),
-      h('button', { class: 'small', onclick: () => { sfx(app); app.teams[player] = randomTeam(3); showTeamBuilder(app, player); } }, 'ALEATÓRIO'),
+      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); showTitle(app); } }, '< VOLTAR'),
+      h('h2', { class: 'p1' }, 'SEU TIME (até 3 Pokémon)'),
+      h('button', { class: 'small', onclick: () => { sfx(app); app.teams[0] = BASE_SPECIES.slice(0, 3).map(sp => defaultSet(sp)); showTeamBuilder(app); } }, 'SUGERIDO'),
+      h('button', { class: 'small', onclick: () => { sfx(app); app.teams[0] = randomTeam(3); showTeamBuilder(app); } }, 'ALEATÓRIO'),
       h('button', { class: 'small primary', onclick: next }, 'PRONTO >')),
     h('div', { class: 'scroll' }, body)));
 }
@@ -254,7 +252,6 @@ function trainerPicker(app, idx, label, { allowRandom = false } = {}) {
 
 // ---------------------------------------------------------------- opções da partida
 export function showSetup(app) {
-  const vsCpu = app.mode === '1p';
   const opt = (label, values, key, names) => {
     const row = h('div', { class: 'opt-row' }, h('span', {}, label));
     const draw = () => {
@@ -266,19 +263,17 @@ export function showSetup(app) {
   };
   mount(h('div', { class: 'screen' },
     h('div', { class: 'topbar' },
-      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); showTeamBuilder(app, app.mode === '2p' ? 1 : 0); } }, '< VOLTAR'),
+      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); showTeamBuilder(app); } }, '< VOLTAR'),
       h('h2', {}, 'PREPARAR BATALHA'),
       h('button', { class: 'primary', onclick: () => { sfx(app, 'go'); app.startBattle(); } }, 'LUTAR!')),
     h('div', { class: 'scroll' },
       h('div', { class: 'setup' },
-        trainerPicker(app, 0, vsCpu ? 'SEU TREINADOR' : 'TREINADOR DO JOGADOR 1'),
-        trainerPicker(app, 1, vsCpu ? 'TREINADOR RIVAL' : 'TREINADOR DO JOGADOR 2', { allowRandom: true }),
-        vsCpu ? opt('Dificuldade', ['easy', 'normal', 'hard'], 'difficulty', ['FÁCIL', 'NORMAL', 'DIFÍCIL']) : null,
-        vsCpu ? opt('Time do rival', ['random', 'mirror', 'presets'], 'rivalMode', ['ALEATÓRIO', 'IGUAL AO MEU', 'SUGERIDO']) : null,
+        trainerPicker(app, 0, 'SEU TREINADOR'),
+        trainerPicker(app, 1, 'TREINADOR RIVAL', { allowRandom: true }),
+        opt('Dificuldade', ['easy', 'normal', 'hard'], 'difficulty', ['FÁCIL', 'NORMAL', 'DIFÍCIL']),
+        opt('Time do rival', ['random', 'mirror', 'presets'], 'rivalMode', ['ALEATÓRIO', 'IGUAL AO MEU', 'SUGERIDO']),
         opt('Tempo', [180, 240, 360, 5999], 'timeLimit', ['3 MIN', '4 MIN', '6 MIN', 'SEM LIMITE']),
-        h('div', { class: 'hint' }, vsCpu
-          ? 'Toque e arraste no lado esquerdo para andar. Toque nos golpes para usar (arraste o botão para mirar). Teclado: WASD, J K L ; para os golpes, Espaço para esquivar, E para Mega.'
-          : 'Modo mesa: o jogador 1 joga pela parte de baixo da tela e o jogador 2 pela de cima. No teclado, o jogador 2 usa as setas e o teclado numérico.')))));
+        h('div', { class: 'hint' }, 'Toque e arraste no lado esquerdo para andar. Toque nos golpes para usar (arraste o botão para mirar). Teclado: WASD, J K L ; para os golpes, Espaço para esquivar, E para Mega.')))));
 }
 
 // ---------------------------------------------------------------- online
@@ -327,7 +322,7 @@ export function showOnline(app) {
   };
   mount(h('div', { class: 'screen' },
     h('div', { class: 'topbar' },
-      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); app.onlineClose(); showTeamBuilder(app, 0); } }, '< VOLTAR'),
+      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); app.onlineClose(); showTeamBuilder(app); } }, '< VOLTAR'),
       h('h2', {}, 'BATALHA ONLINE')),
     h('div', { class: 'scroll' },
       h('div', { class: 'setup' },
@@ -381,9 +376,8 @@ export function showSettings(app, back) {
 export function showChoice(app, battle) {
   const c = battle.choice;
   const side = battle.sides[c.side];
-  const rotated = app.mode === '2p' && c.side === 1;
   mount(h('div', { class: 'overlay' },
-    h('div', { class: `box ${rotated ? 'rotated' : ''}` },
+    h('div', { class: 'box' },
       h('h2', {}, c.reason === 'faint' ? `${side.name}: escolha o próximo Pokémon` : `${side.name}: trocar para qual Pokémon?`),
       h('div', { class: 'choice-row' }, ...c.options.map(slot => {
         const m = side.mons[slot];
@@ -412,7 +406,7 @@ export function showResult(app, battle) {
         app.mode === 'online'
           ? h('button', { class: 'primary', onclick: e => { sfx(app, 'select'); e.target.disabled = true; e.target.textContent = 'ESPERANDO O OUTRO...'; app.onlineRematch(); } }, app.rematchAsked ? 'ACEITAR REVANCHE' : 'REVANCHE')
           : h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.startBattle(); } }, 'REVANCHE'),
-        app.mode === 'online' ? null : h('button', { onclick: () => { sfx(app); app.stopBattle(); showTeamBuilder(app, 0); } }, 'TROCAR TIME'),
+        app.mode === 'online' ? null : h('button', { onclick: () => { sfx(app); app.stopBattle(); showTeamBuilder(app); } }, 'TROCAR TIME'),
         h('button', { class: 'ghost', onclick: () => { sfx(app, 'back'); app.onlineClose(); app.stopBattle(); showTitle(app); } }, 'MENU')))));
 }
 

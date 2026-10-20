@@ -15,6 +15,9 @@ const KEYMAP = [
   },
 ];
 
+// WASD/JKL e setas/teclado numérico controlam o mesmo jogador
+const KEYS = mergeMaps(KEYMAP[0], KEYMAP[1]);
+
 const blankEdge = () => ({ move: null, dodge: false, mega: false, switchTo: null, next: false, mash: 0 });
 
 export class Controls {
@@ -22,13 +25,12 @@ export class Controls {
     this.canvas = canvas;
     this.pointers = new Map();
     this.keys = new Set();
-    this.mode = '1p';
     this.humans = [true, false];
     this.joy = [null, null];
     this.aim = [null, null];
     this.edges = [blankEdge(), blankEdge()];
     this.padPrev = [{}, {}];
-    this.layout = computeLayout(800, 400, '1p');
+    this.layout = computeLayout(800, 400);
     this.battle = null;
     this.onPause = null;
     this.enabled = false;
@@ -43,8 +45,7 @@ export class Controls {
     window.addEventListener('blur', () => { this.keys.clear(); this.pointers.clear(); this.joy = [null, null]; });
   }
 
-  setup(mode, humans, teamCounts, me = 0) {
-    this.mode = mode;
+  setup(humans, teamCounts, me = 0) {
     this.me = me;
     this.humans = humans;
     this.teamCounts = teamCounts;
@@ -55,7 +56,7 @@ export class Controls {
   }
 
   resize(W, H) {
-    this.layout = computeLayout(W, H, this.mode, this.me || 0);
+    this.layout = computeLayout(W, H, this.me || 0);
   }
 
   capture(id) {
@@ -78,11 +79,7 @@ export class Controls {
     for (let i = 0; i < 2; i++) {
       if (!this.humans[i]) continue;
       const S = L.sides[i];
-      if (b?.clash) {
-        const mine = this.mode !== '2p' || (i === 0 ? y > L.H / 2 : y < L.H / 2);
-        if (mine) { this.edges[i].mash++; this.pointers.set(e.pointerId, { role: 'mash', side: i }); return; }
-        continue;
-      }
+      if (b?.clash) { this.edges[i].mash++; this.pointers.set(e.pointerId, { role: 'mash', side: i }); return; }
       for (let k = 0; k < S.moves.length; k++) {
         if (inCircle(S.moves[k], x, y)) {
           this.pointers.set(e.pointerId, { role: 'move', side: i, slot: k, x0: x, y0: y, x, y, aiming: false });
@@ -144,7 +141,7 @@ export class Controls {
     if (e.code === 'Escape' || e.code === 'KeyP') { this.onPause?.(); return; }
     for (let i = 0; i < 2; i++) {
       if (!this.humans[i]) continue;
-      const map = this.mode !== '2p' ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
+      const map = KEYS;
       const ed = this.edges[i];
       const mashKey = map.moves.flat().includes(e.code) || map.dodge.includes(e.code);
       if (this.battle?.clash && mashKey) { ed.mash++; e.preventDefault(); continue; }
@@ -164,8 +161,7 @@ export class Controls {
   gamepads() {
     const pads = (navigator.getGamepads?.() || []).filter(Boolean);
     const out = [null, null];
-    if (this.mode !== '2p') out[this.me || 0] = pads[0] || null;
-    else { out[0] = pads[0] || null; out[1] = pads[1] || null; }
+    out[this.me || 0] = pads[0] || null;
     return out;
   }
 
@@ -180,7 +176,7 @@ export class Controls {
       if (!inp) continue;
       const ed = this.edges[i];
       let mx = 0, my = 0;
-      const map = this.mode !== '2p' ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
+      const map = KEYS;
       const held = list => list.some(c => this.keys.has(c));
       if (held(map.left)) mx -= 1;
       if (held(map.right)) mx += 1;

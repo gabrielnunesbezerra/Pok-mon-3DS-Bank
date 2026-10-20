@@ -15,7 +15,8 @@ Batalha de Pokémon em tempo real numa arena 2D vista de cima, inspirada no "Pok
 - **Esquiva em dash** com invencibilidade e rastro, **stamina e recarga** em cada golpe.
 - **Treinadores dos jogos e do anime** (Ash, Red, Blue, Misty, Brock, Dawn, Cynthia, Lance, Steven, Iris e outros), com apresentação "VS" e corte de Mega Evolução.
 - **Estádio grande** com câmera que acompanha a luta. Surf, Earthquake, Heat Wave e outros golpes de área pegam boa parte do campo e deixam marcas no chão.
-- **Modos**: contra a CPU (3 dificuldades), online com código de sala e 2 jogadores no mesmo celular (ou teclado/controle).
+- **Modos**: contra a CPU (3 dificuldades) e online com código de sala. Também dá para jogar com teclado ou controle.
+- **Efeitos em pixel art**: os golpes são desenhados com pixels do mesmo tamanho dos pixels dos sprites, cores chapadas e contorno, no estilo dos jogos 2D.
 
 ## Online
 
@@ -49,7 +50,7 @@ www/                 o jogo (HTML + JavaScript puro, sem framework)
     hit.js           precisão, dano, status, atributos, itens
     shapes.js        a "forma" de cada golpe na arena (raio, projétil, onda...)
     ai.js            treinador do computador
-  js/render/         desenho (canvas): arena, sprites, efeitos, HUD
+  js/render/         desenho (canvas): arena, sprites, efeitos (pixel.js: camada em pixel art), HUD
   js/net/            modo online (lockstep.js: simulação sincronizada; online.js: salas)
   js/ui/menus.js     telas de menu
   vendor/            PeerJS (MIT)
