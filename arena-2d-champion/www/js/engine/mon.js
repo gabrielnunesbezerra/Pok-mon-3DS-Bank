@@ -59,6 +59,8 @@ export function recalcStats(mon, full = false) {
 // Estado que some quando o Pokémon sai de campo
 export function resetField(mon) {
   mon.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
+  // segundos até cada mudança de atributo começar a voltar ao normal (buffs são temporários)
+  mon.boostClock = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
   mon.vol = {};
   mon.action = null;
   mon.stamina = STAMINA_MAX;
@@ -82,6 +84,7 @@ export function resetField(mon) {
   mon.residualClock = 0;
   mon.statusData.toxicTurns = 0;
   mon.types = [...SPECIES[mon.species].types];
+  mon.weightkg = SPECIES[mon.species].weightkg;
   mon.semiInv = null;
   mon.airborne = false;
   mon.z = 0;
@@ -116,6 +119,7 @@ export function slotMove(mon, slot) {
 }
 
 export function isGrounded(b, mon) {
+  if (mon.vol.magnetrise || mon.vol.telekinesis) return false;
   if (mon.vol.smackdown) return true;
   if (mon.vol.roost) return true;
   if (mon.vol.ingrain) return true;
@@ -134,6 +138,8 @@ export const isSun = w => w === 'sunnyday' || w === 'desolateland';
 export const isRain = w => w === 'raindance' || w === 'primordialsea';
 
 export function getStat(b, mon, key, { ignorePositive = false, ignoreNegative = false, noBoost = false } = {}) {
+  // Wonder Room troca Defesa e Defesa Especial
+  if (b.field.wonderroom > 0 && (key === 'def' || key === 'spd')) key = key === 'def' ? 'spd' : 'def';
   let stage = noBoost ? 0 : mon.boosts[key] || 0;
   if (ignorePositive && stage > 0) stage = 0;
   if (ignoreNegative && stage < 0) stage = 0;
@@ -155,6 +161,8 @@ export function getSpeed(b, mon) {
   if (hasAbility(mon, 'chlorophyll') && isSun(weatherFor(b, mon))) spe *= 2;
   if (b.sides[mon.side].conds.tailwind > 0) spe *= 2;
   if (mon.status === 'par') spe *= 0.5;
+  // Trick Room: os lentos ficam rápidos e os rápidos ficam lentos
+  if (b.field.trickroom > 0) spe = Math.max(30, 300 - spe);
   return spe;
 }
 

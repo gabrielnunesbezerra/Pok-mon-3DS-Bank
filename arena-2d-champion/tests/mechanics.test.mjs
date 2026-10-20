@@ -185,9 +185,60 @@ test('Fly deixa o usuário invulnerável e cai sobre o alvo', () => {
   assert.ok(m1.hp < m1.maxhp);
 });
 
+test('Atributos aumentados voltam ao normal com o tempo', () => {
+  const { battle, m0 } = duel([mon('weavile', ['swordsdance'])], [mon('blastoise', ['tackle'])]);
+  executeMove(battle, m0, 'swordsdance', null, {});
+  assert.equal(m0.boosts.atk, 2);
+  run(battle, 17);
+  assert.equal(m0.boosts.atk, 1, 'depois do tempo do buff, cai um estágio');
+  run(battle, 3.5);
+  assert.equal(m0.boosts.atk, 0);
+});
+
+test('Stealth Rock machuca quem entra (Charizard leva 4x)', () => {
+  const { battle, m0 } = duel([mon('steelix', ['stealthrock'])], [mon('blastoise', ['tackle']), mon('charizard', ['tackle'])]);
+  executeMove(battle, m0, 'stealthrock', null, {});
+  assert.ok(battle.sides[1].hazards.stealthrock);
+  battle.switchIn(1, 1);
+  const zard = battle.sides[1].active;
+  assert.equal(zard.maxhp - zard.hp, Math.floor(zard.maxhp / 2));
+});
+
+test('Normal e Lutador não afetam Gengar; Shadow Tag impede a troca', () => {
+  const { battle, m0, m1 } = duel([mon('weavile', ['tackle', 'brickbreak']), mon('steelix', ['tackle'])], [mon('gengar', ['shadowball'], { item: 'gengarite' })]);
+  fixedRolls(battle);
+  assert.equal(calcDamage(battle, m0, m1, liveMove(battle, m0, 'tackle')).eff, 0);
+  battle.sides[1].megaGauge = 100;
+  battle.requestMega(1);
+  run(battle, 2.5);
+  assert.equal(m1.ability, 'shadowtag');
+  battle.sides[0].switchCd = 0;
+  assert.equal(battle.canSwitch(0), false);
+});
+
+test('Destiny Bond leva o atacante junto', () => {
+  const { battle, m0, m1 } = duel([mon('weavile', ['nightslash'])], [mon('gengar', ['destinybond'])]);
+  executeMove(battle, m1, 'destinybond', null, {});
+  m1.hp = 1;
+  m0.x = 470;
+  battle.rng.chance = () => true;
+  executeMove(battle, m0, 'nightslash', null, {});
+  run(battle, 1);
+  assert.ok(m1.fainted && m0.fainted);
+});
+
+test('Trick Room deixa Steelix mais rápido que Weavile', async () => {
+  const { getSpeed } = await import('../www/js/engine/mon.js');
+  const { battle } = duel([mon('steelix', ['trickroom'])], [mon('weavile', ['tackle'])]);
+  const [s, w] = [battle.sides[0].active, battle.sides[1].active];
+  assert.ok(getSpeed(battle, s) < getSpeed(battle, w));
+  executeMove(battle, s, 'trickroom', null, {});
+  assert.ok(getSpeed(battle, s) > getSpeed(battle, w));
+});
+
 test('Batalha CPU contra CPU termina sem erros', () => {
   const team = [mon('charizard', ['flamethrower', 'airslash', 'solarbeam', 'roost'], { item: 'charizarditey' }), mon('weavile', ['nightslash', 'iceshard', 'icepunch', 'swordsdance'])];
   const battle = new Battle({ teams: [team, team], cpu: [true, true], seed: 9, events: false, timeLimit: 400 });
-  run(battle, 400);
+  run(battle, 405); // o limite de tempo encerra a batalha se ninguém vencer antes
   assert.ok(battle.over);
 });

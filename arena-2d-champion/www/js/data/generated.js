@@ -134,6 +134,73 @@ export const SPECIES = {
    "Sneasel"
   ]
  },
+ "steelix": {
+  "id": "steelix",
+  "num": 208,
+  "name": "Steelix",
+  "types": [
+   "Steel",
+   "Ground"
+  ],
+  "baseStats": {
+   "hp": 75,
+   "atk": 85,
+   "def": 200,
+   "spa": 55,
+   "spd": 65,
+   "spe": 30
+  },
+  "abilities": [
+   "Rock Head",
+   "Sturdy",
+   "Sheer Force"
+  ],
+  "weightkg": 400,
+  "genderRatio": {
+   "M": 0.5,
+   "F": 0.5
+  },
+  "gender": null,
+  "requiredItem": null,
+  "baseSpecies": "Steelix",
+  "forme": "",
+  "prevos": [
+   "Onix"
+  ]
+ },
+ "gengar": {
+  "id": "gengar",
+  "num": 94,
+  "name": "Gengar",
+  "types": [
+   "Ghost",
+   "Poison"
+  ],
+  "baseStats": {
+   "hp": 60,
+   "atk": 65,
+   "def": 60,
+   "spa": 130,
+   "spd": 75,
+   "spe": 110
+  },
+  "abilities": [
+   "Cursed Body"
+  ],
+  "weightkg": 40.5,
+  "genderRatio": {
+   "M": 0.5,
+   "F": 0.5
+  },
+  "gender": null,
+  "requiredItem": null,
+  "baseSpecies": "Gengar",
+  "forme": "",
+  "prevos": [
+   "Haunter",
+   "Gastly"
+  ]
+ },
  "venusaurmega": {
   "id": "venusaurmega",
   "num": 3,
@@ -248,9 +315,67 @@ export const SPECIES = {
   "requiredItem": "Blastoisinite",
   "baseSpecies": "Blastoise",
   "forme": "Mega"
+ },
+ "steelixmega": {
+  "id": "steelixmega",
+  "num": 208,
+  "name": "Steelix-Mega",
+  "types": [
+   "Steel",
+   "Ground"
+  ],
+  "baseStats": {
+   "hp": 75,
+   "atk": 125,
+   "def": 230,
+   "spa": 55,
+   "spd": 95,
+   "spe": 30
+  },
+  "abilities": [
+   "Sand Force"
+  ],
+  "weightkg": 740,
+  "genderRatio": {
+   "M": 0.5,
+   "F": 0.5
+  },
+  "gender": null,
+  "requiredItem": "Steelixite",
+  "baseSpecies": "Steelix",
+  "forme": "Mega"
+ },
+ "gengarmega": {
+  "id": "gengarmega",
+  "num": 94,
+  "name": "Gengar-Mega",
+  "types": [
+   "Ghost",
+   "Poison"
+  ],
+  "baseStats": {
+   "hp": 60,
+   "atk": 65,
+   "def": 80,
+   "spa": 170,
+   "spd": 95,
+   "spe": 130
+  },
+  "abilities": [
+   "Shadow Tag"
+  ],
+  "weightkg": 40.5,
+  "genderRatio": {
+   "M": 0.5,
+   "F": 0.5
+  },
+  "gender": null,
+  "requiredItem": "Gengarite",
+  "baseSpecies": "Gengar",
+  "forme": "Mega"
  }
 };
-export const LEARNSETS = {"venusaur":{"acidspray":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"amnesia":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"bide":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,7]},"bind":{"how":["Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[5,7]},"block":{"how":["Tutor","Evento"],"via":["Bulbasaur"],"gens":[4,7]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,9]},"bulletseed":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"captivate":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Bulbasaur"],"gens":[6,6]},"charm":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"confide":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[6,7]},"curse":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"cut":{"how":["Virtual Console","TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"doubleedge":{"how":["TM","Nível","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"earthpower":{"how":["TM"],"via":[],"gens":[8,9]},"earthquake":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"echoedvoice":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,7]},"endure":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"energyball":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"facade":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"falseswipe":{"how":["TM","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"flash":{"how":["Virtual Console","TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"frenzyplant":{"how":["TM","Tutor","Evento"],"via":["Bulbasaur"],"gens":[3,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"furycutter":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"gigadrain":{"how":["TM","Tutor","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"grassknot":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"grasspledge":{"how":["TM","Tutor","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"grasswhistle":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[3,7]},"grassyglide":{"how":["TM","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[8,9]},"grassyterrain":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[6,9]},"growl":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"growth":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"helpinghand":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"ingrain":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[4,9]},"knockoff":{"how":["TM","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"leafstorm":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"leechseed":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"lightscreen":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"magicalleaf":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"megadrain":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"naturalgift":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"naturepower":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"outrage":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"petalblizzard":{"how":["TM","Nível"],"via":[],"gens":[6,9]},"petaldance":{"how":["Nível","Virtual Console","Ovo"],"via":["Bulbasaur"],"gens":[3,9]},"poisonjab":{"how":["TM"],"via":[],"gens":[9,9]},"poisonpowder":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"powerwhip":{"how":["Nível","TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"protect":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"rage":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,7]},"razorleaf":{"how":["Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"razorwind":{"how":["Virtual Console"],"via":["Bulbasaur"],"gens":[7,7]},"reflect":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"rest":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"return":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":["Ivysaur"],"gens":[3,9]},"rockclimb":{"how":["TM"],"via":[],"gens":[4,4]},"rocksmash":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"round":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,8]},"safeguard":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"scaryface":{"how":["TM"],"via":[],"gens":[9,9]},"secretpower":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"seedbomb":{"how":["TM","Nível","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"skullbash":{"how":["Ovo","Virtual Console"],"via":["Bulbasaur"],"gens":[3,8]},"sleeppowder":{"how":["Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sludge":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[4,7]},"sludgebomb":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"solarbeam":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"stompingtantrum":{"how":["TM","Tutor"],"via":[],"gens":[7,9]},"strength":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"stringshot":{"how":["Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"sweetscent":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"swordsdance":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"synthesis":{"how":["Nível","Tutor","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"tackle":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"takedown":{"how":["TM","Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"terablast":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"terrainpulse":{"how":["Tutor"],"via":[],"gens":[8,8]},"toxic":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"trailblaze":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"venoshock":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"vinewhip":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"weatherball":{"how":["TM","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"workup":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"worryseed":{"how":["Nível","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]}},"charizard":{"acrobatics":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"aerialace":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"aircutter":{"how":["TM","Tutor","Ovo"],"via":["Charmander"],"gens":[4,9]},"airslash":{"how":["TM","Nível","Virtual Console","Evento"],"via":[],"gens":[4,9]},"ancientpower":{"how":["Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"attract":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"beatup":{"how":["TM","Ovo","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"bellydrum":{"how":["Evento","Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"bide":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"bite":{"how":["Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"blastburn":{"how":["TM","Tutor","Evento"],"via":["Charmander"],"gens":[3,9]},"blazekick":{"how":["TM"],"via":[],"gens":[8,8]},"block":{"how":["Evento"],"via":["Charmander"],"gens":[5,5]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"breakingswipe":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"brickbreak":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"brutalswing":{"how":["TM"],"via":[],"gens":[7,8]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,9]},"captivate":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Charmander"],"gens":[6,6]},"confide":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[6,7]},"counter":{"how":["Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"crunch":{"how":["TM","Evento","Virtual Console","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"curse":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"cut":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"defog":{"how":["Tutor","TM"],"via":[],"gens":[4,7]},"dig":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"doubleedge":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"dragonbreath":{"how":["Nível","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,9]},"dragoncheer":{"how":["TM"],"via":[],"gens":[9,9]},"dragonclaw":{"how":["TM","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"dragondance":{"how":["TM","Evento","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"dragonpulse":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"dragonrage":{"how":["Virtual Console","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"dragonrush":{"how":["Ovo"],"via":["Charmander"],"gens":[4,9]},"dragontail":{"how":["TM","Virtual Console","Evento","Ovo"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"dualwingbeat":{"how":["Tutor"],"via":[],"gens":[8,8]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"earthquake":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[3,9]},"echoedvoice":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,7]},"ember":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"facade":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"falseswipe":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"fireblast":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"firefang":{"how":["TM","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"firepledge":{"how":["TM","Tutor","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"firepunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"firespin":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"fissure":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"flameburst":{"how":["Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,7]},"flamecharge":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"flamethrower":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"flareblitz":{"how":["TM","Nível","Evento","Virtual Console","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"fling":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"fly":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[3,9]},"focusblast":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"furycutter":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"furyswipes":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[8,8]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"growl":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[4,8]},"heatcrash":{"how":["TM"],"via":[],"gens":[8,9]},"heatwave":{"how":["TM","Nível","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"helpinghand":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"holdhands":{"how":["Evento"],"via":[],"gens":[6,6]},"honeclaws":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,6]},"howl":{"how":["Evento"],"via":["Charmander"],"gens":[4,4]},"hurricane":{"how":["TM"],"via":[],"gens":[8,9]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"incinerate":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,6]},"inferno":{"how":["Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"irontail":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"leer":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"megakick":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"megapunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"metalclaw":{"how":["Nível","TM","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"mysticalfire":{"how":["TM"],"via":[],"gens":[8,8]},"naturalgift":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,4]},"ominouswind":{"how":["Tutor"],"via":[],"gens":[4,4]},"outrage":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"overheat":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"poweruppunch":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[6,6]},"protect":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"quickattack":{"how":["Evento"],"via":["Charmander"],"gens":[4,4]},"rage":{"how":["Virtual Console","Nível"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"reflect":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,8]},"rest":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"return":{"how":["TM","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"rockslide":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"rocksmash":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"rocktomb":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"roost":{"how":["Virtual Console","TM","Tutor"],"via":[],"gens":[4,8]},"round":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,8]},"sandstorm":{"how":["TM","Virtual Console"],"via":[],"gens":[7,9]},"scaleshot":{"how":["Tutor"],"via":[],"gens":[8,8]},"scaryface":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"scorchingsands":{"how":["TM","Tutor"],"via":[],"gens":[8,9]},"scratch":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"secretpower":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[3,6]},"seismictoss":{"how":["Virtual Console","Evento","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"shadowclaw":{"how":["TM","Nível"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"skullbash":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"skydrop":{"how":["TM"],"via":[],"gens":[5,7]},"slash":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"smokescreen":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"solarbeam":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[4,9]},"steelwing":{"how":["TM","Virtual Console"],"via":[],"gens":[3,8]},"strength":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"submission":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"swift":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"swordsdance":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"tailwind":{"how":["Tutor"],"via":[],"gens":[4,7]},"takedown":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,9]},"temperflare":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[9,9]},"terablast":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[9,9]},"thunderpunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"toxic":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"twister":{"how":["Tutor"],"via":[],"gens":[4,4]},"weatherball":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"willowisp":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"wingattack":{"how":["Virtual Console","Nível","Evento","Ovo"],"via":["Charmander"],"gens":[3,8]},"workup":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[7,8]}},"blastoise":{"aquajet":{"how":["Virtual Console","Ovo"],"via":["Squirtle"],"gens":[4,9]},"aquaring":{"how":["Ovo"],"via":["Squirtle"],"gens":[4,9]},"aquatail":{"how":["Nível","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"aurasphere":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[6,9]},"avalanche":{"how":["TM"],"via":[],"gens":[4,9]},"bide":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"bite":{"how":["Nível","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"blizzard":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"block":{"how":["Evento"],"via":["Squirtle"],"gens":[5,5]},"bodypress":{"how":["TM"],"via":[],"gens":[8,9]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"brickbreak":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"brine":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"bubble":{"how":["Virtual Console","Nível","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"bubblebeam":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,8]},"captivate":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Squirtle"],"gens":[6,6]},"chillingwater":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"confide":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[6,7]},"confusion":{"how":["Virtual Console"],"via":["Squirtle"],"gens":[7,7]},"counter":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"crunch":{"how":["TM"],"via":[],"gens":[8,9]},"curse":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"darkpulse":{"how":["TM","Virtual Console"],"via":[],"gens":[6,9]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"dig":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"dive":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"doubleedge":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"dragonpulse":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Wartortle","Squirtle"],"gens":[6,9]},"dragontail":{"how":["Virtual Console","TM"],"via":[],"gens":[5,8]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"earthquake":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"facade":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"fakeout":{"how":["Virtual Console","Ovo"],"via":["Squirtle"],"gens":[4,9]},"falseswipe":{"how":["TM","Evento"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"fissure":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"flail":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"flashcannon":{"how":["TM","Nível","Virtual Console"],"via":[],"gens":[4,9]},"fling":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"flipturn":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"focusblast":{"how":["TM"],"via":[],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"followme":{"how":["Evento"],"via":["Squirtle"],"gens":[5,5]},"foresight":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,7]},"frustration":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"gyroball":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"hail":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"haze":{"how":["TM","Ovo","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"helpinghand":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"hydrocannon":{"how":["TM","Tutor","Evento"],"via":["Squirtle"],"gens":[3,9]},"hydropump":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"icebeam":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"icepunch":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"icespinner":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"icywind":{"how":["TM","Tutor","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"irondefense":{"how":["TM","Nível","Tutor","Evento"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"irontail":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"lifedew":{"how":["Ovo"],"via":["Squirtle"],"gens":[8,9]},"liquidation":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[7,9]},"megakick":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"megapunch":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"mirrorcoat":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"mist":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"muddywater":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"mudshot":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"mudsport":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,7]},"naturalgift":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,4]},"outrage":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"poweruppunch":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[6,6]},"protect":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"rage":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"raindance":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"rapidspin":{"how":["Nível","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"reflect":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"refresh":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,7]},"rest":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"return":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"rockclimb":{"how":["TM"],"via":[],"gens":[4,4]},"rockslide":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"rocksmash":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"rocktomb":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"rollout":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"round":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"scald":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"scaryface":{"how":["TM"],"via":[],"gens":[9,9]},"secretpower":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[3,6]},"seismictoss":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"shellsmash":{"how":["Nível"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"signalbeam":{"how":["Tutor"],"via":[],"gens":[4,7]},"skullbash":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"smackdown":{"how":["TM"],"via":[],"gens":[5,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"strength":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"submission":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"surf":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"tackle":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"tailwhip":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"takedown":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,9]},"terablast":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"terrainpulse":{"how":["Tutor"],"via":[],"gens":[8,8]},"toxic":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"waterfall":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"watergun":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"waterpledge":{"how":["TM","Tutor","Evento"],"via":["Wartortle","Squirtle"],"gens":[5,9]},"waterpulse":{"how":["TM","Nível","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"waterspout":{"how":["Ovo"],"via":["Squirtle"],"gens":[4,9]},"wavecrash":{"how":["Nível"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"weatherball":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"whirlpool":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"withdraw":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"workup":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"yawn":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,9]},"zenheadbutt":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,9]}},"weavile":{"aerialace":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"agility":{"how":["TM","Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"assist":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,7]},"assurance":{"how":["Nível","TM"],"via":[],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"avalanche":{"how":["TM","Ovo"],"via":["Sneasel"],"gens":[4,9]},"batonpass":{"how":["TM"],"via":[],"gens":[9,9]},"beatup":{"how":["Nível","TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"bite":{"how":["Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"blizzard":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"brickbreak":{"how":["TM","Evento"],"via":["Sneasel"],"gens":[3,9]},"calmmind":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"captivate":{"how":["TM"],"via":["Sneasel"],"gens":[4,4]},"chillingwater":{"how":["TM"],"via":[],"gens":[9,9]},"confide":{"how":["TM"],"via":["Sneasel"],"gens":[6,7]},"counter":{"how":["Ovo","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,9]},"crushclaw":{"how":["Ovo"],"via":["Sneasel"],"gens":[3,7]},"curse":{"how":["Virtual Console"],"via":["Sneasel"],"gens":[7,7]},"cut":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"darkpulse":{"how":["TM","Nível","Tutor"],"via":["Sneasel"],"gens":[4,9]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"detect":{"how":["Virtual Console"],"via":["Sneasel"],"gens":[7,7]},"dig":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"doubleedge":{"how":["Tutor"],"via":["Sneasel"],"gens":[3,3]},"doublehit":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"dreameater":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"embargo":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,7]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,9]},"facade":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"fakeout":{"how":["Evento","Ovo"],"via":["Sneasel"],"gens":[3,9]},"faketears":{"how":["TM"],"via":["Sneasel"],"gens":[8,9]},"falseswipe":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"feint":{"how":["Ovo"],"via":["Sneasel"],"gens":[5,9]},"feintattack":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"fling":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,9]},"focusblast":{"how":["TM"],"via":[],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"foresight":{"how":["Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"foulplay":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[5,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"furycutter":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"furyswipes":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"gigaimpact":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"hail":{"how":["TM"],"via":["Sneasel"],"gens":[3,8]},"headbutt":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[4,7]},"helpinghand":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"honeclaws":{"how":["Nível","TM"],"via":["Sneasel"],"gens":[5,9]},"hyperbeam":{"how":["TM"],"via":[],"gens":[4,9]},"icebeam":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"icepunch":{"how":["TM","Tutor","Evento","Ovo","Virtual Console","Dream World"],"via":["Sneasel"],"gens":[3,9]},"iceshard":{"how":["Nível","Evento","Ovo"],"via":["Sneasel"],"gens":[4,9]},"icespinner":{"how":["TM"],"via":[],"gens":[9,9]},"iciclecrash":{"how":["Ovo"],"via":["Sneasel"],"gens":[6,9]},"iciclespear":{"how":["TM"],"via":["Sneasel"],"gens":[8,9]},"icywind":{"how":["TM","Nível","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"irontail":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"knockoff":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[4,9]},"laserfocus":{"how":["Tutor"],"via":["Sneasel"],"gens":[7,7]},"lashout":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[8,9]},"leer":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"lowkick":{"how":["TM","Tutor","Dream World"],"via":["Sneasel"],"gens":[4,9]},"lowsweep":{"how":["TM"],"via":["Sneasel"],"gens":[5,9]},"megakick":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"megapunch":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"metalclaw":{"how":["TM","Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"metronome":{"how":["TM"],"via":[],"gens":[9,9]},"mimic":{"how":["Tutor"],"via":["Sneasel"],"gens":[3,3]},"mudslap":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"nastyplot":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,9]},"naturalgift":{"how":["TM"],"via":["Sneasel"],"gens":[4,4]},"nightmare":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"nightslash":{"how":["Nível","Evento"],"via":[],"gens":[4,9]},"payback":{"how":["TM"],"via":["Sneasel"],"gens":[4,8]},"poisonjab":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"poweruppunch":{"how":["TM"],"via":["Sneasel"],"gens":[6,6]},"protect":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"psychocut":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"psychup":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"punishment":{"how":["Nível","Ovo"],"via":["Sneasel"],"gens":[4,7]},"pursuit":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,7]},"quickattack":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"raindance":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"reflect":{"how":["TM","Virtual Console","Ovo"],"via":["Sneasel"],"gens":[3,8]},"rest":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"retaliate":{"how":["TM"],"via":["Sneasel"],"gens":[5,8]},"return":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"revenge":{"how":["TM","Nível"],"via":[],"gens":[4,8]},"reversal":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"rocksmash":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"round":{"how":["TM"],"via":["Sneasel"],"gens":[5,8]},"scaryface":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"scratch":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"screech":{"how":["Nível","TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"secretpower":{"how":["TM"],"via":["Sneasel"],"gens":[3,6]},"shadowball":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"shadowclaw":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"slash":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"sleeptalk":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"snarl":{"how":["TM"],"via":["Sneasel"],"gens":[5,9]},"snatch":{"how":["Tutor","Nível","TM"],"via":["Sneasel"],"gens":[3,7]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"snowscape":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"spite":{"how":["TM","Tutor","Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"strength":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"substitute":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"sunnyday":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"surf":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"swift":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"swordsdance":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"takedown":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"taunt":{"how":["TM","Nível","Dream World","Evento"],"via":["Sneasel"],"gens":[3,9]},"terablast":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"thief":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"throatchop":{"how":["TM","Tutor","Ovo"],"via":["Sneasel"],"gens":[7,9]},"torment":{"how":["TM"],"via":["Sneasel"],"gens":[3,7]},"toxic":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"trailblaze":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"tripleaxel":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[8,9]},"upperhand":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"waterpulse":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"whirlpool":{"how":["TM"],"via":["Sneasel"],"gens":[4,8]},"xscissor":{"how":["TM","Evento"],"via":["Sneasel"],"gens":[4,9]}}};
+export const LEARNSETS = {"venusaur":{"acidspray":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"amnesia":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"bide":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,7]},"bind":{"how":["Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[5,7]},"block":{"how":["Tutor","Evento"],"via":["Bulbasaur"],"gens":[4,7]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,9]},"bulletseed":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"captivate":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Bulbasaur"],"gens":[6,6]},"charm":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"confide":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[6,7]},"curse":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"cut":{"how":["Virtual Console","TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"doubleedge":{"how":["TM","Nível","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"earthpower":{"how":["TM"],"via":[],"gens":[8,9]},"earthquake":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"echoedvoice":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,7]},"endure":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"energyball":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"facade":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"falseswipe":{"how":["TM","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"flash":{"how":["Virtual Console","TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"frenzyplant":{"how":["TM","Tutor","Evento"],"via":["Bulbasaur"],"gens":[3,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"furycutter":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"gigadrain":{"how":["TM","Tutor","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"grassknot":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"grasspledge":{"how":["TM","Tutor","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"grasswhistle":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[3,7]},"grassyglide":{"how":["TM","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[8,9]},"grassyterrain":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[6,9]},"growl":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"growth":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"helpinghand":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"ingrain":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[4,9]},"knockoff":{"how":["TM","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"leafstorm":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"leechseed":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"lightscreen":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"magicalleaf":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"megadrain":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"naturalgift":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"naturepower":{"how":["TM","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"outrage":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,8]},"petalblizzard":{"how":["TM","Nível"],"via":[],"gens":[6,9]},"petaldance":{"how":["Nível","Virtual Console","Ovo"],"via":["Bulbasaur"],"gens":[3,9]},"poisonjab":{"how":["TM"],"via":[],"gens":[9,9]},"poisonpowder":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"powerwhip":{"how":["Nível","TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"protect":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"rage":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,7]},"razorleaf":{"how":["Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"razorwind":{"how":["Virtual Console"],"via":["Bulbasaur"],"gens":[7,7]},"reflect":{"how":["Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"rest":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"return":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":["Ivysaur"],"gens":[3,9]},"rockclimb":{"how":["TM"],"via":[],"gens":[4,4]},"rocksmash":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"round":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,8]},"safeguard":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"scaryface":{"how":["TM"],"via":[],"gens":[9,9]},"secretpower":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"seedbomb":{"how":["TM","Nível","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"skullbash":{"how":["Ovo","Virtual Console"],"via":["Bulbasaur"],"gens":[3,8]},"sleeppowder":{"how":["Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sludge":{"how":["Ovo"],"via":["Bulbasaur"],"gens":[4,7]},"sludgebomb":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,8]},"solarbeam":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"stompingtantrum":{"how":["TM","Tutor"],"via":[],"gens":[7,9]},"strength":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[3,6]},"stringshot":{"how":["Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,4]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,7]},"sweetscent":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"swordsdance":{"how":["TM","Virtual Console","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"synthesis":{"how":["Nível","Tutor","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"tackle":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"takedown":{"how":["TM","Nível","Virtual Console"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]},"terablast":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"terrainpulse":{"how":["Tutor"],"via":[],"gens":[8,8]},"toxic":{"how":["TM","Virtual Console","Ovo"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"trailblaze":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[9,9]},"venoshock":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"vinewhip":{"how":["Nível","Virtual Console","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[3,9]},"weatherball":{"how":["TM","Evento"],"via":["Ivysaur","Bulbasaur"],"gens":[5,9]},"workup":{"how":["TM"],"via":["Ivysaur","Bulbasaur"],"gens":[7,8]},"worryseed":{"how":["Nível","Tutor"],"via":["Ivysaur","Bulbasaur"],"gens":[4,9]}},"charizard":{"acrobatics":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"aerialace":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"aircutter":{"how":["TM","Tutor","Ovo"],"via":["Charmander"],"gens":[4,9]},"airslash":{"how":["TM","Nível","Virtual Console","Evento"],"via":[],"gens":[4,9]},"ancientpower":{"how":["Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"attract":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"beatup":{"how":["TM","Ovo","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"bellydrum":{"how":["Evento","Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"bide":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"bite":{"how":["Ovo","Virtual Console"],"via":["Charmander"],"gens":[3,9]},"blastburn":{"how":["TM","Tutor","Evento"],"via":["Charmander"],"gens":[3,9]},"blazekick":{"how":["TM"],"via":[],"gens":[8,8]},"block":{"how":["Evento"],"via":["Charmander"],"gens":[5,5]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"breakingswipe":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"brickbreak":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"brutalswing":{"how":["TM"],"via":[],"gens":[7,8]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,9]},"captivate":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Charmander"],"gens":[6,6]},"confide":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[6,7]},"counter":{"how":["Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"crunch":{"how":["TM","Evento","Virtual Console","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"curse":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"cut":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"defog":{"how":["Tutor","TM"],"via":[],"gens":[4,7]},"dig":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"doubleedge":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"dragonbreath":{"how":["Nível","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,9]},"dragoncheer":{"how":["TM"],"via":[],"gens":[9,9]},"dragonclaw":{"how":["TM","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"dragondance":{"how":["TM","Evento","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"dragonpulse":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"dragonrage":{"how":["Virtual Console","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"dragonrush":{"how":["Ovo"],"via":["Charmander"],"gens":[4,9]},"dragontail":{"how":["TM","Virtual Console","Evento","Ovo"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"dualwingbeat":{"how":["Tutor"],"via":[],"gens":[8,8]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"earthquake":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[3,9]},"echoedvoice":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,7]},"ember":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"facade":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"falseswipe":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"fireblast":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"firefang":{"how":["TM","Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"firepledge":{"how":["TM","Tutor","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"firepunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"firespin":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"fissure":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"flameburst":{"how":["Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,7]},"flamecharge":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"flamethrower":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"flareblitz":{"how":["TM","Nível","Evento","Virtual Console","Ovo"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"fling":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"fly":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[3,9]},"focusblast":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"furycutter":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"furyswipes":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[8,8]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"growl":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[4,8]},"heatcrash":{"how":["TM"],"via":[],"gens":[8,9]},"heatwave":{"how":["TM","Nível","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"helpinghand":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"holdhands":{"how":["Evento"],"via":[],"gens":[6,6]},"honeclaws":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,6]},"howl":{"how":["Evento"],"via":["Charmander"],"gens":[4,4]},"hurricane":{"how":["TM"],"via":[],"gens":[8,9]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"incinerate":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,6]},"inferno":{"how":["Nível","Evento"],"via":["Charmeleon","Charmander"],"gens":[5,9]},"irontail":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"leer":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"megakick":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"megapunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"metalclaw":{"how":["Nível","TM","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"mysticalfire":{"how":["TM"],"via":[],"gens":[8,8]},"naturalgift":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,4]},"ominouswind":{"how":["Tutor"],"via":[],"gens":[4,4]},"outrage":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"overheat":{"how":["TM","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"poweruppunch":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[6,6]},"protect":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"quickattack":{"how":["Evento"],"via":["Charmander"],"gens":[4,4]},"rage":{"how":["Virtual Console","Nível"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"reflect":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,8]},"rest":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"return":{"how":["TM","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"rockslide":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"rocksmash":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"rocktomb":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"roost":{"how":["Virtual Console","TM","Tutor"],"via":[],"gens":[4,8]},"round":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[5,8]},"sandstorm":{"how":["TM","Virtual Console"],"via":[],"gens":[7,9]},"scaleshot":{"how":["Tutor"],"via":[],"gens":[8,8]},"scaryface":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"scorchingsands":{"how":["TM","Tutor"],"via":[],"gens":[8,9]},"scratch":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"secretpower":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[3,6]},"seismictoss":{"how":["Virtual Console","Evento","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"shadowclaw":{"how":["TM","Nível"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"skullbash":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"skydrop":{"how":["TM"],"via":[],"gens":[5,7]},"slash":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"smokescreen":{"how":["Nível","Virtual Console","Evento"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"solarbeam":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[4,9]},"steelwing":{"how":["TM","Virtual Console"],"via":[],"gens":[3,8]},"strength":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"submission":{"how":["Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,7]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,7]},"swift":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"swordsdance":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Charmeleon","Charmander"],"gens":[3,9]},"tailwind":{"how":["Tutor"],"via":[],"gens":[4,7]},"takedown":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[7,9]},"temperflare":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[9,9]},"terablast":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[9,9]},"thunderpunch":{"how":["TM","Virtual Console","Tutor"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"toxic":{"how":["Virtual Console","TM"],"via":["Charmeleon","Charmander"],"gens":[3,8]},"twister":{"how":["Tutor"],"via":[],"gens":[4,4]},"weatherball":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[8,9]},"willowisp":{"how":["TM","Virtual Console"],"via":["Charmeleon","Charmander"],"gens":[4,9]},"wingattack":{"how":["Virtual Console","Nível","Evento","Ovo"],"via":["Charmander"],"gens":[3,8]},"workup":{"how":["TM"],"via":["Charmeleon","Charmander"],"gens":[7,8]}},"blastoise":{"aquajet":{"how":["Virtual Console","Ovo"],"via":["Squirtle"],"gens":[4,9]},"aquaring":{"how":["Ovo"],"via":["Squirtle"],"gens":[4,9]},"aquatail":{"how":["Nível","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"aurasphere":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[6,9]},"avalanche":{"how":["TM"],"via":[],"gens":[4,9]},"bide":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"bite":{"how":["Nível","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"blizzard":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"block":{"how":["Evento"],"via":["Squirtle"],"gens":[5,5]},"bodypress":{"how":["TM"],"via":[],"gens":[8,9]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"brickbreak":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"brine":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"bubble":{"how":["Virtual Console","Nível","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"bubblebeam":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"bulldoze":{"how":["TM"],"via":[],"gens":[5,8]},"captivate":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,4]},"celebrate":{"how":["Evento"],"via":["Squirtle"],"gens":[6,6]},"chillingwater":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"confide":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[6,7]},"confusion":{"how":["Virtual Console"],"via":["Squirtle"],"gens":[7,7]},"counter":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"crunch":{"how":["TM"],"via":[],"gens":[8,9]},"curse":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"darkpulse":{"how":["TM","Virtual Console"],"via":[],"gens":[6,9]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"dig":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"dive":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"doubleedge":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"dragonpulse":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Wartortle","Squirtle"],"gens":[6,9]},"dragontail":{"how":["Virtual Console","TM"],"via":[],"gens":[5,8]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"earthquake":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"facade":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"fakeout":{"how":["Virtual Console","Ovo"],"via":["Squirtle"],"gens":[4,9]},"falseswipe":{"how":["TM","Evento"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"fissure":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"flail":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"flashcannon":{"how":["TM","Nível","Virtual Console"],"via":[],"gens":[4,9]},"fling":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"flipturn":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"focusblast":{"how":["TM"],"via":[],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"followme":{"how":["Evento"],"via":["Squirtle"],"gens":[5,5]},"foresight":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,7]},"frustration":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"gyroball":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"hail":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"haze":{"how":["TM","Ovo","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"helpinghand":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"hydrocannon":{"how":["TM","Tutor","Evento"],"via":["Squirtle"],"gens":[3,9]},"hydropump":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"icebeam":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"icepunch":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"icespinner":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"icywind":{"how":["TM","Tutor","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"irondefense":{"how":["TM","Nível","Tutor","Evento"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"irontail":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"lifedew":{"how":["Ovo"],"via":["Squirtle"],"gens":[8,9]},"liquidation":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[7,9]},"megakick":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"megapunch":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"mirrorcoat":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"mist":{"how":["Ovo","Virtual Console"],"via":["Squirtle"],"gens":[3,9]},"muddywater":{"how":["TM","Ovo"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"mudshot":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"mudsport":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,7]},"naturalgift":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,4]},"outrage":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,8]},"poweruppunch":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[6,6]},"protect":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"rage":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"raindance":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"rapidspin":{"how":["Nível","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"reflect":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"refresh":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,7]},"rest":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"return":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"rockclimb":{"how":["TM"],"via":[],"gens":[4,4]},"rockslide":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"rocksmash":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"rocktomb":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"rollout":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"round":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"scald":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[5,8]},"scaryface":{"how":["TM"],"via":[],"gens":[9,9]},"secretpower":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[3,6]},"seismictoss":{"how":["Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"shellsmash":{"how":["Nível"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"signalbeam":{"how":["Tutor"],"via":[],"gens":[4,7]},"skullbash":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"smackdown":{"how":["TM"],"via":[],"gens":[5,9]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"strength":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"submission":{"how":["Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,7]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"surf":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,7]},"tackle":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"tailwhip":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"takedown":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[7,9]},"terablast":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"terrainpulse":{"how":["Tutor"],"via":[],"gens":[8,8]},"toxic":{"how":["Virtual Console","TM"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"waterfall":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[3,8]},"watergun":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"waterpledge":{"how":["TM","Tutor","Evento"],"via":["Wartortle","Squirtle"],"gens":[5,9]},"waterpulse":{"how":["TM","Nível","Tutor"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"waterspout":{"how":["Ovo"],"via":["Squirtle"],"gens":[4,9]},"wavecrash":{"how":["Nível"],"via":["Wartortle","Squirtle"],"gens":[9,9]},"weatherball":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[8,9]},"whirlpool":{"how":["TM","Virtual Console"],"via":["Wartortle","Squirtle"],"gens":[4,9]},"withdraw":{"how":["Nível","Virtual Console","Evento"],"via":["Wartortle","Squirtle"],"gens":[3,9]},"workup":{"how":["TM"],"via":["Wartortle","Squirtle"],"gens":[7,8]},"yawn":{"how":["Ovo"],"via":["Squirtle"],"gens":[3,9]},"zenheadbutt":{"how":["TM","Tutor"],"via":["Wartortle","Squirtle"],"gens":[4,9]}},"weavile":{"aerialace":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"agility":{"how":["TM","Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"assist":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,7]},"assurance":{"how":["Nível","TM"],"via":[],"gens":[4,9]},"attract":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"avalanche":{"how":["TM","Ovo"],"via":["Sneasel"],"gens":[4,9]},"batonpass":{"how":["TM"],"via":[],"gens":[9,9]},"beatup":{"how":["Nível","TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"bite":{"how":["Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"blizzard":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"brickbreak":{"how":["TM","Evento"],"via":["Sneasel"],"gens":[3,9]},"calmmind":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"captivate":{"how":["TM"],"via":["Sneasel"],"gens":[4,4]},"chillingwater":{"how":["TM"],"via":[],"gens":[9,9]},"confide":{"how":["TM"],"via":["Sneasel"],"gens":[6,7]},"counter":{"how":["Ovo","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,9]},"crushclaw":{"how":["Ovo"],"via":["Sneasel"],"gens":[3,7]},"curse":{"how":["Virtual Console"],"via":["Sneasel"],"gens":[7,7]},"cut":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"darkpulse":{"how":["TM","Nível","Tutor"],"via":["Sneasel"],"gens":[4,9]},"defensecurl":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"detect":{"how":["Virtual Console"],"via":["Sneasel"],"gens":[7,7]},"dig":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"doubleedge":{"how":["Tutor"],"via":["Sneasel"],"gens":[3,3]},"doublehit":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,9]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"dreameater":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"embargo":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,7]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,9]},"facade":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"fakeout":{"how":["Evento","Ovo"],"via":["Sneasel"],"gens":[3,9]},"faketears":{"how":["TM"],"via":["Sneasel"],"gens":[8,9]},"falseswipe":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"feint":{"how":["Ovo"],"via":["Sneasel"],"gens":[5,9]},"feintattack":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"fling":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,9]},"focusblast":{"how":["TM"],"via":[],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"foresight":{"how":["Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"foulplay":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[5,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"furycutter":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"furyswipes":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"gigaimpact":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"hail":{"how":["TM"],"via":["Sneasel"],"gens":[3,8]},"headbutt":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[4,7]},"helpinghand":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"honeclaws":{"how":["Nível","TM"],"via":["Sneasel"],"gens":[5,9]},"hyperbeam":{"how":["TM"],"via":[],"gens":[4,9]},"icebeam":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"icepunch":{"how":["TM","Tutor","Evento","Ovo","Virtual Console","Dream World"],"via":["Sneasel"],"gens":[3,9]},"iceshard":{"how":["Nível","Evento","Ovo"],"via":["Sneasel"],"gens":[4,9]},"icespinner":{"how":["TM"],"via":[],"gens":[9,9]},"iciclecrash":{"how":["Ovo"],"via":["Sneasel"],"gens":[6,9]},"iciclespear":{"how":["TM"],"via":["Sneasel"],"gens":[8,9]},"icywind":{"how":["TM","Nível","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"irontail":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"knockoff":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[4,9]},"laserfocus":{"how":["Tutor"],"via":["Sneasel"],"gens":[7,7]},"lashout":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[8,9]},"leer":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"lowkick":{"how":["TM","Tutor","Dream World"],"via":["Sneasel"],"gens":[4,9]},"lowsweep":{"how":["TM"],"via":["Sneasel"],"gens":[5,9]},"megakick":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"megapunch":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"metalclaw":{"how":["TM","Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"metronome":{"how":["TM"],"via":[],"gens":[9,9]},"mimic":{"how":["Tutor"],"via":["Sneasel"],"gens":[3,3]},"mudslap":{"how":["Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"nastyplot":{"how":["TM","Nível"],"via":["Sneasel"],"gens":[4,9]},"naturalgift":{"how":["TM"],"via":["Sneasel"],"gens":[4,4]},"nightmare":{"how":["Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"nightslash":{"how":["Nível","Evento"],"via":[],"gens":[4,9]},"payback":{"how":["TM"],"via":["Sneasel"],"gens":[4,8]},"poisonjab":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"poweruppunch":{"how":["TM"],"via":["Sneasel"],"gens":[6,6]},"protect":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"psychocut":{"how":["TM"],"via":["Sneasel"],"gens":[8,8]},"psychup":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"punishment":{"how":["Nível","Ovo"],"via":["Sneasel"],"gens":[4,7]},"pursuit":{"how":["Ovo"],"via":["Sneasel"],"gens":[4,7]},"quickattack":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"raindance":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"reflect":{"how":["TM","Virtual Console","Ovo"],"via":["Sneasel"],"gens":[3,8]},"rest":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"retaliate":{"how":["TM"],"via":["Sneasel"],"gens":[5,8]},"return":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"revenge":{"how":["TM","Nível"],"via":[],"gens":[4,8]},"reversal":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"rocksmash":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"round":{"how":["TM"],"via":["Sneasel"],"gens":[5,8]},"scaryface":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"scratch":{"how":["Nível","Virtual Console","Evento"],"via":["Sneasel"],"gens":[3,9]},"screech":{"how":["Nível","TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"secretpower":{"how":["TM"],"via":["Sneasel"],"gens":[3,6]},"shadowball":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"shadowclaw":{"how":["TM"],"via":["Sneasel"],"gens":[4,9]},"slash":{"how":["Nível","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"sleeptalk":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"snarl":{"how":["TM"],"via":["Sneasel"],"gens":[5,9]},"snatch":{"how":["Tutor","Nível","TM"],"via":["Sneasel"],"gens":[3,7]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,8]},"snowscape":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"spite":{"how":["TM","Tutor","Ovo","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"strength":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"substitute":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"sunnyday":{"how":["TM"],"via":["Sneasel"],"gens":[3,9]},"surf":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Sneasel"],"gens":[3,7]},"swift":{"how":["TM","Tutor","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"swordsdance":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[3,9]},"takedown":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"taunt":{"how":["TM","Nível","Dream World","Evento"],"via":["Sneasel"],"gens":[3,9]},"terablast":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"thief":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,9]},"throatchop":{"how":["TM","Tutor","Ovo"],"via":["Sneasel"],"gens":[7,9]},"torment":{"how":["TM"],"via":["Sneasel"],"gens":[3,7]},"toxic":{"how":["TM","Virtual Console"],"via":["Sneasel"],"gens":[3,7]},"trailblaze":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"tripleaxel":{"how":["TM","Tutor"],"via":["Sneasel"],"gens":[8,9]},"upperhand":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"waterpulse":{"how":["TM"],"via":["Sneasel"],"gens":[9,9]},"whirlpool":{"how":["TM"],"via":["Sneasel"],"gens":[4,8]},"xscissor":{"how":["TM","Evento"],"via":["Sneasel"],"gens":[4,9]}},"steelix":{"ancientpower":{"how":["Tutor"],"via":["Onix"],"gens":[4,4]},"aquatail":{"how":["Tutor"],"via":[],"gens":[4,7]},"attract":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"autotomize":{"how":["Nível"],"via":[],"gens":[5,8]},"bide":{"how":["Virtual Console"],"via":["Onix"],"gens":[7,7]},"bind":{"how":["Nível","Tutor","Virtual Console","Dream World"],"via":["Onix"],"gens":[3,8]},"block":{"how":["Tutor","Ovo"],"via":["Onix"],"gens":[3,8]},"bodypress":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"bodyslam":{"how":["TM","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"breakingswipe":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"brutalswing":{"how":["TM"],"via":["Onix"],"gens":[7,8]},"bulldoze":{"how":["TM"],"via":["Onix"],"gens":[5,8]},"captivate":{"how":["TM"],"via":["Onix"],"gens":[4,4]},"confide":{"how":["TM"],"via":["Onix"],"gens":[6,7]},"crunch":{"how":["TM","Nível","Virtual Console"],"via":[],"gens":[3,8]},"curse":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[4,8]},"cut":{"how":["Virtual Console","TM"],"via":[],"gens":[3,7]},"darkpulse":{"how":["TM","Tutor"],"via":[],"gens":[4,8]},"defensecurl":{"how":["Virtual Console","Tutor","Ovo"],"via":["Onix"],"gens":[3,8]},"dig":{"how":["TM","Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"doubleedge":{"how":["Nível","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,7]},"dragonbreath":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"dragondance":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"dragonpulse":{"how":["TM","Tutor","Virtual Console"],"via":["Onix"],"gens":[4,8]},"dragontail":{"how":["TM","Ovo","Virtual Console"],"via":["Onix"],"gens":[5,8]},"drillrun":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"earthpower":{"how":["TM","Tutor"],"via":["Onix"],"gens":[4,8]},"earthquake":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Onix"],"gens":[3,8]},"explosion":{"how":["TM","Tutor","Virtual Console","Ovo"],"via":["Onix"],"gens":[3,7]},"facade":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"firefang":{"how":["TM","Nível"],"via":[],"gens":[4,8]},"fissure":{"how":["Virtual Console"],"via":["Onix"],"gens":[7,7]},"flail":{"how":["Ovo","Virtual Console"],"via":["Onix"],"gens":[3,8]},"flashcannon":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[4,8]},"frustration":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,7]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,8]},"gyroball":{"how":["TM","Nível"],"via":["Onix"],"gens":[4,8]},"harden":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Onix"],"gens":[4,8]},"headsmash":{"how":["Ovo"],"via":["Onix"],"gens":[8,8]},"heavyslam":{"how":["TM","Ovo"],"via":["Onix"],"gens":[5,8]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,7]},"highhorsepower":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"hyperbeam":{"how":["TM","Virtual Console"],"via":[],"gens":[3,8]},"icefang":{"how":["TM","Nível"],"via":[],"gens":[4,8]},"irondefense":{"how":["TM"],"via":[],"gens":[8,8]},"ironhead":{"how":["TM","Tutor"],"via":["Onix"],"gens":[4,8]},"irontail":{"how":["TM","Nível","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"magnetrise":{"how":["Nível","Tutor"],"via":[],"gens":[4,8]},"meteorbeam":{"how":["Tutor"],"via":["Onix"],"gens":[8,8]},"mimic":{"how":["Tutor","Virtual Console"],"via":["Onix"],"gens":[3,7]},"mudslap":{"how":["Virtual Console","Tutor"],"via":["Onix"],"gens":[3,7]},"mudsport":{"how":["Nível"],"via":["Onix"],"gens":[4,7]},"naturalgift":{"how":["TM"],"via":["Onix"],"gens":[4,4]},"naturepower":{"how":["TM"],"via":["Onix"],"gens":[6,7]},"payback":{"how":["TM"],"via":["Onix"],"gens":[4,8]},"protect":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"psychicfangs":{"how":["TM"],"via":[],"gens":[8,8]},"psychup":{"how":["TM","Tutor"],"via":["Onix"],"gens":[3,7]},"rage":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"rest":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"return":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,7]},"roar":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,7]},"rockblast":{"how":["TM","Ovo"],"via":["Onix"],"gens":[4,8]},"rockclimb":{"how":["TM","Ovo","Dream World"],"via":["Onix"],"gens":[4,7]},"rockpolish":{"how":["Nível","TM"],"via":["Onix"],"gens":[4,8]},"rockslide":{"how":["TM","Nível","Tutor","Virtual Console","Ovo"],"via":["Onix"],"gens":[3,8]},"rocksmash":{"how":["Virtual Console","TM"],"via":["Onix"],"gens":[3,7]},"rockthrow":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"rocktomb":{"how":["TM","Nível"],"via":["Onix"],"gens":[3,8]},"rollout":{"how":["Virtual Console","Tutor","Ovo"],"via":["Onix"],"gens":[3,8]},"rototiller":{"how":["Ovo"],"via":["Onix"],"gens":[6,7]},"round":{"how":["TM"],"via":["Onix"],"gens":[5,8]},"sandstorm":{"how":["TM","Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"sandtomb":{"how":["TM","Nível"],"via":["Onix"],"gens":[3,8]},"scaryface":{"how":["TM"],"via":["Onix"],"gens":[8,8]},"scorchingsands":{"how":["Tutor"],"via":["Onix"],"gens":[8,8]},"screech":{"how":["TM","Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"secretpower":{"how":["TM"],"via":["Onix"],"gens":[3,6]},"selfdestruct":{"how":["TM","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"skullbash":{"how":["Virtual Console"],"via":["Onix"],"gens":[7,7]},"slam":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Onix"],"gens":[3,8]},"smackdown":{"how":["Nível","TM"],"via":["Onix"],"gens":[5,8]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"stealthrock":{"how":["TM","Nível","Tutor","Virtual Console","Ovo","Dream World"],"via":["Onix"],"gens":[4,8]},"steelbeam":{"how":["Tutor"],"via":[],"gens":[8,8]},"steelroller":{"how":["Tutor"],"via":[],"gens":[8,8]},"stompingtantrum":{"how":["TM","Tutor"],"via":["Onix"],"gens":[7,8]},"stoneedge":{"how":["TM","Nível"],"via":["Onix"],"gens":[4,8]},"strength":{"how":["Virtual Console","TM"],"via":["Onix"],"gens":[3,7]},"substitute":{"how":["TM","Tutor","Virtual Console"],"via":["Onix"],"gens":[3,8]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Onix"],"gens":[3,7]},"tackle":{"how":["Nível","Virtual Console"],"via":["Onix"],"gens":[3,8]},"takedown":{"how":["Virtual Console"],"via":["Onix"],"gens":[7,7]},"taunt":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"thunderfang":{"how":["TM","Nível"],"via":[],"gens":[4,8]},"torment":{"how":["TM"],"via":["Onix"],"gens":[3,7]},"toxic":{"how":["TM","Virtual Console"],"via":["Onix"],"gens":[3,8]},"twister":{"how":["Tutor"],"via":["Onix"],"gens":[4,4]},"wideguard":{"how":["Ovo"],"via":["Onix"],"gens":[7,8]}},"gengar":{"acidspray":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[9,9]},"allyswitch":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[7,8]},"astonish":{"how":["Evento","Ovo"],"via":["Gastly"],"gens":[3,9]},"attract":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,8]},"bide":{"how":["Virtual Console"],"via":["Haunter","Gastly"],"gens":[7,7]},"bodyslam":{"how":["TM","Virtual Console","Tutor"],"via":[],"gens":[3,9]},"brickbreak":{"how":["TM","Virtual Console"],"via":[],"gens":[3,9]},"captivate":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[4,4]},"clearsmog":{"how":["Ovo"],"via":["Gastly"],"gens":[5,9]},"confide":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[6,7]},"confuseray":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"corrosivegas":{"how":["Tutor"],"via":["Haunter","Gastly"],"gens":[8,8]},"counter":{"how":["Virtual Console","Tutor"],"via":[],"gens":[3,7]},"curse":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"darkpulse":{"how":["TM","Nível","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"dazzlinggleam":{"how":["TM","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[6,9]},"destinybond":{"how":["Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"disable":{"how":["Virtual Console","Ovo","Dream World"],"via":["Gastly"],"gens":[4,9]},"doubleedge":{"how":["Virtual Console","Tutor"],"via":[],"gens":[3,7]},"doubleteam":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,7]},"drainpunch":{"how":["TM","Tutor"],"via":[],"gens":[4,9]},"dreameater":{"how":["Nível","Virtual Console","TM","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"dynamicpunch":{"how":["Virtual Console","Tutor"],"via":[],"gens":[3,7]},"embargo":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[4,7]},"encore":{"how":["TM"],"via":["Haunter"],"gens":[8,9]},"endure":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"energyball":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[4,9]},"explosion":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Haunter","Gastly"],"gens":[3,7]},"facade":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"firepunch":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"fling":{"how":["TM"],"via":["Haunter"],"gens":[4,9]},"focusblast":{"how":["TM"],"via":["Haunter"],"gens":[4,9]},"focuspunch":{"how":["TM","Tutor"],"via":[],"gens":[3,9]},"foulplay":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[5,9]},"frustration":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,7]},"gigadrain":{"how":["TM","Tutor","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"gigaimpact":{"how":["TM"],"via":[],"gens":[4,9]},"grudge":{"how":["Ovo"],"via":["Gastly"],"gens":[3,8]},"gunkshot":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[9,9]},"haze":{"how":["TM","Virtual Console","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"headbutt":{"how":["Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[4,8]},"hex":{"how":["TM","Nível"],"via":["Haunter","Gastly"],"gens":[5,9]},"hiddenpower":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,7]},"hyperbeam":{"how":["TM","Virtual Console","Evento"],"via":[],"gens":[3,9]},"hypnosis":{"how":["Nível","Virtual Console","Evento","Dream World"],"via":["Haunter","Gastly"],"gens":[3,9]},"icepunch":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"icywind":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"imprison":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[8,9]},"infestation":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[6,7]},"knockoff":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"laserfocus":{"how":["Tutor"],"via":[],"gens":[7,7]},"lick":{"how":["Nível","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"meanlook":{"how":["Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"megadrain":{"how":["Virtual Console"],"via":["Haunter","Gastly"],"gens":[7,8]},"megakick":{"how":["TM","Virtual Console","Tutor"],"via":[],"gens":[3,8]},"megapunch":{"how":["TM","Virtual Console","Tutor"],"via":[],"gens":[3,8]},"metronome":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter"],"gens":[3,9]},"mimic":{"how":["Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,7]},"nastyplot":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[8,9]},"naturalgift":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[4,4]},"nightmare":{"how":["Nível","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,7]},"nightshade":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"ominouswind":{"how":["Tutor"],"via":["Haunter","Gastly"],"gens":[4,4]},"painsplit":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"payback":{"how":["Nível","TM","Evento"],"via":["Haunter","Gastly"],"gens":[4,9]},"perishsong":{"how":["Nível","Ovo","Virtual Console"],"via":["Gastly"],"gens":[3,9]},"phantomforce":{"how":["TM"],"via":["Haunter"],"gens":[8,9]},"poisongas":{"how":["Virtual Console"],"via":["Haunter","Gastly"],"gens":[8,8]},"poisonjab":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[4,9]},"poltergeist":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[8,9]},"poweruppunch":{"how":["TM"],"via":[],"gens":[6,6]},"protect":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"psychic":{"how":["TM","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"psychicnoise":{"how":["TM"],"via":[],"gens":[9,9]},"psychup":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"psywave":{"how":["Virtual Console","Ovo"],"via":["Haunter","Gastly"],"gens":[3,7]},"rage":{"how":["Virtual Console"],"via":["Haunter","Gastly"],"gens":[7,7]},"raindance":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"reflecttype":{"how":["Nível","Ovo"],"via":["Gastly"],"gens":[6,9]},"rest":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"return":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,7]},"rocksmash":{"how":["Virtual Console","TM"],"via":[],"gens":[3,7]},"roleplay":{"how":["Tutor"],"via":[],"gens":[4,7]},"round":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[5,8]},"scaryface":{"how":["TM","Ovo"],"via":["Haunter","Gastly"],"gens":[5,9]},"secretpower":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[3,6]},"seismictoss":{"how":["Virtual Console","Tutor"],"via":[],"gens":[3,8]},"selfdestruct":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,8]},"shadowball":{"how":["TM","Nível","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"shadowclaw":{"how":["TM"],"via":["Haunter"],"gens":[4,9]},"shadowpunch":{"how":["Nível","Evento"],"via":["Haunter"],"gens":[3,9]},"skillswap":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"skittersmack":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[8,9]},"skullbash":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"sleeptalk":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"sludgebomb":{"how":["TM","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"sludgewave":{"how":["TM","Evento","Dream World"],"via":["Haunter","Gastly"],"gens":[5,9]},"smog":{"how":["Virtual Console","Ovo"],"via":["Haunter","Gastly"],"gens":[5,9]},"snatch":{"how":["Tutor","TM"],"via":["Haunter","Gastly"],"gens":[3,7]},"snore":{"how":["TM","Tutor","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,8]},"spite":{"how":["TM","Nível","Tutor","Virtual Console","Evento"],"via":["Haunter","Gastly"],"gens":[3,9]},"strength":{"how":["Virtual Console","TM"],"via":[],"gens":[3,7]},"submission":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"substitute":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,9]},"suckerpunch":{"how":["Nível","Virtual Console","Evento","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"sunnyday":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"swagger":{"how":["TM","Virtual Console","Tutor"],"via":["Haunter","Gastly"],"gens":[3,7]},"takedown":{"how":["Virtual Console"],"via":[],"gens":[7,7]},"taunt":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"telekinesis":{"how":["Tutor","TM"],"via":["Haunter","Gastly"],"gens":[5,7]},"terablast":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[9,9]},"thief":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"thunder":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"thunderbolt":{"how":["TM","Virtual Console"],"via":["Haunter","Gastly"],"gens":[3,9]},"thunderpunch":{"how":["TM","Virtual Console","Tutor","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"thunderwave":{"how":["TM"],"via":[],"gens":[9,9]},"torment":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[3,7]},"toxic":{"how":["TM","Virtual Console","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"toxicspikes":{"how":["TM"],"via":["Haunter"],"gens":[9,9]},"trick":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[4,9]},"trickroom":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[4,9]},"uproar":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[4,8]},"venoshock":{"how":["TM"],"via":["Haunter","Gastly"],"gens":[5,9]},"willowisp":{"how":["TM","Virtual Console","Evento","Ovo"],"via":["Haunter","Gastly"],"gens":[3,9]},"wonderroom":{"how":["TM","Tutor"],"via":["Haunter","Gastly"],"gens":[5,8]},"zapcannon":{"how":["Virtual Console"],"via":["Haunter","Gastly"],"gens":[7,7]}}};
 export const MOVES = {
  "acidspray": {
   "id": "acidspray",
@@ -403,6 +528,25 @@ export const MOVES = {
     "volatileStatus": "flinch"
    }
   ]
+ },
+ "allyswitch": {
+  "id": "allyswitch",
+  "name": "Ally Switch",
+  "num": 502,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 15,
+  "pri": 2,
+  "flags": [
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "User and ally swap positions; using again can fail."
  },
  "amnesia": {
   "id": "amnesia",
@@ -573,6 +717,34 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Power doubles if target was damaged this turn."
  },
+ "astonish": {
+  "id": "astonish",
+  "name": "Astonish",
+  "num": 310,
+  "type": "Ghost",
+  "cat": "Physical",
+  "bp": 30,
+  "acc": 100,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "30% chance to make the target flinch.",
+  "sec": [
+   {
+    "chance": 30,
+    "volatileStatus": "flinch"
+   }
+  ]
+ },
  "attract": {
   "id": "attract",
   "name": "Attract",
@@ -620,6 +792,29 @@ export const MOVES = {
   "gen": 4,
   "nonstd": null,
   "desc": "This move does not check accuracy."
+ },
+ "autotomize": {
+  "id": "autotomize",
+  "name": "Autotomize",
+  "num": 475,
+  "type": "Steel",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "snatch",
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": "Past",
+  "desc": "Raises the user's Speed by 2; user loses 100 kg.",
+  "boosts": {
+   "spe": 2
+  }
  },
  "avalanche": {
   "id": "avalanche",
@@ -1269,6 +1464,27 @@ export const MOVES = {
    }
   ]
  },
+ "clearsmog": {
+  "id": "clearsmog",
+  "name": "Clear Smog",
+  "num": 499,
+  "type": "Poison",
+  "cat": "Special",
+  "bp": 50,
+  "acc": true,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "Resets all of the target's stat stages to 0."
+ },
  "confide": {
   "id": "confide",
   "name": "Confide",
@@ -1294,6 +1510,29 @@ export const MOVES = {
   "boosts": {
    "spa": -1
   }
+ },
+ "confuseray": {
+  "id": "confuseray",
+  "name": "Confuse Ray",
+  "num": 109,
+  "type": "Ghost",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Confuses the target.",
+  "vol": "confusion"
  },
  "confusion": {
   "id": "confusion",
@@ -1321,6 +1560,29 @@ export const MOVES = {
     "volatileStatus": "confusion"
    }
   ]
+ },
+ "corrosivegas": {
+  "id": "corrosivegas",
+  "name": "Corrosive Gas",
+  "num": 810,
+  "type": "Poison",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 100,
+  "pp": 40,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "allAdjacent",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": "Unobtainable",
+  "desc": "Removes adjacent Pokemon's held items."
  },
  "counter": {
   "id": "counter",
@@ -1480,6 +1742,27 @@ export const MOVES = {
    }
   ]
  },
+ "dazzlinggleam": {
+  "id": "dazzlinggleam",
+  "name": "Dazzling Gleam",
+  "num": 605,
+  "type": "Fairy",
+  "cat": "Special",
+  "bp": 80,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "allAdjacentFoes",
+  "crit": 1,
+  "gen": 6,
+  "nonstd": null,
+  "desc": "No additional effect. Hits adjacent foes."
+ },
  "defensecurl": {
   "id": "defensecurl",
   "name": "Defense Curl",
@@ -1526,6 +1809,28 @@ export const MOVES = {
   "gen": 4,
   "nonstd": null,
   "desc": "-1 evasion; ends user and target hazards/terrain."
+ },
+ "destinybond": {
+  "id": "destinybond",
+  "name": "Destiny Bond",
+  "num": 194,
+  "type": "Ghost",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "bypasssub",
+   "noassist",
+   "failcopycat"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "If an opponent knocks out the user, it also faints.",
+  "vol": "destinybond"
  },
  "detect": {
   "id": "detect",
@@ -1575,6 +1880,30 @@ export const MOVES = {
   "gen": 1,
   "nonstd": null,
   "desc": "Digs underground turn 1, strikes turn 2."
+ },
+ "disable": {
+  "id": "disable",
+  "name": "Disable",
+  "num": 50,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 100,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "bypasssub",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "For 4 turns, disables the target's last move used.",
+  "vol": "disable"
  },
  "dive": {
   "id": "dive",
@@ -1871,6 +2200,34 @@ export const MOVES = {
   "desc": "Forces the target to switch to a random ally.",
   "forceSwitch": true
  },
+ "drainpunch": {
+  "id": "drainpunch",
+  "name": "Drain Punch",
+  "num": 409,
+  "type": "Fighting",
+  "cat": "Physical",
+  "bp": 75,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "punch",
+   "heal",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "User recovers 50% of the damage dealt.",
+  "drain": [
+   1,
+   2
+  ]
+ },
  "dreameater": {
   "id": "dreameater",
   "name": "Dream Eater",
@@ -1896,6 +2253,28 @@ export const MOVES = {
    1,
    2
   ]
+ },
+ "drillrun": {
+  "id": "drillrun",
+  "name": "Drill Run",
+  "num": 529,
+  "type": "Ground",
+  "cat": "Physical",
+  "bp": 80,
+  "acc": 95,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 2,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "High critical hit ratio."
  },
  "dualwingbeat": {
   "id": "dualwingbeat",
@@ -2074,6 +2453,31 @@ export const MOVES = {
    }
   ]
  },
+ "encore": {
+  "id": "encore",
+  "name": "Encore",
+  "num": 227,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 100,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "bypasssub",
+   "metronome",
+   "failencore"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "Target repeats its last move for its next 3 turns.",
+  "vol": "encore"
+ },
  "endure": {
   "id": "endure",
   "name": "Endure",
@@ -2125,6 +2529,29 @@ export const MOVES = {
     }
    }
   ]
+ },
+ "explosion": {
+  "id": "explosion",
+  "name": "Explosion",
+  "num": 153,
+  "type": "Normal",
+  "cat": "Physical",
+  "bp": 250,
+  "acc": 100,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome",
+   "noparentalbond"
+  ],
+  "target": "allAdjacent",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Hits adjacent Pokemon. The user faints.",
+  "selfdestruct": "always"
  },
  "facade": {
   "id": "facade",
@@ -3125,6 +3552,54 @@ export const MOVES = {
    "spa": 1
   }
  },
+ "grudge": {
+  "id": "grudge",
+  "name": "Grudge",
+  "num": 288,
+  "type": "Ghost",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "bypasssub",
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": "Past",
+  "desc": "If the user faints, the attack used loses all its PP.",
+  "vol": "grudge"
+ },
+ "gunkshot": {
+  "id": "gunkshot",
+  "name": "Gunk Shot",
+  "num": 441,
+  "type": "Poison",
+  "cat": "Physical",
+  "bp": 120,
+  "acc": 80,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "30% chance to poison the target.",
+  "sec": [
+   {
+    "chance": 30,
+    "status": "psn"
+   }
+  ]
+ },
  "gyroball": {
   "id": "gyroball",
   "name": "Gyro Ball",
@@ -3167,6 +3642,29 @@ export const MOVES = {
   "nonstd": "Past",
   "desc": "For 5 turns, hail crashes down.",
   "weather": "hail"
+ },
+ "harden": {
+  "id": "harden",
+  "name": "Harden",
+  "num": 106,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 30,
+  "pri": 0,
+  "flags": [
+   "snatch",
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Raises the user's Defense by 1.",
+  "boosts": {
+   "def": 1
+  }
  },
  "haze": {
   "id": "haze",
@@ -3214,6 +3712,32 @@ export const MOVES = {
     "chance": 30,
     "volatileStatus": "flinch"
    }
+  ]
+ },
+ "headsmash": {
+  "id": "headsmash",
+  "name": "Head Smash",
+  "num": 457,
+  "type": "Rock",
+  "cat": "Physical",
+  "bp": 150,
+  "acc": 80,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Has 1/2 recoil.",
+  "recoil": [
+   1,
+   2
   ]
  },
  "heatcrash": {
@@ -3268,6 +3792,30 @@ export const MOVES = {
    }
   ]
  },
+ "heavyslam": {
+  "id": "heavyslam",
+  "name": "Heavy Slam",
+  "num": 484,
+  "type": "Steel",
+  "cat": "Physical",
+  "bp": 0,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "nonsky",
+   "metronome",
+   "minimize"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "More power the heavier the user than the target."
+ },
  "helpinghand": {
   "id": "helpinghand",
   "name": "Helping Hand",
@@ -3290,6 +3838,27 @@ export const MOVES = {
   "desc": "One adjacent ally's move power is 1.5x this turn.",
   "vol": "helpinghand"
  },
+ "hex": {
+  "id": "hex",
+  "name": "Hex",
+  "num": 506,
+  "type": "Ghost",
+  "cat": "Special",
+  "bp": 65,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "Power doubles if the target has a status ailment."
+ },
  "hiddenpower": {
   "id": "hiddenpower",
   "name": "Hidden Power",
@@ -3310,6 +3879,28 @@ export const MOVES = {
   "gen": 2,
   "nonstd": "Past",
   "desc": "Varies in type based on the user's IVs."
+ },
+ "highhorsepower": {
+  "id": "highhorsepower",
+  "name": "High Horsepower",
+  "num": 667,
+  "type": "Ground",
+  "cat": "Physical",
+  "bp": 95,
+  "acc": 95,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 7,
+  "nonstd": null,
+  "desc": "No additional effect."
  },
  "holdhands": {
   "id": "holdhands",
@@ -3483,6 +4074,29 @@ export const MOVES = {
    "volatileStatus": "mustrecharge"
   }
  },
+ "hypnosis": {
+  "id": "hypnosis",
+  "name": "Hypnosis",
+  "num": 95,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 60,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Causes the target to fall asleep.",
+  "status": "slp"
+ },
  "icebeam": {
   "id": "icebeam",
   "name": "Ice Beam",
@@ -3507,6 +4121,39 @@ export const MOVES = {
    {
     "chance": 10,
     "status": "frz"
+   }
+  ]
+ },
+ "icefang": {
+  "id": "icefang",
+  "name": "Ice Fang",
+  "num": 423,
+  "type": "Ice",
+  "cat": "Physical",
+  "bp": 65,
+  "acc": 95,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome",
+   "bite"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "10% chance to freeze. 10% chance to flinch.",
+  "sec": [
+   {
+    "chance": 10,
+    "status": "frz"
+   },
+   {
+    "chance": 10,
+    "volatileStatus": "flinch"
    }
   ]
  },
@@ -3664,6 +4311,29 @@ export const MOVES = {
    }
   ]
  },
+ "imprison": {
+  "id": "imprison",
+  "name": "Imprison",
+  "num": 286,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "snatch",
+   "bypasssub",
+   "metronome",
+   "mustpressure"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "No foe can use any move known by the user.",
+  "vol": "imprison"
+ },
  "incinerate": {
   "id": "incinerate",
   "name": "Incinerate",
@@ -3712,6 +4382,29 @@ export const MOVES = {
    }
   ]
  },
+ "infestation": {
+  "id": "infestation",
+  "name": "Infestation",
+  "num": 611,
+  "type": "Bug",
+  "cat": "Special",
+  "bp": 20,
+  "acc": 100,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 6,
+  "nonstd": null,
+  "desc": "Traps and damages the target for 4-5 turns.",
+  "vol": "partiallytrapped"
+ },
  "ingrain": {
   "id": "ingrain",
   "name": "Ingrain",
@@ -3756,6 +4449,34 @@ export const MOVES = {
   "boosts": {
    "def": 2
   }
+ },
+ "ironhead": {
+  "id": "ironhead",
+  "name": "Iron Head",
+  "num": 442,
+  "type": "Steel",
+  "cat": "Physical",
+  "bp": 80,
+  "acc": 100,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "30% chance to make the target flinch.",
+  "sec": [
+   {
+    "chance": 30,
+    "volatileStatus": "flinch"
+   }
+  ]
  },
  "irontail": {
   "id": "irontail",
@@ -3926,6 +4647,34 @@ export const MOVES = {
    "def": -1
   }
  },
+ "lick": {
+  "id": "lick",
+  "name": "Lick",
+  "num": 122,
+  "type": "Ghost",
+  "cat": "Physical",
+  "bp": 30,
+  "acc": 100,
+  "pp": 30,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "30% chance to paralyze the target.",
+  "sec": [
+   {
+    "chance": 30,
+    "status": "par"
+   }
+  ]
+ },
  "lifedew": {
   "id": "lifedew",
   "name": "Life Dew",
@@ -4075,6 +4824,49 @@ export const MOVES = {
   "nonstd": null,
   "desc": "This move does not check accuracy."
  },
+ "magnetrise": {
+  "id": "magnetrise",
+  "name": "Magnet Rise",
+  "num": 393,
+  "type": "Electric",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "snatch",
+   "gravity",
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "For 5 turns, the user has immunity to Ground.",
+  "vol": "magnetrise"
+ },
+ "meanlook": {
+  "id": "meanlook",
+  "name": "Mean Look",
+  "num": 212,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "reflectable",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "Prevents the target from switching out."
+ },
  "megadrain": {
   "id": "megadrain",
   "name": "Mega Drain",
@@ -4177,6 +4969,28 @@ export const MOVES = {
     }
    }
   ]
+ },
+ "meteorbeam": {
+  "id": "meteorbeam",
+  "name": "Meteor Beam",
+  "num": 800,
+  "type": "Rock",
+  "cat": "Special",
+  "bp": 120,
+  "acc": 90,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "charge",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": null,
+  "desc": "Raises user's Sp. Atk by 1 on turn 1. Hits turn 2."
  },
  "metronome": {
   "id": "metronome",
@@ -4499,6 +5313,28 @@ export const MOVES = {
   "desc": "A sleeping target is hurt by 1/4 max HP per turn.",
   "vol": "nightmare"
  },
+ "nightshade": {
+  "id": "nightshade",
+  "name": "Night Shade",
+  "num": 101,
+  "type": "Ghost",
+  "cat": "Special",
+  "bp": 0,
+  "acc": 100,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Does damage equal to the user's level.",
+  "damage": "level"
+ },
  "nightslash": {
   "id": "nightslash",
   "name": "Night Slash",
@@ -4609,6 +5445,28 @@ export const MOVES = {
    }
   }
  },
+ "painsplit": {
+  "id": "painsplit",
+  "name": "Pain Split",
+  "num": 220,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "Shares HP of user and target equally."
+ },
  "payback": {
   "id": "payback",
   "name": "Payback",
@@ -4630,6 +5488,28 @@ export const MOVES = {
   "gen": 4,
   "nonstd": null,
   "desc": "Power doubles if the user moves after the target."
+ },
+ "perishsong": {
+  "id": "perishsong",
+  "name": "Perish Song",
+  "num": 195,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "sound",
+   "distance",
+   "bypasssub",
+   "metronome"
+  ],
+  "target": "all",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "All active Pokemon will faint in 3 turns."
  },
  "petalblizzard": {
   "id": "petalblizzard",
@@ -4679,6 +5559,55 @@ export const MOVES = {
   "self": {
    "volatileStatus": "lockedmove"
   }
+ },
+ "phantomforce": {
+  "id": "phantomforce",
+  "name": "Phantom Force",
+  "num": 566,
+  "type": "Ghost",
+  "cat": "Physical",
+  "bp": 90,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "charge",
+   "mirror",
+   "metronome",
+   "nosleeptalk",
+   "noassist",
+   "failinstruct"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 6,
+  "nonstd": null,
+  "desc": "Disappears turn 1. Hits turn 2. Breaks protection.",
+  "breaksProtect": true
+ },
+ "poisongas": {
+  "id": "poisongas",
+  "name": "Poison Gas",
+  "num": 139,
+  "type": "Poison",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 90,
+  "pp": 40,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "metronome"
+  ],
+  "target": "allAdjacentFoes",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Poisons the foe(s).",
+  "status": "psn"
  },
  "poisonjab": {
   "id": "poisonjab",
@@ -4731,6 +5660,27 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Poisons the target.",
   "status": "psn"
+ },
+ "poltergeist": {
+  "id": "poltergeist",
+  "name": "Poltergeist",
+  "num": 809,
+  "type": "Ghost",
+  "cat": "Physical",
+  "bp": 110,
+  "acc": 90,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": null,
+  "desc": "Fails if the target has no held item."
  },
  "poweruppunch": {
   "id": "poweruppunch",
@@ -4809,6 +5759,87 @@ export const MOVES = {
   "vol": "protect",
   "stalling": true
  },
+ "psychic": {
+  "id": "psychic",
+  "name": "Psychic",
+  "num": 94,
+  "type": "Psychic",
+  "cat": "Special",
+  "bp": 90,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "10% chance to lower the target's Sp. Def by 1.",
+  "sec": [
+   {
+    "chance": 10,
+    "boosts": {
+     "spd": -1
+    }
+   }
+  ]
+ },
+ "psychicfangs": {
+  "id": "psychicfangs",
+  "name": "Psychic Fangs",
+  "num": 706,
+  "type": "Psychic",
+  "cat": "Physical",
+  "bp": 85,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome",
+   "bite"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 7,
+  "nonstd": null,
+  "desc": "Destroys screens, unless the target is immune."
+ },
+ "psychicnoise": {
+  "id": "psychicnoise",
+  "name": "Psychic Noise",
+  "num": 917,
+  "type": "Psychic",
+  "cat": "Special",
+  "bp": 75,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "sound",
+   "bypasssub",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 9,
+  "nonstd": null,
+  "desc": "For 2 turns, the target is prevented from healing.",
+  "sec": [
+   {
+    "chance": 100,
+    "volatileStatus": "healblock"
+   }
+  ]
+ },
  "psychocut": {
   "id": "psychocut",
   "name": "Psycho Cut",
@@ -4851,6 +5882,27 @@ export const MOVES = {
   "gen": 2,
   "nonstd": null,
   "desc": "Copies the target's current stat stages."
+ },
+ "psywave": {
+  "id": "psywave",
+  "name": "Psywave",
+  "num": 149,
+  "type": "Psychic",
+  "cat": "Special",
+  "bp": 0,
+  "acc": 100,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": "Past",
+  "desc": "Random damage equal to 0.5x-1.5x user's level."
  },
  "punishment": {
   "id": "punishment",
@@ -5062,6 +6114,28 @@ export const MOVES = {
   "desc": "For 5 turns, physical damage to allies is halved.",
   "side": "reflect"
  },
+ "reflecttype": {
+  "id": "reflecttype",
+  "name": "Reflect Type",
+  "num": 513,
+  "type": "Normal",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "bypasssub",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "User becomes the same type as the target."
+ },
  "refresh": {
   "id": "refresh",
   "name": "Refresh",
@@ -5218,6 +6292,32 @@ export const MOVES = {
   "desc": "Forces the target to switch to a random ally.",
   "forceSwitch": true
  },
+ "rockblast": {
+  "id": "rockblast",
+  "name": "Rock Blast",
+  "num": 350,
+  "type": "Rock",
+  "cat": "Physical",
+  "bp": 25,
+  "acc": 90,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome",
+   "bullet"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "Hits 2-5 times in one turn.",
+  "multihit": [
+   2,
+   5
+  ]
+ },
  "rockclimb": {
   "id": "rockclimb",
   "name": "Rock Climb",
@@ -5245,6 +6345,29 @@ export const MOVES = {
     "volatileStatus": "confusion"
    }
   ]
+ },
+ "rockpolish": {
+  "id": "rockpolish",
+  "name": "Rock Polish",
+  "num": 397,
+  "type": "Rock",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "snatch",
+   "metronome"
+  ],
+  "target": "self",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Raises the user's Speed by 2.",
+  "boosts": {
+   "spe": 2
+  }
  },
  "rockslide": {
   "id": "rockslide",
@@ -5303,6 +6426,27 @@ export const MOVES = {
    }
   ]
  },
+ "rockthrow": {
+  "id": "rockthrow",
+  "name": "Rock Throw",
+  "num": 88,
+  "type": "Rock",
+  "cat": "Physical",
+  "bp": 50,
+  "acc": 90,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "No additional effect."
+ },
  "rocktomb": {
   "id": "rocktomb",
   "name": "Rock Tomb",
@@ -5331,6 +6475,27 @@ export const MOVES = {
     }
    }
   ]
+ },
+ "roleplay": {
+  "id": "roleplay",
+  "name": "Role Play",
+  "num": 272,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "bypasssub",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "User replaces its Ability with the target's."
  },
  "rollout": {
   "id": "rollout",
@@ -5383,6 +6548,27 @@ export const MOVES = {
    1,
    2
   ]
+ },
+ "rototiller": {
+  "id": "rototiller",
+  "name": "Rototiller",
+  "num": 563,
+  "type": "Ground",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "distance",
+   "nonsky",
+   "metronome"
+  ],
+  "target": "all",
+  "crit": 1,
+  "gen": 6,
+  "nonstd": "Past",
+  "desc": "Raises Atk/Sp. Atk of grounded Grass types by 1."
  },
  "round": {
   "id": "round",
@@ -5448,6 +6634,28 @@ export const MOVES = {
   "nonstd": null,
   "desc": "For 5 turns, a sandstorm rages. Rock: 1.5x SpD.",
   "weather": "Sandstorm"
+ },
+ "sandtomb": {
+  "id": "sandtomb",
+  "name": "Sand Tomb",
+  "num": 328,
+  "type": "Ground",
+  "cat": "Physical",
+  "bp": 35,
+  "acc": 85,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "Traps and damages the target for 4-5 turns.",
+  "vol": "partiallytrapped"
  },
  "scald": {
   "id": "scald",
@@ -5687,6 +6895,29 @@ export const MOVES = {
   "desc": "Does damage equal to the user's level.",
   "damage": "level"
  },
+ "selfdestruct": {
+  "id": "selfdestruct",
+  "name": "Self-Destruct",
+  "num": 120,
+  "type": "Normal",
+  "cat": "Physical",
+  "bp": 200,
+  "acc": 100,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome",
+   "noparentalbond"
+  ],
+  "target": "allAdjacent",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Hits adjacent Pokemon. The user faints.",
+  "selfdestruct": "always"
+ },
  "shadowball": {
   "id": "shadowball",
   "name": "Shadow Ball",
@@ -5738,6 +6969,29 @@ export const MOVES = {
   "gen": 4,
   "nonstd": null,
   "desc": "High critical hit ratio."
+ },
+ "shadowpunch": {
+  "id": "shadowpunch",
+  "name": "Shadow Punch",
+  "num": 325,
+  "type": "Ghost",
+  "cat": "Physical",
+  "bp": 60,
+  "acc": true,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "punch",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "This move does not check accuracy."
  },
  "shellsmash": {
   "id": "shellsmash",
@@ -5793,6 +7047,59 @@ export const MOVES = {
    }
   ]
  },
+ "skillswap": {
+  "id": "skillswap",
+  "name": "Skill Swap",
+  "num": 285,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "bypasssub",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "The user and the target trade Abilities."
+ },
+ "skittersmack": {
+  "id": "skittersmack",
+  "name": "Skitter Smack",
+  "num": 806,
+  "type": "Bug",
+  "cat": "Physical",
+  "bp": 70,
+  "acc": 90,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": null,
+  "desc": "100% chance to lower target's Sp. Atk by 1.",
+  "sec": [
+   {
+    "chance": 100,
+    "boosts": {
+     "spa": -1
+    }
+   }
+  ]
+ },
  "skullbash": {
   "id": "skullbash",
   "name": "Skull Bash",
@@ -5845,6 +7152,29 @@ export const MOVES = {
   "gen": 5,
   "nonstd": "Past",
   "desc": "User and foe fly up turn 1. Damages on turn 2."
+ },
+ "slam": {
+  "id": "slam",
+  "name": "Slam",
+  "num": 21,
+  "type": "Normal",
+  "cat": "Physical",
+  "bp": 80,
+  "acc": 75,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "nonsky",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "No additional effect."
  },
  "slash": {
   "id": "slash",
@@ -5973,6 +7303,33 @@ export const MOVES = {
    }
   ]
  },
+ "sludgewave": {
+  "id": "sludgewave",
+  "name": "Sludge Wave",
+  "num": 482,
+  "type": "Poison",
+  "cat": "Special",
+  "bp": 95,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "allAdjacent",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "10% chance to poison adjacent Pokemon.",
+  "sec": [
+   {
+    "chance": 10,
+    "status": "psn"
+   }
+  ]
+ },
  "smackdown": {
   "id": "smackdown",
   "name": "Smack Down",
@@ -5995,6 +7352,33 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Removes the target's Ground immunity.",
   "vol": "smackdown"
+ },
+ "smog": {
+  "id": "smog",
+  "name": "Smog",
+  "num": 123,
+  "type": "Poison",
+  "cat": "Special",
+  "bp": 30,
+  "acc": 70,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "40% chance to poison the target.",
+  "sec": [
+   {
+    "chance": 40,
+    "status": "psn"
+   }
+  ]
  },
  "smokescreen": {
   "id": "smokescreen",
@@ -6168,6 +7552,70 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Lowers the PP of the target's last move by 4."
  },
+ "stealthrock": {
+  "id": "stealthrock",
+  "name": "Stealth Rock",
+  "num": 446,
+  "type": "Rock",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "reflectable",
+   "metronome",
+   "mustpressure"
+  ],
+  "target": "foeSide",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Hurts foes on switch-in. Factors Rock weakness.",
+  "side": "stealthrock"
+ },
+ "steelbeam": {
+  "id": "steelbeam",
+  "name": "Steel Beam",
+  "num": 796,
+  "type": "Steel",
+  "cat": "Special",
+  "bp": 140,
+  "acc": 95,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": null,
+  "desc": "User loses 50% max HP."
+ },
+ "steelroller": {
+  "id": "steelroller",
+  "name": "Steel Roller",
+  "num": 798,
+  "type": "Steel",
+  "cat": "Physical",
+  "bp": 130,
+  "acc": 100,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 8,
+  "nonstd": null,
+  "desc": "Fails if there is no terrain active. Ends the terrain."
+ },
  "steelwing": {
   "id": "steelwing",
   "name": "Steel Wing",
@@ -6221,6 +7669,27 @@ export const MOVES = {
   "gen": 7,
   "nonstd": null,
   "desc": "Power doubles if the user's last move failed."
+ },
+ "stoneedge": {
+  "id": "stoneedge",
+  "name": "Stone Edge",
+  "num": 444,
+  "type": "Rock",
+  "cat": "Physical",
+  "bp": 100,
+  "acc": 80,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 2,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "High critical hit ratio."
  },
  "strength": {
   "id": "strength",
@@ -6344,6 +7813,28 @@ export const MOVES = {
   "nonstd": null,
   "desc": "User takes 1/4 its max HP to put in a substitute.",
   "vol": "substitute"
+ },
+ "suckerpunch": {
+  "id": "suckerpunch",
+  "name": "Sucker Punch",
+  "num": 389,
+  "type": "Dark",
+  "cat": "Physical",
+  "bp": 70,
+  "acc": 100,
+  "pp": 5,
+  "pri": 1,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Usually goes first. Fails if target is not attacking."
  },
  "sunnyday": {
   "id": "sunnyday",
@@ -6624,6 +8115,31 @@ export const MOVES = {
   "desc": "Target can't use status moves its next 3 turns.",
   "vol": "taunt"
  },
+ "telekinesis": {
+  "id": "telekinesis",
+  "name": "Telekinesis",
+  "num": 477,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "gravity",
+   "allyanim",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": "Past",
+  "desc": "For 3 turns, target floats but moves can't miss it.",
+  "vol": "telekinesis"
+ },
  "temperflare": {
   "id": "temperflare",
   "name": "Temper Flare",
@@ -6741,6 +8257,93 @@ export const MOVES = {
    }
   ]
  },
+ "thunder": {
+  "id": "thunder",
+  "name": "Thunder",
+  "num": 87,
+  "type": "Electric",
+  "cat": "Special",
+  "bp": 110,
+  "acc": 70,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "30% chance to paralyze. Can't miss in rain.",
+  "sec": [
+   {
+    "chance": 30,
+    "status": "par"
+   }
+  ]
+ },
+ "thunderbolt": {
+  "id": "thunderbolt",
+  "name": "Thunderbolt",
+  "num": 85,
+  "type": "Electric",
+  "cat": "Special",
+  "bp": 90,
+  "acc": 100,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "10% chance to paralyze the target.",
+  "sec": [
+   {
+    "chance": 10,
+    "status": "par"
+   }
+  ]
+ },
+ "thunderfang": {
+  "id": "thunderfang",
+  "name": "Thunder Fang",
+  "num": 422,
+  "type": "Electric",
+  "cat": "Physical",
+  "bp": 65,
+  "acc": 95,
+  "pp": 15,
+  "pri": 0,
+  "flags": [
+   "contact",
+   "protect",
+   "mirror",
+   "metronome",
+   "bite"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "10% chance to paralyze. 10% chance to flinch.",
+  "sec": [
+   {
+    "chance": 10,
+    "status": "par"
+   },
+   {
+    "chance": 10,
+    "volatileStatus": "flinch"
+   }
+  ]
+ },
  "thunderpunch": {
   "id": "thunderpunch",
   "name": "Thunder Punch",
@@ -6769,6 +8372,29 @@ export const MOVES = {
     "status": "par"
    }
   ]
+ },
+ "thunderwave": {
+  "id": "thunderwave",
+  "name": "Thunder Wave",
+  "num": 86,
+  "type": "Electric",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 90,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "reflectable",
+   "mirror",
+   "metronome"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 1,
+  "nonstd": null,
+  "desc": "Paralyzes the target.",
+  "status": "par"
  },
  "torment": {
   "id": "torment",
@@ -6816,6 +8442,29 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Badly poisons the target. Poison types can't miss.",
   "status": "tox"
+ },
+ "toxicspikes": {
+  "id": "toxicspikes",
+  "name": "Toxic Spikes",
+  "num": 390,
+  "type": "Poison",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 20,
+  "pri": 0,
+  "flags": [
+   "reflectable",
+   "nonsky",
+   "metronome",
+   "mustpressure"
+  ],
+  "target": "foeSide",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Poisons grounded foes on switch-in. Max 2 layers.",
+  "side": "toxicspikes"
  },
  "trailblaze": {
   "id": "trailblaze",
@@ -6873,6 +8522,50 @@ export const MOVES = {
     "chance": 20
    }
   ]
+ },
+ "trick": {
+  "id": "trick",
+  "name": "Trick",
+  "num": 271,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "allyanim",
+   "noassist",
+   "failcopycat"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "User switches its held item with the target's."
+ },
+ "trickroom": {
+  "id": "trickroom",
+  "name": "Trick Room",
+  "num": 433,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 5,
+  "pri": -7,
+  "flags": [
+   "mirror",
+   "metronome"
+  ],
+  "target": "all",
+  "crit": 1,
+  "gen": 4,
+  "nonstd": null,
+  "desc": "Goes last. For 5 turns, turn order is reversed.",
+  "pseudo": "trickroom"
  },
  "tripleaxel": {
   "id": "tripleaxel",
@@ -6953,6 +8646,34 @@ export const MOVES = {
     "volatileStatus": "flinch"
    }
   ]
+ },
+ "uproar": {
+  "id": "uproar",
+  "name": "Uproar",
+  "num": 253,
+  "type": "Normal",
+  "cat": "Special",
+  "bp": 90,
+  "acc": 100,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "sound",
+   "bypasssub",
+   "metronome",
+   "nosleeptalk",
+   "failinstruct"
+  ],
+  "target": "randomNormal",
+  "crit": 1,
+  "gen": 3,
+  "nonstd": null,
+  "desc": "Lasts 3 turns. Active Pokemon cannot fall asleep.",
+  "self": {
+   "volatileStatus": "uproar"
+  }
  },
  "venoshock": {
   "id": "venoshock",
@@ -7189,6 +8910,26 @@ export const MOVES = {
   "desc": "Traps and damages the target for 4-5 turns.",
   "vol": "partiallytrapped"
  },
+ "wideguard": {
+  "id": "wideguard",
+  "name": "Wide Guard",
+  "num": 469,
+  "type": "Rock",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 3,
+  "flags": [
+   "snatch"
+  ],
+  "target": "allySide",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "Protects allies from multi-target moves this turn.",
+  "side": "wideguard"
+ },
  "willowisp": {
   "id": "willowisp",
   "name": "Will-O-Wisp",
@@ -7257,6 +8998,27 @@ export const MOVES = {
   "boosts": {
    "def": 1
   }
+ },
+ "wonderroom": {
+  "id": "wonderroom",
+  "name": "Wonder Room",
+  "num": 472,
+  "type": "Psychic",
+  "cat": "Status",
+  "bp": 0,
+  "acc": true,
+  "pp": 10,
+  "pri": 0,
+  "flags": [
+   "mirror",
+   "metronome"
+  ],
+  "target": "all",
+  "crit": 1,
+  "gen": 5,
+  "nonstd": null,
+  "desc": "For 5 turns, all Defense and Sp. Def stats switch.",
+  "pseudo": "wonderroom"
  },
  "workup": {
   "id": "workup",
@@ -7350,6 +9112,34 @@ export const MOVES = {
   "nonstd": null,
   "desc": "Puts the target to sleep after 1 turn.",
   "vol": "yawn"
+ },
+ "zapcannon": {
+  "id": "zapcannon",
+  "name": "Zap Cannon",
+  "num": 192,
+  "type": "Electric",
+  "cat": "Special",
+  "bp": 120,
+  "acc": 50,
+  "pp": 5,
+  "pri": 0,
+  "flags": [
+   "protect",
+   "mirror",
+   "metronome",
+   "bullet"
+  ],
+  "target": "normal",
+  "crit": 1,
+  "gen": 2,
+  "nonstd": null,
+  "desc": "100% chance to paralyze the target.",
+  "sec": [
+   {
+    "chance": 100,
+    "status": "par"
+   }
+  ]
  },
  "zenheadbutt": {
   "id": "zenheadbutt",

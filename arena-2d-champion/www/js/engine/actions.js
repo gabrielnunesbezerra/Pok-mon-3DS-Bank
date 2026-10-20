@@ -6,6 +6,7 @@ import { FIELD_TURN, HP_SCALE, GLOBAL_COOLDOWN } from './constants.js';
 import {
   slotMove, itemActive, hasAbility, hasType, cooldownMult, getStat, isGrounded, weatherFor, isSun, isRain, itemRemovable,
 } from './mon.js';
+import { effectiveness } from '../data/dex.js';
 import * as H from './hit.js';
 
 // ---------------------------------------------------------------- custos
@@ -61,11 +62,14 @@ export function slotBlock(b, mon, slot) {
   if (mv.cat === 'Status' && mon.vol.taunt) return 'provocado';
   if (mv.cat === 'Status' && itemActive(mon) === 'assaultvest') return 'colete';
   if (mon.vol.torment && mon.lastMove === id) return 'tormento';
+  if (mon.vol.disable && mon.vol.disable.slot === slot) return 'desativado';
+  const foe = b.foeActive?.(mon);
+  if (foe?.vol.imprison && foe.moves.some(m => (m.mimic || m.id) === id)) return 'aprisionado';
   if ((id === 'snore' || id === 'sleeptalk') && mon.status !== 'slp') return 'acordado';
   if (mon.stamina < staminaCost(b, mon, mv)) return 'stamina';
   return null;
 }
-const RESTRICTION = ['escolha', 'bis', 'provocado', 'colete', 'tormento', 'acordado'];
+const RESTRICTION = ['escolha', 'bis', 'provocado', 'colete', 'tormento', 'acordado', 'desativado', 'aprisionado'];
 
 function allRestricted(b, mon) {
   return mon.moves.every((m, i) => RESTRICTION.includes(slotBlock(b, mon, i)));
@@ -201,7 +205,15 @@ export function executeMove(b, user, id, aim, opts = {}) {
     const a = foe?.action;
     if (!(a && (a.type === 'windup' || a.type === 'charge') && a.pri > 0)) return failMove(b, user);
   }
-  if (['helpinghand', 'followme', 'holdhands', 'dragoncheer'].includes(id)) return failMove(b, user);
+  if (['helpinghand', 'followme', 'holdhands', 'dragoncheer', 'allyswitch'].includes(id)) return failMove(b, user);
+  if (id === 'suckerpunch') {
+    // só funciona se o alvo estiver preparando um ataque
+    const a = foe?.action;
+    if (!(a && ['windup', 'charge'].includes(a.type) && MOVES[a.id]?.cat !== 'Status')) return failMove(b, user);
+  }
+  if (id === 'poltergeist' && !foe?.item) return failMove(b, user);
+  if (id === 'steelroller' && !b.field.terrain) return failMove(b, user);
+  if (id === 'rototiller' && !(hasType(user, 'Grass') && isGrounded(b, user))) return failMove(b, user);
   if (id === 'snore' && user.status !== 'slp') return failMove(b, user);
   if (mv.cat !== 'Status' && b.field.weather?.id === 'primordialsea' && mv.type === 'Fire') {
     b.say('O ataque de Fogo se apagou na chuva torrencial!');
@@ -230,6 +242,7 @@ export function executeMove(b, user, id, aim, opts = {}) {
       }[id];
       if (msg) b.say(msg);
       if (id === 'skullbash') H.boost(b, user, { def: 1 }, user, mv);
+      if (id === 'meteorbeam') H.boost(b, user, { spa: 1 }, user, mv);
       user.action = { type: 'charge', t: 0, dur: chargeTime, id, aim, called: opts.called, slot: opts.slot, pri: mv.pri };
       b.setAnim(user, 'Charge', chargeTime);
       b.emit({ t: 'charge', mon: user, id });
@@ -290,7 +303,71 @@ export function selfMove(b, user, exec) {
   const fail = (msg = 'Mas falhou!') => { b.say(msg); };
   switch (id) {
     case 'growth': ok(); return H.boost(b, user, isSun(w) ? { atk: 2, spa: 2 } : { atk: 1, spa: 1 }, user, mv, { fromMove: true });
-    case 'curse': ok(); return H.boost(b, user, { spe: -1, atk: 1, def: 1 }, user, mv, { fromMove: true });
+    case 'curse':
+      // Fantasma: gasta metade dos PS e amaldiçoa o alvo; outros tipos: Vel -1, Atq +1, Def +1
+      if (hasType(user, 'Ghost')) {
+        if (!foe || foe.vol.curse) return fail();
+        H.damageMon(b, user, user.maxhp / 2, { direct: true });
+        foe.vol.curse = {};
+        b.say(`${user.name} cortou os próprios PS e amaldiçoou ${foe.name}!`);
+        b.emit({ t: 'statusHit', mon: foe, by: user, mv });
+        return ok();
+      }
+      ok(); return H.boost(b, user, { spe: -1, atk: 1, def: 1 }, user, mv, { fromMove: true });
+    case 'autotomize':
+      ok();
+      H.boost(b, user, { spe: 2 }, user, mv, { fromMove: true });
+      if (user.weightkg > 0.1) { user.weightkg = Math.max(0.1, user.weightkg - 100); b.say(`${user.name} ficou mais leve!`); }
+      return;
+    case 'magnetrise':
+      if (user.vol.magnetrise || user.vol.smackdown || user.vol.ingrain) return fail();
+      user.vol.magnetrise = { t: FIELD_TURN * 5 };
+      b.say(`${user.name} levitou com eletromagnetismo!`);
+      return ok();
+    case 'destinybond':
+      user.vol.destinybond = { t: FIELD_TURN };
+      b.say(`${user.name} está tentando levar o adversário junto!`);
+      return ok();
+    case 'grudge':
+      user.vol.grudge = {};
+      b.say(`${user.name} quer que o adversário guarde rancor!`);
+      return ok();
+    case 'imprison':
+      if (user.vol.imprison) return fail();
+      user.vol.imprison = {};
+      b.say(`${user.name} selou os golpes que conhece!`);
+      return ok();
+    case 'wideguard':
+      user.vol.wideguard = { t: 1.2 };
+      b.say('O Wide Guard protege o time!');
+      b.emit({ t: 'protectUp', mon: user });
+      return ok();
+    case 'perishsong': {
+      const mons = [user, foe].filter(Boolean);
+      for (const m of mons) if (!m.vol.perish) m.vol.perish = { t: FIELD_TURN * 3 };
+      b.say('Todos que ouviram a canção vão desmaiar em 3 turnos!');
+      return ok();
+    }
+    case 'stealthrock': case 'toxicspikes': {
+      const hz = b.sides[1 - user.side].hazards;
+      if (id === 'stealthrock') { if (hz.stealthrock) return fail(); hz.stealthrock = true; b.say('Pedras pontudas flutuam em volta do lado adversário!'); }
+      else { if (hz.toxicspikes >= 2) return fail(); hz.toxicspikes++; b.say('Espinhos venenosos se espalharam pelo lado adversário!'); }
+      b.emit({ t: 'hazard', side: 1 - user.side, id });
+      return ok();
+    }
+    case 'trickroom':
+      b.field.trickroom = b.field.trickroom > 0 ? 0 : FIELD_TURN * 5;
+      b.say(b.field.trickroom ? `${user.name} distorceu as dimensões!` : 'As dimensões voltaram ao normal.');
+      b.emit({ t: 'room', id: 'trickroom', on: b.field.trickroom > 0 });
+      return ok();
+    case 'wonderroom':
+      b.field.wonderroom = b.field.wonderroom > 0 ? 0 : FIELD_TURN * 5;
+      b.say(b.field.wonderroom ? 'Defesa e Defesa Especial foram trocadas!' : 'A Wonder Room acabou.');
+      b.emit({ t: 'room', id: 'wonderroom', on: b.field.wonderroom > 0 });
+      return ok();
+    case 'rototiller':
+      ok();
+      return H.boost(b, user, { atk: 1, spa: 1 }, user, mv, { fromMove: true });
     case 'bellydrum':
       if (user.hp * 2 <= user.maxhp || user.boosts.atk >= 6) return fail();
       H.damageMon(b, user, Math.floor(user.maxhp / 2), { direct: true });
@@ -428,7 +505,7 @@ export function strike(b, user, target, exec, ctx = {}) {
   if (target.action?.type === 'switching' && mv.id !== 'pursuit') return 'none';
   if (target.action?.type === 'entering') return 'none';
   if (target.vol.protect && mv.flags.includes('protect') && !ctx.unavoidable) {
-    if (mv.id === 'feint') {
+    if (mv.id === 'feint' || mv.id === 'phantomforce') {
       delete target.vol.protect;
       b.say(`${target.name} teve a proteção quebrada!`);
     } else {
@@ -449,6 +526,8 @@ export function strike(b, user, target, exec, ctx = {}) {
       }
       if (mv.id === 'dreameater' && target.status !== 'slp') { b.say(`Não afeta ${target.name}...`); return 'immune'; }
     }
+    if (mv.ohko && hasAbility(target, 'sturdy')) { b.say(`${target.name} aguentou com Sturdy!`); return 'immune'; }
+    if (mv.id === 'thunderwave' && effectiveness('Electric', target.types) === 0) { b.say(`Não afeta ${target.name}...`); return 'immune'; }
     if (mv.flags.includes('powder') && hasType(target, 'Grass')) {
       b.say(`Não afeta ${target.name}...`);
       b.text(target, 'Imune', '#bbbbbb');
@@ -465,7 +544,12 @@ export function strike(b, user, target, exec, ctx = {}) {
 
   if (mv.cat === 'Status') return statusHit(b, user, target, exec, mv, ctx);
 
-  if (mv.id === 'brickbreak') {
+  if (target.vol.wideguard && ['allAdjacent', 'allAdjacentFoes'].includes(mv.target)) {
+    b.say(`O Wide Guard protegeu ${target.name}!`);
+    b.emit({ t: 'protect', mon: target });
+    return 'blocked';
+  }
+  if (mv.id === 'brickbreak' || mv.id === 'psychicfangs') {
     const conds = b.sides[target.side].conds;
     if (conds.reflect > 0 || conds.lightscreen > 0) { conds.reflect = 0; conds.lightscreen = 0; b.say('As barreiras foram quebradas!'); }
   }
@@ -493,7 +577,7 @@ export function strike(b, user, target, exec, ctx = {}) {
     if (itemActive(user) === 'bigroot') amount *= 1.3;
     H.healMon(b, user, amount);
   }
-  if (mv.recoil && dealt > 0) {
+  if (mv.recoil && dealt > 0 && !hasAbility(user, 'rockhead')) {
     H.damageMon(b, user, (dealt * mv.recoil[0]) / mv.recoil[1], { direct: true });
     b.say(`${user.name} se feriu com o impacto!`);
   }
@@ -535,7 +619,15 @@ export function strike(b, user, target, exec, ctx = {}) {
     delete user.vol.leechseed;
     delete user.vol.partiallytrapped;
   }
-  if (mv.id === 'icespinner' && b.field.terrain) b.clearTerrain();
+  if ((mv.id === 'icespinner' || mv.id === 'steelroller') && b.field.terrain) b.clearTerrain();
+  if (mv.id === 'clearsmog' && dealt !== -1 && !target.fainted) {
+    for (const k of Object.keys(target.boosts)) target.boosts[k] = 0;
+    b.say(`As mudanças de atributo de ${target.name} foram desfeitas!`);
+  }
+  if (mv.id === 'steelbeam' && !user.fainted) {
+    H.damageMon(b, user, user.maxhp / 4, { direct: true });
+    b.say(`${user.name} se feriu com o próprio raio!`);
+  }
   if (mv.id === 'furycutter' && user.vol.furycutter) user.vol.furycutter = { count: Math.min(2, user.vol.furycutter.count + 1), at: b.time };
   if (mv.id === 'tripleaxel') ctx.hitLanded = true;
 
@@ -564,6 +656,13 @@ export function strike(b, user, target, exec, ctx = {}) {
       b.say(`O balão de ${target.name} estourou!`);
     }
     if (target.action?.type === 'stance' && target.action.mode !== 'bide') stanceRetaliate(b, target, user, mv, dealt);
+  }
+  if (dealt > 0 && !target.fainted && hasAbility(target, 'cursedbody') && !user.vol.disable && b.rng.chance(30)) {
+    const slot = user.moves.findIndex(m => (m.mimic || m.id) === exec.id);
+    if (slot >= 0) {
+      user.vol.disable = { t: FIELD_TURN * 4, slot };
+      b.say(`O Cursed Body de ${target.name} desativou ${mv.name}!`);
+    }
   }
   applySelfEffects(b, user, exec);
   if (mv.forceSwitch && dealt !== -1 && !target.fainted) b.forceSwitch(target);
@@ -652,6 +751,48 @@ function statusHit(b, user, target, exec, mv, ctx) {
       b.say('O vento varreu as barreiras!');
       return done();
     }
+    case 'disable':
+      if (H.addVolatile(b, target, 'disable', user, mv, loud)) return done();
+      return 'fail';
+    case 'meanlook':
+      H.addVolatile(b, target, 'trapped', user, mv, loud);
+      return done();
+    case 'telekinesis':
+      if (H.addVolatile(b, target, 'telekinesis', user, mv, loud)) return done();
+      return 'fail';
+    case 'painsplit': {
+      const avg = Math.floor((user.hp / user.maxhp + target.hp / target.maxhp) / 2 * 1000) / 1000;
+      user.hp = Math.max(1, Math.round(user.maxhp * avg));
+      target.hp = Math.max(1, Math.round(target.maxhp * avg));
+      b.say('Os dois dividiram os PS!');
+      return done();
+    }
+    case 'reflecttype':
+      user.types = [...target.types];
+      b.say(`${user.name} copiou o tipo de ${target.name}!`);
+      return done();
+    case 'roleplay':
+      if (target.ability === user.ability) return fail();
+      user.ability = target.ability;
+      b.say(`${user.name} copiou a habilidade de ${target.name}!`);
+      return done();
+    case 'skillswap':
+      if (target.isMega || user.isMega) return fail();
+      [user.ability, target.ability] = [target.ability, user.ability];
+      b.say(`${user.name} trocou de habilidade com ${target.name}!`);
+      return done();
+    case 'trick': {
+      if ((!user.item && !target.item) || (user.item && !itemRemovable(user)) || (target.item && !itemRemovable(target))) return fail();
+      [user.item, target.item] = [target.item, user.item];
+      b.say(`${user.name} trocou de item com ${target.name}!`);
+      b.emit({ t: 'item', mon: target });
+      return done();
+    }
+    case 'corrosivegas':
+      if (!target.item || !itemRemovable(target)) return fail();
+      b.say(`O gás corroeu o item ${ITEMS[target.item].name} de ${target.name}!`);
+      target.item = null;
+      return done();
     case 'block':
       H.addVolatile(b, target, 'trapped', user, mv, loud);
       return done();

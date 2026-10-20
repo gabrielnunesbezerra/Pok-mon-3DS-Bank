@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile'];
-const FORMS = ['venusaurmega', 'charizardmegax', 'charizardmegay', 'blastoisemega'];
+const SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar'];
+const FORMS = ['venusaurmega', 'charizardmegax', 'charizardmegay', 'blastoisemega', 'steelixmega', 'gengarmega'];
 
 // Golpes que ninguém aprende mas que Nature Power e o cansaço (Struggle) podem usar
 const EXTRA_MOVES = ['triattack', 'struggle'];

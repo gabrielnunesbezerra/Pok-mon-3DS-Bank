@@ -2,7 +2,7 @@
 // Segue as regras dos jogos principais (fórmula de dano da 5ª geração em diante); só o "turno"
 // virou tempo (ver constants.js).
 import { MOVES, ITEMS, STAT_PT, STATUS_PT, TYPE_PT, effectiveness } from '../data/dex.js';
-import { LEVEL, FIELD_TURN, ACTION_TURN } from './constants.js';
+import { LEVEL, FIELD_TURN, ACTION_TURN, BOOST_DURATION } from './constants.js';
 import {
   getStat, getSpeed, hasType, hasAbility, itemActive, isGrounded, weatherFor, isSun, isRain, accMult, hpFrac, itemRemovable,
 } from './mon.js';
@@ -30,7 +30,7 @@ export function hitsSemiInvulnerable(mv, mode) {
   if (mode === 'fly') return ['hurricane', 'twister', 'smackdown', 'thunder', 'skyuppercut', 'gust'].includes(mv.id);
   if (mode === 'dig') return ['earthquake', 'magnitude', 'fissure'].includes(mv.id);
   if (mode === 'dive') return ['surf', 'whirlpool'].includes(mv.id);
-  return false;
+  return false; // Phantom Force: nada acerta
 }
 
 const bypassSub = mv => mv.flags.includes('sound') || mv.flags.includes('bypasssub');
@@ -61,7 +61,7 @@ export function basePower(b, user, target, mv, ctx) {
       return w >= 200 ? 120 : w >= 100 ? 100 : w >= 50 ? 80 : w >= 25 ? 60 : w >= 10 ? 40 : 20;
     }
     case 'gyroball': return Math.min(150, Math.floor((25 * getSpeed(b, opp)) / Math.max(1, getSpeed(b, user))) + 1);
-    case 'heatcrash': {
+    case 'heatcrash': case 'heavyslam': {
       const r = user.weightkg / opp.weightkg;
       return r >= 5 ? 120 : r >= 4 ? 100 : r >= 3 ? 80 : r >= 2 ? 60 : 40;
     }
@@ -83,6 +83,7 @@ export function basePower(b, user, target, mv, ctx) {
     case 'waterspout': return Math.max(1, Math.floor((150 * user.hp) / user.maxhp));
     case 'weatherball': return weatherFor(b, user) ? 100 : 50;
     case 'round': return 60;
+    case 'hex': return opp.status ? 130 : 65;
     default: return bp;
   }
 }
@@ -100,6 +101,7 @@ export function accuracyCheck(b, user, target, mv, ctx = {}) {
   if (mv.id === 'blizzard' && (w === 'hail' || w === 'snow')) return true;
   if (mv.id === 'toxic' && hasType(user, 'Poison')) return true;
   if (mv.ohko) return b.rng.chance(30);
+  if (target.vol.telekinesis) return true;
   let stage = user.boosts.accuracy;
   let eva = target.boosts.evasion;
   if (target.vol.foresight && eva > 0) eva = 0;
@@ -114,7 +116,8 @@ export function accuracyCheck(b, user, target, mv, ctx = {}) {
 export function calcDamage(b, user, target, mv, ctx = {}) {
   const eff = typeEffect(b, user, target, mv);
   if (mv.id === 'dragonrage') return { damage: 40, eff: eff === 0 ? 0 : 1, crit: false };
-  if (mv.id === 'seismictoss') return { damage: LEVEL, eff: eff === 0 ? 0 : 1, crit: false };
+  if (mv.id === 'seismictoss' || mv.id === 'nightshade') return { damage: LEVEL, eff: eff === 0 ? 0 : 1, crit: false };
+  if (mv.id === 'psywave') return { damage: Math.max(1, Math.floor((LEVEL * b.rng.int(50, 150)) / 100)), eff: eff === 0 ? 0 : 1, crit: false };
   if (mv.ohko) return { damage: target.hp, eff: eff === 0 ? 0 : 1, crit: false, ohko: true };
   let bp = basePower(b, user, target, mv, ctx);
   if (!bp) return { damage: 0, eff, crit: false };
@@ -133,6 +136,8 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (item === 'muscleband' && mv.cat === 'Physical') bp *= 1.1;
   if (item === 'wiseglasses' && mv.cat === 'Special') bp *= 1.1;
   if (hasAbility(user, 'toughclaws') && mv.flags.includes('contact')) bp *= 1.3;
+  if (sheerForce(user, mv)) bp *= 1.3;
+  if (hasAbility(user, 'sandforce') && weatherFor(b, user) === 'sandstorm' && ['Rock', 'Ground', 'Steel'].includes(mv.type)) bp *= 1.3;
   if (hasAbility(user, 'megalauncher') && mv.flags.includes('pulse')) bp *= 1.5;
   if (b.field.terrain?.id === 'grassyterrain') {
     if (mv.type === 'Grass' && isGrounded(b, user)) bp *= 1.3;
@@ -218,6 +223,7 @@ export function damageMon(b, mon, amount, { source = null, mv = null, direct = f
     const fullHp = mon.hp === mon.maxhp;
     if (amount >= mon.hp) {
       if (mon.vol.endure) { amount = mon.hp - 1; b.say(`${mon.name} aguentou o golpe!`); }
+      else if (fullHp && hasAbility(mon, 'sturdy')) { amount = mon.hp - 1; b.say(`${mon.name} aguentou com Sturdy!`); }
       else if (mv?.id === 'falseswipe') amount = mon.hp - 1;
       else if (fullHp && itemActive(mon) === 'focussash') {
         amount = mon.hp - 1;
@@ -240,7 +246,7 @@ export function damageMon(b, mon, amount, { source = null, mv = null, direct = f
   }
   if (mon.hp <= 0) {
     mon.hp = 0;
-    b.faint(mon);
+    b.faint(mon, direct ? null : source);
   } else {
     checkBerry(b, mon);
   }
@@ -249,6 +255,7 @@ export function damageMon(b, mon, amount, { source = null, mv = null, direct = f
 
 export function healMon(b, mon, amount, { silent = false } = {}) {
   if (mon.fainted || mon.hp >= mon.maxhp) return 0;
+  if (mon.vol.healblock) return 0;
   amount = Math.max(1, Math.floor(amount));
   amount = Math.min(amount, mon.maxhp - mon.hp);
   mon.hp += amount;
@@ -287,7 +294,7 @@ export function applyStatus(b, target, status, source, mv, { fromMove = false, r
     (status === 'par' && hasType(target, 'Electric')) ||
     ((status === 'psn' || status === 'tox') && (hasType(target, 'Poison') || hasType(target, 'Steel'))) ||
     (status === 'frz' && (hasType(target, 'Ice') || isSun(weatherFor(b, target)))) ||
-    (status === 'slp' && hasAbility(target, 'insomnia'));
+    (status === 'slp' && (hasAbility(target, 'insomnia') || b.field.uproar > 0));
   if (immune) {
     if (loud) b.say(`Não afeta ${target.name}...`);
     return false;
@@ -408,6 +415,23 @@ export function addVolatile(b, target, id, source, mv, { fromMove = false } = {}
       if (target.semiInv === 'fly') b.cancelSemiInv(target);
       b.say(`${target.name} caiu no chão!`);
       return true;
+    case 'disable': {
+      const slot = target.moves.findIndex(m => (m.mimic || m.id) === (mv?.id === 'disable' ? target.lastMove : mv?.id));
+      if (slot < 0 || target.vol.disable) return fail();
+      target.vol.disable = { t: FIELD_TURN * 4, slot };
+      b.say(`${MOVES[target.moves[slot].mimic || target.moves[slot].id].name} de ${target.name} foi desativado!`);
+      mentalHerb(b, target);
+      return true;
+    }
+    case 'healblock':
+      target.vol.healblock = { t: FIELD_TURN * 2 };
+      b.say(`${target.name} não pode recuperar PS!`);
+      return true;
+    case 'telekinesis':
+      if (target.vol.telekinesis || target.species === 'gengarmega') return fail();
+      target.vol.telekinesis = { t: FIELD_TURN * 3 };
+      b.say(`${target.name} foi erguido no ar!`);
+      return true;
     case 'trapped':
       if (target.vol.trapped) return fail();
       target.vol.trapped = {};
@@ -446,6 +470,7 @@ export function boost(b, mon, boosts, source, mv, { fromMove = false } = {}) {
       continue;
     }
     mon.boosts[stat] = after;
+    mon.boostClock[stat] = BOOST_DURATION;
     any = true;
     const words = delta > 0 ? ['aumentou', 'aumentou muito', 'aumentou drasticamente'] : ['diminuiu', 'diminuiu muito', 'diminuiu drasticamente'];
     b.say(`${name} de ${mon.name} ${words[Math.min(2, Math.abs(delta) - 1)]}!`);
@@ -461,9 +486,13 @@ export function boost(b, mon, boosts, source, mv, { fromMove = false } = {}) {
 }
 
 // ---------------------------------------------------------------- efeitos secundários
+export function sheerForce(user, mv) {
+  return user.ability === 'sheerforce' && mv.cat !== 'Status' && (mv.sec || []).length > 0;
+}
+
 export function secondaries(b, user, target, mv, dealt) {
   const fainted = target.fainted;
-  for (const sec of mv.sec || []) {
+  for (const sec of sheerForce(user, mv) ? [] : mv.sec || []) {
     if (!b.rng.chance(sec.chance ?? 100)) continue;
     if (!fainted && dealt !== -1) {
       if (sec.status) applyStatus(b, target, sec.status, user, mv);

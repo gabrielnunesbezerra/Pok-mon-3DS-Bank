@@ -23,3 +23,7 @@ export const MEGA_GAUGE_MAX = 100;
 export const MEGA_RESPONSE_WINDOW = 1.8;
 export const SWITCH_COOLDOWN = 3;
 export const TIME_LIMIT = 240;
+// Mudanças de atributo são temporárias: depois de BOOST_DURATION segundos começam a voltar ao normal,
+// um estágio a cada BOOST_STEP segundos
+export const BOOST_DURATION = 16;
+export const BOOST_STEP = 3;

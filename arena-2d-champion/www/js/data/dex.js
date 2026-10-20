@@ -3,7 +3,7 @@ import { SPECIES, LEARNSETS, MOVES, TYPE_CHART } from './generated.js';
 
 export { SPECIES, LEARNSETS, MOVES, TYPE_CHART };
 
-export const BASE_SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile'];
+export const BASE_SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar'];
 
 export const TYPE_PT = {
   Normal: 'Normal', Fire: 'Fogo', Water: 'Água', Grass: 'Planta', Electric: 'Elétrico', Ice: 'Gelo',
@@ -49,6 +49,12 @@ export const ABILITIES = {
   drought: { name: 'Drought', desc: 'Ao entrar (ou Mega Evoluir), deixa o sol forte por 5 turnos.' },
   megalauncher: { name: 'Mega Launcher', desc: 'Golpes de pulso e aura (Water Pulse, Dark Pulse, Dragon Pulse, Aura Sphere) ficam 50% mais fortes.' },
   insomnia: { name: 'Insomnia', desc: 'Não consegue dormir.' },
+  rockhead: { name: 'Rock Head', desc: 'Não recebe dano de recuo (Head Smash, Double-Edge, Take Down...).' },
+  sturdy: { name: 'Sturdy', desc: 'Com PS cheios, aguenta qualquer golpe com 1 PS. Imune a golpes de nocaute instantâneo.' },
+  sheerforce: { name: 'Sheer Force', desc: 'Golpes com efeito secundário ficam 30% mais fortes, mas perdem o efeito.' },
+  sandforce: { name: 'Sand Force', desc: 'Na tempestade de areia, golpes de Pedra, Terrestre e Aço ficam 30% mais fortes. Não sofre dano da areia.' },
+  cursedbody: { name: 'Cursed Body', desc: '30% de chance de desativar o golpe que o acertou.' },
+  shadowtag: { name: 'Shadow Tag', desc: 'O adversário não consegue trocar de Pokémon.' },
 };
 
 export const toId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -60,6 +66,8 @@ export const ITEMS = {
   charizarditex: { name: 'Charizardite X', desc: 'Mega Pedra: Charizard vira Mega Charizard X.', fling: 80, mega: { from: 'charizard', to: 'charizardmegax' } },
   charizarditey: { name: 'Charizardite Y', desc: 'Mega Pedra: Charizard vira Mega Charizard Y.', fling: 80, mega: { from: 'charizard', to: 'charizardmegay' } },
   blastoisinite: { name: 'Blastoisinite', desc: 'Mega Pedra: Blastoise vira Mega Blastoise.', fling: 80, mega: { from: 'blastoise', to: 'blastoisemega' } },
+  steelixite: { name: 'Steelixite', desc: 'Mega Pedra: Steelix vira Mega Steelix.', fling: 80, mega: { from: 'steelix', to: 'steelixmega' } },
+  gengarite: { name: 'Gengarite', desc: 'Mega Pedra: Gengar vira Mega Gengar.', fling: 80, mega: { from: 'gengar', to: 'gengarmega' } },
   leftovers: { name: 'Leftovers', desc: 'Recupera 1/16 dos PS por turno.', fling: 10 },
   blacksludge: { name: 'Black Sludge', desc: 'Tipo Venenoso recupera 1/16 por turno; os outros perdem 1/8.', fling: 30 },
   sitrusberry: { name: 'Sitrus Berry', desc: 'Com metade dos PS ou menos, recupera 1/4. Uma vez.', fling: 10, berry: { type: 'Psychic', bp: 80 } },
@@ -105,18 +113,23 @@ export const ITEMS = {
   toxicorb: { name: 'Toxic Orb', desc: 'Envenena gravemente o Pokémon depois de um turno em campo.', fling: 30 },
 };
 
-export const MEGA_STONE_FOR = { venusaur: ['venusaurite'], charizard: ['charizarditex', 'charizarditey'], blastoise: ['blastoisinite'], weavile: [] };
+export const MEGA_STONE_FOR = { venusaur: ['venusaurite'], charizard: ['charizarditex', 'charizarditey'], blastoise: ['blastoisinite'], weavile: [], steelix: ['steelixite'], gengar: ['gengarite'] };
 
 // Raio do corpo na arena, altura do voo (Charizard paira) e escala do sprite
+// bw: usa o sprite de frente/costas no estilo Black/White (Megas sem sprite PMD)
 export const BODY = {
   venusaur: { radius: 25, hover: 0, scale: 2 },
-  venusaurmega: { radius: 28, hover: 0, scale: 2.3, tint: [255, 120, 170], spriteFrom: 'venusaur' },
+  venusaurmega: { radius: 29, hover: 0, scale: 1.25, bw: true },
   charizard: { radius: 22, hover: 14, scale: 2 },
   charizardmegax: { radius: 24, hover: 14, scale: 2 },
-  charizardmegay: { radius: 23, hover: 16, scale: 2.2, tint: [255, 200, 60], spriteFrom: 'charizard' },
+  charizardmegay: { radius: 25, hover: 16, scale: 1.2, bw: true },
   blastoise: { radius: 23, hover: 0, scale: 2 },
-  blastoisemega: { radius: 26, hover: 0, scale: 2.25, tint: [80, 150, 255], spriteFrom: 'blastoise' },
+  blastoisemega: { radius: 27, hover: 0, scale: 1.25, bw: true },
   weavile: { radius: 18, hover: 0, scale: 2 },
+  steelix: { radius: 30, hover: 0, scale: 2 },
+  steelixmega: { radius: 32, hover: 0, scale: 2 },
+  gengar: { radius: 20, hover: 0, scale: 2 },
+  gengarmega: { radius: 22, hover: 0, scale: 2 },
 };
 
 export const HIDDEN_POWER_TYPES = ['Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel'];
@@ -138,6 +151,14 @@ export const PRESETS = {
   weavile: [
     { name: 'Lâmina', ability: 'pickpocket', item: 'lifeorb', moves: ['nightslash', 'icepunch', 'iceshard', 'swordsdance'] },
     { name: 'Raio Gélido', ability: 'pressure', item: 'nevermeltice', moves: ['iciclecrash', 'knockoff', 'fakeout', 'icebeam'] },
+  ],
+  steelix: [
+    { name: 'Mega Muralha', ability: 'sturdy', item: 'steelixite', moves: ['heavyslam', 'earthquake', 'stoneedge', 'stealthrock'] },
+    { name: 'Força Bruta', ability: 'sheerforce', item: 'lifeorb', moves: ['ironhead', 'earthquake', 'icefang', 'thunderfang'] },
+  ],
+  gengar: [
+    { name: 'Mega Sombra', ability: 'cursedbody', item: 'gengarite', moves: ['shadowball', 'sludgebomb', 'focusblast', 'destinybond'] },
+    { name: 'Pesadelo', ability: 'cursedbody', item: 'lifeorb', moves: ['hypnosis', 'dreameater', 'shadowball', 'thunderbolt'] },
   ],
 };
 

@@ -1,9 +1,9 @@
 // A batalha: lados, Pokémon em campo, entidades (projéteis, raios, ondas...), clima, troca,
 // Mega Evolução, choque de Megas e choque de raios.
-import { SPECIES, MOVES, TYPE_CHART, effectiveness, displayName } from '../data/dex.js';
+import { SPECIES, MOVES, TYPE_CHART, STAT_PT, effectiveness, displayName } from '../data/dex.js';
 import {
   DT, FIELD, FIELD_TURN, ACTION_TURN, STAMINA_MAX, STAMINA_REGEN, DODGE, MEGA_GAUGE_MAX, MEGA_RESPONSE_WINDOW,
-  SWITCH_COOLDOWN, TIME_LIMIT,
+  SWITCH_COOLDOWN, TIME_LIMIT, BOOST_STEP,
 } from './constants.js';
 import { makeRng } from './rng.js';
 import {
@@ -26,7 +26,7 @@ export const ARENAS = {
   ice: { name: 'Arena de Gelo', desc: 'O chão escorrega (menos para o tipo Gelo).' },
 };
 
-const CLASH_ELEMENT = { venusaurmega: 'grass', charizardmegax: 'fire', charizardmegay: 'fire', blastoisemega: 'water' };
+const CLASH_ELEMENT = { venusaurmega: 'grass', charizardmegax: 'fire', charizardmegay: 'fire', blastoisemega: 'water', steelixmega: 'ground', gengarmega: 'ghost' };
 
 export class Battle {
   constructor({ teams, names = ['Jogador', 'Rival'], cpu = [false, true], difficulty = 'normal', arena = 'grass', seed, timeLimit = TIME_LIMIT, events = true }) {
@@ -38,7 +38,7 @@ export class Battle {
     this.events = [];
     this.log = [];
     this.ents = [];
-    this.field = { weather: null, terrain: null, mudsport: 0, storm: 0, stormClock: 0, echoedvoice: null };
+    this.field = { weather: null, terrain: null, mudsport: 0, storm: 0, stormClock: 0, echoedvoice: null, trickroom: 0, wonderroom: 0, uproar: 0, rockfall: 0, rockfallClock: 0 };
     this.cinematic = null;
     this.clash = null;
     this.choice = null;
@@ -53,6 +53,7 @@ export class Battle {
       mons: teams[i].map((set, slot) => createMon(set, i, slot)),
       active: null,
       conds: { reflect: 0, lightscreen: 0, safeguard: 0, mist: 0, tailwind: 0 },
+      hazards: { stealthrock: false, toxicspikes: 0 },
       megaGauge: 0,
       megaUsed: false,
       switchCd: 0,
@@ -299,6 +300,24 @@ export class Battle {
     tick('confusion', () => this.say(`${mon.name} não está mais confuso!`));
     tick('partiallytrapped', () => this.say(`${mon.name} se libertou!`));
     tick('yawn', () => H.applyStatus(this, mon, 'slp', null, null));
+    tick('disable', () => this.say(`O golpe de ${mon.name} não está mais desativado.`));
+    tick('healblock');
+    tick('telekinesis', () => this.say(`${mon.name} voltou ao chão.`));
+    tick('magnetrise', () => this.say(`O campo magnético de ${mon.name} acabou.`));
+    tick('destinybond');
+    tick('wideguard');
+    tick('perish', () => { this.say(`${mon.name} sucumbiu ao Perish Song!`); this.faint(mon); });
+    if (mon.fainted) return;
+    // buffs e debuffs voltam ao normal aos poucos
+    for (const k of Object.keys(mon.boosts)) {
+      if (!mon.boosts[k]) continue;
+      mon.boostClock[k] -= dt;
+      if (mon.boostClock[k] > 0) continue;
+      mon.boosts[k] -= Math.sign(mon.boosts[k]);
+      mon.boostClock[k] = BOOST_STEP;
+      if (!mon.boosts[k]) this.say(`${STAT_PT[k]} de ${mon.name} voltou ao normal.`);
+      this.emit({ t: 'boostFade', mon, stat: k });
+    }
     if (mon.status === 'slp') {
       mon.statusData.sleepLeft -= dt;
       if (mon.statusData.sleepLeft <= 0) H.cureStatus(this, mon);
@@ -333,7 +352,7 @@ export class Battle {
     const max = mon.maxhp;
     const hurt = (frac, msg) => { if (!mon.fainted) H.damageMon(this, mon, max * frac * f, { direct: true }); };
     const heal = frac => { if (!mon.fainted) H.healMon(this, mon, max * frac * f); };
-    if (w === 'sandstorm' && !['Rock', 'Ground', 'Steel'].some(t => hasType(mon, t)) && !mon.semiInv) hurt(1 / 16);
+    if (w === 'sandstorm' && !['Rock', 'Ground', 'Steel'].some(t => hasType(mon, t)) && !hasAbility(mon, 'sandforce') && !mon.semiInv) hurt(1 / 16);
     if (w === 'hail' && !hasType(mon, 'Ice') && !mon.semiInv) hurt(1 / 16);
     if (hasAbility(mon, 'solarpower') && isSun(w)) hurt(1 / 8);
     if (hasAbility(mon, 'raindish') && isRain(w)) heal(1 / 16);
@@ -357,6 +376,7 @@ export class Battle {
     if (mon.vol.nightmare && mon.status === 'slp') hurt(1 / 4);
     if (mon.vol.nightmare && mon.status !== 'slp') delete mon.vol.nightmare;
     if (mon.vol.partiallytrapped) hurt(mon.vol.partiallytrapped.frac);
+    if (mon.vol.curse) hurt(1 / 4);
   }
 
   // ---------------------------------------------------------------- estado de ação
@@ -716,7 +736,7 @@ export class Battle {
         user.semiInv = shape.mode;
         exec.pending++;
         user.action = { type: 'semiinv', mode: shape.mode, t: 0, dur: herb ? 0.5 : shape.duration, exec, radius: shape.radius, tx: foe?.x ?? user.x, ty: foe?.y ?? user.y };
-        this.say({ fly: `${user.name} voou bem alto!`, dig: `${user.name} cavou um buraco!`, dive: `${user.name} mergulhou!` }[shape.mode]);
+        this.say({ fly: `${user.name} voou bem alto!`, dig: `${user.name} cavou um buraco!`, dive: `${user.name} mergulhou!`, phantom: `${user.name} desapareceu!` }[shape.mode]);
         this.emit({ t: 'vanish', mon: user, mode: shape.mode });
         break;
       }
@@ -736,6 +756,17 @@ export class Battle {
         const dur = shape.mode === 'bide' ? 2.6 : 1.1;
         user.action = { type: 'stance', mode: shape.mode, t: 0, dur, exec, taken: 0 };
         this.say(shape.mode === 'bide' ? `${user.name} está acumulando energia!` : `${user.name} se preparou para revidar!`);
+        break;
+      }
+      case 'blast': {
+        // Explosion / Self-Destruct: explode em volta e o usuário desmaia
+        user.action = { type: 'endlag', t: 0, dur: 0.2 };
+        this.ents.push({ kind: 'shock', x: user.x, y: user.y, r: shape.radius, t: 0, dur: 0.6, type: 'Fire', side: user.side, explosion: true });
+        this.emit({ t: 'explode', x: user.x, y: user.y, type: 'Fire', r: shape.radius, big: true });
+        this.emit({ t: 'shake', amount: 16 });
+        if (foe && !foe.semiInv && dist(user, foe) <= shape.radius + foe.radius) strike(this, user, foe, exec, { dir });
+        this.finalize(exec);
+        if (!user.fainted) { user.hp = 0; this.faint(user); }
         break;
       }
       case 'rollout':
@@ -1021,17 +1052,20 @@ export class Battle {
     e.t += dt;
     if (!e.done && e.t >= e.delay) {
       e.done = true;
-      this.emit({ t: 'bolt', x: e.x, y: e.y });
+      // raio da Tempestade Mega ou pedra da Avalanche de Pedras
+      const type = e.rock ? 'Rock' : 'Electric';
+      this.emit({ t: e.rock ? 'rockfall' : 'bolt', x: e.x, y: e.y });
       this.emit({ t: 'shake', amount: 7 });
       for (const s of this.sides) {
         const m = s.active;
         if (!m || !m.onField || m.fainted || m.semiInv || m.iframes > 0) continue;
         if (Math.hypot(m.x - e.x, m.y - e.y) > 50 + m.radius) continue;
-        const eff = effectiveness('Electric', m.types);
+        const eff = effectiveness(type, m.types);
         if (eff === 0) { this.text(m, 'Imune', '#bbb'); continue; }
-        this.say(`Um raio atingiu ${m.name}!`);
-        H.damageMon(this, m, (m.maxhp / 10) * eff, { direct: true, color: '#ffe066' });
-        if (this.rng.chance(30)) H.applyStatus(this, m, 'par', null, null);
+        this.say(e.rock ? `Uma pedra caiu em ${m.name}!` : `Um raio atingiu ${m.name}!`);
+        H.damageMon(this, m, (m.maxhp / 10) * eff, { direct: true, color: e.rock ? '#c9b469' : '#ffe066' });
+        if (!e.rock && this.rng.chance(30)) H.applyStatus(this, m, 'par', null, null);
+        if (e.rock && this.rng.chance(20)) H.addVolatile(this, m, 'flinch', null, null);
       }
     }
     if (e.t >= e.delay + 0.3) e.dead = true;
@@ -1246,6 +1280,20 @@ export class Battle {
     }
     if (f.terrain) { f.terrain.t -= dt; if (f.terrain.t <= 0) this.clearTerrain(); }
     if (f.mudsport > 0) f.mudsport -= dt;
+    const timed = (key, msg) => { if (f[key] > 0) { f[key] -= dt; if (f[key] <= 0) { f[key] = 0; this.say(msg); this.emit({ t: 'room', id: key, on: false }); } } };
+    timed('trickroom', 'As dimensões voltaram ao normal.');
+    timed('wonderroom', 'A Wonder Room acabou: Defesa e Defesa Especial voltaram ao normal.');
+    timed('uproar', 'O tumulto acabou.');
+    if (f.rockfall > 0) {
+      f.rockfall -= dt;
+      f.rockfallClock += dt;
+      if (f.rockfallClock >= 2.1) {
+        f.rockfallClock = 0;
+        const mons = this.sides.map(s => s.active).filter(m => m && m.onField && !m.fainted);
+        const m = this.rng.pick(mons);
+        if (m) this.ents.push({ kind: 'bolt', rock: true, x: m.x + this.rng.range(-40, 40), y: m.y + this.rng.range(-30, 30), t: 0, delay: 0.9, done: false });
+      }
+    }
     for (const s of this.sides) for (const k of Object.keys(s.conds)) {
       if (s.conds[k] > 0) {
         s.conds[k] -= dt;
@@ -1279,6 +1327,8 @@ export class Battle {
     if (!m || m.fainted || !m.onField) return false;
     if (s.switchCd > 0) return false;
     if (m.vol.partiallytrapped || m.vol.trapped || m.vol.ingrain) return false;
+    const foe = this.foeActive(m);
+    if (foe && hasAbility(foe, 'shadowtag') && !hasAbility(m, 'shadowtag') && !hasType(m, 'Ghost')) return false;
     if (m.action && !['windup', 'endlag', 'stun'].includes(m.action.type)) return false;
     if (m.vol.lockedmove) return false;
     return this.switchOptions(sideIdx).length > 0;
@@ -1321,7 +1371,23 @@ export class Battle {
     if (!initial) s.switchCd = SWITCH_COOLDOWN;
     this.say(initial ? `${s.name} enviou ${mon.name}!` : `Vai, ${mon.name}!`);
     this.emit({ t: 'sendOut', mon, initial });
-    this.entryEffects(mon);
+    if (!initial) this.entryHazards(mon);
+    if (!mon.fainted) this.entryEffects(mon);
+  }
+
+  // Stealth Rock e Toxic Spikes pegam quem entra em campo
+  entryHazards(mon) {
+    const hz = this.sides[mon.side].hazards;
+    if (hz.stealthrock) {
+      const eff = effectiveness('Rock', mon.types);
+      this.say(`Pedras pontudas atingiram ${mon.name}!`);
+      this.emit({ t: 'hazardHit', mon, id: 'stealthrock' });
+      H.damageMon(this, mon, (mon.maxhp / 8) * eff, { direct: true, color: '#c9b469' });
+    }
+    if (hz.toxicspikes && isGrounded(this, mon) && !mon.fainted) {
+      if (hasType(mon, 'Poison')) { hz.toxicspikes = 0; this.say(`${mon.name} absorveu os Toxic Spikes!`); }
+      else H.applyStatus(this, mon, hz.toxicspikes >= 2 ? 'tox' : 'psn', null, null);
+    }
   }
 
   entryEffects(mon) {
@@ -1368,8 +1434,16 @@ export class Battle {
   }
 
   // ---------------------------------------------------------------- desmaio e fim
-  faint(mon) {
+  faint(mon, killer = null) {
     if (mon.fainted) return;
+    // Destiny Bond e Grudge: quem nocauteou paga junto
+    if (killer && killer.side !== mon.side && !killer.fainted && killer.onField) {
+      if (mon.vol.destinybond) { this.say(`${mon.name} levou ${killer.name} junto!`); this.faint(killer); }
+      else if (mon.vol.grudge && killer.lastMove) {
+        const slot = killer.moves.find(m => (m.mimic || m.id) === killer.lastMove);
+        if (slot) { slot.cd = 30; slot.cdMax = 30; this.say(`${MOVES[killer.lastMove].name} de ${killer.name} ficou sem energia pelo rancor!`); }
+      }
+    }
     mon.fainted = true;
     mon.hp = 0;
     mon.status = null;
@@ -1489,7 +1563,18 @@ export class Battle {
       'fire+water': () => { this.setWeather('raindance', 8, { silentFail: true }); this.field.storm = 8 * FIELD_TURN; this.field.stormClock = 0; return 'Tempestade Mega'; },
       'fire+grass': () => { this.setWeather('sunnyday', 8, { silentFail: true }); return 'Sol Escaldante'; },
       'grass+water': () => { this.setWeather('raindance', 8, { silentFail: true }); this.setTerrain('grassyterrain', 8); return 'Chuva Primaveril'; },
+      'ground+ground': () => { this.setWeather('sandstorm', 8, { silentFail: true }); this.field.rockfall = 8 * FIELD_TURN; return 'Avalanche de Pedras'; },
+      'ghost+ghost': () => { this.field.trickroom = 8 * FIELD_TURN; this.field.wonderroom = 8 * FIELD_TURN; this.emit({ t: 'room', id: 'trickroom', on: true }); return 'Dimensão Fantasma'; },
     };
+    // Steelix traz areia e pedras caindo; Gengar distorce a arena com Trick Room
+    const weatherOf = { fire: () => this.setWeather('sunnyday', 8, { silentFail: true }), water: () => this.setWeather('raindance', 8, { silentFail: true }), grass: () => this.setTerrain('grassyterrain', 8), ground: () => this.setWeather('sandstorm', 8, { silentFail: true }), ghost: () => {} };
+    const [e1, e2] = els.split('+');
+    if (!table[els] && (e1 === 'ground' || e2 === 'ground')) {
+      table[els] = () => { const other = e1 === 'ground' ? e2 : e1; if (other === 'ghost') this.field.trickroom = 8 * FIELD_TURN; else weatherOf[other](); this.field.rockfall = 8 * FIELD_TURN; return 'Terremoto Mega'; };
+    }
+    if (!table[els] && (e1 === 'ghost' || e2 === 'ghost')) {
+      table[els] = () => { const other = e1 === 'ghost' ? e2 : e1; weatherOf[other](); this.field.trickroom = 8 * FIELD_TURN; this.emit({ t: 'room', id: 'trickroom', on: true }); return 'Noite Distorcida'; };
+    }
     const name = (table[els] || table['fire+water'])();
     this.say(`O choque das Megas criou um clima: ${name}!`);
     this.emit({ t: 'megaClimate', name, els });
