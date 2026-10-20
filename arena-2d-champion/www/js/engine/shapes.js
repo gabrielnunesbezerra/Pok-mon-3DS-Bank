@@ -203,7 +203,7 @@ export const SHAPES = {
   round: ring(270, { sound: true }),
   scald: beam(20, 0.65),
   scorchingsands: proj(500, 13, { sprite: 'sand', lob: true, explode: 50 }),
-  shadowball: proj(470, 15),
+  shadowball: proj(470, 15, { sprite: 'shadow' }),
   signalbeam: beam(18, 0.7),
   sludge: proj(500, 12, { sprite: 'glob', lob: true, explode: 42 }),
   sludgebomb: proj(500, 14, { sprite: 'glob', lob: true, explode: 55 }),

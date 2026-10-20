@@ -84,10 +84,14 @@ export class Renderer {
           const r = e.r || 60;
           fx.burst(e.x, e.y, e.type, e.big ? 70 : 32, e.big ? 520 : 300, { size: e.big ? 6 : 4.5, life: 0.7 });
           fx.glow(e.x, e.y, '#fff3b0', r * 1.4, 0.35);
-          fx.smoke(e.x, e.y, e.big ? 18 : 7, 'rgba(60,55,60,0.55)', e.big ? 40 : 20);
+          fx.smoke(e.x, e.y - 10, e.big ? 9 : 5, 'rgba(150,140,135,0.28)', e.big ? 34 : 18);
+          if (e.big) for (let i = 0; i < 26; i++) {
+            const a = Math.random() * TAU, sp = 120 + Math.random() * 320;
+            fx.add({ x: e.x, y: e.y - 20, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.7 - 80, drag: 2.5, size: 7 + Math.random() * 7, grow: 10, life: 0.5 + Math.random() * 0.4, color: palette('Fire')[1 + (i % 3)], shape: 'circle', blend: 'lighter' });
+          }
           fx.shake = Math.max(fx.shake, e.big ? 18 : 7);
           if (e.big) { fx.flash = 0.8; fx.flashColor = '#fff6d0'; }
-          fx.decal(e.x, e.y, DECAL_FOR[e.type] || 'scorch', r * 0.8, 9);
+          fx.decal(e.x, e.y, DECAL_FOR[e.type] || 'scorch', Math.min(140, r * 0.45), 9);
           this.sound.play('explode');
           break;
         }
@@ -715,6 +719,22 @@ export class Renderer {
         g.fillStyle = '#7df07d'; g.beginPath(); g.arc(0, 0, s, 0, TAU); g.fill();
         g.fillStyle = '#e8ffe8'; g.beginPath(); g.arc(0, 0, s * 0.5, 0, TAU); g.fill();
         break;
+      case 'shadow': {
+        const sg = g.createRadialGradient(0, 0, s * 0.1, 0, 0, s * 1.3);
+        sg.addColorStop(0, '#12061f');
+        sg.addColorStop(0.55, '#3b1a63');
+        sg.addColorStop(0.85, '#8a5ad6');
+        sg.addColorStop(1, 'rgba(160,110,240,0)');
+        g.fillStyle = sg;
+        g.beginPath(); g.arc(0, 0, s * 1.3, 0, TAU); g.fill();
+        g.strokeStyle = '#c9a8ff';
+        g.lineWidth = 2;
+        for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(0, 0, s * (0.55 + i * 0.22), t * 9 + i * 2.1, t * 9 + i * 2.1 + 1.6); g.stroke(); }
+        g.fillStyle = '#ff5ad0';
+        g.beginPath(); g.arc(-s * 0.25, -s * 0.1, s * 0.12, 0, TAU); g.arc(s * 0.25, -s * 0.1, s * 0.12, 0, TAU); g.fill();
+        if (Math.random() < 0.5) this.fx.add({ x: p.x + (Math.random() - 0.5) * s * 2, y: y + (Math.random() - 0.5) * s * 2, vx: 0, vy: -30, size: s * 0.5, grow: s * 0.6, life: 0.4, color: 'rgba(60,25,100,0.45)', shape: 'circle' });
+        break;
+      }
       case 'fist':
         g.fillStyle = '#5a4636'; g.fillRect(-s, -s * 0.7, s * 2, s * 1.4);
         g.fillStyle = '#2a201a'; g.fillRect(s * 0.4, -s * 0.7, s * 0.6, s * 1.4);
@@ -787,9 +807,20 @@ export class Renderer {
       }
     } else {
       const outer = style === 'solar' ? '#f6ff9a' : e.id === 'hyperbeam' ? '#ffb347' : e.id === 'signalbeam' ? `hsl(${(t * 400) % 360},90%,65%)` : TYPE_COLOR[e.type];
-      g.fillStyle = hexA(outer, 0.9); g.fillRect(0, -w / 2, len, w);
-      g.fillStyle = pal[0]; g.fillRect(0, -w * 0.25, len, w * 0.5);
-      g.fillStyle = '#ffffff'; g.fillRect(0, -w * 0.1, len, w * 0.2);
+      if (style !== 'solar') g.globalCompositeOperation = 'source-over';
+      g.fillStyle = hexA(outer, 0.92); g.fillRect(0, -w / 2, len, w);
+      g.fillStyle = pal[1]; g.fillRect(0, -w * 0.3, len, w * 0.6);
+      g.fillStyle = pal[0]; g.fillRect(0, -w * 0.14, len, w * 0.28);
+      if (e.type === 'Dragon' || e.type === 'Psychic' || e.type === 'Ghost') {
+        g.lineWidth = Math.max(3, w * 0.16);
+        for (const [ph, col] of [[0, pal[3]], [Math.PI, pal[2]]]) {
+          g.strokeStyle = col;
+          g.beginPath();
+          for (let d = 0; d <= len; d += 8) g.lineTo(d, Math.sin(d * 0.05 - t * 18 + ph) * w * 0.55);
+          g.stroke();
+        }
+      }
+      g.globalCompositeOperation = 'lighter';
       g.fillStyle = 'rgba(255,255,255,0.55)';
       for (let d = (t * 800) % 46; d < len; d += 46) g.fillRect(d, -w / 2, 8, w);
       if (style === 'solar') for (let i = 0; i < 3; i++) { g.fillStyle = 'rgba(255,255,220,0.25)'; g.fillRect(0, -w * (1 + i * 0.4) + Math.sin(t * 12 + i) * 4, len, 3); }
@@ -848,15 +879,30 @@ export class Renderer {
         g.beginPath(); g.arc(-i * 22 - half * 0.6, 0, half * 0.75 + i * 8, -0.85, 0.85); g.stroke();
       }
     } else if (e.id === 'heatwave') {
-      g.globalCompositeOperation = 'lighter';
-      const grd = g.createLinearGradient(-e.thickness * 2.5, 0, e.thickness, 0);
-      grd.addColorStop(0, 'rgba(255,120,40,0)');
-      grd.addColorStop(1, 'rgba(255,150,60,0.6)');
+      const grd = g.createLinearGradient(-e.thickness * 3, 0, e.thickness * 0.6, 0);
+      grd.addColorStop(0, 'rgba(255,90,20,0)');
+      grd.addColorStop(0.75, 'rgba(255,90,20,0.32)');
+      grd.addColorStop(1, 'rgba(232,54,28,0.55)');
       g.fillStyle = grd;
-      g.fillRect(-e.thickness * 2.5, -half, e.thickness * 3.5, e.width);
-      g.strokeStyle = 'rgba(255,230,180,0.6)';
-      g.lineWidth = 3;
-      for (let yy = -half; yy < half; yy += 26) { g.beginPath(); g.moveTo(-40, yy); g.quadraticCurveTo(-10, yy + 10 * Math.sin(this.time * 12 + yy), 20, yy); g.stroke(); }
+      g.fillRect(-e.thickness * 3, -half, e.thickness * 3.6, e.width);
+      // línguas de fogo na frente
+      for (let yy = -half; yy <= half; yy += 16) {
+        const h = 16 + 12 * Math.sin(yy * 0.13 + this.time * 22) + Math.random() * 6;
+        const x0 = e.thickness * 0.5;
+        g.fillStyle = pal[3];
+        g.beginPath(); g.moveTo(x0 - 6, yy - 9); g.quadraticCurveTo(x0 + h, yy, x0 - 6, yy + 9); g.fill();
+        g.fillStyle = pal[1];
+        g.beginPath(); g.moveTo(x0 - 6, yy - 5); g.quadraticCurveTo(x0 + h * 0.6, yy, x0 - 6, yy + 5); g.fill();
+      }
+      // ar tremendo atrás
+      g.strokeStyle = 'rgba(255,220,170,0.45)';
+      g.lineWidth = 2.5;
+      for (let yy = -half + 10; yy < half; yy += 30) {
+        g.beginPath(); g.moveTo(-e.thickness * 2.4, yy);
+        for (let xx = -e.thickness * 2.4; xx < 0; xx += 12) g.lineTo(xx, yy + Math.sin(xx * 0.12 + this.time * 16 + yy) * 5);
+        g.stroke();
+      }
+      if (Math.random() < 0.3) this.fx.decal(e.x - e.dx * 30 + (Math.random() - 0.5) * e.width * -e.dy, e.y - e.dy * 30 + (Math.random() - 0.5) * e.width * e.dx, 'scorch', 18, 4);
     } else {
       // Surf / Muddy Water: paredão de água com espuma na crista
       const deep = e.id === 'muddywater' ? ['rgba(90,65,30,0)', 'rgba(110,80,40,0.75)', '#8a6a3c', '#d9c49a'] : ['rgba(40,110,210,0)', 'rgba(50,130,230,0.75)', '#3a8fe8', '#e9f7ff'];
@@ -1029,6 +1075,11 @@ export class Renderer {
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       g.fillStyle = grd;
       g.beginPath(); g.ellipse(e.x, e.y - 20, rr, rr * 0.8, 0, 0, TAU); g.fill();
+      // anel de choque correndo pelo chão
+      g.globalCompositeOperation = 'source-over';
+      g.strokeStyle = `rgba(255,248,225,${0.8 * (1 - k)})`;
+      g.lineWidth = 10 * (1 - k) + 2;
+      g.beginPath(); g.ellipse(e.x, e.y, e.r * (0.2 + k * 1.1), e.r * 0.7 * (0.2 + k * 1.1), 0, 0, TAU); g.stroke();
     } else {
       g.strokeStyle = pal[1]; g.lineWidth = 8;
       g.beginPath(); g.ellipse(e.x, e.y, e.r * (0.3 + k * 0.7), e.r * 0.72 * (0.3 + k * 0.7), 0, 0, TAU); g.stroke();
