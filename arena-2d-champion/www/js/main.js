@@ -118,6 +118,7 @@ class App {
     this.paused = false;
     this.controls.enabled = true;
     this.last = performance.now();
+    this.choiceShown = false; // se a pausa cobriu a escolha de Pokémon, ela aparece de novo
     UI.clearUi();
   }
 

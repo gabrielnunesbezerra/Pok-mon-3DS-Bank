@@ -35,7 +35,7 @@ export class Renderer {
   }
 
   resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = window.innerWidth, H = window.innerHeight;
     this.canvas.width = Math.round(W * dpr);
     this.canvas.height = Math.round(H * dpr);
@@ -576,9 +576,9 @@ export class Renderer {
     }
     // ponta
     g.fillStyle = pal[0];
-    g.beginPath(); g.arc(len, 0, w * 0.9, 0, TAU); g.fill();
+    g.beginPath(); g.arc(len, 0, w * 0.62, 0, TAU); g.fill();
     g.fillStyle = '#fff';
-    g.beginPath(); g.arc(0, 0, w * 0.7, 0, TAU); g.fill();
+    g.beginPath(); g.arc(0, 0, w * 0.42, 0, TAU); g.fill();
     g.restore();
     if (Math.random() < 0.8) this.fx.trail(e.ox + Math.cos(e.angle) * len, e.oy + Math.sin(e.angle) * len, e.type, w, 4);
   }

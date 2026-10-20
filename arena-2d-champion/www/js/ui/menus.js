@@ -158,13 +158,13 @@ function slotCard(app, team, slot, rerender) {
       onclick: () => { if (s !== set.species) { team[slot] = defaultSet(s); sfx(app); rerender(); } },
     }, h('img', { src: portrait(app, s), alt: s })))),
     head,
+    moves,
+    hp,
     abilityRow,
     h('div', { class: 'hint' }, ABILITIES[set.ability]?.desc || ''),
     h('div', { class: 'row' }, h('label', {}, 'Item'), itemSel),
     h('div', { class: 'hint' }, ITEMS[set.item || 'none']?.desc || ''),
-    genderRow,
-    moves,
-    hp);
+    genderRow);
 }
 
 function learnInfo(species, id) {

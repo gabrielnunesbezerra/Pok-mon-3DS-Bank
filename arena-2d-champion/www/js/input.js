@@ -57,6 +57,10 @@ export class Controls {
     this.layout = computeLayout(W, H, this.mode);
   }
 
+  capture(id) {
+    try { this.canvas.setPointerCapture(id); } catch { /* ponteiro já solto */ }
+  }
+
   pos(e) {
     const r = this.canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
@@ -81,7 +85,7 @@ export class Controls {
       for (let k = 0; k < S.moves.length; k++) {
         if (inCircle(S.moves[k], x, y)) {
           this.pointers.set(e.pointerId, { role: 'move', side: i, slot: k, x0: x, y0: y, x, y, aiming: false });
-          this.canvas.setPointerCapture?.(e.pointerId);
+          this.capture(e.pointerId);
           return;
         }
       }
@@ -94,7 +98,7 @@ export class Controls {
       if (inRect(S.joyZone, x, y) && !this.joy[i]) {
         this.joy[i] = { id: e.pointerId, bx: x, by: y, x, y };
         this.pointers.set(e.pointerId, { role: 'joy', side: i });
-        this.canvas.setPointerCapture?.(e.pointerId);
+        this.capture(e.pointerId);
         return;
       }
     }
