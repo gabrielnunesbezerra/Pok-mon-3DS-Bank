@@ -5,6 +5,8 @@ import { slotMove, megaTarget } from '../engine/mon.js';
 import { slotBlock, staminaCost } from '../engine/actions.js';
 import { STAMINA_MAX, MEGA_GAUGE_MAX } from '../engine/constants.js';
 import { teamIcons } from '../layout.js';
+import { shapeFor } from '../engine/shapes.js';
+import { foeBeamThreat } from '../engine/ai.js';
 
 const TAU = Math.PI * 2;
 const SIDE_COLOR = ['#e8433f', '#3f7fe8'];
@@ -246,6 +248,20 @@ function drawControls(g, R, b, i, L, ui) {
     g.beginPath(); g.arc(cx, cy, S.joyR * 0.45, 0, TAU); g.fill();
   }
   if (!m) return;
+  const foe = b.foeActive(m);
+  const beamIncoming = foe && m.onField && foeBeamThreat(b, foe);
+  if (beamIncoming && m.moves.some((_, k) => shapeFor(slotMove(m, k)).kind === 'beam' && !slotBlock(b, m, k))) {
+    g.save();
+    g.translate(S.dodge.x - 22 * u, S.dodge.y - 36 * u);
+    g.rotate(rot);
+    g.font = `${Math.round(2.2 * u)}px ${FONT}`;
+    g.textAlign = 'center';
+    g.lineWidth = 4; g.strokeStyle = '#000';
+    g.strokeText('RESPONDA COM UM RAIO!', 0, 0);
+    g.fillStyle = '#ffe14a';
+    g.fillText('RESPONDA COM UM RAIO!', 0, 0);
+    g.restore();
+  }
   // golpes
   for (let k = 0; k < S.moves.length; k++) {
     const c = S.moves[k];
@@ -255,6 +271,7 @@ function drawControls(g, R, b, i, L, ui) {
     const block = m.onField ? slotBlock(b, m, k) : 'recarga';
     const s = m.moves[k];
     const aiming = ctl.aim[i]?.slot === k;
+    const answer = beamIncoming && shapeFor(id).kind === 'beam' && !block;
     g.save();
     g.translate(c.x, c.y);
     g.rotate(rot);
@@ -271,6 +288,11 @@ function drawControls(g, R, b, i, L, ui) {
       g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, c.r, -Math.PI / 2, -Math.PI / 2 + TAU * cdFrac); g.closePath(); g.fill();
     }
     g.globalAlpha = 1;
+    if (answer) {
+      g.strokeStyle = `hsl(${(performance.now() / 3) % 360},100%,65%)`;
+      g.lineWidth = 0.9 * u;
+      g.beginPath(); g.arc(0, 0, c.r + 1.2 * u + Math.sin(performance.now() / 60) * 0.5 * u, 0, TAU); g.stroke();
+    }
     g.fillStyle = '#fff';
     g.textAlign = 'center';
     const label = shortName(mv.name);
@@ -387,7 +409,7 @@ function drawClash(g, R, b, L, ui) {
   g.textAlign = 'center';
   g.font = `${Math.round(3.6 * u)}px ${FONT}`;
   const pulse = 1 + 0.1 * Math.sin(performance.now() / 60);
-  if (!c.result) {
+  if (c.result === null) {
     g.save();
     g.translate(W / 2, y + 9 * u);
     g.scale(pulse, pulse);

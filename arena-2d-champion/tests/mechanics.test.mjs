@@ -94,6 +94,21 @@ test('Dois raios se encontrando começam o choque de raios', () => {
   assert.ok(m0.hp < m0.maxhp, 'quem perdeu o choque leva o golpe');
 });
 
+test('Choque de raios termina dos dois lados (vitória do jogador 1 e do jogador 2)', () => {
+  for (const winner of [0, 1]) {
+    const { battle, m0, m1 } = duel([mon('charizard', ['flamethrower'])], [mon('blastoise', ['hydropump'])]);
+    executeMove(battle, m0, 'flamethrower', null, {});
+    executeMove(battle, m1, 'hydropump', null, {});
+    for (let i = 0; i < 30 && !battle.clash; i++) battle.step();
+    assert.ok(battle.clash);
+    for (let i = 0; i < 600 && battle.clash; i++) { battle.sides[winner].input.mash = 2; battle.step(); }
+    assert.equal(battle.clash, null, `choque vencido pelo lado ${winner} precisa acabar`);
+    run(battle, 0.5);
+    const loser = winner === 0 ? m1 : m0;
+    assert.ok(loser.hp < loser.maxhp);
+  }
+});
+
 test('Protect bloqueia o golpe', () => {
   const { battle, m0, m1 } = duel([mon('weavile', ['iceshard'])], [mon('blastoise', ['protect'])]);
   executeMove(battle, m1, 'protect', null, {});

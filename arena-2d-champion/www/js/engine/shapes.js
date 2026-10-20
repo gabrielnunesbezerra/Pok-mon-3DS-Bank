@@ -6,7 +6,8 @@ import { MOVES } from '../data/dex.js';
 const lunge = (range = 100, o = {}) => ({ kind: 'lunge', range, speed: range >= 180 ? 780 : 640, reach: 18, anim: 'Attack', ...o });
 const slash = (reach = 85, o = {}) => ({ kind: 'slash', range: 46, reach, arc: 120, anim: 'Swing', ...o });
 const proj = (speed = 540, size = 12, o = {}) => ({ kind: 'projectile', speed, size, range: 520, anim: 'Shoot', sprite: 'orb', ...o });
-const beam = (width = 22, duration = 0.75, o = {}) => ({ kind: 'beam', length: 560, width, duration, grow: 1500, anim: 'Shoot', ...o });
+// o raio avança a 800 px/s: dá tempo de o outro responder com um raio e começar o choque
+const beam = (width = 22, duration = 0.75, o = {}) => ({ kind: 'beam', length: 560, width, duration: duration + 0.35, grow: 800, anim: 'Shoot', ...o });
 const cone = (range = 230, angle = 50, o = {}) => ({ kind: 'cone', range, angle, duration: 0.45, anim: 'Shoot', ...o });
 const wave = (width = 260, o = {}) => ({ kind: 'wave', speed: 430, width, range: 430, thickness: 34, anim: 'Shoot', ...o });
 const ring = (radius = 240, o = {}) => ({ kind: 'ring', radius, speed: 560, anim: 'Charge', ...o });

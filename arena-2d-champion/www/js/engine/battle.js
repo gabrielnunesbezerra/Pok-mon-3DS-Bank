@@ -1115,7 +1115,9 @@ export class Battle {
       if (a && b && !a.hit && !b.hit && a.t > 0.04 && b.t > 0.04) {
         const ea = this.beamEnd(a), eb = this.beamEnd(b);
         const p = segIntersect(a.ox, a.oy, ea.x, ea.y, b.ox, b.oy, eb.x, eb.y);
-        const headOn = Math.hypot(ea.x - eb.x, ea.y - eb.y) < (a.width + b.width) / 2;
+        // raios de frente um para o outro ficam paralelos: a ponta de um encostando no outro já é choque
+        const reach = (a.width + b.width) / 2;
+        const headOn = segDist(ea.x, ea.y, b.ox, b.oy, eb.x, eb.y) < reach || segDist(eb.x, eb.y, a.ox, a.oy, ea.x, ea.y) < reach;
         if (p || headOn) this.startClash(a, b, p || { x: (ea.x + eb.x) / 2, y: (ea.y + eb.y) / 2 });
       }
     }
@@ -1141,7 +1143,7 @@ export class Battle {
   updateClash(dt) {
     const c = this.clash;
     c.t += dt;
-    if (c.result) {
+    if (c.result !== null) {
       if (c.t >= c.resultAt + 0.8) this.endClash();
       return;
     }

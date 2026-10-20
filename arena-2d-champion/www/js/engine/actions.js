@@ -41,6 +41,7 @@ export function baseCooldown(mv) {
 function windupFor(mv, shape) {
   if (shape.kind === 'stance') return 0.02;
   const p = mv.pri;
+  if (shape.kind === 'beam' && p <= 0) return 0.34; // brilho de carga antes do raio
   if (p >= 2) return 0.04;
   if (p === 1) return 0.08;
   if (p <= -6) return 0.45;

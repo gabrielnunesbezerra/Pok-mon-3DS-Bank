@@ -22,13 +22,13 @@ export function computeLayout(W, H, mode) {
     L.log = { x: W / 2, y: H - 4 * u, w: W * 0.4 };
   } else {
     // modo mesa: cada jogador segura um lado do aparelho
-    const row = (y, x0, dir) => [0, 1, 2, 3].map(i => ({ x: x0 + dir * i * 15.5 * u, y, r: 7 * u }));
+    const row = (y, x0, dir) => [0, 1, 2, 3].map(i => ({ x: x0 + dir * i * 15 * u, y, r: 7 * u }));
     const p1y = H - 9 * u, p2y = 9 * u;
     L.sides[0] = {
       rot: 0,
       joyZone: { x: 0, y: H * 0.5, w: W * 0.34, h: H * 0.5 },
       joyR: 10 * u,
-      moves: row(p1y, W - 70 * u, 1),
+      moves: row(p1y, W - 75 * u, 1),
       dodge: { x: W - 9 * u, y: p1y - 1 * u, r: 8 * u },
       mega: { x: W - 9 * u, y: p1y - 19 * u, r: 6.5 * u },
       panel: { x: W / 2 - 30 * u, y: H - 18 * u, w: 46 * u, h: 16.5 * u, flip: false },
@@ -38,7 +38,7 @@ export function computeLayout(W, H, mode) {
       rot: Math.PI,
       joyZone: { x: W * 0.66, y: 0, w: W * 0.34, h: H * 0.5 },
       joyR: 10 * u,
-      moves: row(p2y, 70 * u, -1),
+      moves: row(p2y, 75 * u, -1),
       dodge: { x: 9 * u, y: p2y + 1 * u, r: 8 * u },
       mega: { x: 9 * u, y: p2y + 19 * u, r: 6.5 * u },
       panel: { x: W / 2 - 16 * u, y: 1.5 * u, w: 46 * u, h: 16.5 * u, flip: true, rotated: true },

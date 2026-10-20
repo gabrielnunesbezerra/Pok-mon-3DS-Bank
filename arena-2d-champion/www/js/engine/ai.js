@@ -13,6 +13,15 @@ const DIFF = {
   hard: { react: 0.17, dodge: 0.72, mash: 8.5, megaResponse: 0.9, lead: 0.75, smart: 0.95, mega: 1 },
 };
 
+// o adversário está carregando ou soltando um raio (devolve algo que identifica esse raio)
+export function foeBeamThreat(b, foe) {
+  const a = foe.action;
+  if (a?.type === 'windup' && shapeFor(a.id).kind === 'beam') return a;
+  if (a?.type === 'charge' && shapeFor(a.id).kind === 'beam' && a.dur - a.t < 0.6) return a;
+  if (a?.type === 'channel' && a.ent?.kind === 'beam' && !a.ent.hit && a.ent.t < 0.45) return a.ent;
+  return null;
+}
+
 const MELEE = new Set(['lunge', 'slash', 'grab', 'spin', 'rollout']);
 const WEATHER_OF = { sunnyday: 'sunnyday', raindance: 'raindance', sandstorm: 'sandstorm', hail: 'hail', snowscape: 'snow' };
 
@@ -64,15 +73,29 @@ export class CpuController {
       this.decide(me, foe, inp);
     }
     this.steer(me, foe, inp, dt);
-    this.dodgeCheck(me, foe, inp);
+    if (!this.beamAnswer(me, foe, inp)) this.dodgeCheck(me, foe, inp);
+  }
+
+  // Raio vindo na minha direção e eu tenho um raio pronto: respondo para começar o choque
+  beamAnswer(me, foe, inp) {
+    if (!foe || !canStartMove(this.b, me)) return false;
+    const incoming = foeBeamThreat(this.b, foe);
+    if (!incoming || this.answered === incoming) return false;
+    this.answered = incoming;
+    if (Math.random() > this.d.megaResponse) return false;
+    const slot = me.moves.findIndex((m, k) => shapeFor(slotMove(me, k)).kind === 'beam' && !slotBlock(this.b, me, k));
+    if (slot < 0) return false;
+    inp.move = { slot, aim: null };
+    return true;
   }
 
   decide(me, foe, inp) {
     const b = this.b;
     if (b.canMega(this.side) && Math.random() < this.d.mega) { inp.mega = true; return; }
-    if (foe && b.canSwitch(this.side) && Math.random() < this.d.smart * 0.12) {
+    // troca só quando o confronto é ruim e o Pokémon já ficou um tempo em campo (evita trocar sem parar)
+    if (foe && b.canSwitch(this.side) && b.time - me.enteredAt > 7 && Math.random() < this.d.smart * 0.035) {
       const now = this.matchup(me, foe);
-      if (now < -1 && hpFrac(me) > 0.3) {
+      if (now < -1 && hpFrac(me) > 0.4) {
         const opts = b.switchOptions(this.side);
         const best = this.chooseSwitch(opts);
         if (this.matchup(b.sides[this.side].mons[best], foe) > now + 1) { inp.switchTo = best; return; }
