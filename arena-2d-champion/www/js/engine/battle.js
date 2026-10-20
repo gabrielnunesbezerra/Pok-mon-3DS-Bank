@@ -1129,7 +1129,8 @@ export class Battle {
       const stat = beam.mv.cat === 'Physical' ? u.stats.atk : u.stats.spa;
       return (beam.mv.bp || 60) * stab * stat * (TYPE_CHART[beam.mv.type]?.[other.mv.type] ?? 1);
     };
-    const sa = strength(a, b), sb = strength(b, a);
+    // raiz quadrada: tipo e poder ajudam, mas quem toca mais rápido ainda consegue virar
+    const sa = Math.sqrt(strength(a, b)), sb = Math.sqrt(strength(b, a));
     this.clash = { a, b, x: point.x, y: point.y, meter: 0, t: 0, dur: 5, push: [sa / (sa + sb), sb / (sa + sb)], taps: [0, 0], result: null };
     a.len = Math.hypot(point.x - a.ox, point.y - a.oy);
     b.len = Math.hypot(point.x - b.ox, point.y - b.oy);
@@ -1149,7 +1150,7 @@ export class Battle {
       c.taps[i] += taps;
       c.meter += (i === 0 ? 1 : -1) * taps * 0.085 * c.push[i] * 2;
     }
-    c.meter += (c.push[0] - c.push[1]) * dt * 0.25;
+    c.meter += (c.push[0] - c.push[1]) * dt * 0.15;
     c.meter = Math.max(-1, Math.min(1, c.meter));
     const total = Math.hypot(c.a.ox - c.b.ox, c.a.oy - c.b.oy);
     const k = (c.meter + 1) / 2;

@@ -11,8 +11,8 @@ export function computeLayout(W, H, mode) {
       joyZone: { x: 0, y: H * 0.28, w: W * 0.48, h: H * 0.72 },
       joyR: 12 * u,
       dodge: { x: cx, y: cy, r: 9.5 * u },
-      moves: [196, 238, 280, 322].map(a => ({ x: cx + Math.cos((a * Math.PI) / 180) * 22 * u, y: cy + Math.sin((a * Math.PI) / 180) * 22 * u, r: 7.6 * u })),
-      mega: { x: W - 9 * u, y: H - 50 * u, r: 7 * u },
+      moves: [180, 216, 252, 288].map(a => ({ x: cx + Math.cos((a * Math.PI) / 180) * 26 * u, y: cy + Math.sin((a * Math.PI) / 180) * 26 * u, r: 7.6 * u })),
+      mega: { x: W - 47 * u, y: H - 53 * u, r: 7 * u },
       panel: { x: 1.5 * u, y: 1.5 * u, w: 52 * u, h: 19 * u, flip: false },
       mash: { x: W - 22 * u, y: H - 30 * u, r: 16 * u },
     };

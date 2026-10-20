@@ -1,0 +1,8 @@
+{
+  "appId": "com.gabrielnunesbezerra.arena2dchampion",
+  "appName": "Arena 2D Champion",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#16172a"
+  }
+}

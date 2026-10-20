@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- Desenha o ícone e a tela de abertura do app. Abra com ?kind=icon|foreground|splash&w=..&h=..
+     (as imagens em android/app/src/main/res foram geradas a partir daqui). -->
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: 'Press Start 2P'; src: url('../www/assets/fonts/press-start-2p.woff2') format('woff2'); }
+html, body { margin: 0; background: transparent; }
+</style></head>
+<body><canvas id="c"></canvas>
+<script>
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'icon';
+const W = +q.get('w') || 512, H = +q.get('h') || 512;
+const c = document.getElementById('c');
+c.width = W; c.height = H;
+const g = c.getContext('2d');
+
+function emblem(cx, cy, s) {
+  // campo
+  const w = s, h = s * 0.72;
+  g.save();
+  g.translate(cx - w / 2, cy - h / 2);
+  const r = s * 0.1;
+  g.beginPath(); g.roundRect(0, 0, w, h, r); g.clip();
+  for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#4f9d3a' : '#5aab44'; g.fillRect((w / 8) * i, 0, w / 8 + 1, h); }
+  g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = s * 0.025;
+  g.strokeRect(s * 0.04, s * 0.04, w - s * 0.08, h - s * 0.08);
+  g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.stroke();
+  g.beginPath(); g.arc(w / 2, h / 2, s * 0.17, 0, Math.PI * 2); g.stroke();
+  // raios se chocando
+  const by = h / 2;
+  const beam = (x0, x1, outer, inner) => {
+    g.fillStyle = outer; g.fillRect(Math.min(x0, x1), by - s * 0.07, Math.abs(x1 - x0), s * 0.14);
+    g.fillStyle = inner; g.fillRect(Math.min(x0, x1), by - s * 0.03, Math.abs(x1 - x0), s * 0.06);
+  };
+  beam(0, w / 2, '#ff6a1f', '#ffe08a');
+  beam(w / 2, w, '#2f7fe8', '#d8f0ff');
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  for (let i = 0; i < 16; i++) { const rr = i % 2 ? s * 0.06 : s * 0.16; const a = (i * Math.PI) / 8; g.lineTo(w / 2 + Math.cos(a) * rr, by + Math.sin(a) * rr); }
+  g.closePath(); g.fill();
+  g.restore();
+  g.strokeStyle = '#ffd84a'; g.lineWidth = s * 0.035;
+  g.beginPath(); g.roundRect(cx - w / 2, cy - h / 2, w, h, r); g.stroke();
+}
+
+async function draw() {
+  await document.fonts.load('20px "Press Start 2P"');
+  if (kind !== 'foreground') {
+    const grad = g.createRadialGradient(W / 2, H * 0.2, 10, W / 2, H / 2, Math.max(W, H));
+    grad.addColorStop(0, '#2e3270'); grad.addColorStop(1, '#16172a');
+    g.fillStyle = grad; g.fillRect(0, 0, W, H);
+  }
+  if (kind === 'icon' || kind === 'foreground') {
+    const s = kind === 'foreground' ? W * 0.6 : W * 0.78;
+    emblem(W / 2, H * 0.47, s);
+    g.font = `${Math.round(s * 0.13)}px "Press Start 2P"`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = s * 0.03; g.strokeStyle = '#000';
+    g.strokeText('ARENA', W / 2, H * 0.47 + s * 0.47);
+    g.fillStyle = '#ffd84a';
+    g.fillText('ARENA', W / 2, H * 0.47 + s * 0.47);
+  } else {
+    const s = Math.min(W, H) * 0.42;
+    emblem(W / 2, H * 0.36, s);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `${Math.round(s * 0.24)}px "Press Start 2P"`;
+    g.lineWidth = s * 0.03; g.strokeStyle = '#000';
+    g.strokeText('ARENA 2D', W / 2, H * 0.36 + s * 0.58);
+    g.fillStyle = '#ffd84a'; g.fillText('ARENA 2D', W / 2, H * 0.36 + s * 0.58);
+    g.font = `${Math.round(s * 0.13)}px "Press Start 2P"`;
+    g.fillStyle = '#ffffff'; g.fillText('CHAMPION', W / 2, H * 0.36 + s * 0.8);
+  }
+  document.title = 'pronto';
+}
+draw();
+</script></body></html>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Arena 2D Champion</string>
+    <string name="title_activity_main">Arena 2D Champion</string>
+    <string name="package_name">com.gabrielnunesbezerra.arena2dchampion</string>
+    <string name="custom_url_scheme">com.gabrielnunesbezerra.arena2dchampion</string>
+</resources>
