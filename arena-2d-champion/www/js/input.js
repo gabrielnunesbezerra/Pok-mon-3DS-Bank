@@ -43,8 +43,9 @@ export class Controls {
     window.addEventListener('blur', () => { this.keys.clear(); this.pointers.clear(); this.joy = [null, null]; });
   }
 
-  setup(mode, humans, teamCounts) {
+  setup(mode, humans, teamCounts, me = 0) {
     this.mode = mode;
+    this.me = me;
     this.humans = humans;
     this.teamCounts = teamCounts;
     this.edges = [blankEdge(), blankEdge()];
@@ -54,7 +55,7 @@ export class Controls {
   }
 
   resize(W, H) {
-    this.layout = computeLayout(W, H, this.mode);
+    this.layout = computeLayout(W, H, this.mode, this.me || 0);
   }
 
   capture(id) {
@@ -78,7 +79,7 @@ export class Controls {
       if (!this.humans[i]) continue;
       const S = L.sides[i];
       if (b?.clash) {
-        const mine = this.mode === '1p' || (i === 0 ? y > L.H / 2 : y < L.H / 2);
+        const mine = this.mode !== '2p' || (i === 0 ? y > L.H / 2 : y < L.H / 2);
         if (mine) { this.edges[i].mash++; this.pointers.set(e.pointerId, { role: 'mash', side: i }); return; }
         continue;
       }
@@ -143,7 +144,7 @@ export class Controls {
     if (e.code === 'Escape' || e.code === 'KeyP') { this.onPause?.(); return; }
     for (let i = 0; i < 2; i++) {
       if (!this.humans[i]) continue;
-      const map = this.mode === '1p' && i === 0 ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
+      const map = this.mode !== '2p' ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
       const ed = this.edges[i];
       const mashKey = map.moves.flat().includes(e.code) || map.dodge.includes(e.code);
       if (this.battle?.clash && mashKey) { ed.mash++; e.preventDefault(); continue; }
@@ -163,21 +164,23 @@ export class Controls {
   gamepads() {
     const pads = (navigator.getGamepads?.() || []).filter(Boolean);
     const out = [null, null];
-    if (this.mode === '1p') out[0] = pads[0] || null;
+    if (this.mode !== '2p') out[this.me || 0] = pads[0] || null;
     else { out[0] = pads[0] || null; out[1] = pads[1] || null; }
     return out;
   }
 
   // Escreve no input de cada lado humano da batalha
-  poll(battle) {
+  // copia o estado dos controles para a entrada de cada lado humano (inputs[i]; por padrão, a da batalha)
+  poll(battle, inputs = battle.sides.map(s => s.input)) {
     this.battle = battle;
     const pads = this.gamepads();
     for (let i = 0; i < 2; i++) {
       if (!this.humans[i]) continue;
-      const inp = battle.sides[i].input;
+      const inp = inputs[i];
+      if (!inp) continue;
       const ed = this.edges[i];
       let mx = 0, my = 0;
-      const map = this.mode === '1p' && i === 0 ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
+      const map = this.mode !== '2p' ? mergeMaps(KEYMAP[0], KEYMAP[1]) : KEYMAP[i];
       const held = list => list.some(c => this.keys.has(c));
       if (held(map.left)) mx -= 1;
       if (held(map.right)) mx += 1;

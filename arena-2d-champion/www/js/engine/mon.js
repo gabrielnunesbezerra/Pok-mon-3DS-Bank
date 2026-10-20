@@ -169,11 +169,11 @@ export function getSpeed(b, mon) {
 // Velocidade de andar na arena (pixels por segundo)
 export function moveSpeed(b, mon) {
   const spe = getSpeed(b, mon);
-  let v = 95 + spe * 0.85;
+  let v = 130 + spe * 1.05;
   if (mon.vol.partiallytrapped) v *= 0.55;
   if (mon.vol.ingrain) v *= 0.4;
   v *= b.arenaSpeedMult(mon);
-  return Math.min(v, 430);
+  return Math.min(v, 520);
 }
 
 // Recarga dos golpes encolhe um pouco para quem é rápido

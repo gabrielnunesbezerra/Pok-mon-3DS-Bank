@@ -3,17 +3,17 @@
 // só a forma física do golpe.
 import { MOVES } from '../data/dex.js';
 
-const lunge = (range = 100, o = {}) => ({ kind: 'lunge', range, speed: range >= 180 ? 780 : 640, reach: 18, anim: 'Attack', ...o });
+const lunge = (range = 100, o = {}) => ({ kind: 'lunge', range: range >= 180 ? range * 1.25 : range, speed: range >= 180 ? 900 : 680, reach: 18, anim: 'Attack', ...o });
 const slash = (reach = 85, o = {}) => ({ kind: 'slash', range: 46, reach, arc: 120, anim: 'Swing', ...o });
-const proj = (speed = 540, size = 12, o = {}) => ({ kind: 'projectile', speed, size, range: 520, anim: 'Shoot', sprite: 'orb', ...o });
+const proj = (speed = 540, size = 12, o = {}) => ({ kind: 'projectile', speed: speed * 1.15, size, range: 720, anim: 'Shoot', sprite: 'orb', ...o });
 // o raio avança a 800 px/s: dá tempo de o outro responder com um raio e começar o choque
-const beam = (width = 22, duration = 0.75, o = {}) => ({ kind: 'beam', length: 560, width, duration: duration + 0.35, grow: 800, anim: 'Shoot', ...o });
-const cone = (range = 230, angle = 50, o = {}) => ({ kind: 'cone', range, angle, duration: 0.45, anim: 'Shoot', ...o });
-const wave = (width = 260, o = {}) => ({ kind: 'wave', speed: 430, width, range: 430, thickness: 34, anim: 'Shoot', ...o });
-const ring = (radius = 240, o = {}) => ({ kind: 'ring', radius, speed: 560, anim: 'Charge', ...o });
-const area = (radius = 70, delay = 0.45, o = {}) => ({ kind: 'area', radius, delay, count: 1, spread: 0, anim: 'Shoot', ...o });
-const gaze = (o = {}) => ({ kind: 'gaze', range: 330, angle: 80, anim: 'Charge', ...o });
-const sproj = (sprite = 'orb', speed = 430, o = {}) => ({ kind: 'projectile', speed, size: 14, range: 480, anim: 'Shoot', sprite, ...o });
+const beam = (width = 22, duration = 0.75, o = {}) => ({ kind: 'beam', length: 800, width: width * 1.3, duration: duration + 0.35, grow: 950, anim: 'Shoot', ...o });
+const cone = (range = 230, angle = 50, o = {}) => ({ kind: 'cone', range: range * 1.4, angle, duration: 0.45, anim: 'Shoot', ...o });
+const wave = (width = 260, o = {}) => ({ kind: 'wave', speed: 520, width: width * 1.6, range: 700, thickness: 44, anim: 'Shoot', ...o });
+const ring = (radius = 240, o = {}) => ({ kind: 'ring', radius: radius * 1.45, speed: 700, anim: 'Charge', ...o });
+const area = (radius = 70, delay = 0.45, o = {}) => ({ kind: 'area', radius: radius * 1.2, delay, count: 1, spread: 0, anim: 'Shoot', ...o });
+const gaze = (o = {}) => ({ kind: 'gaze', range: 460, angle: 80, anim: 'Charge', ...o });
+const sproj = (sprite = 'orb', speed = 430, o = {}) => ({ kind: 'projectile', speed: speed * 1.15, size: 14, range: 640, anim: 'Shoot', sprite, ...o });
 const self = (o = {}) => ({ kind: 'self', anim: 'Charge', ...o });
 const field = (o = {}) => ({ kind: 'field', anim: 'Charge', ...o });
 
@@ -128,7 +128,7 @@ export const SHAPES = {
   bulletseed: proj(640, 7, { sprite: 'seed', spread: 0.18, burst: 0.07 }),
   dig: { kind: 'semiinv', mode: 'dig', duration: 1.1, radius: 62, anim: 'Charge' },
   dive: { kind: 'semiinv', mode: 'dive', duration: 1.1, radius: 66, anim: 'Charge' },
-  earthquake: ring(330, { ground: true, speed: 520, anim: 'Hop' }),
+  earthquake: { kind: 'ring', radius: 640, speed: 760, ground: true, anim: 'Hop', big: true },
   fissure: { kind: 'line', length: 400, width: 46, delay: 0.55, ground: true, anim: 'Hop' },
   fly: { kind: 'semiinv', mode: 'fly', duration: 1.15, radius: 60, anim: 'Hop' },
   fling: proj(600, 10, { sprite: 'item' }),
@@ -139,7 +139,7 @@ export const SHAPES = {
   petalblizzard: ring(175, { speed: 380, sprite: 'petal', anim: 'Rotate' }),
   psychocut: proj(640, 16, { sprite: 'crescent' }),
   razorleaf: proj(620, 9, { sprite: 'leaf', count: 3, spread: 0.22 }),
-  rockslide: area(42, 0.55, { count: 3, spread: 55, sprite: 'rock' }),
+  rockslide: area(44, 0.55, { count: 5, spread: 110, sprite: 'rock' }),
   rocktomb: area(58, 0.45, { sprite: 'rock' }),
   scaleshot: proj(660, 8, { sprite: 'scale', spread: 0.15, burst: 0.07 }),
   seedbomb: proj(470, 12, { sprite: 'seed', lob: true, explode: 45 }),
@@ -152,8 +152,8 @@ export const SHAPES = {
   airslash: proj(640, 16, { sprite: 'crescent' }),
   ancientpower: proj(560, 12, { sprite: 'rock', count: 3, spread: 0.16 }),
   aurasphere: proj(470, 15, { sprite: 'aura', homing: 3.2 }),
-  blastburn: area(125, 0.6, { sprite: 'explosion' }),
-  blizzard: cone(330, 75, { duration: 0.6 }),
+  blastburn: area(150, 0.6, { sprite: 'explosion' }),
+  blizzard: { kind: 'cone', range: 560, angle: 95, duration: 0.75, anim: 'Shoot', big: true },
   brine: proj(560, 12),
   bubble: proj(380, 8, { sprite: 'bubble', count: 3, spread: 0.3 }),
   bubblebeam: beam(18, 0.7, { sprite: 'bubble' }),
@@ -178,9 +178,9 @@ export const SHAPES = {
   gigadrain: proj(560, 13, { sprite: 'drain' }),
   grassknot: area(46, 0.3, { sprite: 'snare' }),
   grasspledge: area(75, 0.5, { sprite: 'pillar' }),
-  heatwave: wave(300, { speed: 400, range: 380 }),
+  heatwave: { kind: 'wave', speed: 480, width: 620, range: 900, thickness: 70, anim: 'Shoot', big: true },
   hiddenpower: proj(560, 10, { count: 3, spread: 0.2 }),
-  hurricane: proj(360, 26, { sprite: 'tornado' }),
+  hurricane: proj(360, 34, { sprite: 'tornado' }),
   hydrocannon: beam(40, 1.0),
   hydropump: beam(30, 0.85),
   hyperbeam: beam(40, 1.0),
@@ -194,7 +194,7 @@ export const SHAPES = {
   mirrorcoat: { kind: 'stance', mode: 'mirrorcoat', anim: 'Charge' },
   mudshot: proj(580, 11, { sprite: 'mud' }),
   mudslap: proj(620, 9, { sprite: 'mud', range: 280 }),
-  muddywater: wave(290, { sprite: 'mud' }),
+  muddywater: { kind: 'wave', speed: 520, width: 720, range: 1250, thickness: 60, anim: 'Shoot', sprite: 'mud', big: true },
   mysticalfire: proj(560, 13, { sprite: 'flame' }),
   ominouswind: wave(200, { speed: 460, range: 400 }),
   overheat: beam(42, 0.9),
@@ -210,7 +210,8 @@ export const SHAPES = {
   snarl: ring(250, { sound: true }),
   snore: ring(230, { sound: true }),
   solarbeam: beam(36, 0.9, { charge: 1.4 }),
-  surf: wave(330, { range: 440 }),
+  // Surf varre a altura inteira da arena: só dá para passar com esquiva, Protect ou mergulhando
+  surf: { kind: 'wave', speed: 560, width: 940, range: 1600, thickness: 64, anim: 'Shoot', big: true },
   swift: proj(560, 9, { sprite: 'star', count: 5, spread: 0.35, homing: 4 }),
   terablast: proj(580, 14, { sprite: 'crystal' }),
   terrainpulse: proj(540, 14, { sprite: 'pulse' }),
@@ -278,8 +279,8 @@ export const SHAPES = {
   suckerpunch: lunge(250, { speed: 1150 }),
   phantomforce: { kind: 'semiinv', mode: 'phantom', duration: 1.1, radius: 62, anim: 'Charge' },
   heavyslam: { kind: 'leap', range: 300, radius: 90, anim: 'Hop' },
-  explosion: { kind: 'blast', radius: 240, anim: 'Charge' },
-  selfdestruct: { kind: 'blast', radius: 200, anim: 'Charge' },
+  explosion: { kind: 'blast', radius: 320, anim: 'Charge' },
+  selfdestruct: { kind: 'blast', radius: 260, anim: 'Charge' },
   clearsmog: proj(540, 14, { sprite: 'smoke' }),
   gunkshot: proj(640, 17, { sprite: 'glob' }),
   rockblast: proj(640, 11, { sprite: 'rock', spread: 0.15, burst: 0.08 }),
@@ -296,7 +297,7 @@ export const SHAPES = {
   nightshade: proj(700, 13, { sprite: 'pulse' }),
   psywave: wave(170, { range: 380, speed: 480, sprite: 'pulse' }),
   dazzlinggleam: ring(260, { speed: 700 }),
-  sludgewave: ring(340, { speed: 420, sprite: 'sludge' }),
+  sludgewave: { kind: 'ring', radius: 520, speed: 560, sprite: 'sludge', anim: 'Charge', big: true },
   thunderbolt: beam(18, 0.6, { sprite: 'lightning' }),
   thunder: area(60, 0.55, { sprite: 'bolt' }),
   meteorbeam: beam(42, 0.9, { charge: 1.2 }),

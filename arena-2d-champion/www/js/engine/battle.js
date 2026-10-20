@@ -20,10 +20,11 @@ const angleTo = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
 const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
 
+// segundos da apresentação "treinador x treinador" antes da contagem
+export const START_INTRO = 1.4;
+
 export const ARENAS = {
-  grass: { name: 'Estádio de Grama', desc: 'Fogo no chão acende a grama.' },
-  water: { name: 'Campo Aquático', desc: 'Fora das plataformas, quem não é de Água nada mais devagar. Gelo congela a água.' },
-  ice: { name: 'Arena de Gelo', desc: 'O chão escorrega (menos para o tipo Gelo).' },
+  grass: { name: 'Estádio da Liga Pokémon', desc: 'Arena grande de grama. Fogo no chão acende a grama.' },
 };
 
 const CLASH_ELEMENT = { venusaurmega: 'grass', charizardmegax: 'fire', charizardmegay: 'fire', blastoisemega: 'water', steelixmega: 'ground', gengarmega: 'ghost' };
@@ -44,9 +45,7 @@ export class Battle {
     this.choice = null;
     this.winner = null;
     this.over = false;
-    this.platforms = arena === 'water'
-      ? [{ x: FIELD.x + FIELD.w / 2, y: FIELD.y + FIELD.h / 2, r: 78 }, { x: FIELD.x + 150, y: FIELD.y + FIELD.h / 2, r: 64 }, { x: FIELD.x + FIELD.w - 150, y: FIELD.y + FIELD.h / 2, r: 64 }]
-      : [];
+    this.platforms = [];
     this.sides = [0, 1].map(i => ({
       index: i,
       name: names[i],
@@ -63,8 +62,10 @@ export class Battle {
       feedback: null,
       stats: { damage: 0, ko: 0 },
     }));
+    // identificadores iguais em qualquer aparelho (o modo online roda a mesma simulação nos dois)
+    for (const s of this.sides) for (const m of s.mons) m.uid = s.index * 10 + m.slot + 1;
     for (const s of this.sides) this.switchIn(s.index, 0, { initial: true });
-    this.cinematic = { type: 'start', t: 0, dur: 2.2 };
+    this.cinematic = { type: 'start', t: 0, dur: START_INTRO + 2.2 };
   }
 
   // ---------------------------------------------------------------- utilidades
@@ -145,7 +146,12 @@ export class Battle {
   step(dt = DT) {
     if (this.over) { this.time += dt; this.updateEnts(dt, true); return; }
     for (const s of this.sides) if (s.cpu) s.cpu.update(dt);
-    if (this.choice) return this.clearInputs();
+    if (this.choice) {
+      // a escolha chega pela entrada do lado (igual para toque, teclado e online)
+      const pick = this.sides[this.choice.side].input.switchTo;
+      if (pick !== null && pick !== undefined) this.choose(pick);
+      return this.clearInputs();
+    }
     if (this.cinematic) { this.updateCinematic(dt); return this.clearInputs(); }
     if (this.clash) { this.updateClash(dt); return this.clearInputs(); }
 
@@ -197,7 +203,7 @@ export class Battle {
     mon.dodgeCd = DODGE.cooldown;
     mon.iframes = DODGE.iframes;
     mon.action = { type: 'dodge', t: 0, dur: DODGE.duration, dx: dx / len, dy: dy / len };
-    this.setAnim(mon, 'Hop', DODGE.duration);
+    this.setAnim(mon, 'Walk', DODGE.duration);
     this.emit({ t: 'dodgeStart', mon });
   }
 
@@ -559,7 +565,7 @@ export class Battle {
     if (a.t < a.dur - 0.38) {
       if (foe) { a.tx = foe.x; a.ty = foe.y; }
       const d = Math.hypot(a.tx - mon.x, a.ty - mon.y);
-      const step = Math.min(d, 330 * dt);
+      const step = Math.min(d, 430 * dt);
       if (d > 1) { mon.x += ((a.tx - mon.x) / d) * step; mon.y += ((a.ty - mon.y) / d) * step; }
     } else if (!a.locked) {
       a.locked = true;
@@ -1359,10 +1365,10 @@ export class Battle {
     resetField(mon);
     if (passed) { mon.boosts = passed.boosts; Object.assign(mon.vol, passed.vol); }
     if (initial || !old) {
-      mon.x = sideIdx === 0 ? FIELD.x + 150 : FIELD.x + FIELD.w - 150;
+      mon.x = sideIdx === 0 ? FIELD.x + 380 : FIELD.x + FIELD.w - 380;
       mon.y = FIELD.y + FIELD.h / 2;
     }
-    if (old && old.fainted) { mon.x = sideIdx === 0 ? FIELD.x + 130 : FIELD.x + FIELD.w - 130; mon.y = FIELD.y + FIELD.h / 2; }
+    if (old && old.fainted) { mon.x = sideIdx === 0 ? FIELD.x + 300 : FIELD.x + FIELD.w - 300; mon.y = FIELD.y + FIELD.h / 2; }
     mon.facing = sideIdx === 0 ? 0 : Math.PI;
     mon.onField = true;
     mon.enteredAt = this.time;

@@ -6,7 +6,8 @@ import {
 } from '../data/dex.js';
 import { describeMove } from '../data/movetext.js';
 import { staminaCost, baseCooldown } from '../engine/actions.js';
-import { ARENAS } from '../engine/battle.js';
+import { TRAINER_DATA } from '../data/sprites.js';
+import { cleanCode } from '../net/online.js';
 
 const ui = () => document.getElementById('ui');
 
@@ -53,12 +54,14 @@ export function showTitle(app) {
       h('div', { class: 'top' }, 'CHAMPION'),
       h('div', { class: 'sub' }, 'Batalha Pokémon em tempo real')),
     h('div', { class: 'menu' },
-      h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app, 0); } }, '1 JOGADOR'),
-      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = '2p'; showTeamBuilder(app, 0); } }, '2 JOGADORES'),
-      h('button', { class: 'gold', onclick: () => { sfx(app); showDex(app); } }, 'GOLPEDEX'),
-      h('button', { onclick: () => { sfx(app); showHelp(app, () => showTitle(app)); } }, 'COMO JOGAR'),
-      h('button', { onclick: () => { sfx(app); showSettings(app, () => showTitle(app)); } }, 'OPÇÕES'),
-      h('button', { onclick: () => { sfx(app); showCredits(app); } }, 'CRÉDITOS')),
+      h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app, 0); } }, 'CONTRA A CPU'),
+      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = 'online'; showTeamBuilder(app, 0); } }, 'ONLINE'),
+      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = '2p'; showTeamBuilder(app, 0); } }, '2 NO MESMO CELULAR')),
+    h('div', { class: 'menu sub' },
+      h('button', { class: 'gold small', onclick: () => { sfx(app); showDex(app); } }, 'GOLPEDEX'),
+      h('button', { class: 'small', onclick: () => { sfx(app); showHelp(app, () => showTitle(app)); } }, 'COMO JOGAR'),
+      h('button', { class: 'small', onclick: () => { sfx(app); showSettings(app, () => showTitle(app)); } }, 'OPÇÕES'),
+      h('button', { class: 'small', onclick: () => { sfx(app); showCredits(app); } }, 'CRÉDITOS')),
     h('div', { class: 'footer-note' }, 'Projeto de fã, sem fins lucrativos. Pokémon © Nintendo, Creatures e GAME FREAK.')));
 }
 
@@ -104,6 +107,7 @@ export function showTeamBuilder(app, player) {
     app.saveTeams();
     sfx(app, 'select');
     if (app.mode === '2p' && player === 0) showTeamBuilder(app, 1);
+    else if (app.mode === 'online') showOnline(app);
     else showSetup(app);
   };
   mount(h('div', { class: 'screen' },
@@ -222,19 +226,35 @@ function pickMove(app, set, k, rerender) {
   render();
 }
 
+// ---------------------------------------------------------------- escolha de treinador
+const TRAINER_IDS = Object.keys(TRAINER_DATA);
+
+export function randomTrainer(except = null) {
+  const pool = TRAINER_IDS.filter(id => id !== except);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function trainerPicker(app, idx, label, { allowRandom = false } = {}) {
+  const grid = h('div', { class: `trainers side${idx}` });
+  const draw = () => {
+    grid.innerHTML = '';
+    const pick = app.trainerPick[idx];
+    if (allowRandom) {
+      grid.append(h('button', { class: `trainer ${pick === 'random' ? 'on' : ''}`, onclick: () => { sfx(app); app.trainerPick[idx] = 'random'; draw(); } },
+        h('div', { class: 'qmark' }, '?'), h('span', {}, 'Sorteio')));
+    }
+    for (const id of TRAINER_IDS) {
+      grid.append(h('button', { class: `trainer ${pick === id ? 'on' : ''}`, onclick: () => { sfx(app); app.trainerPick[idx] = id; draw(); } },
+        h('img', { src: TRAINER_DATA[id].img, alt: TRAINER_DATA[id].name }), h('span', {}, TRAINER_DATA[id].name)));
+    }
+  };
+  draw();
+  return h('div', { class: 'picker' }, h('div', { class: `picker-label p${idx + 1}` }, label), grid);
+}
+
 // ---------------------------------------------------------------- opções da partida
 export function showSetup(app) {
   const vsCpu = app.mode === '1p';
-  const arenas = h('div', { class: 'arenas' });
-  const swatch = { grass: 'linear-gradient(90deg,#4f9d3a 50%,#5aab44 50%)', water: 'linear-gradient(#2f7fd8,#1d5cb0)', ice: 'linear-gradient(#e4f5fc,#bfe3f2)' };
-  const renderArenas = () => {
-    arenas.innerHTML = '';
-    for (const [id, a] of Object.entries(ARENAS)) {
-      arenas.append(h('div', { class: `arena-opt ${app.arena === id ? 'on' : ''}`, onclick: () => { app.arena = id; sfx(app); renderArenas(); } },
-        h('div', { class: 'swatch', style: { background: swatch[id] } }), h('h3', {}, a.name), h('p', {}, a.desc)));
-    }
-  };
-  renderArenas();
   const opt = (label, values, key, names) => {
     const row = h('div', { class: 'opt-row' }, h('span', {}, label));
     const draw = () => {
@@ -251,13 +271,79 @@ export function showSetup(app) {
       h('button', { class: 'primary', onclick: () => { sfx(app, 'go'); app.startBattle(); } }, 'LUTAR!')),
     h('div', { class: 'scroll' },
       h('div', { class: 'setup' },
-        arenas,
+        trainerPicker(app, 0, vsCpu ? 'SEU TREINADOR' : 'TREINADOR DO JOGADOR 1'),
+        trainerPicker(app, 1, vsCpu ? 'TREINADOR RIVAL' : 'TREINADOR DO JOGADOR 2', { allowRandom: true }),
         vsCpu ? opt('Dificuldade', ['easy', 'normal', 'hard'], 'difficulty', ['FÁCIL', 'NORMAL', 'DIFÍCIL']) : null,
         vsCpu ? opt('Time do rival', ['random', 'mirror', 'presets'], 'rivalMode', ['ALEATÓRIO', 'IGUAL AO MEU', 'SUGERIDO']) : null,
         opt('Tempo', [180, 240, 360, 5999], 'timeLimit', ['3 MIN', '4 MIN', '6 MIN', 'SEM LIMITE']),
         h('div', { class: 'hint' }, vsCpu
           ? 'Toque e arraste no lado esquerdo para andar. Toque nos golpes para usar (arraste o botão para mirar). Teclado: WASD, J K L ; para os golpes, Espaço para esquivar, E para Mega.'
           : 'Modo mesa: o jogador 1 joga pela parte de baixo da tela e o jogador 2 pela de cima. No teclado, o jogador 2 usa as setas e o teclado numérico.')))));
+}
+
+// ---------------------------------------------------------------- online
+export function showOnline(app) {
+  const status = h('div', { class: 'net-status' }, '');
+  const codeBox = h('div', { class: 'room-code' });
+  const codeInput = h('input', { type: 'text', placeholder: 'CÓDIGO', maxlength: 5, autocapitalize: 'characters', autocomplete: 'off', spellcheck: 'false', class: 'code-input' });
+  codeInput.addEventListener('input', () => { codeInput.value = cleanCode(codeInput.value); });
+  const setStatus = (text, bad = false) => { status.textContent = text; status.className = `net-status ${bad ? 'bad' : ''}`; };
+  let busy = false;
+  const lock = on => { busy = on; createBtn.disabled = on; joinBtn.disabled = on; cancelBtn.style.display = on ? '' : 'none'; };
+  const callbacks = {
+    status: t => setStatus(t),
+    message: t => { setStatus(t, true); codeBox.textContent = ''; lock(false); },
+    left: t => app.onlineLeft(t),
+  };
+  const createBtn = h('button', { class: 'primary', onclick: async () => {
+    if (busy) return;
+    sfx(app, 'select');
+    lock(true);
+    setStatus('Criando a sala...');
+    try {
+      const code = await app.onlineCreate(callbacks);
+      codeBox.textContent = code;
+      setStatus('Sala criada! Passe o código para o outro jogador e espere ele entrar.');
+    } catch (e) { callbacks.message(app.onlineError(e)); }
+  } }, 'CRIAR SALA');
+  const joinBtn = h('button', { class: 'blue', onclick: async () => {
+    if (busy) return;
+    const code = cleanCode(codeInput.value);
+    if (code.length !== 5) { setStatus('O código tem 5 letras e números.', true); return; }
+    sfx(app, 'select');
+    lock(true);
+    setStatus('Conectando...');
+    try { await app.onlineJoin(code, callbacks); } catch (e) { callbacks.message(app.onlineError(e)); }
+  } }, 'ENTRAR');
+  const cancelBtn = h('button', { class: 'ghost small', style: { display: 'none' }, onclick: () => { sfx(app, 'back'); app.onlineClose(); codeBox.textContent = ''; setStatus('Cancelado.'); lock(false); } }, 'CANCELAR');
+  const opt = (label, values, key, names) => {
+    const row = h('div', { class: 'opt-row' }, h('span', {}, label));
+    const draw = () => {
+      row.querySelectorAll('button').forEach(b => b.remove());
+      values.forEach((v, i) => row.append(h('button', { class: `small ${app[key] === v ? 'on' : ''}`, onclick: () => { app[key] = v; sfx(app); draw(); } }, names[i])));
+    };
+    draw();
+    return row;
+  };
+  mount(h('div', { class: 'screen' },
+    h('div', { class: 'topbar' },
+      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); app.onlineClose(); showTeamBuilder(app, 0); } }, '< VOLTAR'),
+      h('h2', {}, 'BATALHA ONLINE')),
+    h('div', { class: 'scroll' },
+      h('div', { class: 'setup' },
+        trainerPicker(app, 0, 'SEU TREINADOR'),
+        h('div', { class: 'online-row' },
+          h('div', { class: 'online-card' },
+            h('h3', {}, 'Criar uma sala'),
+            h('p', { class: 'hint' }, 'Você recebe um código de 5 letras para passar ao amigo. O tempo da batalha é o que você escolher aqui.'),
+            opt('Tempo', [180, 240, 360], 'timeLimit', ['3 MIN', '4 MIN', '6 MIN']),
+            createBtn, codeBox),
+          h('div', { class: 'online-card' },
+            h('h3', {}, 'Entrar numa sala'),
+            h('p', { class: 'hint' }, 'Digite o código que o seu amigo recebeu.'),
+            codeInput, joinBtn)),
+        h('div', { class: 'online-foot' }, status, cancelBtn),
+        h('div', { class: 'hint' }, 'Os dois aparelhos precisam de internet e da mesma versão do jogo. Cada um usa o próprio time (o que está em "Seu time"). Quem criou a sala joga do lado vermelho.')))));
 }
 
 // ---------------------------------------------------------------- pausa e opções
@@ -268,7 +354,8 @@ export function showPause(app) {
       h('button', { class: 'primary', onclick: () => { sfx(app); app.resume(); } }, 'CONTINUAR'),
       h('button', { onclick: () => { sfx(app); showHelp(app, () => showPause(app)); } }, 'COMO JOGAR'),
       h('button', { onclick: () => { sfx(app); showSettings(app, () => showPause(app)); } }, 'OPÇÕES'),
-      h('button', { class: 'ghost', onclick: () => { sfx(app, 'back'); app.quit(); } }, 'SAIR DA BATALHA'))));
+      h('button', { class: 'ghost', onclick: () => { sfx(app, 'back'); app.quit(); } }, app.mode === 'online' ? 'DESISTIR E SAIR' : 'SAIR DA BATALHA'),
+      app.mode === 'online' ? h('div', { class: 'hint', style: { textAlign: 'center' } }, 'No online a batalha não para enquanto este menu está aberto.') : null)));
 }
 
 export function showSettings(app, back) {
@@ -300,7 +387,7 @@ export function showChoice(app, battle) {
       h('h2', {}, c.reason === 'faint' ? `${side.name}: escolha o próximo Pokémon` : `${side.name}: trocar para qual Pokémon?`),
       h('div', { class: 'choice-row' }, ...c.options.map(slot => {
         const m = side.mons[slot];
-        return h('button', { onclick: () => { sfx(app, 'select'); clearUi(); battle.choose(slot); } },
+        return h('button', { onclick: () => { sfx(app, 'select'); clearUi(); app.controls.edges[c.side].switchTo = slot; } },
           h('img', { src: portrait(app, m.baseSpecies) }),
           m.name,
           h('div', { class: 'hpbar' }, h('div', { style: { width: `${(m.hp / m.maxhp) * 100}%` } })));
@@ -322,9 +409,20 @@ export function showResult(app, battle) {
       h('div', { class: 'hint', style: { textAlign: 'center' } }, `Duração: ${Math.floor(battle.time / 60)}min ${Math.floor(battle.time % 60)}s`),
       h('div', { class: 'result-grid' }, sideBox(battle.sides[0]), sideBox(battle.sides[1])),
       h('div', { class: 'choice-row' },
-        h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.startBattle(); } }, 'REVANCHE'),
-        h('button', { onclick: () => { sfx(app); app.stopBattle(); showTeamBuilder(app, 0); } }, 'TROCAR TIME'),
-        h('button', { class: 'ghost', onclick: () => { sfx(app, 'back'); app.stopBattle(); showTitle(app); } }, 'MENU')))));
+        app.mode === 'online'
+          ? h('button', { class: 'primary', onclick: e => { sfx(app, 'select'); e.target.disabled = true; e.target.textContent = 'ESPERANDO O OUTRO...'; app.onlineRematch(); } }, app.rematchAsked ? 'ACEITAR REVANCHE' : 'REVANCHE')
+          : h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.startBattle(); } }, 'REVANCHE'),
+        app.mode === 'online' ? null : h('button', { onclick: () => { sfx(app); app.stopBattle(); showTeamBuilder(app, 0); } }, 'TROCAR TIME'),
+        h('button', { class: 'ghost', onclick: () => { sfx(app, 'back'); app.onlineClose(); app.stopBattle(); showTitle(app); } }, 'MENU')))));
+}
+
+// aviso simples (ex.: o outro jogador saiu)
+export function showNotice(app, title, text, then) {
+  mount(h('div', { class: 'overlay' },
+    h('div', { class: 'box' },
+      h('h2', {}, title),
+      h('div', { class: 'text', style: { textAlign: 'center' } }, text),
+      h('button', { class: 'primary', onclick: () => { sfx(app); then(); } }, 'OK'))));
 }
 
 // ---------------------------------------------------------------- Golpedex
@@ -365,22 +463,26 @@ export function showHelp(app, back) {
       h('div', {
         class: 'text', html: `
 <h3>Controles</h3>
-<p>Arraste no lado esquerdo da tela para andar. Os quatro botões coloridos são os golpes: toque para soltar mirando no adversário, ou arraste o botão para mirar onde quiser. O botão branco é a esquiva: por um instante o Pokémon fica intocável.</p>
+<p>Arraste no lado esquerdo da tela para andar. Os quatro botões coloridos são os golpes: toque para soltar mirando no adversário, ou arraste o botão para mirar onde quiser. O botão branco é a esquiva: um dash rápido na direção em que você está andando, e durante ele o Pokémon fica intocável.</p>
 <p>No teclado: <kbd>WASD</kbd> anda, <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <kbd>;</kbd> (ou <kbd>1</kbd>-<kbd>4</kbd>) usam os golpes, <kbd>Espaço</kbd> esquiva, <kbd>E</kbd> Mega Evolução, <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> trocam de Pokémon, <kbd>Esc</kbd> pausa. Controles de videogame também funcionam.</p>
 <h3>Stamina e recarga</h3>
-<p>Cada golpe gasta stamina (a barra amarela) e tem uma recarga própria. Golpes com pouco PP nos jogos gastam mais stamina, golpes fortes demoram mais para recarregar. Esquivar também gasta stamina.</p>
+<p>Cada golpe gasta stamina (a barra amarela) e tem uma recarga própria. Golpes com pouco PP nos jogos gastam mais stamina, golpes fortes demoram mais para recarregar. Esquivar também gasta stamina: cada risquinho da barra é uma esquiva.</p>
+<h3>Atributos temporários</h3>
+<p>Swords Dance, Dragon Dance, Calm Mind e companhia aumentam os atributos só por um tempo. A etiqueta no painel (Atq+2, por exemplo) tem uma barrinha que mostra quanto falta; quando ela acaba, o atributo volta um nível a cada poucos segundos. Quedas de atributo também passam com o tempo.</p>
 <h3>Igual aos jogos</h3>
 <p>O dano usa a mesma fórmula dos jogos (nível 50), com STAB, tipos, críticos, clima, habilidades e itens. Status, mudanças de atributo, Protect, Substitute, Leech Seed, golpes de dois turnos, Fly, Dig e Dive funcionam como nos jogos, só que em tempo real: um "turno" vale alguns segundos.</p>
 <h3>Clima</h3>
 <p>No sol, Solar Beam sai sem carga, Fogo fica mais forte e Água mais fraca. Na chuva é o contrário, e Hurricane nunca erra. Chlorophyll, Solar Power, Rain Dish e Drought mudam conforme o clima.</p>
 <h3>Mega Evolução</h3>
-<p>Venusaur, Charizard e Blastoise segurando a Mega Pedra podem Mega Evoluir uma vez por batalha. A barra de Mega enche quando você causa dano, leva dano e esquiva no último instante. Cheia, aperte o botão MEGA.</p>
+<p>Venusaur, Charizard, Blastoise, Steelix e Gengar segurando a Mega Pedra podem Mega Evoluir uma vez por batalha. O anel em volta do seu treinador é a barra de Mega: enche quando você causa dano, leva dano e esquiva no último instante. Cheio, aperte o botão MEGA.</p>
 <h3>Choque de Megas</h3>
 <p>Se um treinador Mega Evoluir e o outro responder com a própria Mega durante a animação, as Megas se chocam e criam um clima especial na arena: Sol Extremo, Chuva Torrencial, Tempestade Mega com raios caindo e outros, dependendo dos Pokémon.</p>
 <h3>Choque de raios</h3>
 <p>Quando dois golpes de raio (Solar Beam, Hydro Pump, Flamethrower, Ice Beam, Hyper Beam...) se encontram, começa o choque: toque o mais rápido que puder. Quem empurrar o raio até o outro lado acerta com mais força. Tipo e poder do golpe ajudam a empurrar.</p>
 <h3>Arena</h3>
-<p>Projéteis se chocam no ar. Fogo e Água juntos viram vapor, que atrapalha a mira. Fogo acende a grama do estádio, a água apaga. No Campo Aquático, golpes de Gelo congelam a água e criam chão firme.</p>` }),
+<p>O Estádio da Liga é grande e a câmera acompanha a luta. Golpes de área como Surf, Earthquake e Heat Wave pegam boa parte do campo. Projéteis se chocam no ar, Fogo e Água juntos viram vapor, Fogo acende a grama e a água apaga.</p>
+<h3>Online</h3>
+<p>Um jogador cria a sala e recebe um código; o outro digita o código. A conexão é direta entre os dois celulares, então os dois precisam de internet. Se a rede engasgar, a batalha espera o outro lado em vez de pular.</p>` }),
       h('button', { class: 'primary', onclick: () => { sfx(app); back(); } }, 'OK'))));
 }
 
@@ -398,6 +500,9 @@ export async function showCredits(app) {
 <p>Golpes, aprendizado, atributos e tipos: Pokémon Showdown (pacote @pkmn/dex).</p>
 <h3>Sprites e retratos</h3>
 <p>PMD Sprite Repository (SpriteCollab), licença CC BY-NC 4.0. Artes oficiais via PokeAPI/sprites.</p>
+<p>Treinadores e Megas no estilo Black/White (Mega Venusaur, Mega Charizard Y e Mega Blastoise): Smogon Sprite Project (smogon/sprites) e os artistas creditados lá.</p>
+<h3>Online</h3>
+<p>PeerJS (licença MIT) para a conexão direta entre os aparelhos.</p>
 <p>${credits.map(c => `${c.what}: ${c.by.join(', ')}`).join('<br>')}</p>
 <h3>Fontes</h3>
 <p>Press Start 2P (CodeMan38) e Pixelify Sans (Stefie Justprince), licença SIL OFL 1.1.</p>

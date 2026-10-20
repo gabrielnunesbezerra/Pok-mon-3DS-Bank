@@ -239,6 +239,6 @@ test('Trick Room deixa Steelix mais rápido que Weavile', async () => {
 test('Batalha CPU contra CPU termina sem erros', () => {
   const team = [mon('charizard', ['flamethrower', 'airslash', 'solarbeam', 'roost'], { item: 'charizarditey' }), mon('weavile', ['nightslash', 'iceshard', 'icepunch', 'swordsdance'])];
   const battle = new Battle({ teams: [team, team], cpu: [true, true], seed: 9, events: false, timeLimit: 400 });
-  run(battle, 405); // o limite de tempo encerra a batalha se ninguém vencer antes
+  run(battle, 700); // o limite de tempo encerra a batalha (apresentação, Megas e choques pausam o relógio)
   assert.ok(battle.over);
 });

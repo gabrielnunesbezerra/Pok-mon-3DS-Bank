@@ -4,16 +4,22 @@ Batalha de Pokémon em tempo real numa arena 2D vista de cima, inspirada no "Pok
 
 ## O que tem
 
-- **4 Pokémon**: Venusaur, Charizard, Blastoise e Weavile, com times de até 3.
-- **Todos os golpes que eles podem aprender**: 286 golpes no total (nível, TM, tutor, ovo e evento, de todas as gerações, contando as pré-evoluções). Cada um funciona como nos jogos: mesmo poder, precisão, tipo, categoria, efeitos secundários, prioridade, golpes de dois turnos, recarga do Hyper Beam, Protect, Substitute, Leech Seed, Rollout, Outrage, Counter, Baton Pass, Roar, Metronome, Sleep Talk e por aí vai.
+- **6 Pokémon**: Venusaur, Charizard, Blastoise, Weavile, Steelix e Gengar, com times de até 3.
+- **Todos os golpes que eles podem aprender**: 356 golpes no total (nível, TM, tutor, ovo e evento, de todas as gerações, contando as pré-evoluções). Cada um funciona como nos jogos: mesmo poder, precisão, tipo, categoria, efeitos secundários, prioridade, golpes de dois turnos, recarga do Hyper Beam, Protect, Substitute, Leech Seed, Rollout, Outrage, Counter, Baton Pass, Roar, Metronome, Sleep Talk, Perish Song, Destiny Bond, Trick Room e por aí vai.
 - **Fórmula de dano dos jogos** (nível 50), conferida contra a calculadora do Smogon: STAB, tipos, crítico, clima, terreno, telas, habilidades e itens.
-- **Habilidades**: Overgrow, Chlorophyll, Blaze, Solar Power, Torrent, Rain Dish, Pressure, Pickpocket e as das Megas (Thick Fat, Tough Claws, Drought, Mega Launcher).
-- **Mega Evolução** de Venusaur, Charizard (X e Y) e Blastoise. A barra de Mega enche com dano causado, dano recebido e esquivas no último instante.
-- **Choque de Megas**: se os dois treinadores Mega Evoluem juntos, as Megas criam um clima especial (Sol Extremo, Chuva Torrencial, Tempestade Mega com raios, Chuva Primaveril...).
+- **Habilidades** de todos, inclusive as das Megas (Thick Fat, Tough Claws, Drought, Mega Launcher, Sand Force, Shadow Tag).
+- **Mega Evolução** de Venusaur, Charizard (X e Y), Blastoise, Steelix e Gengar, com sprites das Megas. A barra de Mega fica em volta do treinador e enche com dano causado, dano recebido e esquivas no último instante.
+- **Choque de Megas**: se os dois treinadores Mega Evoluem juntos, as Megas criam um clima especial (Sol Extremo, Chuva Torrencial, Tempestade Mega com raios, Tempestade de Areia...).
 - **Choque de raios**: quando dois golpes de raio se encontram (Solar Beam x Hydro Pump, Flamethrower x Hydro Pump...), começa um minigame de tocar rápido.
-- **Clima de verdade**: Solar Beam sem carga no sol, Hurricane que não erra na chuva, Synthesis que cura mais no sol, Weather Ball que muda de tipo...
-- **Interações na arena**: projéteis se chocam no ar, fogo com água vira vapor que atrapalha a mira, fogo acende a grama, água apaga, gelo congela a água do Campo Aquático.
-- **Stamina e recarga** em cada golpe, **esquiva** com invencibilidade, troca de Pokémon, 3 arenas, IA em 3 dificuldades e modo 2 jogadores no mesmo aparelho (ou teclado/controle).
+- **Atributos temporários**: Swords Dance, Dragon Dance e companhia aumentam o atributo por um tempo, depois ele volta aos poucos.
+- **Esquiva em dash** com invencibilidade e rastro, **stamina e recarga** em cada golpe.
+- **Treinadores dos jogos e do anime** (Ash, Red, Blue, Misty, Brock, Dawn, Cynthia, Lance, Steven, Iris e outros), com apresentação "VS" e corte de Mega Evolução.
+- **Estádio grande** com câmera que acompanha a luta. Surf, Earthquake, Heat Wave e outros golpes de área pegam boa parte do campo e deixam marcas no chão.
+- **Modos**: contra a CPU (3 dificuldades), online com código de sala e 2 jogadores no mesmo celular (ou teclado/controle).
+
+## Online
+
+Um jogador toca em CRIAR SALA e recebe um código de 5 letras; o outro toca em ENTRAR e digita o código. A conexão é direta entre os aparelhos (WebRTC, pela biblioteca PeerJS); o servidor público do PeerJS só serve para os dois se encontrarem. Os dois aparelhos rodam a mesma simulação e trocam apenas os comandos de cada quadro, com alguns quadros de atraso conforme a rede. De tempos em tempos eles comparam um resumo do estado e, se algo divergir, quem criou a sala manda o estado completo. Os dois precisam de internet e da mesma versão do jogo.
 
 ## Como jogar no celular
 
@@ -28,7 +34,7 @@ Esta pasta já funciona como raiz de um repositório separado (por exemplo `AREN
 ```bash
 npm install
 npm run serve     # abre em http://localhost:8080
-npm test          # simula todos os golpes e confere que nada quebra
+npm test          # simula todos os golpes, as mecânicas e o modo online
 ```
 
 Controles no teclado: `WASD` anda, `J` `K` `L` `;` (ou `1`-`4`) usam os golpes, `Espaço` esquiva, `E` Mega Evolução, `Z` `X` `C` trocam de Pokémon, `Esc` pausa.
@@ -44,20 +50,24 @@ www/                 o jogo (HTML + JavaScript puro, sem framework)
     shapes.js        a "forma" de cada golpe na arena (raio, projétil, onda...)
     ai.js            treinador do computador
   js/render/         desenho (canvas): arena, sprites, efeitos, HUD
+  js/net/            modo online (lockstep.js: simulação sincronizada; online.js: salas)
   js/ui/menus.js     telas de menu
+  vendor/            PeerJS (MIT)
   js/data/           dados gerados (golpes, aprendizado) e escritos à mão
 android/             projeto Android (Capacitor)
 scripts/             geração de dados, download de sprites, servidor local
 tests/               testes do motor
 ```
 
-Os dados dos golpes vêm do Pokémon Showdown (`npm run gen-data` gera de novo) e os sprites do PMD SpriteCollab (`npm run fetch-assets`).
+Os dados dos golpes vêm do Pokémon Showdown (`npm run gen-data` gera de novo) e os sprites do PMD SpriteCollab e do Smogon Sprite Project (`npm run fetch-assets`).
 
 ## Créditos
 
 - Dados: Pokémon Showdown (@pkmn/dex).
 - Sprites e retratos: PMD Sprite Repository (SpriteCollab), CC BY-NC 4.0. Os autores de cada sprite estão em `www/assets/credits.json` e na tela de créditos do jogo.
+- Treinadores e Megas no estilo Black/White (Mega Venusaur, Mega Charizard Y, Mega Blastoise): Smogon Sprite Project (smogon/sprites).
 - Artes oficiais: PokeAPI/sprites.
+- Conexão online: PeerJS (MIT).
 - Fontes: Press Start 2P e Pixelify Sans (SIL OFL 1.1).
 
 Pokémon © Nintendo, Creatures Inc. e GAME FREAK inc. Este projeto não tem ligação com elas.
