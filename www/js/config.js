@@ -20,3 +20,6 @@ export const hex = n => '#' + n.toString(16).padStart(6, '0');
 export const MUNDO = { w: 960, h: 441 };
 export const RADIO = 9;
 export const HUD_ALTO = 48;
+
+// Arena oval do combate: elipse em coordenadas do mundo
+export const OVALO = { cx: 480, cy: 222, rx: 455, ry: 168 };

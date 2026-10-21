@@ -48,6 +48,7 @@ const aCoord = (cx, cy) => {
   const r = canvas.getBoundingClientRect();
   return { x: ((cx - r.left) / r.width) * ANCHO, y: ((cy - r.top) / r.height) * ALTO };
 };
+app.aCoord = aCoord;
 app.entrada = new Entrada(canvas, aCoord);
 app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.escena?.tecla?.(c, nueva, e); };
 app.entrada.alPuntero = (tipo, p, e) => { if (tipo === 'down') audio.iniciar(); app.escena?.puntero?.(tipo, p, e); };

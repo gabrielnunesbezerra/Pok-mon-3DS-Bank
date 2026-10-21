@@ -1,9 +1,163 @@
-// Em construção (fases 2 e 3)
-import { ANCHO, ALTO } from '../config.js';
-import { fondoMenu, texto } from '../render/pixel.js';
+// Escolha de Pokémon: grade 3x3 no centro, quadro de cada lado com sprite, tipos, atributos e as 5 skills.
+import { ANCHO, ALTO, UI, hex } from '../config.js';
+import { ROSTER, ROLES } from '../data/pokemon.js';
+import { ARENAS } from '../data/arenas.js';
+import { TIPOS } from '../data/regras.js';
+import { fondoMenu, texto, marco, rect } from '../render/pixel.js';
+import { formasDe } from '../render/sprites.js';
+import { sfx } from '../audio.js';
+
+const NIVELES = ['facil', 'normal', 'dificil'];
+const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
+const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
+const CARD = { w: 80, h: 44, gap: 8, x0: 190, y0: 58 };
+
 export class Seleccion {
-  constructor(app) { this.app = app; }
-  tecla(c, nueva) { if (nueva && (c === 'Escape' || c === 'Backspace')) this.app.ir('titulo'); }
-  puntero(tipo) { if (tipo === 'down') this.app.ir('titulo'); }
-  dibujar(g) { fondoMenu(g, ANCHO, ALTO); texto(g, 'COMING SOON', ANCHO / 2, ALTO / 2, { tam: 16, align: 'center', base: 'middle', borde: 4 }); }
+  constructor(app, datos = {}) {
+    this.app = app;
+    this.modo = datos.modo ?? 'cpu';
+    this.t = 0;
+    const ant = app.ultimaSeleccion;
+    this.elegido = [ant?.[0] ?? 0, this.modo === 'entreno' ? 1 : (ant?.[1] ?? Math.floor(Math.random() * ROSTER.length))];
+    this.cursor = this.elegido[0];
+    this.lado = 0; // quem está sendo editado: 0 = jogador 1, 1 = oponente
+    this.nivel = app.ajustes.nivel ?? 'normal';
+    this.arena = Math.max(0, ARENAS.findIndex(a => a.id === app.ajustes.arena));
+    this.foco = 'grade'; // 'grade' | 'arena' | 'nivel' | 'luchar' | 'volver'
+    this.aleatorio = [false, this.modo !== 'versus'];
+  }
+
+  entrar() { for (const p of ROSTER) { const f = [p, ...(p.evoluciones ?? [])]; for (const x of f) { this.app.bank.hoja(x.dex, 'Idle'); this.app.bank.retrato(x.dex); } } }
+
+  atras() { sfx('atras'); this.app.ir('titulo', { menu: 'jugar' }); }
+  luchar() {
+    const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
+    this.app.ultimaSeleccion = [...this.elegido];
+    this.app.ajustes.nivel = this.nivel; this.app.ajustes.arena = ARENAS[this.arena].id; this.app.guardarAjustes();
+    sfx('confirmar');
+    this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, arena: ARENAS[this.arena].id, nivel: this.nivel });
+  }
+
+  elegirCarta(i) {
+    this.elegido[this.lado] = i;
+    this.aleatorio[this.lado] = false;
+    sfx('confirmar');
+    if (this.lado === 0 && this.modo !== 'entreno') { this.lado = 1; this.cursor = this.elegido[1]; }
+    else this.foco = 'luchar';
+  }
+
+  tecla(c, nueva) {
+    if (!nueva) return;
+    const n = ROSTER.length;
+    if (c === 'Escape' || c === 'Backspace') return this.atras();
+    if (c === 'Tab') { if (this.modo !== 'entreno') { this.lado = 1 - this.lado; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
+    if (c === 'KeyR' && this.foco === 'grade' && this.lado === 1 && this.modo === 'cpu') { this.aleatorio[1] = true; this.elegido[1] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
+    const dx = ['ArrowRight', 'KeyD'].includes(c) ? 1 : ['ArrowLeft', 'KeyA'].includes(c) ? -1 : 0;
+    const dy = ['ArrowDown', 'KeyS'].includes(c) ? 1 : ['ArrowUp', 'KeyW'].includes(c) ? -1 : 0;
+    const accion = ['Enter', 'Space', 'NumpadEnter'].includes(c);
+    if (this.foco === 'grade') {
+      if (dx) { this.cursor = (this.cursor + dx + n) % n; sfx('seleccion'); }
+      if (dy) { const f = Math.floor(this.cursor / 3) + dy; if (f > 2) this.foco = 'arena'; else if (f >= 0) this.cursor = f * 3 + (this.cursor % 3); sfx('seleccion'); }
+      if (accion) this.elegirCarta(this.cursor);
+    } else {
+      const orden = this.modo === 'cpu' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
+      const i = orden.indexOf(this.foco);
+      if (dy) { const j = i + dy; if (j < 0) this.foco = 'grade'; else if (j < orden.length) this.foco = orden[j]; sfx('seleccion'); }
+      if (this.foco === 'arena' && dx) { this.arena = (this.arena + dx + ARENAS.length) % ARENAS.length; sfx('seleccion'); }
+      if (this.foco === 'nivel' && dx) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + dx + 3) % 3]; sfx('seleccion'); }
+      if (this.foco === 'luchar' && accion) this.luchar();
+    }
+  }
+
+  cajaCarta(i) { return { x: CARD.x0 + (i % 3) * (CARD.w + CARD.gap), y: CARD.y0 + Math.floor(i / 3) * (CARD.h + CARD.gap), w: CARD.w, h: CARD.h }; }
+  puntero(tipo, p) {
+    if (tipo !== 'down' && tipo !== 'move') return;
+    const dentro = (c, m = 0) => p.x >= c.x - m && p.x <= c.x + c.w + m && p.y >= c.y - m && p.y <= c.y + c.h + m;
+    for (let i = 0; i < ROSTER.length; i++) if (dentro(this.cajaCarta(i))) { if (tipo === 'move') { if (this.cursor !== i || this.foco !== 'grade') { this.cursor = i; this.foco = 'grade'; } } else { this.cursor = i; this.foco = 'grade'; this.elegirCarta(i); } return; }
+    if (tipo !== 'down') return;
+    if (dentro(this.cajaVolver())) return this.atras();
+    if (dentro(this.cajaLuchar())) return this.luchar();
+    if (dentro(this.cajaArena(-1))) { this.arena = (this.arena - 1 + ARENAS.length) % ARENAS.length; sfx('seleccion'); return; }
+    if (dentro(this.cajaArena(1))) { this.arena = (this.arena + 1) % ARENAS.length; sfx('seleccion'); return; }
+    if (this.modo === 'cpu') { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
+    if (this.modo !== 'entreno') { if (dentro({ x: 4, y: 38, w: 178, h: 24 })) { this.lado = 0; this.cursor = this.elegido[0]; sfx('seleccion'); } if (dentro({ x: 458, y: 38, w: 178, h: 24 })) { this.lado = 1; this.cursor = this.elegido[1]; sfx('seleccion'); } }
+  }
+  cajaVolver() { return { x: 4, y: 4, w: 70, h: 18 }; }
+  cajaLuchar() { return { x: ANCHO / 2 - 64, y: 308, w: 128, h: 28 }; }
+  cajaArena(d) { return { x: d < 0 ? 196 : 410, y: 232, w: 20, h: 18 }; }
+  cajaNivel(d) { return { x: d < 0 ? 196 : 410, y: 258, w: 20, h: 18 }; }
+
+  actualizar(dt) { this.t += dt; }
+
+  dibujar(g) {
+    const bank = this.app.bank, t = this.t;
+    fondoMenu(g, ANCHO, ALTO);
+    marco(g, 0, 0, ANCHO, 26, 'panel');
+    const v = this.cajaVolver(); marco(g, v.x, v.y, v.w, v.h); texto(g, '< MENU', v.x + v.w / 2, v.y + v.h / 2, { tam: 7, align: 'center', base: 'middle' });
+    texto(g, this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
+    // painéis laterais
+    this.panel(g, 0, 4, t);
+    this.panel(g, 1, 458, t);
+    // grade
+    ROSTER.forEach((p, i) => {
+      const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno';
+      const foco = this.cursor === i && this.foco === 'grade';
+      marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
+      const img = bank.retrato(p.dex);
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 4, c.y + 4, 36, 36);
+      texto(g, p.nombre, c.x + 44, c.y + 8, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 48 });
+      p.tipos.forEach((tp, k) => { rect(g, c.x + 44 + k * 14, c.y + 22, 12, 7, '#04102c'); rect(g, c.x + 45 + k * 14, c.y + 23, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
+      if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
+      if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
+    });
+    // opções
+    const fila = (y, etiqueta, valor, enfocado, cajaIzq, cajaDer) => {
+      marco(g, 218, y, 192, 18, enfocado ? 'oro' : 'azul');
+      texto(g, etiqueta, 226, y + 9, { tam: 6, base: 'middle', color: enfocado ? UI.textoOscuro : UI.suave });
+      texto(g, valor, 314, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
+      texto(g, '<', cajaIzq.x + 10, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
+      texto(g, '>', cajaDer.x + 10, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
+    };
+    fila(232, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
+    if (this.modo === 'cpu') fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
+    const l = this.cajaLuchar();
+    marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
+    texto(g, 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
+    texto(g, this.modo === 'cpu' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE', ANCHO / 2, ALTO - 10, { tam: 6, color: UI.apagado, align: 'center' });
+  }
+
+  panel(g, lado, x0, t) {
+    const bank = this.app.bank;
+    if (lado === 1 && this.modo === 'entreno') { marco(g, x0, 30, 178, 270, 'panel'); texto(g, 'DUMMY', x0 + 89, 52, { tam: 10, align: 'center', color: UI.suave }); texto(g, 'Stands still, takes hits.\nNo timer.', x0 + 89, 80, { tam: 7, align: 'center', color: UI.suave }); return; }
+    const idx = lado === 1 && this.aleatorio[1] && this.modo === 'cpu' ? -1 : this.elegido[lado];
+    const activo = this.lado === lado && this.modo !== 'entreno';
+    marco(g, x0, 30, 178, 270, 'panel');
+    rect(g, x0 + 2, 31, 174, 14, lado === 0 ? '#1f4f9a' : '#9a2a2a');
+    texto(g, lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2', x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });
+    if (activo) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(x0 + 1, 31, 176, 268); }
+    if (idx < 0) { texto(g, 'RANDOM', x0 + 89, 140, { tam: 14, align: 'center', color: '#ffd23c', borde: 3 }); texto(g, '?', x0 + 89, 110, { tam: 30, align: 'center', color: '#fff', borde: 4 }); return; }
+    const p = ROSTER[idx];
+    const forma = [p, ...(p.evoluciones ?? [])];
+    // sprite grande
+    const fila = lado === 0 ? 2 : 6;
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x0 + 89, 118, 26, 6, 0, 0, 7); g.fill();
+    bank.dibujar(g, p.dex, 'Idle', t, x0 + 89, 118, 2, { fila });
+    texto(g, p.nombre, x0 + 89, 126, { tam: 9, align: 'center', color: '#fff', borde: 3 });
+    p.tipos.forEach((tp, k) => { const x = x0 + 89 - p.tipos.length * 15 + k * 30; rect(g, x - 1, 141, 30, 11, '#04102c'); rect(g, x, 142, 28, 9, hex(TIPOS[tp] ?? 0xffffff)); texto(g, tp, x + 14, 146.5, { tam: 5, align: 'center', base: 'middle', borde: 1 }); });
+    texto(g, `${ROLES[p.rol].nombre} · ${p.lema}`, x0 + 89, 157, { tam: 5.5, align: 'center', color: UI.suave, max: 168 });
+    // linha evolutiva
+    const cadena = forma.map(f => f.nombre).join(' > ') + (forma.at(-1).mega ? ` > ${forma.at(-1).mega.nombre}` : '');
+    texto(g, cadena, x0 + 89, 168, { tam: 5, align: 'center', color: '#7dd3fc', max: 170 });
+    // atributos
+    const barra = (y, nombre, v, max, color) => { texto(g, nombre, x0 + 8, y, { tam: 5.5, color: UI.suave }); rect(g, x0 + 36, y + 1, 70, 5, '#04102c'); rect(g, x0 + 37, y + 2, Math.round(68 * Math.min(1, v / max)), 3, color); };
+    barra(176, 'HP', p.hp, 100, '#3cd34e'); barra(184, 'SPD', p.vel, 180, '#7dd3fc'); barra(192, 'ATK', p.atk * 100, 140, '#ff7a5a'); barra(200, 'DEF', p.def * 100, 125, '#ffd166');
+    // skills
+    SLOTS.forEach(([s, k], i) => {
+      const h = p.kit[s], y = 216 + i * 14;
+      rect(g, x0 + 6, y - 1, 24, 10, '#04102c'); rect(g, x0 + 7, y, 22, 8, '#225697');
+      texto(g, k, x0 + 18, y + 4, { tam: 5, align: 'center', base: 'middle' });
+      rect(g, x0 + 33, y + 1, 5, 6, hex(TIPOS[h.tipo] ?? 0xffffff));
+      texto(g, h.nombre, x0 + 42, y + 4, { tam: 6, base: 'middle', max: 130 });
+    });
+  }
 }
