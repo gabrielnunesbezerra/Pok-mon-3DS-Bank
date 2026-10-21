@@ -1,0 +1,279 @@
+[
+ {
+  "dex": "0001",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "dex": "0002",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0003",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "<@!276175146304405514>",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0004",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0005",
+  "sprite": [
+   "CHUNSOFT",
+   "bwappi",
+   "Grimlin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "0palite"
+  ]
+ },
+ {
+  "dex": "0006",
+  "sprite": [
+   "CHUNSOFT",
+   "Emboarger"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "0palite"
+  ]
+ },
+ {
+  "dex": "0006-0001",
+  "sprite": [
+   "Kevin0itachi",
+   "G〜",
+   "Kevin"
+  ],
+  "retrato": [
+   "Emboarger",
+   "Soulja"
+  ]
+ },
+ {
+  "dex": "0007",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "dex": "0008",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0009",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0041",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "fledermaus"
+  ]
+ },
+ {
+  "dex": "0042",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "JFain"
+  ]
+ },
+ {
+  "dex": "0095",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0143",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "NOLASMOR",
+   "Emboarger"
+  ]
+ },
+ {
+  "dex": "0169",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "<ElGian>",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0208",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "dex": "0208-0001",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "Ichor"
+  ]
+ },
+ {
+  "dex": "0427",
+  "sprite": [
+   "CHUNSOFT",
+   "JFain"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0428",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "JFain"
+  ]
+ },
+ {
+  "dex": "0428-0001",
+  "sprite": [
+   "JFain"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0446",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "dex": "0447",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Fearless-Quit"
+  ]
+ },
+ {
+  "dex": "0448",
+  "sprite": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Deeshura",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0448-0001",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "Caitemis"
+  ]
+ },
+ {
+  "dex": "0656",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "◥θ┴θ◤",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0657",
+  "sprite": [
+   "Caitemis"
+  ],
+  "retrato": [
+   "baronessfaron",
+   "NOLASMOR",
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0658",
+  "sprite": [
+   "Jhony-Rex",
+   "Soulja"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ }
+]
