@@ -1,11 +1,12 @@
 // Quem manda no lutador: teclado e mouse (jogador 1), teclado do jogador 2, controle (gamepad) e toque.
-import { ANCHO, ALTO, UI, hex } from './config.js';
+import { ANCHO, ALTO, BARRA_Y, UI, hex } from './config.js';
 import { marco, rect, texto } from './render/pixel.js';
 import { icono, tono } from './render/iconos.js';
 import { TIPOS } from './data/regras.js';
 
 export const CONTROLES = {
-  kbm: { mover: 'WASD', lmb: 'LMB', rmb: 'RMB', esp: 'SPC', q: 'Q', e: 'E', mega: 'R' },
+  kbm: { mover: 'WASD', lmb: 'LMB', rmb: 'RMB', esp: 'SPC', q: 'Q', e: 'E', mega: 'F' },
+  tactil: { mover: 'Stick', lmb: 'ATK', rmb: 'SKL', esp: 'DASH', q: 'UTIL', e: 'ULT', mega: 'EVO' },
   teclado2: { mover: 'Arrows', lmb: 'K', rmb: 'L', esp: '↵', q: 'I', e: 'O', mega: 'P' },
 };
 export const nombreTecla = c => ({ Space: 'SPC', Enter: 'ENTER', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' }[c] ?? c.replace(/^Key|^Digit/, ''));
@@ -28,7 +29,7 @@ export class ControlHumano {
       it.my = (ent.abajo('KeyS') ? 1 : 0) - (ent.abajo('KeyW') ? 1 : 0);
       it.lmb = ent.ptr.izq || ent.abajo('KeyJ');
       it.rmb = ent.ptr.der || ent.abajo('KeyK');
-      it.esp = ent.abajo('Space'); it.q = ent.abajo('KeyQ'); it.e = ent.abajo('KeyE'); it.mega = ent.abajo('KeyR');
+      it.esp = ent.abajo('Space'); it.q = ent.abajo('KeyQ'); it.e = ent.abajo('KeyE'); it.mega = ent.abajo('KeyF') || ent.abajo('KeyR');
       if (!ent.ptr.fuera && this.camara) { const p = this.camara.aMundo(ent.ptr.x, ent.ptr.y); it.ax = p.x; it.ay = p.y; this.hayMouse = true; }
       else mira();
     } else if (this.esquema === 'teclado2') {
@@ -65,7 +66,7 @@ const SLOTS = {
   esp: { dx: -66, dy: -68, r: 28, rot: 'DASH' },
   q: { dx: -146, dy: -46, r: 26, rot: 'UTIL' },
   e: { dx: -8, dy: -104, r: 29, rot: 'ULT' },
-  mega: { dx: -152, dy: 36, r: 29, rot: 'EVO' },
+  mega: { dx: -150, dy: -110, r: 29, rot: 'EVO' },
 };
 
 export class PanelTactil {
@@ -73,7 +74,7 @@ export class PanelTactil {
     this.app = app; this.toques = new Map(); this.estado = VACIO();
     // em celular (ponteiro "grosso") o modo toque já nasce ligado, antes de qualquer toque na tela
     this.activo = !!globalThis.matchMedia?.('(pointer: coarse)').matches;
-    this.l = null; this.alPausa = null;
+    this.l = null; this.alPausa = null; this.extras = [];
     this.stick = { cx: 80, cy: 282, r: 46, x0: 80, y0: 282 };
     this.botones = Object.entries(SLOTS).map(([id, s]) => ({ id, r: s.r, x: 0, y: 0, txt: s.rot }));
     this.pausa = { id: 'pausa', x: 0, y: 66, r: 15 };
@@ -112,11 +113,13 @@ export class PanelTactil {
     this.colocar();
     const b = this.botonEn(t);
     if (b?.id === 'pausa') { t.boton = 'pausa'; this.alPausa?.(); return; }
+    const ex = this.extras.find(e => t.x >= e.x - 4 && t.x <= e.x + e.w + 4 && t.y >= e.y - 4 && t.y <= e.y + e.h + 4);
+    if (ex) { t.boton = 'extra'; ex.al(); return; }
     if (b) { t.boton = b.id; return; }
     if (t.x < ANCHO * 0.45) {
       t.stick = true;
       this.stick.cx = Math.max(60, Math.min(ANCHO * 0.4, t.x));
-      this.stick.cy = Math.max(110, Math.min(ALTO - 50, t.y));
+      this.stick.cy = Math.max(110, Math.min(BARRA_Y - 52, t.y));
     }
   }
   actualizar() {
@@ -166,6 +169,12 @@ export class PanelTactil {
       this.boton(g, b, l, t);
     }
     this.botonPausa(g);
+    for (const e of this.extras) {
+      g.save(); g.globalAlpha = 0.85;
+      g.fillStyle = 'rgba(8,24,56,0.85)'; g.beginPath(); g.roundRect(e.x, e.y, e.w, e.h, 6); g.fill();
+      g.lineWidth = 1.5; g.strokeStyle = '#8fd3ff'; g.stroke(); g.restore();
+      texto(g, e.txt(), e.x + e.w / 2, e.y + e.h / 2, { tam: 7, align: 'center', base: 'middle', color: '#e8f6ff', borde: 2 });
+    }
   }
 
   boton(g, b, l, t) {

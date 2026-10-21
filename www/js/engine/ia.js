@@ -103,4 +103,16 @@ export class IA {
 }
 
 // Boneco de treino: não faz nada
-export class Muneco { intento() { return { mx: 0, my: 0, ax: 0, ay: 0 }; } }
+// boneco de treino: gira devagar pelo lado direito da arena ou fica parado (tecla K)
+export class Muneco {
+  constructor(l) { this.l = l; this.t = 0; this.quieto = false; }
+  intento(dt = 1 / 60) {
+    this.t += dt;
+    const l = this.l, r = l?.rival;
+    const base = { ax: r ? r.x : (l?.x ?? 0) - 50, ay: r ? r.y : l?.y ?? 0 };
+    if (!l || this.quieto) return { mx: 0, my: 0, ...base };
+    const tx = OVALO.cx + OVALO.rx * 0.24 + Math.cos(this.t * 0.5) * 110, ty = OVALO.cy + Math.sin(this.t) * 60;
+    const dx = tx - l.x, dy = ty - l.y, d = Math.hypot(dx, dy) || 1, v = d > 6 ? 0.45 : 0;
+    return { mx: (dx / d) * v, my: (dy / d) * v, ...base };
+  }
+}

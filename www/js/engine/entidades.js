@@ -30,7 +30,7 @@ export class Proyectil {
     this.estilo = h.estilo ?? 'bola';
     this.tipoAtq = h.tipo;
     const boca = extra.desde ?? { x: dueno.x + Math.cos(ang) * 10, y: dueno.y + Math.sin(ang) * 6, alt: dueno.alto * 0.55 };
-    this.x = boca.x; this.y = boca.y; this.alt = boca.alt ?? dueno.alto * 0.55;
+    this.x = boca.x; this.y = boca.y; this.alt = boca.alt ?? dueno.alto * 0.55; this.alt0 = this.alt;
     this.recorrido = 0;
     this.vel = h.vel ?? 250;
     this.vx = Math.cos(ang) * this.vel; this.vy = Math.sin(ang) * this.vel;
@@ -71,15 +71,39 @@ export class Proyectil {
     }
     this.x += this.vx * dt; this.y += this.vy * dt;
     this.recorrido += this.vel * dt;
+    // o tiro desce da boca até a altura do peito do alvo nos primeiros 80 px
+    this.alt = this.alt0 + (Math.min(this.alt0, 16) - this.alt0) * Math.min(1, this.recorrido / 80);
     if (this.zig != null) {
       const z = h.zigzag, off = Math.sin(this.recorrido * (z.frec ?? 0.09) + this.zig) * (z.amp ?? 9) * Math.min(1, this.recorrido / 24);
       this.x += -Math.sin(this.ang) * (off - this.zigOff); this.y += Math.cos(this.ang) * (off - this.zigOff);
       this.zigOff = off;
     }
+    // dois tiros de donos diferentes se anulam; o mais forte (1,3x) sobrevive com dano reduzido
+    if (!h.revienta && !h.noChoca) {
+      for (const o of luta.entidades) {
+        if (o === this || !(o instanceof Proyectil) || o.vivo === false || o.dueno === dueno || o.h.revienta || o.h.noChoca) continue;
+        if (Math.hypot(o.x - this.x, o.y - this.y) >= this.radio + o.radio + 3) continue;
+        const mx = (this.x + o.x) / 2, my = (this.y + o.y) / 2 - this.alt;
+        luta.emit({ t: 'impacto', x: mx, y: my + 4, tipo: 'NORMAL', slot: 'clash' });
+        luta.emit({ t: 'texto', x: mx, y: my - 6, txt: 'CLASH', color: '#ffffff', dur: 0.5 });
+        luta.emit({ t: 'sonido', n: 'clash' });
+        if (this.dano > o.dano * 1.3) { this.dano -= o.dano; o.chocar(); continue; }
+        if (o.dano > this.dano * 1.3) { o.dano -= this.dano; this.chocar(); return false; }
+        o.chocar(); this.chocar(); return false;
+      }
+    }
     // acerta o lutador (ou um clone)
     for (const b of luta.blancos(dueno)) {
       if (b.oculto || b.est?.vuelo) continue;
-      if (Math.hypot(b.x - this.x, b.y - this.y) < this.radio + RADIO) return this.terminar(false, b);
+      if (Math.hypot(b.x - this.x, b.y - this.y) >= this.radio + RADIO) continue;
+      // quem está invulnerável (dash) deixa o tiro passar, mostrando MISS
+      if (h.revienta && !b.esClon) { this.enRival = true; return this.terminar(true); }
+      if (!b.esClon && b.invulnerable && !h.revienta) {
+        if (!this.errou) { this.errou = true; b.recibir(dueno, { dano: 0, tipo: h.tipo }); }
+        continue;
+      }
+      if (this.errou && !b.esClon) continue;
+      return this.terminar(false, b);
     }
     // corta contra a borda da arena
     if (this.recorrido >= this.alcance || fueraCampo(this.x, this.y, 22)) return this.terminar(true);
@@ -90,7 +114,11 @@ export class Proyectil {
     const { h, dueno, luta } = this;
     this.vivo = false;
     const ang = this.ang;
-    const g = pacote(h, this.extra, ang, { dano: this.dano });
+    const g = pacote(h, this.extra, ang, { dano: this.dano, empuje: h.empuje ?? 18, proyectil: true });
+    // numa rajada só o primeiro tiro vale como golpe (sem combo, energia ou som repetido)
+    const v = this.extra.volea;
+    if (v) { if (v.golpe) g.tick = true; else v.golpe = true; }
+    if (this.extra.clon) g.tick = true;
     if (alvo) {
       if (h.explosion) this.explotar(h.explosion.radio, g);
       else {
@@ -98,16 +126,7 @@ export class Proyectil {
         if (res === 'golpe') luta.emit({ t: 'impacto', x: this.x, y: this.y - 4, tipo: h.tipo, estilo: this.estilo, slot: this.extra.slot });
       }
     } else if (h.explosion) this.explotar(h.explosion.radio, g);
-    if (h.revienta && explotarSolo) {
-      // vinha que prende quem estiver perto
-      const r = dueno.rival;
-      if (r && !r.ko && Math.hypot(r.x - this.x, r.y - this.y) < h.revienta.radio + RADIO) {
-        atingir(dueno, r, { ...g, dano: this.dano, aturde: undefined });
-        r.ponerEstado('lento', h.revienta.atrapa, { f: 0.9 });
-        r.texto('TRAPPED!', '#86efac');
-      }
-      luta.emit({ t: 'anillo', x: this.x, y: this.y, color: '#86efac', r: h.revienta.radio });
-    }
+    if (h.revienta && explotarSolo) { this.reventar(); luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: h.tipo }); return false; }
     if (h.metralla && alvo) {
       const m = h.metralla;
       for (let i = 0; i < m.n; i++) {
@@ -117,6 +136,34 @@ export class Proyectil {
     }
     luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: h.tipo });
     return false;
+  }
+
+  // a semente estoura em vinhas: prende (raiz total) quem estiver na área; se ninguém, a armadilha fica um instante
+  reventar() {
+    const { h, dueno, luta, extra } = this;
+    const R = h.revienta.radio, x = this.enRival && dueno.rival ? dueno.rival.x : this.x, y = this.enRival && dueno.rival ? dueno.rival.y : this.y;
+    const RR = R + RADIO * 0.5;
+    const vinhas = { tipo: 'enredadera', x, y, radio: R, t: 0, dur: h.revienta.dura ?? 0.6, vivo: true, update(dt) { this.t += dt; return this.t < this.dur; } };
+    luta.add(vinhas);
+    luta.emit({ t: 'enredadera', x, y, radio: R });
+    const atrapar = () => {
+      const r = dueno.rival;
+      if (!r || r.ko || r.est.vuelo || r.invulnerable) return false;
+      if (((r.x - x) / RR) ** 2 + ((r.y - y) / (RR * 0.65)) ** 2 > 1) return false;
+      const res = r.recibir(dueno, { dano: this.dano, tipo: h.tipo, slot: extra.slot, surge: extra.surge, drenaje: h.drenaje, ralentiza: { f: 1, dur: h.revienta.atrapa }, pesado: true });
+      if (res === 'golpe') { r.texto('TRAPPED!', '#86efac', { dy: 14 }); vinhas.dur = Math.max(vinhas.dur, h.revienta.atrapa); vinhas.sobre = r; }
+      return true;
+    };
+    if (atrapar()) return;
+    let t = 0;
+    luta.add({ vivo: true, update: dt => (t += dt) < (h.revienta.dura ?? 0.6) && !atrapar() });
+  }
+
+  // some sem dano (choque com outro tiro)
+  chocar() {
+    if (this.vivo === false) return;
+    this.vivo = false;
+    this.luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: this.h.tipo });
   }
 
   explotar(radio, g) {

@@ -24,7 +24,7 @@ Batalha 1 contra 1 de Pokémon em tempo real numa arena oval. Projeto de fã, se
 | Esquiva / dash | Space | Enter | DASH |
 | Utilitária | Q | I | Q |
 | Ultimate | E | O | ULT |
-| Evoluir / Mega | R | P | EVO |
+| Evoluir / Mega | F | P | EVO |
 | Pausa | Esc ou P | | |
 
 A mira do jogador 1 é o mouse; no toque e no jogador 2 é automática no rival.

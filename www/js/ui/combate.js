@@ -1,6 +1,8 @@
 // Cena de combate: monta a luta, liga os controles, desenha arena, lutadores, efeitos e HUD,
 // e cuida de pausa e tela de resultado.
-import { ANCHO, ALTO, HUD_ALTO, UI, FUENTE } from '../config.js';
+import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, UI, FUENTE } from '../config.js';
+
+const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a'];
 import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
@@ -13,7 +15,7 @@ import { filaDesdeAngulo } from '../render/sprites.js';
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
 import { ListaBotones } from './menus.js';
-import { sfx, silenciar } from '../audio.js';
+import { sfx, silenciar, activarMusica, pararMusica } from '../audio.js';
 
 const ANIMS_BASE = ['Idle', 'Walk', 'Attack', 'Hurt'];
 const formasDe = def => [def, ...(def.evoluciones ?? [])].flatMap(f => (f.mega ? [f.dex, f.mega.dex] : [f.dex]));
@@ -60,9 +62,13 @@ export class Combate {
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
     app.tactil.l = a; app.tactil.alPausa = () => this.alternarPausa();
+    app.tactil.extras = d.modo === 'entreno' ? [
+      { x: ANCHO - 208, y: 52, w: 62, h: 24, txt: () => 'RELOAD', al: () => this.recargar() },
+      { x: ANCHO - 140, y: 52, w: 88, h: 24, txt: () => (this.ctrls[1]?.quieto ? 'DUMMY: STILL' : 'DUMMY: MOVES'), al: () => this.alternarMuneco() },
+    ] : [];
     this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
     if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
-    else if (d.modo === 'entreno') this.ctrls.push(new Muneco());
+    else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
     else this.ctrls.push(new IA(luta, b, d.nivel));
     this.humanos = d.modo === 'versus' ? [0, 1] : [0];
     if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
@@ -87,6 +93,7 @@ export class Combate {
       return this.resultado?.lista.tecla(c);
     }
     if (c === 'Escape' || c === 'KeyP' && this.datos.modo !== 'versus') return this.alternarPausa();
+    if (this.luta?.entreno && !this.pausado) { if (c === 'KeyT') this.recargar(); else if (c === 'KeyK') this.alternarMuneco(); }
     if (c === 'KeyM') { this.app.ajustes.sonido = !this.app.ajustes.sonido; silenciar(!this.app.ajustes.sonido); this.app.guardarAjustes(); }
     if (this.pausado) {
       if (this.verControles) { this.verControles = false; return; }
@@ -100,6 +107,8 @@ export class Combate {
   }
 
   revancha() { this.app.ir('combate', this.datos); }
+  recargar() { this.luta.recargar(); sfx('confirmar'); }
+  alternarMuneco() { const m = this.ctrls?.[1]; if (m instanceof Muneco) m.quieto = !m.quieto; }
 
   alternarPausa() {
     if (!this.cargado || this.luta.fase === 'fin') return;
@@ -112,15 +121,16 @@ export class Combate {
     const app = this.app;
     const ops = [
       { txt: 'RESUME', id: 'seguir' }, { txt: 'RESTART FIGHT', id: 'repetir' },
-      { txt: `SOUND: ${app.ajustes.sonido ? 'ON' : 'OFF'}`, id: 'sonido' },
-      { txt: 'CONTROLS', id: 'controles' }, { txt: 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' },
+      { txt: `SOUND: ${app.ajustes.sonido ? 'ON' : 'OFF'}`, id: 'sonido' }, { txt: `MUSIC: ${app.ajustes.musica ? 'ON' : 'OFF'}`, id: 'musica' },
+      { txt: 'CONTROLS', id: 'controles' }, { txt: this.datos.tutorial ? 'EXIT TUTORIAL' : 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' },
     ];
     this.menuPausa = new ListaBotones({
-      x: ANCHO / 2, y: 96, w: 190, h: 22, paso: 26, ops,
-      alElegir: o => {
+      x: ANCHO / 2, y: 92, w: 172, h: 32, paso: 40, ops, cols: 2, sepX: 184,
+      alElegir: (o, i) => {
         if (o.id === 'seguir') this.alternarPausa();
         else if (o.id === 'repetir') this.revancha();
-        else if (o.id === 'sonido') { app.ajustes.sonido = !app.ajustes.sonido; silenciar(!app.ajustes.sonido); app.guardarAjustes(); this.armarPausa(); this.menuPausa.foco = 2; }
+        else if (o.id === 'sonido') { app.ajustes.sonido = !app.ajustes.sonido; silenciar(!app.ajustes.sonido); app.guardarAjustes(); this.armarPausa(); this.menuPausa.foco = i; }
+        else if (o.id === 'musica') { app.ajustes.musica = !app.ajustes.musica; app.guardarAjustes(); if (app.ajustes.musica) { activarMusica(true); app.musica(); } else pararMusica(); this.armarPausa(); this.menuPausa.foco = i; }
         else if (o.id === 'controles') this.verControles = true;
         else if (o.id === 'cambiar') this.volver();
         else app.ir('titulo');
@@ -196,6 +206,7 @@ export class Combate {
     }
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());
     fx.dibujar(g);
+    this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
     fx.dibujarTextos(g, FUENTE);
     for (const b of fx.globos) this.dibujarGlobo(g, b);
@@ -203,11 +214,9 @@ export class Combate {
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
-    if (!this.app.tactil.activo) for (const i of this.humanos) {
-      const esquema = i === 0 ? CONTROLES.kbm : CONTROLES.teclado2;
-      this.hud.barraSkills(g, luta.luchadores[i], i, this.t, esquema);
-    }
+    this.hud.barraSkills(g, luta, this.humanos, this.t, { 0: this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm, 1: CONTROLES.teclado2 });
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
+    if (luta.entreno) this.dibujarEntreno(g, luta);
     if (this.tutorial) this.dibujarTutorial(g);
     if (!this.app.tactil.activo && !this.pausado && this.luta.fase !== 'fin') this.dibujarMira(g);
     // anúncios do centro
@@ -329,6 +338,34 @@ export class Combate {
         for (let i = 0; i < 3; i++) { const px = sx - 9 + i * 7; rect(g, px - 1, by - 11, 6, 6, '#000'); rect(g, px, by - 10, 4, 4, i < l.cargaTipo.n ? colorTipo(l.cargaTipo.tipo === 'CONFUSION' ? 'PSYCHIC' : l.cargaTipo.tipo) : '#2a3040'); }
       }
     }
+  }
+
+  // colchetes no rival quando quem luta de perto está ao alcance; ponto de mira de quem joga sem mouse
+  dibujarFijado(g, luta) {
+    luta.luchadores.forEach((yo, i) => {
+      const r = yo.rival, c = this.ctrls?.[i];
+      if (!yo.humano || yo.ko) return;
+      if (yo.kit.lmb.forma === 'tajo' && r && !r.ko && Math.hypot(r.x - yo.x, r.y - yo.y) < yo.kit.lmb.alcance + 9 + 30) {
+        const cx = Math.round(r.x), cy = Math.round(r.y - r.alto * 0.5), a = Math.round(r.alto * 0.5) + 4;
+        g.fillStyle = COLOR_EQUIPO[i]; g.globalAlpha = 0.9;
+        for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          g.fillRect(cx + sx * a - (sx > 0 ? 3 : 0), cy + sy * a, 4, 1);
+          g.fillRect(cx + sx * a, cy + sy * a - (sy > 0 ? 3 : 0), 1, 4);
+        }
+        g.globalAlpha = 1;
+      }
+      if (c?.esquema && c.esquema !== 'kbm' && c.esquema !== 'tactil') {
+        const ang = Math.atan2(yo.ay - yo.y, yo.ax - yo.x), fx = Math.round(yo.x + Math.cos(ang) * 16), fy = Math.round(yo.y + Math.sin(ang) * 9);
+        g.fillStyle = COLOR_EQUIPO[i]; g.fillRect(fx - 1, fy - 1, 3, 3);
+      }
+    });
+  }
+
+  // treino: último dano, dano por segundo e combo; dica das teclas
+  dibujarEntreno(g, luta) {
+    const combo = luta.t - luta.ultimoGolpeEntreno < 2.2 ? luta.comboActual : 0;
+    texto(g, `Last ${Math.round(luta.ultimoDanoEntreno)} · Dps ${luta.dps.toFixed(1)} · Combo ${combo} (Max ${luta.mejorCombo})`, ANCHO / 2, HUD_ALTO + 22, { tam: 8, align: 'center', borde: 2 });
+    texto(g, this.app.tactil.activo ? 'All recharges in 3 s' : 'All recharges in 3 s · T instant · K dummy still/moving', ANCHO / 2, BARRA_Y - 12, { tam: 8, align: 'center', color: '#93acd4', borde: 2 });
   }
 
   dibujarTutorial(g) {

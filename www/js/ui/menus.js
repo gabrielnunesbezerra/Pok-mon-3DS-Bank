@@ -4,16 +4,27 @@ import { UI } from '../config.js';
 import { sfx } from '../audio.js';
 
 export class ListaBotones {
-  constructor({ x = 320, y = 136, w = 210, h = 23, paso = 25, ops = [], alElegir, tam = 8 }) {
-    Object.assign(this, { x, y, w, h, paso, ops, alElegir, tam });
+  constructor({ x = 320, y = 136, w = 210, h = 23, paso = 25, ops = [], alElegir, tam = 8, cols = 1, sepX = 0 }) {
+    Object.assign(this, { x, y, w, h, paso, ops, alElegir, tam, cols, sepX });
     this.foco = 0;
   }
-  caja(i) { return { x: this.x - this.w / 2, y: this.y + i * this.paso, w: this.w, h: this.h }; }
+  caja(i) {
+    const col = i % this.cols, fila = Math.floor(i / this.cols);
+    const dx = this.cols === 1 ? 0 : (col - (this.cols - 1) / 2) * this.sepX;
+    return { x: this.x - this.w / 2 + dx, y: this.y + fila * this.paso, w: this.w, h: this.h };
+  }
   mover(d) { this.foco = (this.foco + d + this.ops.length) % this.ops.length; sfx('seleccion'); }
+  moverCuadro(dc, df) {
+    const n = this.ops.length, filas = Math.ceil(n / this.cols);
+    const col = ((this.foco % this.cols) + dc + this.cols) % this.cols, fila = (Math.floor(this.foco / this.cols) + df + filas) % filas;
+    this.foco = Math.min(n - 1, fila * this.cols + col); sfx('seleccion');
+  }
   elegir(i = this.foco) { const o = this.ops[i]; if (o && !o.apagado) { sfx(o.atras ? 'atras' : 'confirmar'); this.alElegir(o, i); } }
   tecla(c) {
-    if (c === 'ArrowUp' || c === 'KeyW') this.mover(-1);
-    else if (c === 'ArrowDown' || c === 'KeyS') this.mover(1);
+    if (this.cols > 1 && (c === 'ArrowLeft' || c === 'KeyA')) this.moverCuadro(-1, 0);
+    else if (this.cols > 1 && (c === 'ArrowRight' || c === 'KeyD')) this.moverCuadro(1, 0);
+    else if (c === 'ArrowUp' || c === 'KeyW') this.cols > 1 ? this.moverCuadro(0, -1) : this.mover(-1);
+    else if (c === 'ArrowDown' || c === 'KeyS') this.cols > 1 ? this.moverCuadro(0, 1) : this.mover(1);
     else if (c === 'Enter' || c === 'Space' || c === 'NumpadEnter') this.elegir();
     else return false;
     return true;
@@ -39,7 +50,7 @@ export class ListaBotones {
       if (f) {
         const bob = Math.round(Math.sin(t * 9) * 2);
         for (let j = -5; j <= 5; j++) {
-          const w = 6 - Math.abs(j), x = Math.round(c.x + c.w + 7 + bob), y = Math.round(c.y + c.h / 2 + j);
+          const w = 6 - Math.abs(j), x = this.cols > 1 ? Math.round(c.x - 9 + bob) : Math.round(c.x + c.w + 7 + bob), y = Math.round(c.y + c.h / 2 + j);
           g.fillStyle = '#04102c'; g.fillRect(x, y, w, 1);
           if (w > 2) { g.fillStyle = j < 0 ? '#fff2a0' : '#f8c448'; g.fillRect(x + 1, y, w - 2, 1); }
         }

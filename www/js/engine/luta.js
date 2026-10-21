@@ -1,7 +1,8 @@
 // Uma luta 1 contra 1: dois lutadores, rounds, relógio, entidades (projéteis, ondas, zonas) e eventos.
 // Roda no Node nos testes e no navegador no jogo. O desenho só lê o estado e os eventos.
 import { REGLAS } from '../data/regras.js';
-import { OVALO } from '../config.js';
+import { OVALO, RADIO } from '../config.js';
+import { limitarCampo } from './fisica.js';
 import { Lutador } from './lutador.js';
 import { Habilidades } from './habilidades.js';
 import { sembrar } from './util.js';
@@ -27,6 +28,7 @@ export class Luta {
     this.fase = 'intro';
     this.fin = null; // { ganador }
     this.entreno = modo === 'entreno';
+    this.registroDano = []; this.mejorCombo = 0; this.comboActual = 0; this.ultimoGolpeEntreno = -9; this.ultimoDanoEntreno = 0;
     this.empezarRonda();
   }
 
@@ -106,6 +108,8 @@ export class Luta {
       if (this.fase === 'intro') continue;
       l.update(dt, this.fase === 'lucha' ? intentos?.[i] ?? null : null);
     }
+    if (activos) this.separar();
+    if (this.entreno && this.fase === 'lucha') this.actualizarEntreno(dt);
     if (activos) {
       for (const e of this.entidades) if (e.vivo !== false && e.update(dt) === false) e.vivo = false;
       this.entidades = this.entidades.filter(e => e.vivo !== false);
@@ -120,6 +124,51 @@ export class Luta {
     if (this.fase === 'lucha' && !this.entreno) {
       this.reloj -= dt;
       if (this.reloj <= 0) { this.reloj = 0; this.tiempoAgotado(); }
+    }
+  }
+
+  // os dois lutadores não se atravessam (exceto em dash, salto, voo ou escondido)
+  separar() {
+    const [a, b] = this.luchadores;
+    if (a.ko || b.ko || a.dash || b.dash || a.salto || b.salto || a.est.vuelo || b.est.vuelo) return;
+    let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+    const min = RADIO * 2;
+    if (d >= min) return;
+    if (d < 0.01) { dx = 1; dy = 0; d = 1; }
+    const s = (min - d) / 2;
+    const pa = limitarCampo(a.x - (dx / d) * s, a.y - (dy / d) * s), pb = limitarCampo(b.x + (dx / d) * s, b.y + (dy / d) * s);
+    a.x = pa.x; a.y = pa.y; b.x = pb.x; b.y = pb.y;
+  }
+
+  // treino: dano por segundo, combo, recarga automática em 3 s e boneco que se cura
+  anotarEntreno(d) {
+    this.registroDano.push({ t: this.t, d });
+    this.comboActual = this.t - this.ultimoGolpeEntreno < REGLAS.comboVentana ? this.comboActual + 1 : 1;
+    this.ultimoGolpeEntreno = this.t;
+    this.mejorCombo = Math.max(this.mejorCombo, this.comboActual);
+    this.ultimoDanoEntreno = d;
+  }
+  get dps() { return this.registroDano.reduce((s, x) => s + x.d, 0) / 5; }
+  actualizarEntreno(dt) {
+    for (const l of this.luchadores) {
+      if (!l.humano) continue;
+      for (const k in l.cd) l.cd[k] = Math.min(l.cd[k], 3);
+      l.energia = Math.min(REGLAS.energiaMax, l.energia + (REGLAS.energiaMax / 3) * dt);
+      if (l.ulti < REGLAS.ultiMax) l.ulti = Math.min(REGLAS.ultiMax, l.ulti + (REGLAS.ultiMax / 3) * dt);
+      if (l.etapa < l.etapasTotales - 1 && l.exp < l.expNecesaria) l.exp = Math.min(l.expNecesaria, l.exp + (l.expNecesaria / 3) * dt);
+    }
+    this.registroDano = this.registroDano.filter(x => this.t - x.t <= 5);
+    const m = this.luchadores[1];
+    if (this.t - this.ultimoGolpeEntreno > 2.5 && m.hp < m.hpMax) m.hp = m.hpMax;
+  }
+  recargar() {
+    if (!this.entreno) return;
+    for (const l of this.luchadores) {
+      if (!l.humano) continue;
+      l.energia = REGLAS.energiaMax; l.ulti = REGLAS.ultiMax; l.calor = 0; l.sobrecargaHasta = 0;
+      if (l.etapa < l.etapasTotales - 1) l.exp = l.expNecesaria;
+      for (const k in l.cd) l.cd[k] = 0;
+      l.texto('RELOAD', '#3ccf4e');
     }
   }
 

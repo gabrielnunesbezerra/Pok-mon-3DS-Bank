@@ -85,7 +85,7 @@ export class Lutador {
     this.dash = null;
     this.salto = 0;
     this.combo = 0; this.ultimoGolpe = -99; this.pasoCombo = 0; this.racha = 0;
-    this.aciertosCombo = 0; this.ultimoTajo = -9;
+    this.aciertosCombo = 0; this.ultimoTajo = -9; this.tejido = -99;
     this.escudo = 0;
     this.ko = false;
     this.moviendo = false;
@@ -115,7 +115,7 @@ export class Lutador {
     fn();
   }
   texto(txt, color = '#ffffff', extra = {}) {
-    this.luta.emit({ t: 'texto', x: this.x, y: this.y - this.alto - 6, txt, color, ...extra });
+    this.luta.emit({ t: 'texto', x: this.x, y: this.y - this.alto - 6 - (extra.dy ?? 0), txt, color, ...extra });
   }
 
   // ---------------------------------------------------------------- recursos
@@ -242,7 +242,7 @@ export class Lutador {
     }
     this.hp = Math.max(0, this.hp - d);
     if (d > 0) this.ultimoDano = t;
-    if (this.inmortal) this.hp = Math.max(1, this.hp);
+    if (this.inmortal) { this.hp = Math.max(1, this.hp); luta.anotarEntreno?.(d); }
     if (fuente && fuente !== this) fuente.acierto(d, g);
     this.ganarUlti(d * REGLAS.ultiPorDanoRecibido);
     this.ganarExp(d * REGLAS.expPorDanoRecibido);

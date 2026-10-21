@@ -5,7 +5,7 @@ import { REGLAS } from '../data/regras.js';
 import { aleatorio, entre, difAng, clamp, dist } from './util.js';
 import { fijarCampo, fueraCampo } from './fisica.js';
 import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir } from './entidades.js';
-import { etapaDe, umbralesExp } from './lutador.js';
+import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -61,6 +61,8 @@ export class Habilidades {
     l.cd[slot] = h.cd;
     l.ultimoAtaque = t;
     l.stats.usos++;
+    if (slot !== 'lmb') l.tejido = t;
+    if (surge) { l.texto('SURGE +30%', '#ffb347', { dy: 18 }); luta.emit({ t: 'sonido', n: 'surge' }); }
     if (slot === 'lmb') {
       l.ultimoBasico = t;
       l.calor += (h.calor ?? 0) * (l.est.potencia?.calor ?? 1);
@@ -92,13 +94,19 @@ export class Habilidades {
   }
 
   evolucionar(l) {
+    const luta = this.luta;
     const gasto = l.expNecesaria;
     l.exp = Math.max(0, l.exp - gasto);
     const fracVida = l.hp / l.hpMax;
-    const antes = { dex: l.dex, esc: l.escala };
+    const antes = { dex: l.dex, esc: l.escala, nombre: l.nombre };
     l.etapa++;
     l.kit = l.kitActual();
-    l.hp = Math.min(l.hpMax, fracVida * l.hpMax + REGLAS.curaEvolucion * l.hpMax);
+    // cura uma parte da vida que faltava (60% nas linhas comuns)
+    const k = REGLAS.curaPerdida?.[tipoLinea(l.def)];
+    l.hp = k != null ? fracVida * l.hpMax + k * (1 - fracVida) * l.hpMax : Math.min(l.hpMax, fracVida * l.hpMax + REGLAS.curaEvolucion * l.hpMax);
+    const curado = Math.round(100 * (l.hp / l.hpMax - fracVida));
+    l.texto(`WHAT? ${antes.nombre} IS EVOLVING!`, '#ffffff', { dy: 4 });
+    luta.programar(1.2, () => { if (!l.ko && curado > 0) l.texto(`+${curado}% HP`, '#3ccf4e'); });
     this.iniciarEvo(l, false, `${l.nombre}!`, '#7dd3fc');
     l.evoVis.desde = antes.dex; l.evoVis.escDesde = antes.esc;
   }
@@ -120,40 +128,67 @@ export class Habilidades {
     const lanzar = h.lanzar ?? 0.15;
     l.animar(h.anim ?? 'Shoot', lanzar + 0.22);
     l.accion = { hasta: luta.t + lanzar + (h.rafaga ? (h.rafaga - 1) * (h.cadaRafaga ?? 0.06) : 0) + 0.05, angulo: ang, lento: 0.6 };
-    const n = h.rafaga ?? 1;
+    let n = h.rafaga ?? 1;
+    // Protean (Froakie): usar uma skill e atacar em seguida solta bolhas extras
+    if (extra.slot === 'lmb' && h.tejido && luta.t - l.tejido < (h.tejidoDur ?? 3)) { n += h.tejido; l.tejido = -99; l.texto('PROTEAN!', '#93c5fd'); }
+    if (n > 1) l.accion.hasta = luta.t + lanzar + (n - 1) * (h.cadaRafaga ?? 0.06) + 0.05;
+    const volea = h.doble || h.zigzag || n > 1 ? { golpe: false } : null;
     for (let i = 0; i < n; i++) {
       luta.programar(lanzar + i * (h.cadaRafaga ?? 0.06), () => {
         if (l.ko || l.est.aturdido) return;
-        const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + (h.abanico ? (aleatorio() - 0.5) * 2 * h.abanico : 0);
+        // leque fixo: o primeiro vai reto, os outros alternam para os lados
+        const abre = i ? (i % 2 ? 1 : -1) * (h.abanico ?? 0.06) * Math.ceil(i / 2) : 0;
+        const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + abre;
         const lanzarUno = (desde, mult = 1, esClon = false) => {
           const lados = h.doble ? [-1, 1] : [0];
           for (const lado of lados) {
             const off = lado * (h.doble ?? 0) * 0.5;
             const pos = desde ?? { x: l.x, y: l.y, alt: l.alto * 0.55 };
             const origen = { x: pos.x + Math.cos(a2) * 10 - Math.sin(a2) * off, y: pos.y + Math.sin(a2) * 6 + Math.cos(a2) * off, alt: l.alto * 0.55 };
-            luta.add(new Proyectil(luta, l, h, a2, { ...extra, mult: (extra.mult ?? 1) * mult, desde: origen, zig: h.zigzag ? aleatorio() * 6 : undefined, clon: esClon }));
+            luta.add(new Proyectil(luta, l, h, a2, { ...extra, mult: (extra.mult ?? 1) * mult, desde: origen, zig: h.zigzag ? aleatorio() * 6 : undefined, clon: esClon, volea: esClon ? null : volea }));
           }
         };
         lanzarUno();
-        if (l.clones && extra.slot === 'lmb') for (const c of l.clones) lanzarUno({ x: c.x, y: c.y, alt: l.alto * 0.55 }, c.mult, true);
+        if (l.clones && (extra.slot === 'lmb' || extra.slot === 'e')) for (const c of l.clones) lanzarUno({ x: c.x, y: c.y, alt: l.alto * 0.55 }, h.clonMult ?? c.mult, true);
         luta.emit({ t: 'disparo', l, h, ang: a2 });
       });
     }
   }
 
-  // ---------------------------------------------------------------- Growth (acumula força)
-  crecimiento(l, h) {
+  // ---------------------------------------------------------------- Growth (segurar para carregar)
+  // Enquanto o botão estiver apertado o lutador carrega: ganha energia e ultimate por segundo e sobe de nível
+  // (1 a 3). Ao soltar, ganha força por h.potenciaDur. Levar dano ou ser atordoado corta a carga.
+  crecimiento(l, h, extra) {
     const luta = this.luta;
-    const p = l.est.potencia ?? { n: 0, mult: 0, cadencia: 1, vel: 0, calor: 1 };
-    const n = Math.min(h.max ?? 3, (p.n ?? 0) + 1);
-    l.ponerEstado('potencia', h.potenciaDur ?? 5, { n, mult: (h.potencia ?? 0.1) * n, cadencia: 1 + (h.cadencia ?? 0) * n, vel: (h.vel ?? 0) * n });
-    l.energia = Math.min(REGLAS.energiaMax, l.energia + (h.energia ?? 0));
-    l.ganarUlti(h.ulti ?? 0);
-    l.animar(h.anim ?? 'Charge', 0.45);
-    l.accion = { hasta: luta.t + 0.35, lento: h.lento ?? 0.15 };
-    l.texto(`POWER x${n}`, '#86efac');
-    luta.emit({ t: 'anillo', x: l.x, y: l.y - l.alto * 0.5, color: '#86efac', r: 28 });
-    luta.emit({ t: 'sonido', n: 'cura' });
+    let t = 0, nivel = 0, cortado = false;
+    l.animar(h.anim ?? 'Charge', h.max ?? 3);
+    l.canal = { forma: 'crecimiento', nivel: 0, t: 0 };
+    l.accion = {
+      hasta: luta.t + (h.max ?? 3), bloquea: true, lento: h.lento ?? 0.15, angulo: l.angulo,
+      update: dt => {
+        t += dt;
+        const suelta = t > (h.minimo ?? 0.25) && !l.intento?.[extra.slot];
+        if (luta.t < l.dolorHasta || l.est.aturdido) cortado = true;
+        if (suelta || cortado) { l.accion.hasta = luta.t; return; }
+        l.ganarEnergia((h.energia ?? 0) * dt);
+        l.ganarUlti((h.ulti ?? 0) * dt);
+        const n = Math.min(3, 1 + Math.floor((t / (h.max ?? 3)) * 3));
+        if (n !== nivel) {
+          if (nivel) { luta.emit({ t: 'anillo', x: l.x, y: l.y - l.alto * 0.5, color: '#fde047', r: 12 + n * 6 }); luta.emit({ t: 'sonido', n: 'seleccion' }); }
+          nivel = n;
+        }
+        l.canal = { forma: 'crecimiento', nivel, t };
+      },
+      fin: () => {
+        l.canal = null;
+        l.anim = null;
+        if (l.ko || cortado || !nivel || !h.potencia) return;
+        luta.emit({ t: 'anillo', x: l.x, y: l.y - l.alto * 0.5, color: '#fde047', r: 12 + nivel * 6 });
+        l.texto(nivel >= 3 ? 'FULL! ATK UP' : 'ATK UP', '#fde047');
+        luta.emit({ t: 'sonido', n: 'cura' });
+        l.ponerEstado('potencia', h.potenciaDur ?? 5, { n: nivel, mult: h.potencia * nivel, cadencia: 1, vel: 0, reduce: 0, color: '#fde047' });
+      },
+    };
   }
 
   // ---------------------------------------------------------------- dash

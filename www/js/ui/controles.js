@@ -5,7 +5,7 @@ import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
 
 export const CONTROLES = {
-  kbm: { mover: 'WASD', lmb: 'Left click', rmb: 'Right click', esp: 'Space', q: 'Q', e: 'E', mega: 'R' },
+  kbm: { mover: 'WASD', lmb: 'Left click', rmb: 'Right click', esp: 'Space', q: 'Q', e: 'E', mega: 'F' },
   teclado2: { mover: 'Arrows', lmb: 'K', rmb: 'L', esp: 'Enter', q: 'I', e: 'O', mega: 'P' },
 };
 
