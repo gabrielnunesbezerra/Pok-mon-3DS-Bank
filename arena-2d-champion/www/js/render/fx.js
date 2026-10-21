@@ -1,5 +1,6 @@
 // Partículas (com brilho aditivo, fumaça e faíscas), textos flutuantes, tremida de tela, clarões
-// e marcas no chão que somem devagar.
+// e marcas no chão que somem devagar. As partículas "com altura" (gotas, pedras, brasas, folhas)
+// voam em arco, quicam e respingam ao cair, com sombra no chão.
 import { TYPE_COLOR } from '../data/dex.js';
 
 const PALETTE = {
@@ -32,6 +33,8 @@ export class Fx {
     this.texts = [];
     this.labels = [];
     this.decals = [];
+    this.ph = []; // partículas com altura (z) e gravidade
+    this.ripples = [];
     this.shake = 0;
     this.flash = 0;
     this.flashColor = '#fff';
@@ -85,6 +88,191 @@ export class Fx {
     });
   }
 
+  // ---------------------------------------------------------------- partículas com altura
+  // kind: drop (água: respinga ao cair), rock (quica), shard (gelo: quica e brilha), ember (sobe),
+  // leaf (cai balançando), goo (veneno: respinga roxo), spark (faísca que quica), dust (nuvem)
+  phys(p) {
+    if (this.ph.length > 700) this.ph.splice(0, 60);
+    this.ph.push({ vx: 0, vy: 0, vz: 0, z: 0, g: 900, size: 3, life: 1.6, t: 0, bounce: 0, landed: 0, ...p });
+  }
+
+  ripple(x, y, r0, r1, color = '#cfeeff', life = 0.45) {
+    if (this.ripples.length > 120) this.ripples.shift();
+    this.ripples.push({ x, y, r0, r1, color, life, t: 0 });
+  }
+
+  // Respingo de água: gotas sobem em arco, caem e fazem anéis no chão
+  splash(x, y, power = 1, dir = null) {
+    const pal = PALETTE.Water;
+    const n = Math.round(10 + 16 * power);
+    for (let i = 0; i < n; i++) {
+      const a = dir === null ? Math.random() * Math.PI * 2 : dir + (Math.random() - 0.5) * 2.2;
+      const sp = (60 + Math.random() * 200) * (0.7 + power * 0.5);
+      this.phys({ kind: 'drop', x, y, z: 6 + Math.random() * 14, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.6, vz: 160 + Math.random() * 260 * (0.6 + power * 0.6), size: 2 + Math.random() * 2.5 * power, color: pal[Math.floor(Math.random() * 3)] });
+    }
+    this.ripple(x, y, 6, 30 + 30 * power, '#d8f2ff', 0.5);
+    this.ripple(x, y, 2, 18 + 18 * power, '#9fdcff', 0.4);
+  }
+
+  // Pedaços que voam e quicam (pedra, terra, gelo, metal)
+  debris(x, y, type, n = 10, power = 1) {
+    const pal = palette(type);
+    const kind = type === 'Ice' ? 'shard' : type === 'Steel' || type === 'Electric' ? 'spark' : 'rock';
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = (50 + Math.random() * 190) * (0.7 + power * 0.4);
+      this.phys({
+        kind, x, y, z: 4 + Math.random() * 18, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.6, vz: 120 + Math.random() * 260 * power,
+        size: kind === 'spark' ? 1.6 + Math.random() : 2.5 + Math.random() * 4 * Math.min(1.5, power), color: pal[1 + Math.floor(Math.random() * 3)],
+        bounce: kind === 'spark' ? 0.55 : 0.38, life: kind === 'spark' ? 0.7 : 1.5 + Math.random() * 0.6, rot: Math.random() * 6,
+      });
+    }
+  }
+
+  // Brasas que sobem e piscam
+  embers(x, y, n = 10, spread = 30) {
+    for (let i = 0; i < n; i++) {
+      this.phys({ kind: 'ember', x: x + (Math.random() - 0.5) * spread, y: y + (Math.random() - 0.5) * spread * 0.4, z: 4 + Math.random() * 30, vx: (Math.random() - 0.5) * 60, vy: (Math.random() - 0.5) * 20, vz: 40 + Math.random() * 90, g: -60, size: 1.6 + Math.random() * 2, life: 0.7 + Math.random() * 0.8, color: palette('Fire')[Math.floor(Math.random() * 3)] });
+    }
+  }
+
+  // Folhas que caem balançando
+  leaves(x, y, n = 8, power = 1) {
+    const pal = palette('Grass');
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 140 * power;
+      this.phys({ kind: 'leaf', x, y, z: 20 + Math.random() * 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5, vz: 80 + Math.random() * 160, g: 260, size: 2.5 + Math.random() * 2, life: 1.6 + Math.random(), color: pal[1 + Math.floor(Math.random() * 3)], ph: Math.random() * 6 });
+    }
+  }
+
+  // Poeira no chão (passos, dash, aterrissagem)
+  dust(x, y, n = 3, size = 6, dir = null, color = 'rgba(214,200,160,0.55)') {
+    for (let i = 0; i < n; i++) {
+      const a = dir === null ? Math.random() * Math.PI * 2 : dir + Math.PI + (Math.random() - 0.5) * 1.4;
+      const sp = 20 + Math.random() * 60;
+      this.phys({ kind: 'dust', x: x + (Math.random() - 0.5) * 8, y: y + (Math.random() - 0.5) * 4, z: 1 + Math.random() * 4, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.5, vz: 10 + Math.random() * 30, g: 30, size: size * (0.6 + Math.random() * 0.6), grow: size * 1.4, life: 0.35 + Math.random() * 0.3, color });
+    }
+  }
+
+  // Impacto de cada tipo com partículas físicas (power ~ 0.5 fraco, 1 normal, 2 enorme)
+  kit(x, y, type, power = 1, dir = null) {
+    switch (type) {
+      case 'Water': this.splash(x, y, power, dir); break;
+      case 'Fire': this.embers(x, y, Math.round(8 + 12 * power), 30 * power); this.smoke(x, y - 10, Math.round(2 + 3 * power), 'rgba(60,50,50,0.45)', 12 + 8 * power); break;
+      case 'Rock': case 'Ground': this.debris(x, y, type, Math.round(6 + 10 * power), power); this.dust(x, y, Math.round(3 + 5 * power), 10 + 6 * power); break;
+      case 'Ice': this.debris(x, y, 'Ice', Math.round(6 + 10 * power), power); break;
+      case 'Steel': case 'Electric': this.debris(x, y, type, Math.round(6 + 8 * power), power); break;
+      case 'Grass': case 'Bug': this.leaves(x, y, Math.round(4 + 8 * power), power); break;
+      case 'Poison': {
+        for (let i = 0; i < 6 + 8 * power; i++) {
+          const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 150;
+          this.phys({ kind: 'goo', x, y, z: 8 + Math.random() * 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.6, vz: 120 + Math.random() * 200, size: 2.5 + Math.random() * 2.5, color: palette('Poison')[1 + Math.floor(Math.random() * 3)] });
+        }
+        break;
+      }
+      case 'Fighting': case 'Normal': case 'Flying': case 'Dark': this.dust(x, y, Math.round(3 + 4 * power), 8 + 6 * power, dir); break;
+      default: break;
+    }
+  }
+
+  updatePhys(dt) {
+    for (const p of this.ph) {
+      p.t += dt;
+      p.vz -= p.g * dt;
+      p.z += p.vz * dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.grow) p.size += p.grow * dt;
+      if (p.kind === 'leaf') { p.vx *= Math.exp(-2.5 * dt); p.vy *= Math.exp(-2.5 * dt); p.vz = Math.max(p.vz, -55); p.x += Math.sin(p.t * 6 + p.ph) * 40 * dt; }
+      if (p.kind === 'dust') { p.vx *= Math.exp(-4 * dt); p.vy *= Math.exp(-4 * dt); }
+      if (p.z <= 0 && p.vz < 0) {
+        p.z = 0;
+        if (p.kind === 'drop' || p.kind === 'goo') {
+          p.dead = true;
+          if (p.size > 2.4) {
+            for (let i = 0; i < 2; i++) this.phys({ kind: p.kind, x: p.x, y: p.y, z: 0.1, vx: (Math.random() - 0.5) * 70, vy: (Math.random() - 0.5) * 30, vz: 50 + Math.random() * 60, size: 1.4, color: p.color, life: 0.4 });
+            this.ripple(p.x, p.y, 1, 6 + p.size * 2.5, p.kind === 'goo' ? '#c27ae0' : '#d8f2ff', 0.35);
+          }
+        } else if (p.kind === 'leaf') { p.vz = 0; p.g = 0; p.vx = 0; p.vy = 0; p.rest = true; }
+        else if (p.bounce && Math.abs(p.vz) > 40) {
+          p.vz = -p.vz * p.bounce; p.vx *= 0.6; p.vy *= 0.6; p.landed++;
+          if (p.kind === 'rock' && p.landed === 1 && p.size > 4) this.dust(p.x, p.y, 1, p.size * 1.5);
+        } else { p.vz = 0; p.vx *= 0.5; p.vy *= 0.5; p.g = 0; p.rest = true; }
+      }
+    }
+    this.ph = this.ph.filter(p => !p.dead && p.t < p.life);
+    for (const r of this.ripples) r.t += dt;
+    this.ripples = this.ripples.filter(r => r.t < r.life);
+  }
+
+  // anéis de água no chão (embaixo dos Pokémon)
+  drawRipples(g) {
+    g.lineWidth = 2;
+    for (const r of this.ripples) {
+      const k = r.t / r.life;
+      const rad = r.r0 + (r.r1 - r.r0) * Math.sqrt(k);
+      g.globalAlpha = 1 - k;
+      g.strokeStyle = r.color;
+      g.beginPath(); g.ellipse(r.x, r.y, rad, rad * 0.45, 0, 0, Math.PI * 2); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+
+  drawPhys(g) {
+    // sombras no chão primeiro
+    g.fillStyle = 'rgba(0,0,0,0.3)';
+    for (const p of this.ph) {
+      if (p.kind === 'dust' || p.kind === 'ember' || p.z < 2) continue;
+      const s = Math.max(1, p.size * (1 - Math.min(0.6, p.z / 200)));
+      g.fillRect(p.x - s / 2, p.y - s * 0.25, s, Math.max(1, s * 0.5));
+    }
+    for (const p of this.ph) {
+      const fade = Math.min(1, (p.life - p.t) / 0.25);
+      const x = p.x, y = p.y - p.z, s = Math.max(1, p.size);
+      g.globalAlpha = fade;
+      switch (p.kind) {
+        case 'drop': case 'goo':
+          g.fillStyle = p.color;
+          // esticada na direção da queda
+          g.fillRect(x - s / 2, y - s / 2, s, s * (1 + Math.min(1.5, Math.abs(p.vz) / 260)));
+          break;
+        case 'rock':
+          g.save(); g.translate(x, y); g.rotate(Math.round((p.rot + p.t * 6 * (p.rest ? 0 : 1)) / (Math.PI / 4)) * (Math.PI / 4));
+          g.fillStyle = p.color; g.fillRect(-s / 2, -s / 2, s, s);
+          g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(-s / 2, 0, s, s / 2);
+          g.restore();
+          break;
+        case 'shard':
+          g.fillStyle = p.color;
+          g.beginPath(); g.moveTo(x, y - s * 1.3); g.lineTo(x + s * 0.6, y); g.lineTo(x, y + s * 0.6); g.lineTo(x - s * 0.6, y); g.closePath(); g.fill();
+          if (Math.floor(p.t * 14) % 3 === 0) { g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - s, 2, 2); }
+          break;
+        case 'spark':
+          g.fillStyle = Math.floor(p.t * 20) % 2 ? '#ffffff' : p.color;
+          g.fillRect(x - s, y - s / 2, s * 2, s);
+          break;
+        case 'ember':
+          g.globalCompositeOperation = 'lighter';
+          g.fillStyle = Math.floor(p.t * 12 + p.x) % 3 ? p.color : '#fff3b0';
+          g.fillRect(x - s / 2, y - s / 2, s, s);
+          g.globalCompositeOperation = 'source-over';
+          break;
+        case 'leaf': {
+          const flip = Math.sin(p.t * 8 + (p.ph || 0));
+          g.fillStyle = p.color;
+          g.fillRect(x - s, y - s * 0.35 * Math.abs(flip) - 0.5, s * 2, Math.max(1, s * 0.7 * Math.abs(flip)));
+          break;
+        }
+        case 'dust':
+          g.globalAlpha = fade * (1 - p.t / p.life) * 0.9;
+          g.fillStyle = p.color;
+          g.beginPath(); g.arc(x, y, s, 0, Math.PI * 2); g.fill();
+          break;
+      }
+    }
+    g.globalAlpha = 1;
+  }
+
   // marcas no chão: queimado, poça, rachadura, gelo, gosma
   decal(x, y, kind, r = 30, life = 7) {
     if (this.decals.length > 70) this.decals.shift();
@@ -102,6 +290,7 @@ export class Fx {
   }
 
   update(dt) {
+    this.updatePhys(dt);
     for (const p of this.parts) {
       p.t += dt;
       p.vy += p.g * dt;

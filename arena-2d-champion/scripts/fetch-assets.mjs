@@ -1,10 +1,10 @@
 // Baixa os sprites usados no jogo para www/assets/ (rode uma vez: npm run fetch-assets).
 // - Sprites de batalha em 8 direções: PMD SpriteCollab (CC BY-NC 4.0, créditos em assets/credits.json)
-// - Megas sem sprite PMD: animações de frente e de costas do repositório smogon/sprites (pasta models),
-//   convertidas em folhas de pixel art por gif-sheet.mjs; Mega Golisopod só tem imagem parada (champions)
+// - Megas sem sprite PMD: desenho 2D de frente e de costas (estilo Black/White) do PokeRogue,
+//   reduzido para o tamanho de pixel do PMD e animado por partes em sprite-tools.mjs
 // - Arte oficial para os menus: repositório PokeAPI/sprites
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { gifToSheet, pngToSprite, downscalePng } from './gif-sheet.mjs';
+import { animateSprite, downscalePng } from './sprite-tools.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -14,17 +14,18 @@ const COLLAB = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master'
 const POKEAPI = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
 
 // chave do jogo -> pasta do SpriteCollab (sprite) e do retrato
-// gif: animação dos "models" do Smogon (scale = redução para o tamanho de pixel do jogo)
-// rig: imagem parada que o jogo anima por partes
+// bw: sprite 2D do PokeRogue (número-forma) e rig: como animar as partes (frações da altura):
+//   breathe = linha acima da qual o corpo respira, sway = parte de cima que balança, legs = linha das
+//   patas, legBins = quantas faixas de patas alternam, wings = asas fora do centro, fly = não pisa no chão
 const SPRITES = {
   venusaur: { sprite: '0003', portrait: '0003' },
   charizard: { sprite: '0006', portrait: '0006' },
   blastoise: { sprite: '0009', portrait: '0009' },
   weavile: { sprite: '0461', portrait: '0461' },
   charizardmegax: { sprite: '0006/0001', portrait: '0006/0001' },
-  venusaurmega: { sprite: null, portrait: '0003/0001', gif: 'venusaur-omega', scale: 0.33 },
-  charizardmegay: { sprite: null, portrait: '0006/0002', gif: 'charizard-omega_y', scale: 0.33 },
-  blastoisemega: { sprite: null, portrait: '0009/0001', gif: 'blastoise-omega', scale: 0.39 },
+  venusaurmega: { sprite: null, portrait: '0003/0001', bw: '3-mega', rig: { breathe: 0.55, sway: 0.32, legs: 0.82, legBins: 2 } },
+  charizardmegay: { sprite: null, portrait: '0006/0002', bw: '6-mega-y', rig: { breathe: 0.5, sway: 0.2, legs: 0.85, legBins: 2, wings: { inner: 0.2, bottom: 0.7 }, fly: true } },
+  blastoisemega: { sprite: null, portrait: '0009/0001', bw: '9-mega', rig: { breathe: 0.5, sway: 0.15, legs: 0.84, legBins: 2 } },
   steelix: { sprite: '0208', portrait: '0208' },
   gengar: { sprite: '0094', portrait: '0094' },
   steelixmega: { sprite: '0208/0001', portrait: '0208/0001' },
@@ -50,11 +51,53 @@ const SPRITES = {
   aerodactyl: { sprite: '0142', portrait: '0142' },
   aerodactylmega: { sprite: '0142/0001', portrait: '0142/0001' },
   golisopod: { sprite: '0768', portrait: '0768' },
-  golisopodmega: { sprite: null, portrait: '0768/0001', rig: 'champions/sgolisopod-omega.png', scale: 0.39 },
+  golisopodmega: { sprite: null, portrait: '0768/0001', bw: '768-mega', rig: { breathe: 0.5, sway: 0.35, legs: 0.72, legBins: 4 } },
+  mewtwo: { sprite: '0150', portrait: '0150' },
+  mewtwomegax: { sprite: null, portrait: '0150/0001', bw: '150-mega-x', rig: { breathe: 0.5, sway: 0.25, legs: 0.8, legBins: 2 } },
+  mewtwomegay: { sprite: '0150/0002', portrait: '0150/0002' },
+  rayquaza: { sprite: '0384', portrait: '0384' },
+  rayquazamega: { sprite: '0384/0001', portrait: '0384/0001' },
+  garchomp: { sprite: '0445', portrait: '0445' },
+  garchompmega: { sprite: null, portrait: '0445/0001', bw: '445-mega', rig: { breathe: 0.5, sway: 0.25, legs: 0.82, legBins: 2, wings: { inner: 0.25, bottom: 0.6 } } },
+  garchompmegaz: { sprite: null, portrait: '0445/0002', bw: '445-mega-z', rig: { breathe: 0.5, sway: 0.25, legs: 0.82, legBins: 2, wings: { inner: 0.25, bottom: 0.6 } } },
+  gyarados: { sprite: '0130', portrait: '0130' },
+  gyaradosmega: { sprite: null, portrait: '0130/0001', bw: '130-mega', rig: { breathe: 0.6, sway: 0.45, legs: 1, legBins: 1, fly: true } },
+  greninja: { sprite: '0658', portrait: '0658' },
+  greninjamega: { sprite: null, portrait: '0658/0002', bw: '658-mega', rig: { breathe: 0.5, sway: 0.25, legs: 0.82, legBins: 2 } },
+  dragonite: { sprite: '0149', portrait: '0149' },
+  dragonitemega: { sprite: null, portrait: '0149/0001', bw: '149-mega', rig: { breathe: 0.5, sway: 0.2, legs: 0.85, legBins: 2, wings: { inner: 0.22, bottom: 0.55 }, fly: true } },
+  blaziken: { sprite: '0257', portrait: '0257' },
+  blazikenmega: { sprite: null, portrait: '0257/0001', bw: '257-mega', rig: { breathe: 0.5, sway: 0.3, legs: 0.8, legBins: 2 } },
+  scizor: { sprite: '0212', portrait: '0212' },
+  scizormega: { sprite: null, portrait: '0212/0001', bw: '212-mega', rig: { breathe: 0.5, sway: 0.2, legs: 0.82, legBins: 2, wings: { inner: 0.3, bottom: 0.5 } } },
+  metagross: { sprite: '0376', portrait: '0376' },
+  metagrossmega: { sprite: null, portrait: '0376/0001', bw: '376-mega', rig: { breathe: 0.5, sway: 0.15, legs: 0.7, legBins: 4, fly: true } },
+  salamence: { sprite: '0373', portrait: '0373' },
+  salamencemega: { sprite: null, portrait: '0373/0001', bw: '373-mega', rig: { breathe: 0.5, sway: 0.2, legs: 0.9, legBins: 2, wings: { inner: 0.2, bottom: 0.75 }, fly: true } },
+  lopunny: { sprite: '0428', portrait: '0428' },
+  lopunnymega: { sprite: '0428/0001', portrait: '0428/0001' },
+  sableye: { sprite: '0302', portrait: '0302' },
+  sableyemega: { sprite: '0302/0001', portrait: '0302/0001' },
+  mawile: { sprite: '0303', portrait: '0303' },
+  mawilemega: { sprite: '0303/0001', portrait: '0303/0001' },
+  kangaskhan: { sprite: '0115', portrait: '0115' },
+  kangaskhanmega: { sprite: '0115/0001', portrait: '0115/0001' },
+  latios: { sprite: '0381', portrait: '0381' },
+  latiosmega: { sprite: '0381/0001', portrait: '0381/0001' },
+  darkrai: { sprite: '0491', portrait: '0491' },
+  darkraimega: { sprite: '0491/0002', portrait: '0491/0002' },
+  zeraora: { sprite: '0807', portrait: '0807' },
+  zeraoramega: { sprite: '0807/0001', portrait: '0807/0001' },
+  excadrill: { sprite: '0530', portrait: '0530' },
+  excadrillmega: { sprite: '0530/0001', portrait: '0530/0001' },
+  skarmory: { sprite: '0227', portrait: '0227' },
+  skarmorymega: { sprite: '0227/0001', portrait: '0227/0001' },
+  diancie: { sprite: '0719', portrait: '0719' },
+  dianciemega: { sprite: '0719/0001', portrait: '0719/0001' },
 };
+const ROGUE = 'https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/beta/images/pokemon';
+const BW_SCALE = 0.5; // os desenhos BW têm o dobro de detalhe dos sprites do PMD
 const SMOGON = 'https://raw.githubusercontent.com/smogon/sprites/master/src';
-// Mega Venusaur maior e mais detalhada para a tela inicial
-const TITLE_GIF = { gif: 'venusaur-omega', scale: 0.62 };
 // Treinadores (sprites dos jogos e do Smogon Sprite Project)
 const TRAINER_BASE = 'https://raw.githubusercontent.com/smogon/sprites/master/src/_uncategorized';
 const TRAINERS = {
@@ -82,9 +125,18 @@ const ARTWORK = {
   absol: 359, absolmega: 10057, manectric: 310, manectricmega: 10055, altaria: 334, altariamega: 10067,
   alakazam: 65, alakazammega: 10037, houndoom: 229, houndoommega: 10048, gallade: 475, gallademega: 10068,
   aerodactyl: 142, aerodactylmega: 10042, golisopod: 768,
+  mewtwo: 150, mewtwomegax: 10043, mewtwomegay: 10044, rayquaza: 384, rayquazamega: 10079, garchomp: 445, garchompmega: 10058,
+  gyarados: 130, gyaradosmega: 10041, greninja: 658, dragonite: 149, blaziken: 257, blazikenmega: 10050, scizor: 212, scizormega: 10046,
+  metagross: 376, metagrossmega: 10076, salamence: 373, salamencemega: 10089, lopunny: 428, lopunnymega: 10088, sableye: 302,
+  sableyemega: 10066, mawile: 303, mawilemega: 10052, kangaskhan: 115, kangaskhanmega: 10039, latios: 381, latiosmega: 10063,
+  darkrai: 491, darkraimega: 491, zeraora: 807, zeraoramega: 807, excadrill: 530, skarmory: 227, diancie: 719, dianciemega: 10075,
 };
 // sem arte oficial no PokeAPI: usa a imagem do Pokémon Champions guardada no smogon/sprites
-const ARTWORK_FALLBACK = { golisopodmega: 'champions/sgolisopod-omega.png' };
+// (Mega Darkrai e Mega Zeraora ainda não têm nenhuma: ficam com a arte da forma normal)
+const ARTWORK_FALLBACK = {
+  golisopodmega: 'champions/sgolisopod-omega.png', garchompmegaz: 'champions/sgarchomp-omega_z.png', greninjamega: 'champions/sgreninja-omega.png',
+  dragonitemega: 'champions/sdragonite-omega.png', excadrillmega: 'champions/sexcadrill-omega.png', skarmorymega: 'champions/sskarmory-omega.png',
+};
 const WANTED_ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Hurt', 'Sleep', 'Charge', 'Swing', 'Hop', 'Rotate', 'Withdraw', 'QuickStrike', 'Faint', 'Strike'];
 
 async function get(url, binary = true) {
@@ -133,8 +185,9 @@ const credit = c => (c ? names[c] || c : null);
 const manifest = {};
 const credits = [];
 rmSync(join(out, 'bw'), { recursive: true, force: true });
+rmSync(join(out, 'gif'), { recursive: true, force: true });
 for (const [key, src] of Object.entries(SPRITES)) {
-  const entry = { anims: null, portrait: null, artwork: null, gif: null, rig: null };
+  const entry = { anims: null, portrait: null, artwork: null, bw: null };
   if (src.sprite) {
     const dir = join(out, 'sprites', key);
     mkdirSync(dir, { recursive: true });
@@ -156,24 +209,19 @@ for (const [key, src] of Object.entries(SPRITES)) {
     const n = node(src.sprite);
     credits.push({ what: `Sprite ${key}`, by: [credit(n.sprite_credit?.primary), ...(n.sprite_credit?.secondary || []).map(credit)].filter(Boolean) });
   }
-  if (src.gif) {
-    mkdirSync(join(out, 'gif'), { recursive: true });
-    entry.gif = {};
-    for (const [view, suffix] of [['front', ''], ['back', '-b']]) {
-      const sheet = gifToSheet(await get(`${SMOGON}/models/s${src.gif}${suffix}.gif`), { scale: src.scale });
-      writeFileSync(join(out, 'gif', `${key}-${view}.png`), sheet.png);
-      entry.gif[view] = { src: `assets/gif/${key}-${view}.png`, ...sheet.meta };
+  if (src.bw) {
+    mkdirSync(join(out, 'bw'), { recursive: true });
+    entry.bw = {};
+    for (const [view, dir] of [['front', ''], ['back', 'back/']]) {
+      const atlas = JSON.parse((await get(`${ROGUE}/${dir}${src.bw}.json`, false)) || 'null');
+      const sheet = animateSprite(await get(`${ROGUE}/${dir}${src.bw}.png`), { scale: BW_SCALE, rig: src.rig, back: view === 'back', atlas });
+      writeFileSync(join(out, 'bw', `${key}-${view}.png`), sheet.png);
+      entry.bw[view] = { src: `assets/bw/${key}-${view}.png`, ...sheet.meta };
     }
-    credits.push({ what: `Sprite ${key}`, by: ['animação 3D dos jogos, via smogon/sprites (models)'] });
+    credits.push({ what: `Sprite ${key}`, by: ['PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá', 'animação por partes feita no jogo'] });
   }
-  if (src.rig) {
-    mkdirSync(join(out, 'gif'), { recursive: true });
-    const sprite = pngToSprite(await get(`${SMOGON}/${src.rig}`), { scale: src.scale });
-    writeFileSync(join(out, 'gif', `${key}-rig.png`), sprite.png);
-    entry.rig = { src: `assets/gif/${key}-rig.png`, ...sprite.meta };
-    credits.push({ what: `Sprite ${key}`, by: ['Pokémon Champions, via smogon/sprites (animado por partes no jogo)'] });
-  }
-  const portrait = await get(`${COLLAB}/portrait/${src.portrait}/Normal.png`);
+  // Mega sem retrato próprio usa o da forma normal
+  const portrait = (await get(`${COLLAB}/portrait/${src.portrait}/Normal.png`)) || (await get(`${COLLAB}/portrait/${src.portrait.split('/')[0]}/Normal.png`));
   if (portrait) {
     mkdirSync(join(out, 'portraits'), { recursive: true });
     writeFileSync(join(out, 'portraits', `${key}.png`), portrait);
@@ -202,10 +250,11 @@ for (const [id, [path, name]] of Object.entries(TRAINERS)) {
 }
 credits.push({ what: 'Treinadores', by: ['sprites dos jogos (via Smogon)', 'Smogon Sprite Project (Ash, Korrina, Lillie, Selene)'] });
 
-// Mega Venusaur da tela inicial
-const titleSheet = gifToSheet(await get(`${SMOGON}/models/s${TITLE_GIF.gif}.gif`), { scale: TITLE_GIF.scale });
-writeFileSync(join(out, 'gif', 'title-venusaurmega.png'), titleSheet.png);
-const title = { src: 'assets/gif/title-venusaurmega.png', ...titleSheet.meta };
+// Mega Venusaur da tela inicial: o desenho inteiro, sem reduzir, respirando
+const titleSheet = animateSprite(await get(`${ROGUE}/${SPRITES.venusaurmega.bw}.png`), { scale: 1, rig: SPRITES.venusaurmega.rig, only: ['Idle'] });
+writeFileSync(join(out, 'bw', 'title-venusaurmega.png'), titleSheet.png);
+const { w, h, feet, cols, anims } = titleSheet.meta;
+const title = { src: 'assets/bw/title-venusaurmega.png', w, h, feet, cols, frames: anims.Idle.durations.length, durations: anims.Idle.durations };
 
 writeFileSync(join(root, 'www/js/data/sprites.js'),
   '// ARQUIVO GERADO por scripts/fetch-assets.mjs\n' +

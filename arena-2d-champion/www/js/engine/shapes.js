@@ -250,6 +250,7 @@ export const SHAPES = {
   magicalleaf: proj(520, 10, { sprite: 'leaf', homing: 3.5 }),
   megadrain: proj(560, 11, { sprite: 'drain' }),
   mirrorcoat: { kind: 'stance', mode: 'mirrorcoat', anim: 'Charge' },
+  metalburst: { kind: 'stance', mode: 'metalburst', anim: 'Charge' },
   mudshot: proj(580, 11, { sprite: 'mud' }),
   mudslap: proj(620, 9, { sprite: 'mud', range: 280 }),
   muddywater: { kind: 'wave', speed: 520, width: 720, range: 1250, thickness: 60, anim: 'Shoot', sprite: 'mud', big: true },

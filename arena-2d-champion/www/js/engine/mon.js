@@ -50,7 +50,7 @@ export function recalcStats(mon, full = false) {
   for (const key of ['atk', 'def', 'spa', 'spd', 'spe']) mon.stats[key] = calcStat(sp.baseStats[key], key);
   const maxhp = calcStat(sp.baseStats.hp, 'hp') * HP_SCALE;
   if (full) mon.maxhp = maxhp;
-  mon.weightkg = sp.weightkg;
+  mon.weightkg = sp.weightkg * (mon.ability === 'lightmetal' ? 0.5 : 1);
   const body = BODY[mon.species] || BODY[mon.baseSpecies];
   mon.radius = body.radius;
   mon.hover = body.hover;
@@ -84,7 +84,7 @@ export function resetField(mon) {
   mon.residualClock = 0;
   mon.statusData.toxicTurns = 0;
   mon.types = [...SPECIES[mon.species].types];
-  mon.weightkg = SPECIES[mon.species].weightkg;
+  mon.weightkg = SPECIES[mon.species].weightkg * (mon.ability === 'lightmetal' ? 0.5 : 1);
   mon.semiInv = null;
   mon.airborne = false;
   mon.z = 0;
@@ -105,7 +105,8 @@ export function hasType(mon, type) {
 }
 
 export function itemActive(mon) {
-  return mon.item && !mon.vol.embargo ? mon.item : null;
+  // Klutz: o item não faz efeito (a Mega Pedra é lida direto de mon.item)
+  return mon.item && !mon.vol.embargo && mon.ability !== 'klutz' ? mon.item : null;
 }
 
 export function hasAbility(mon, id) {
@@ -118,19 +119,30 @@ export function slotMove(mon, slot) {
   return s ? s.mimic || s.id : null;
 }
 
-export function isGrounded(b, mon) {
+// Mold Breaker (e golpes que ignoram habilidade) passam por cima das habilidades de defesa
+export function moldBreaks(user, mv) {
+  return !!user && (user.ability === 'moldbreaker' || !!mv?.ignoreAbility);
+}
+
+// Ventos fortes do Delta Stream
+export function strongWinds(b) {
+  return !!b.sides?.some(s => s.active?.onField && s.active.ability === 'deltastream');
+}
+
+export function isGrounded(b, mon, ignoreLevitate = false) {
   if (mon.vol.magnetrise || mon.vol.telekinesis) return false;
   if (mon.vol.smackdown) return true;
   if (mon.vol.roost) return true;
   if (mon.vol.ingrain) return true;
+  if (!ignoreLevitate && hasAbility(mon, 'levitate')) return false;
   if (hasType(mon, 'Flying')) return false;
   if (itemActive(mon) === 'airballoon') return false;
   return true;
 }
 
 export function weatherFor(b, mon) {
-  // Cloud Nine em campo: ninguém sente o clima
-  if (b.sides?.some(s => s.active?.onField && s.active.ability === 'cloudnine')) return null;
+  // Cloud Nine, Air Lock ou Delta Stream em campo: ninguém sente o clima
+  if (b.sides?.some(s => s.active?.onField && ['cloudnine', 'airlock', 'deltastream'].includes(s.active.ability))) return null;
   // Utility Umbrella ignora sol e chuva para quem segura
   const w = b.field.weather?.id || null;
   if (mon && itemActive(mon) === 'utilityumbrella' && ['sunnyday', 'raindance', 'desolateland', 'primordialsea'].includes(w)) return null;
@@ -161,6 +173,7 @@ export function getSpeed(b, mon) {
   let spe = getStat(b, mon, 'spe');
   if (itemActive(mon) === 'choicescarf') spe *= 1.5;
   if (hasAbility(mon, 'chlorophyll') && isSun(weatherFor(b, mon))) spe *= 2;
+  if (hasAbility(mon, 'sandrush') && weatherFor(b, mon) === 'sandstorm') spe *= 2;
   if (b.sides[mon.side].conds.tailwind > 0) spe *= 2;
   if (mon.status === 'par') spe *= 0.5;
   // Trick Room: os lentos ficam rápidos e os rápidos ficam lentos

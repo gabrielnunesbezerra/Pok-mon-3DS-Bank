@@ -119,6 +119,6 @@ test('time que chega do outro aparelho é conferido', async () => {
   assert.deepEqual(bad[0].moves, ['shadowball']);
   assert.equal(bad[0].item, null);
   assert.equal(bad[0].ability, 'cursedbody');
-  assert.equal(sanitizeTeam([{ species: 'mewtwo', moves: ['psystrike'] }]), null);
+  assert.equal(sanitizeTeam([{ species: 'pikachu', moves: ['thunderbolt'] }]), null);
   assert.equal(sanitizeTeam('lixo'), null);
 });

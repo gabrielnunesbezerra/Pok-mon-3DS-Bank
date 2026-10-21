@@ -1,10 +1,10 @@
 // Uso e execução dos golpes: custo de stamina, recarga, preparo, golpes de dois turnos,
 // golpes que chamam outros golpes e o "acerto" de cada golpe no alvo.
-import { MOVES, ITEMS, SPECIES } from '../data/dex.js';
+import { MOVES, ITEMS, SPECIES, TYPE_PT } from '../data/dex.js';
 import { shapeFor } from './shapes.js';
 import { FIELD_TURN, HP_SCALE, GLOBAL_COOLDOWN } from './constants.js';
 import {
-  slotMove, itemActive, hasAbility, hasType, cooldownMult, getStat, isGrounded, weatherFor, isSun, isRain, itemRemovable,
+  slotMove, itemActive, hasAbility, hasType, cooldownMult, getStat, isGrounded, weatherFor, isSun, isRain, itemRemovable, moldBreaks,
 } from './mon.js';
 import { effectiveness } from '../data/dex.js';
 import * as H from './hit.js';
@@ -18,25 +18,27 @@ export function staminaCost(b, mon, mv) {
   return cost;
 }
 
+// Recarga própria de cada golpe (segundos). Golpes fracos voltam rápido, os fortes demoram um pouco
+// mais; quem segura o ritmo da luta é a stamina, então nenhuma recarga passa de uns 5 segundos.
 export function baseCooldown(mv) {
-  if (mv.id === 'struggle') return 1.2;
+  if (mv.id === 'struggle') return 1;
   if (mv.cat === 'Status') {
-    if (mv.weather || mv.terrain) return 14;
-    if (mv.side) return 12;
-    if (mv.stalling) return 2.6;
-    if (['synthesis', 'roost', 'rest', 'lifedew'].includes(mv.id)) return 10;
-    if (mv.target === 'self' && mv.boosts) return 7;
-    if (mv.status || mv.vol) return 7;
-    return 6;
+    if (mv.weather || mv.terrain) return 10;
+    if (mv.side) return 8;
+    if (mv.stalling) return 2.2;
+    if (['synthesis', 'roost', 'rest', 'lifedew', 'recover', 'softboiled', 'slackoff', 'moonlight', 'morningsun', 'shoreup', 'milkdrink', 'wish', 'strengthsap'].includes(mv.id)) return 7;
+    if (mv.target === 'self' && mv.boosts) return 5;
+    if (mv.status || mv.vol) return 5;
+    return 4.5;
   }
   let power = mv.bp || 70;
   if (mv.multihit) power *= Array.isArray(mv.multihit) ? 3 : mv.multihit;
-  if (['counter', 'mirrorcoat', 'bide'].includes(mv.id)) power = 90;
+  if (['counter', 'mirrorcoat', 'metalburst', 'bide'].includes(mv.id)) power = 90;
   if (mv.ohko) power = 160;
-  let cd = 1.2 + power / 30;
-  if (mv.pri > 0) cd *= 0.75;
+  let cd = 0.7 + power / 45;
+  if (mv.pri > 0) cd *= 0.7;
   if (mv.self?.volatileStatus === 'mustrecharge') cd += 1;
-  return Math.max(1.6, Math.min(7, cd));
+  return Math.max(1, Math.min(4.8, cd));
 }
 
 function windupFor(mv, shape) {
@@ -134,7 +136,9 @@ export function useMove(b, mon, slot, aim = null) {
     return true;
   }
   const shape = shapeFor(id);
-  let dur = windupFor(mv, shape);
+  const pranks = hasAbility(mon, 'prankster') && mv.cat === 'Status';
+  let dur = windupFor(pranks ? { ...mv, pri: mv.pri + 1 } : mv, shape);
+  if (hasAbility(mon, 'stall')) dur *= 1.3;
   if (itemActive(mon) === 'quickclaw' && b.rng.chance(20)) { dur = 0.02; b.say(`A Quick Claw de ${mon.name} agiu!`); }
   if (id === 'grassyglide' && b.field.terrain?.id === 'grassyterrain' && isGrounded(b, mon)) dur = 0.08;
   mon.action = { type: 'windup', t: 0, dur, id, slot, aim, pri: mv.pri };
@@ -198,6 +202,13 @@ export function executeMove(b, user, id, aim, opts = {}) {
   const mv = H.liveMove(b, user, id);
   const shape = shapeFor(id);
   const foe = b.foeActive(user);
+  // Protean: vira do tipo do golpe (uma vez por entrada em campo)
+  if (hasAbility(user, 'protean') && !user.vol.protean && id !== 'struggle' && !(user.types.length === 1 && user.types[0] === mv.type)) {
+    user.types = [mv.type];
+    user.vol.protean = true;
+    b.say(`${user.name} virou do tipo ${TYPE_PT[mv.type]}!`);
+    b.emit({ t: 'protean', mon: user, type: mv.type });
+  }
 
   // condições de falha antes de soltar o golpe
   if ((id === 'fakeout' || id === 'firstimpression') && (prevActed || b.time - user.enteredAt > 2.5)) return failMove(b, user);
@@ -319,6 +330,11 @@ export function selfMove(b, user, exec) {
       H.boost(b, user, { spe: 2 }, user, mv, { fromMove: true });
       if (user.weightkg > 0.1) { user.weightkg = Math.max(0.1, user.weightkg - 100); b.say(`${user.name} ficou mais leve!`); }
       return;
+    case 'charge':
+      user.vol.charge = { t: FIELD_TURN * 2 };
+      b.say(`${user.name} começou a carregar energia!`);
+      ok();
+      return H.boost(b, user, { spd: 1 }, user, mv, { fromMove: true });
     case 'magnetrise':
       if (user.vol.magnetrise || user.vol.smackdown || user.vol.ingrain) return fail();
       user.vol.magnetrise = { t: FIELD_TURN * 5 };
@@ -523,6 +539,8 @@ export function selfMove(b, user, exec) {
       return ok();
     }
     default:
+      // buffs não acumulam: enquanto o aumento ainda vale, o mesmo golpe de buff falha
+      if (mv.boosts && Object.entries(mv.boosts).some(([k, v]) => v > 0 && user.boosts[k] > 0)) return fail(`${user.name} já está sob efeito do buff!`);
       if (mv.boosts) { ok(); H.boost(b, user, mv.boosts, user, mv, { fromMove: true }); }
       if (mv.heal) { if (user.hp === user.maxhp) return fail(`Os PS de ${user.name} já estão cheios!`); heal(mv.heal[0] / mv.heal[1]); ok(); }
       if (!mv.boosts && !mv.heal) fail();
@@ -558,6 +576,9 @@ function strikeTarget(b, user, target, exec, ctx) {
     if (mv.id === 'feint' || mv.id === 'phantomforce') {
       delete target.vol.protect;
       b.say(`${target.name} teve a proteção quebrada!`);
+    } else if (hasAbility(user, 'piercingdrill') && mv.flags.includes('contact')) {
+      b.say(`${user.name} furou a proteção de ${target.name}!`);
+      ctx = { ...ctx, powerMult: (ctx.powerMult || 1) * 0.25 };
     } else {
       b.say(`${target.name} se protegeu!`);
       b.emit({ t: 'protect', mon: target });
@@ -570,20 +591,27 @@ function strikeTarget(b, user, target, exec, ctx) {
     return 'blocked';
   }
   // habilidades que anulam um tipo e ainda ganham algo com isso
-  if (hasAbility(target, 'lightningrod') && mv.type === 'Electric' && target !== user) {
+  const breaks = moldBreaks(user, mv);
+  if (!breaks && hasAbility(target, 'voltabsorb') && mv.type === 'Electric' && target !== user && mv.id !== 'thunderwave') {
+    b.say(`${target.name} absorveu a eletricidade com Volt Absorb!`);
+    b.text(target, 'Imune', '#ffe14a');
+    H.healMon(b, target, target.maxhp / 4);
+    return 'immune';
+  }
+  if (!breaks && hasAbility(target, 'lightningrod') && mv.type === 'Electric' && target !== user) {
     b.say(`${target.name} atraiu o golpe com Lightning Rod!`);
     b.text(target, 'Imune', '#ffe14a');
     H.boost(b, target, { spa: 1 }, target, null);
     return 'immune';
   }
-  if (hasAbility(target, 'flashfire') && mv.type === 'Fire' && target !== user) {
+  if (!breaks && hasAbility(target, 'flashfire') && mv.type === 'Fire' && target !== user) {
     if (!target.vol.flashfire) b.say(`O Flash Fire de ${target.name} deixou os golpes de Fogo mais fortes!`);
     target.vol.flashfire = {};
     b.text(target, 'Imune', '#ff9a3d');
     return 'immune';
   }
   // Magic Bounce: golpes de status refletíveis voltam para quem usou
-  if (mv.cat === 'Status' && mv.flags.includes('reflectable') && hasAbility(target, 'magicbounce') && target !== user && !ctx.bounced) {
+  if (mv.cat === 'Status' && mv.flags.includes('reflectable') && hasAbility(target, 'magicbounce') && target !== user && !ctx.bounced && !breaks) {
     b.say(`${target.name} devolveu ${mv.name} com Magic Bounce!`);
     b.emit({ t: 'bounce', mon: target });
     return statusHit(b, target, user, exec, mv, { ...ctx, bounced: true });
@@ -604,7 +632,9 @@ function strikeTarget(b, user, target, exec, ctx) {
       }
       if (mv.id === 'dreameater' && target.status !== 'slp') { b.say(`Não afeta ${target.name}...`); return 'immune'; }
     }
-    if (mv.ohko && hasAbility(target, 'sturdy')) { b.say(`${target.name} aguentou com Sturdy!`); return 'immune'; }
+    if (mv.ohko && hasAbility(target, 'sturdy') && !breaks) { b.say(`${target.name} aguentou com Sturdy!`); return 'immune'; }
+    // Prankster: golpes de status acelerados não pegam o tipo Sombrio
+    if (mv.prankster && mv.cat === 'Status' && hasType(target, 'Dark') && target !== user) { b.say(`Não afeta ${target.name}...`); b.text(target, 'Imune', '#bbbbbb'); return 'immune'; }
     if (mv.id === 'thunderwave' && effectiveness('Electric', target.types) === 0) { b.say(`Não afeta ${target.name}...`); return 'immune'; }
     if (mv.flags.includes('powder') && hasType(target, 'Grass')) {
       b.say(`Não afeta ${target.name}...`);
@@ -639,6 +669,16 @@ function strikeTarget(b, user, target, exec, ctx) {
   const et = H.effText(res.eff);
   if (et && dealt !== -1) { b.text(target, res.eff > 1 ? 'Super eficaz!' : 'Pouco eficaz', res.eff > 1 ? '#ff7a3d' : '#9fb4c8', 1); b.say(et); }
   b.emit({ t: 'hit', mon: target, by: user, mv, eff: res.eff, crit: res.crit, dmg: dealt, x: target.x, y: target.y });
+  // Parental Bond: o filhote dá uma segunda pancada mais fraca
+  let total = dealt;
+  if (hasAbility(user, 'parentalbond') && dealt > 0 && !target.fainted && !mv.multihit && mv.id !== 'beatup' && (ctx.hitIndex ?? 1) === 1 && !(ctx.volley?.total > 1) && !ctx.parental && !res.ohko && !mv.damage) {
+    const r2 = H.calcDamage(b, user, target, mv, { ...ctx, parental: true, noCrit: true, powerMult: (ctx.powerMult || 1) * 0.25 });
+    const d2 = H.damageMon(b, target, r2.damage, { source: user, mv });
+    if (d2 > 0) total += d2;
+    b.emit({ t: 'hit', mon: target, by: user, mv, eff: r2.eff, crit: false, dmg: d2, x: target.x, y: target.y, second: true });
+    b.say('Acertou 2 vezes!');
+  }
+  if (user.vol.charge && mv.type === 'Electric') delete user.vol.charge;
 
   if (dealt > 0 && !target.fainted) {
     const heavy = Math.min(1, (res.damage / target.maxhp) * 3);
@@ -651,7 +691,7 @@ function strikeTarget(b, user, target, exec, ctx) {
   }
   // dreno, recuo, Life Orb, Shell Bell
   if (mv.drain && dealt > 0) {
-    let amount = (dealt * mv.drain[0]) / mv.drain[1];
+    let amount = (total * mv.drain[0]) / mv.drain[1];
     if (itemActive(user) === 'bigroot') amount *= 1.3;
     H.healMon(b, user, amount);
   }
@@ -715,6 +755,11 @@ function strikeTarget(b, user, target, exec, ctx) {
       H.damageMon(b, user, user.maxhp / 6 / HP_SCALE, { direct: true });
       b.say(`${user.name} se machucou no Rocky Helmet!`);
     }
+    if (hasAbility(target, 'roughskin') && !user.fainted) {
+      H.damageMon(b, user, user.maxhp / 8 / HP_SCALE, { direct: true });
+      b.say(`${user.name} se machucou na Rough Skin de ${target.name}!`);
+    }
+    if (hasAbility(target, 'cutecharm') && !user.fainted && !user.vol.attract && b.rng.chance(30)) H.addVolatile(b, user, 'attract', target, null);
     if (hasAbility(target, 'pickpocket') && !target.fainted && !target.item && user.item && itemRemovable(user)) {
       target.item = user.item;
       user.item = null;
@@ -730,6 +775,7 @@ function strikeTarget(b, user, target, exec, ctx) {
   // reações do alvo
   if (dealt > 0 && !target.fainted) {
     if (hasAbility(target, 'justified') && mv.type === 'Dark') H.boost(b, target, { atk: 1 }, target, null);
+    if (hasAbility(target, 'weakarmor') && mv.cat === 'Physical') H.boost(b, target, { def: -1, spe: 2 }, target, null);
     if (hasAbility(target, 'static') && mv.flags.includes('contact') && !user.fainted && b.rng.chance(30)) {
       b.say(`O Static de ${target.name} deu choque em ${user.name}!`);
       H.applyStatus(b, user, 'par', target, null);
@@ -752,6 +798,14 @@ function strikeTarget(b, user, target, exec, ctx) {
       b.say(`O Cursed Body de ${target.name} desativou ${mv.name}!`);
     }
   }
+  if (target.fainted && !user.fainted && dealt > 0) {
+    if (hasAbility(user, 'moxie')) H.boost(b, user, { atk: 1 }, user, null);
+    if (hasAbility(user, 'battlebond') && !b.sides[user.side].battleBondUsed) {
+      b.sides[user.side].battleBondUsed = true;
+      b.say(`${user.name} ficou mais forte com Battle Bond!`);
+      H.boost(b, user, { atk: 1, spa: 1, spe: 1 }, user, null);
+    }
+  }
   applySelfEffects(b, user, exec);
   if (mv.forceSwitch && dealt !== -1 && !target.fainted) b.forceSwitch(target);
   return 'hit';
@@ -770,8 +824,8 @@ export function applySelfEffects(b, user, exec) {
 
 function stanceRetaliate(b, mon, attacker, mv, dealt) {
   const mode = mon.action.mode;
-  const wanted = mode === 'counter' ? 'Physical' : 'Special';
-  if (mv.cat !== wanted || attacker.side === mon.side) return;
+  const wanted = mode === 'counter' ? 'Physical' : mode === 'metalburst' ? mv.cat : 'Special';
+  if (mv.cat !== wanted || mv.cat === 'Status' || attacker.side === mon.side) return;
   const counterMove = MOVES[mode];
   const eff = H.typeEffect(b, mon, attacker, counterMove);
   const exec = mon.action.exec;
@@ -779,7 +833,7 @@ function stanceRetaliate(b, mon, attacker, mv, dealt) {
   if (eff === 0) { b.say(`Não afeta ${attacker.name}...`); return; }
   b.say(`${mon.name} revidou com ${counterMove.name}!`);
   b.emit({ t: 'counter', mon, target: attacker });
-  H.damageMon(b, attacker, dealt * 2, { source: mon, mv: counterMove });
+  H.damageMon(b, attacker, dealt * (mode === 'metalburst' ? 1.5 : 2), { source: mon, mv: counterMove });
   if (exec) exec.hitAny = true;
 }
 

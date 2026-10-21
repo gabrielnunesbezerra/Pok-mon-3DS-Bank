@@ -13,11 +13,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SPECIES = [
   'venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar',
   'lucario', 'gardevoir', 'tyranitar', 'absol', 'manectric', 'altaria', 'alakazam', 'houndoom', 'gallade', 'aerodactyl', 'golisopod',
+  'mewtwo', 'rayquaza', 'garchomp', 'gyarados', 'greninja', 'dragonite', 'blaziken', 'scizor', 'metagross', 'salamence',
+  'lopunny', 'sableye', 'mawile', 'kangaskhan', 'latios', 'darkrai', 'zeraora', 'excadrill', 'skarmory', 'diancie',
 ];
 const FORMS = [
   'venusaurmega', 'charizardmegax', 'charizardmegay', 'blastoisemega', 'steelixmega', 'gengarmega',
   'lucariomega', 'gardevoirmega', 'tyranitarmega', 'absolmega', 'manectricmega', 'altariamega', 'alakazammega', 'houndoommega',
   'gallademega', 'aerodactylmega', 'golisopodmega',
+  'mewtwomegax', 'mewtwomegay', 'rayquazamega', 'garchompmega', 'garchompmegaz', 'gyaradosmega', 'greninjamega', 'dragonitemega',
+  'blazikenmega', 'scizormega', 'metagrossmega', 'salamencemega', 'lopunnymega', 'sableyemega', 'mawilemega', 'kangaskhanmega',
+  'latiosmega', 'darkraimega', 'zeraoramega', 'excadrillmega', 'skarmorymega', 'dianciemega',
 ];
 
 // ---------------------------------------------------------------- quais golpes ficam
@@ -67,6 +72,7 @@ naturepower secretpower naturalgift fling bide rage skullbash razorwind selfdest
 foresight odorsleuth miracleeye magiccoat snatch focusenergy laserfocus psychup imprison grudge snore nightmare endure
 stockpile spitup swallow recycle bestow lastresort round echoedvoice furycutter megapunch megakick strength cut headbutt
 slam takedown submission dizzypunch doubleslap cometpunch furyswipes furyattack spikecannon barrage eggbomb rocksmash
+horndrill flash frustration covet smellingsalts wrap sandtomb doublekick octazooka
 `.trim().split(/\s+/));
 
 // Golpes com efeito próprio que o jogo ainda não sabe fazer: ficam de fora

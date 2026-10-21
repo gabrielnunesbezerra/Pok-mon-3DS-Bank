@@ -345,6 +345,11 @@ export class Battle {
         if (this.rng.chance(20) || mon.statusData.frozenFor > 8) H.cureStatus(this, mon);
       }
     }
+    // Speed Boost: Velocidade +1 a cada turno em campo
+    if (hasAbility(mon, 'speedboost')) {
+      mon.vol.speedClock = (mon.vol.speedClock || 0) + dt;
+      if (mon.vol.speedClock >= FIELD_TURN) { mon.vol.speedClock -= FIELD_TURN; H.boost(this, mon, { spe: 1 }, mon, null); }
+    }
     // dano e cura por turno, entregues a cada segundo
     mon.residualClock += dt;
     if (mon.residualClock >= 1) {
@@ -367,7 +372,9 @@ export class Battle {
     const max = mon.maxhp;
     const hurt = (frac, msg) => { if (!mon.fainted) H.damageMon(this, mon, max * frac * f, { direct: true }); };
     const heal = frac => { if (!mon.fainted) H.healMon(this, mon, max * frac * f); };
-    if (w === 'sandstorm' && !['Rock', 'Ground', 'Steel'].some(t => hasType(mon, t)) && !hasAbility(mon, 'sandforce') && !mon.semiInv) hurt(1 / 16);
+    if (w === 'sandstorm' && !['Rock', 'Ground', 'Steel'].some(t => hasType(mon, t)) && !['sandforce', 'sandrush', 'sandveil'].includes(mon.ability) && !mon.semiInv) hurt(1 / 16);
+    const foe = this.foeActive(mon);
+    if (mon.status === 'slp' && foe?.onField && hasAbility(foe, 'baddreams')) { hurt(1 / 8); if (f >= 1 / FIELD_TURN) this.text(mon, 'Pesadelo', '#9a6cff'); }
     if (w === 'hail' && !hasType(mon, 'Ice') && !mon.semiInv) hurt(1 / 16);
     if (hasAbility(mon, 'solarpower') && isSun(w)) hurt(1 / 8);
     if (hasAbility(mon, 'raindish') && isRain(w)) heal(1 / 16);
@@ -1478,9 +1485,12 @@ export class Battle {
     if (hasAbility(mon, 'intimidate') && foe?.onField && !foe.fainted) {
       this.say(`${mon.name} intimidou ${foe.name}!`);
       if (hasAbility(foe, 'innerfocus')) this.say(`${foe.name} não se abalou com o Inner Focus!`);
+      else if (hasAbility(foe, 'scrappy')) this.say(`${foe.name} não se abalou com o Scrappy!`);
       else H.boost(this, foe, { atk: -1 }, mon, null);
     }
-    if (hasAbility(mon, 'cloudnine') && this.field.weather) this.say('Os efeitos do clima sumiram!');
+    if ((hasAbility(mon, 'cloudnine') || hasAbility(mon, 'airlock')) && this.field.weather) this.say('Os efeitos do clima sumiram!');
+    if (hasAbility(mon, 'deltastream')) { this.say('Ventos fortes misteriosos estão protegendo os Pokémon do tipo Voador!'); this.emit({ t: 'winds', mon }); }
+    if (hasAbility(mon, 'moldbreaker')) this.say(`${mon.name} quebra todas as regras!`);
     if (hasAbility(mon, 'unnerve') && foe) this.say(`${foe.name} ficou nervoso demais para comer Berries!`);
     if (hasAbility(mon, 'pressure')) this.say(`${mon.name} está exercendo Pressure!`);
     if (itemActive(mon) === 'airballoon') this.say(`${mon.name} está flutuando num balão!`);

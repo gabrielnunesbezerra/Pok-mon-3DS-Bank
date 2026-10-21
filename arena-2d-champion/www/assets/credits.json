@@ -73,7 +73,8 @@
  {
   "what": "Sprite venusaurmega",
   "by": [
-   "animação 3D dos jogos, via smogon/sprites (models)"
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
   ]
  },
  {
@@ -85,7 +86,8 @@
  {
   "what": "Sprite charizardmegay",
   "by": [
-   "animação 3D dos jogos, via smogon/sprites (models)"
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
   ]
  },
  {
@@ -98,7 +100,8 @@
  {
   "what": "Sprite blastoisemega",
   "by": [
-   "animação 3D dos jogos, via smogon/sprites (models)"
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
   ]
  },
  {
@@ -437,13 +440,559 @@
  {
   "what": "Sprite golisopodmega",
   "by": [
-   "Pokémon Champions, via smogon/sprites (animado por partes no jogo)"
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
   ]
  },
  {
   "what": "Retrato golisopodmega",
   "by": [
    "Soulja"
+  ]
+ },
+ {
+  "what": "Sprite mewtwo",
+  "by": [
+   "CHUNSOFT",
+   "JFain"
+  ]
+ },
+ {
+  "what": "Retrato mewtwo",
+  "by": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite mewtwomegax",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato mewtwomegax",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite mewtwomegay",
+  "by": [
+   "JFain"
+  ]
+ },
+ {
+  "what": "Retrato mewtwomegay",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite rayquaza",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato rayquaza",
+  "by": [
+   "CHUNSOFT",
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Sprite rayquazamega",
+  "by": [
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Retrato rayquazamega",
+  "by": [
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Sprite garchomp",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato garchomp",
+  "by": [
+   "CHUNSOFT",
+   "Top_Kec",
+   "G〜"
+  ]
+ },
+ {
+  "what": "Sprite garchompmega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato garchompmega",
+  "by": [
+   "G〜"
+  ]
+ },
+ {
+  "what": "Sprite garchompmegaz",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato garchompmegaz",
+  "by": [
+   "Deeshura"
+  ]
+ },
+ {
+  "what": "Sprite gyarados",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato gyarados",
+  "by": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite gyaradosmega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato gyaradosmega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite greninja",
+  "by": [
+   "Jhony-Rex",
+   "Soulja"
+  ]
+ },
+ {
+  "what": "Retrato greninja",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite greninjamega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato greninjamega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite dragonite",
+  "by": [
+   "CHUNSOFT",
+   "SethY",
+   "Deeshura"
+  ]
+ },
+ {
+  "what": "Retrato dragonite",
+  "by": [
+   "CHUNSOFT",
+   "Emboarger",
+   "AlexGroeger"
+  ]
+ },
+ {
+  "what": "Sprite dragonitemega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato dragonitemega",
+  "by": [
+   "Deeshura",
+   "Crazy_Dragon"
+  ]
+ },
+ {
+  "what": "Sprite blaziken",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato blaziken",
+  "by": [
+   "CHUNSOFT",
+   "Noo"
+  ]
+ },
+ {
+  "what": "Sprite blazikenmega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato blazikenmega",
+  "by": [
+   "Sugi"
+  ]
+ },
+ {
+  "what": "Sprite scizor",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato scizor",
+  "by": [
+   "CHUNSOFT",
+   "Emboarger"
+  ]
+ },
+ {
+  "what": "Sprite scizormega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato scizormega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite metagross",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato metagross",
+  "by": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite metagrossmega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato metagrossmega",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite salamence",
+  "by": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Retrato salamence",
+  "by": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite salamencemega",
+  "by": [
+   "PokeRogue (pagefaultgames/pokerogue-assets) e os artistas creditados lá",
+   "animação por partes feita no jogo"
+  ]
+ },
+ {
+  "what": "Retrato salamencemega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite lopunny",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato lopunny",
+  "by": [
+   "CHUNSOFT",
+   "JFain"
+  ]
+ },
+ {
+  "what": "Sprite lopunnymega",
+  "by": [
+   "JFain"
+  ]
+ },
+ {
+  "what": "Retrato lopunnymega",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite sableye",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato sableye",
+  "by": [
+   "CHUNSOFT",
+   "PhillipsYoung"
+  ]
+ },
+ {
+  "what": "Sprite sableyemega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Retrato sableyemega",
+  "by": [
+   "Ichor",
+   "NOLASMOR"
+  ]
+ },
+ {
+  "what": "Sprite mawile",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato mawile",
+  "by": [
+   "CHUNSOFT",
+   "baronessfaron",
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite mawilemega",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Retrato mawilemega",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite kangaskhan",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato kangaskhan",
+  "by": [
+   "CHUNSOFT",
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Sprite kangaskhanmega",
+  "by": [
+   "Deeshura"
+  ]
+ },
+ {
+  "what": "Retrato kangaskhanmega",
+  "by": []
+ },
+ {
+  "what": "Sprite latios",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato latios",
+  "by": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite latiosmega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Retrato latiosmega",
+  "by": [
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Sprite darkrai",
+  "by": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Retrato darkrai",
+  "by": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite darkraimega",
+  "by": [
+   "Johanne2"
+  ]
+ },
+ {
+  "what": "Retrato darkraimega",
+  "by": [
+   "Deeshura"
+  ]
+ },
+ {
+  "what": "Sprite zeraora",
+  "by": [
+   "Emmuffin",
+   "Caitemis"
+  ]
+ },
+ {
+  "what": "Retrato zeraora",
+  "by": [
+   "Emmuffin",
+   "Top_Kec"
+  ]
+ },
+ {
+  "what": "Sprite zeraoramega",
+  "by": [
+   "pi3.14",
+   "DeltaL"
+  ]
+ },
+ {
+  "what": "Retrato zeraoramega",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Sprite excadrill",
+  "by": [
+   "Soulja",
+   "Skycloud383"
+  ]
+ },
+ {
+  "what": "Retrato excadrill",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite excadrillmega",
+  "by": [
+   "Soulja",
+   "pi3.14",
+   "DeltaL"
+  ]
+ },
+ {
+  "what": "Retrato excadrillmega",
+  "by": [
+   "G〜"
+  ]
+ },
+ {
+  "what": "Sprite skarmory",
+  "by": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "what": "Retrato skarmory",
+  "by": [
+   "CHUNSOFT",
+   "Noo"
+  ]
+ },
+ {
+  "what": "Sprite skarmorymega",
+  "by": [
+   "Johanne2"
+  ]
+ },
+ {
+  "what": "Retrato skarmorymega",
+  "by": [
+   "Sonikku_A"
+  ]
+ },
+ {
+  "what": "Sprite diancie",
+  "by": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "what": "Retrato diancie",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Sprite dianciemega",
+  "by": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "what": "Retrato dianciemega",
+  "by": [
+   "baronessfaron"
   ]
  },
  {

@@ -157,10 +157,11 @@ export class CpuController {
       if (mv.damage === 'level') bp = 75;
       if (mv.damage === 40) bp = 45;
       if (mv.ohko) bp = 45;
-      if (['counter', 'mirrorcoat'].includes(id)) {
+      if (['counter', 'mirrorcoat', 'metalburst'].includes(id)) {
         const a = foe.action;
-        const wanted = id === 'counter' ? 'Physical' : 'Special';
-        return a && a.type === 'windup' && MOVES[a.id]?.cat === wanted ? 150 : 2;
+        const cat = MOVES[a?.id]?.cat;
+        const ok = id === 'metalburst' ? cat && cat !== 'Status' : cat === (id === 'counter' ? 'Physical' : 'Special');
+        return a && a.type === 'windup' && ok ? 150 : 2;
       }
       if (id === 'bide') return 8;
       if (!bp) bp = 60;

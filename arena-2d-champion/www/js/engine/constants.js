@@ -16,7 +16,7 @@ export const WORLD_H = 1320;
 export const FIELD = { x: 180, y: 250, w: 1560, h: 880 };
 
 export const STAMINA_MAX = 100;
-export const GLOBAL_COOLDOWN = 0.9;
+export const GLOBAL_COOLDOWN = 0.55;
 export const STAMINA_REGEN = 13;
 // Esquiva é um dash rente ao chão (não um pulo)
 export const DODGE = { cost: 20, duration: 0.2, speed: 760, iframes: 0.26, cooldown: 0.5 };

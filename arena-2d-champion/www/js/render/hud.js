@@ -417,10 +417,15 @@ function drawMoveButton(g, b, m, k, c, ctl, i, beamIncoming, u, time) {
   g.beginPath(); g.arc(0, -r + 0.9 * u, 0.7 * u, 0, TAU); g.fill();
   g.strokeStyle = 'rgba(0,0,0,0.6)'; g.lineWidth = 1; g.stroke();
   // recarga
-  const cdFrac = Math.max(s.cd / (s.cdMax || 1), m.gcd > 0 ? m.gcd / (m.gcdMax || 1) : 0);
+  // a recarga do próprio golpe escurece bem; a pausa curta depois de qualquer golpe, só um pouco
+  const cdFrac = s.cd / (s.cdMax || 1);
+  const gFrac = m.gcd > 0 ? m.gcd / (m.gcdMax || 1) : 0;
   if (cdFrac > 0) {
     g.fillStyle = 'rgba(0,0,0,0.6)';
     g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + TAU * cdFrac); g.closePath(); g.fill();
+  } else if (gFrac > 0) {
+    g.fillStyle = 'rgba(0,0,0,0.28)';
+    g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, r, -Math.PI / 2, -Math.PI / 2 + TAU * gFrac); g.closePath(); g.fill();
   }
   g.globalAlpha = 1;
   if (answer) {

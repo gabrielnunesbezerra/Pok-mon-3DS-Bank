@@ -19,7 +19,6 @@
     "@capacitor/cli": "8.5.3",
     "@pkmn/dex": "0.10.11",
     "@smogon/sets": "2.0.0",
-    "omggif": "^1.0.10",
     "pngjs": "^7.0.0"
   }
 }

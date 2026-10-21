@@ -5,6 +5,7 @@ import { MOVES, ITEMS, STAT_PT, STATUS_PT, TYPE_PT, effectiveness } from '../dat
 import { LEVEL, FIELD_TURN, ACTION_TURN, BOOST_DURATION } from './constants.js';
 import {
   getStat, getSpeed, hasType, hasAbility, itemActive, isGrounded, weatherFor, isSun, isRain, accMult, hpFrac, itemRemovable,
+  moldBreaks, strongWinds,
 } from './mon.js';
 
 // ---------------------------------------------------------------- golpe "vivo"
@@ -25,6 +26,10 @@ export function liveMove(b, user, id) {
   if (id === 'terablast' && getStat(b, user, 'atk') > getStat(b, user, 'spa')) mv.cat = 'Physical';
   // Pixilate: golpes Normais viram Fada (e ficam 20% mais fortes em calcDamage)
   if (hasAbility(user, 'pixilate') && mv.type === 'Normal' && mv.cat !== 'Status' && id !== 'struggle') { mv.type = 'Fairy'; mv.ate = true; }
+  // Aerilate: golpes Normais viram Voadores
+  if (hasAbility(user, 'aerilate') && mv.type === 'Normal' && mv.cat !== 'Status' && id !== 'struggle') { mv.type = 'Flying'; mv.ate = true; }
+  // Prankster: golpes de status saem com prioridade
+  if (hasAbility(user, 'prankster') && mv.cat === 'Status') { mv.pri += 1; mv.prankster = true; }
   return mv;
 }
 
@@ -111,7 +116,8 @@ export function accuracyCheck(b, user, target, mv, ctx = {}) {
   if (target.vol.telekinesis) return true;
   let stage = user.boosts.accuracy;
   let eva = target.boosts.evasion;
-  if (target.vol.foresight && eva > 0) eva = 0;
+  if ((target.vol.foresight || hasAbility(user, 'keeneye')) && eva > 0) eva = 0;
+  if (hasAbility(target, 'sandveil') && weatherFor(b, target) === 'sandstorm' && !moldBreaks(user, mv)) acc *= 0.8;
   stage = Math.max(-6, Math.min(6, stage - eva));
   acc *= accMult(stage);
   if (itemActive(target) === 'brightpowder') acc *= 0.9;
@@ -130,6 +136,7 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (mv.id === 'endeavor') return { damage: Math.max(0, target.hp - user.hp), eff: eff === 0 ? 0 : 1, crit: false };
   let bp = basePower(b, user, target, mv, ctx);
   if (!bp) return { damage: 0, eff, crit: false };
+  if (hasAbility(user, 'technician') && bp <= 60) bp *= 1.5;
 
   // críticos
   let critStage = (mv.crit || 1) - 1;
@@ -152,6 +159,7 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (mv.ate) bp *= 1.2;
   if (hasAbility(user, 'sharpness') && mv.flags.includes('slicing')) bp *= 1.5;
   if (user.vol.flashfire && mv.type === 'Fire') bp *= 1.5;
+  if (user.vol.charge && mv.type === 'Electric') bp *= 2;
   const terrain = b.field.terrain?.id;
   if (terrain === 'grassyterrain') {
     if (mv.type === 'Grass' && isGrounded(b, user)) bp *= 1.3;
@@ -189,8 +197,10 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   let D = getStat(b, target, defKey, { ignorePositive: crit, noBoost: !!mv.ignoreDefensive });
 
   const third = user.hp * 3 <= user.maxhp;
-  if (third && ((hasAbility(user, 'overgrow') && mv.type === 'Grass') || (hasAbility(user, 'blaze') && mv.type === 'Fire') || (hasAbility(user, 'torrent') && mv.type === 'Water'))) A = Math.floor(A * 1.5);
-  if (hasAbility(target, 'thickfat') && (mv.type === 'Fire' || mv.type === 'Ice')) A = Math.floor(A * 0.5);
+  if (third && ((hasAbility(user, 'overgrow') && mv.type === 'Grass') || (hasAbility(user, 'blaze') && mv.type === 'Fire') || (hasAbility(user, 'torrent') && mv.type === 'Water') || (hasAbility(user, 'swarm') && mv.type === 'Bug'))) A = Math.floor(A * 1.5);
+  if (atkKey === 'atk' && atkSrc === user && hasAbility(user, 'hugepower')) A *= 2;
+  const breaks = moldBreaks(user, mv);
+  if (!breaks && hasAbility(target, 'thickfat') && (mv.type === 'Fire' || mv.type === 'Ice')) A = Math.floor(A * 0.5);
 
   let dmg = Math.floor(Math.floor((Math.floor((2 * LEVEL) / 5 + 2) * bp * A) / D) / 50) + 2;
 
@@ -211,6 +221,8 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   }
   if (item === 'lifeorb') dmg = Math.floor(dmg * 1.3);
   if (item === 'expertbelt' && eff > 1) dmg = Math.floor(dmg * 1.2);
+  // Multiscale: com PS cheios, metade do dano
+  if (!breaks && hasAbility(target, 'multiscale') && target.hp === target.maxhp) dmg = Math.floor(dmg * 0.5);
   if (eff > 0) dmg = Math.max(1, dmg);
   // o dano é o mesmo dos jogos; quem foi multiplicado foram os PS (HP_SCALE)
   return { damage: dmg, eff, crit };
@@ -221,11 +233,13 @@ export function typeEffect(b, user, target, mv) {
   let types = target.types;
   if (target.vol.roost) types = types.filter(t => t !== 'Flying');
   if (mv.type === 'Ground') {
-    if (!isGrounded(b, target)) return 0;
+    if (!isGrounded(b, target, moldBreaks(user, mv))) return 0;
     // derrubado por Smack Down (ou pousado com Roost): o tipo Voador não protege mais
     types = types.filter(t => t !== 'Flying');
   }
-  if (target.vol.foresight && (mv.type === 'Normal' || mv.type === 'Fighting')) types = types.filter(t => t !== 'Ghost');
+  if ((target.vol.foresight || hasAbility(user, 'scrappy')) && (mv.type === 'Normal' || mv.type === 'Fighting')) types = types.filter(t => t !== 'Ghost');
+  // ventos fortes: o tipo Voador não tem fraqueza
+  if (types.includes('Flying') && strongWinds(b) && effectiveness(mv.type, ['Flying']) > 1) types = types.filter(t => t !== 'Flying');
   if (types.length === 0) types = ['Normal'];
   return effectiveness(mv.type, types);
 }
@@ -254,7 +268,7 @@ export function damageMon(b, mon, amount, { source = null, mv = null, direct = f
     const fullHp = mon.hp === mon.maxhp;
     if (amount >= mon.hp) {
       if (mon.vol.endure) { amount = mon.hp - 1; b.say(`${mon.name} aguentou o golpe!`); }
-      else if (fullHp && hasAbility(mon, 'sturdy')) { amount = mon.hp - 1; b.say(`${mon.name} aguentou com Sturdy!`); }
+      else if (fullHp && hasAbility(mon, 'sturdy') && !moldBreaks(source, mv)) { amount = mon.hp - 1; b.say(`${mon.name} aguentou com Sturdy!`); }
       else if (mv?.id === 'falseswipe') amount = mon.hp - 1;
       else if (fullHp && itemActive(mon) === 'focussash') {
         amount = mon.hp - 1;
@@ -330,7 +344,7 @@ export function applyStatus(b, target, status, source, mv, { fromMove = false, r
   }
   const immune =
     (status === 'brn' && hasType(target, 'Fire')) ||
-    (status === 'par' && hasType(target, 'Electric')) ||
+    (status === 'par' && (hasType(target, 'Electric') || hasAbility(target, 'limber'))) ||
     ((status === 'psn' || status === 'tox') && (hasType(target, 'Poison') || hasType(target, 'Steel'))) ||
     (status === 'frz' && (hasType(target, 'Ice') || isSun(weatherFor(b, target)))) ||
     (status === 'slp' && (hasAbility(target, 'insomnia') || b.field.uproar > 0));
@@ -513,6 +527,11 @@ export function boost(b, mon, boosts, source, mv, { fromMove = false } = {}) {
   }
   for (const [stat, amount] of Object.entries(boosts)) {
     if (!amount) continue;
+    // habilidades que impedem o adversário de baixar atributos
+    if (amount < 0 && source && source.side !== mon.side && !moldBreaks(source, mv)) {
+      const guard = hasAbility(mon, 'clearbody') ? 'Clear Body' : hasAbility(mon, 'hypercutter') && stat === 'atk' ? 'Hyper Cutter' : hasAbility(mon, 'keeneye') && stat === 'accuracy' ? 'Keen Eye' : null;
+      if (guard) { b.say(`O ${guard} de ${mon.name} impediu a queda!`); continue; }
+    }
     const before = mon.boosts[stat];
     const after = Math.max(-6, Math.min(6, before + amount));
     const delta = after - before;

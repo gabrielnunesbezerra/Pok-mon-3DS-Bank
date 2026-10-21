@@ -3,7 +3,8 @@
 // pequena (cerca de 134 linhas) e ampliado sem suavizar, com os mesmos pixels grandes do sprite.
 import { gifFrame } from './sprites.js';
 
-const LINES = 134;
+const LINES = 170;
+const BASE_LINES = 134; // medidas da cena foram pensadas para 134 linhas
 
 // céu de cima para baixo; os últimos tons só aparecem perto do sol
 const SKY = ['#0b0d26', '#111336', '#191a46', '#251e56', '#382262', '#53286a', '#7a326f', '#a44470', '#cc626c', '#ea8a68', '#f8ac72', '#ffcf88', '#fff0b8'];
@@ -74,7 +75,7 @@ export class TitleScene {
     if (key === this.key || !W || !H) return;
     this.key = key;
     // pixels do tamanho certo para caber umas 134 linhas, mas sem deixar a área da Mega estreita demais
-    const P = Math.max(2, Math.min(Math.round((H * dpr) / LINES), Math.floor((st.width * dpr) / 150)));
+    const P = Math.max(2, Math.min(Math.round((H * dpr) / LINES), Math.floor((st.width * dpr) / 190)));
     const w = Math.ceil((W * dpr) / P), h = Math.ceil((H * dpr) / P);
     this.canvas.width = w;
     this.canvas.height = h;
@@ -85,9 +86,10 @@ export class TitleScene {
     this.h = h;
     this.cx = toPx(st.left - hr.left + st.width / 2);
     this.groundY = toPx(st.top - hr.top + st.height * 0.74);
-    this.horizon = this.groundY - 17;
-    this.sunR = Math.max(22, Math.min(40, Math.round(h * 0.3)));
-    this.sunY = this.horizon - 12;
+    const u = (this.u = h / BASE_LINES);
+    this.horizon = this.groundY - Math.round(17 * u);
+    this.sunR = Math.max(22, Math.min(Math.round(40 * u), Math.round(h * 0.3)));
+    this.sunY = this.horizon - Math.round(12 * u);
     const rand = random(7);
     this.stars = [];
     for (let i = 0; i < (w * this.horizon) / 140; i++) {
@@ -136,7 +138,7 @@ export class TitleScene {
 
   // Parte parada da cena (céu, sol, montanhas, chão e pedestal), refeita só quando o tamanho muda
   bake() {
-    const { w, h, cx, horizon, groundY, sunR, sunY } = this;
+    const { w, h, cx, horizon, groundY, sunR, sunY, u } = this;
     this.bg.width = w;
     this.bg.height = h;
     const img = new ImageData(w, h);
@@ -194,7 +196,7 @@ export class TitleScene {
     const tuft = pack('#4c8a58'), tuftDark = pack('#2c5a3e'), fl = ['#ff8fb8', '#ffe27a', '#ffffff'].map(pack);
     for (let n = 0; n < (w * (h - horizon)) / 30; n++) {
       const x = Math.floor(rand() * w), y = horizon + 3 + Math.floor(rand() * (h - horizon - 3));
-      if (Math.abs(x - cx) < 62 && Math.abs(y - groundY) < 16) continue;
+      if (Math.abs(x - cx) < 62 * u && Math.abs(y - groundY) < 16 * u) continue;
       if (rand() < 0.8) {
         px[y * w + x] = tuft;
         if (y > 0) px[(y - 1) * w + x] = tuftDark;
@@ -205,7 +207,7 @@ export class TitleScene {
     }
 
     // pedestal de pedra
-    const rx = 52, ry = 11, cy = groundY - 1;
+    const rx = Math.round(52 * u), ry = Math.round(11 * u), cy = groundY - 1;
     const fillEllipse = (ecx, ecy, erx, ery, col, edge) => {
       const c = pack(col), e = edge ? pack(edge) : 0;
       for (let y = -ery; y <= ery; y++) {
@@ -234,7 +236,7 @@ export class TitleScene {
       for (let k = 0; k < len; k++) if (y - k >= 0 && y - k < h) px[(y - k) * w + cx + x] = k === len - 1 ? tuft : tuftDark;
     }
     // sombra da Mega
-    fillEllipse(cx, groundY, 32, 4, '#454a74');
+    fillEllipse(cx, groundY, Math.round(34 * u), Math.round(4 * u), '#454a74');
     this.bg.getContext('2d').putImageData(img, 0, 0);
   }
 
@@ -242,7 +244,7 @@ export class TitleScene {
     this.layout();
     if (!this.w) return;
     this.t += dt;
-    const { g, t, w, cx, groundY } = this;
+    const { g, t, w, cx, groundY, u } = this;
     g.imageSmoothingEnabled = false;
     g.drawImage(this.bg, 0, 0);
 
@@ -265,19 +267,19 @@ export class TitleScene {
     }
 
     const sh = this.sheet;
-    const bodyY = groundY - 28;
+    const bodyY = groundY - Math.round(30 * u);
     // a cada 6 s, uma onda da Mega Evolução sai de trás dela
     const cyc = (t - 1.2) % 6;
     if (t > 1.2 && cyc < 1.3) {
       const k = cyc / 1.3;
-      const r = 8 + k * 78;
+      const r = (8 + k * 78) * u;
       ellipseRing(g, cx, bodyY, r, r, RING[Math.floor(t * 14) % RING.length]);
       ellipseRing(g, cx, bodyY, Math.max(1, r - 3), Math.max(1, r - 3), RING[(Math.floor(t * 14) + 2) % RING.length]);
       ellipseRing(g, cx, groundY + 2, r * 1.3, r * 0.26, '#ffe9a8');
       const n = Math.floor((t - 1.2) / 6);
       if (n !== this.pulseShown) {
         this.pulseShown = n;
-        for (let i = 0; i < 10; i++) this.spark(cx + (Math.random() - 0.5) * 90, bodyY + (Math.random() - 0.5) * 56);
+        for (let i = 0; i < 10; i++) this.spark(cx + (Math.random() - 0.5) * 100 * u, bodyY + (Math.random() - 0.5) * 60 * u);
       }
     }
 
@@ -295,7 +297,7 @@ export class TitleScene {
 
   // pétalas saindo da flor, esporos subindo do chão e brilhos em volta
   particles(dt) {
-    const { g, t, w, h, cx, groundY } = this;
+    const { g, t, w, h, cx, groundY, u } = this;
     this.emit += dt;
     while (this.emit > 0.22) {
       this.emit -= 0.22;
@@ -303,7 +305,7 @@ export class TitleScene {
       if (this.petals.length < 60) {
         const fromFlower = Math.random() < 0.65;
         this.petals.push({
-          x: fromFlower ? cx + (Math.random() - 0.5) * 40 : Math.random() * w * 0.9 - 20,
+          x: fromFlower ? cx + (Math.random() - 0.5) * 44 * u : Math.random() * w * 0.9 - 20,
           y: fromFlower ? top + Math.random() * 8 : -2,
           vx: 6 + Math.random() * 12, vy: fromFlower ? -6 - Math.random() * 8 : 4 + Math.random() * 5,
           ph: Math.random() * 6.3, life: 0, dur: 5 + Math.random() * 4,
@@ -311,9 +313,9 @@ export class TitleScene {
         });
       }
       if (this.spores.length < 26 && Math.random() < 0.7) {
-        this.spores.push({ x: cx + (Math.random() - 0.5) * 120, y: groundY + (Math.random() - 0.3) * 10, vy: -(4 + Math.random() * 6), ph: Math.random() * 6.3, life: 0, dur: 3 + Math.random() * 3 });
+        this.spores.push({ x: cx + (Math.random() - 0.5) * 120 * u, y: groundY + (Math.random() - 0.3) * 10 * u, vy: -(4 + Math.random() * 6), ph: Math.random() * 6.3, life: 0, dur: 3 + Math.random() * 3 });
       }
-      if (Math.random() < 0.35) this.spark(cx + (Math.random() - 0.5) * 80, groundY - 10 - Math.random() * 50);
+      if (Math.random() < 0.35) this.spark(cx + (Math.random() - 0.5) * 90 * u, groundY - 10 * u - Math.random() * 60 * u);
     }
 
     for (const p of this.petals) {
