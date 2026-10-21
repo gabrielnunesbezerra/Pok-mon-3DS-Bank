@@ -218,3 +218,21 @@ test('treino: sem relógio e o boneco não morre', () => {
   correr(l, 5, [null, null]);
   assert.equal(l.reloj, r0);
 });
+
+test('linhas de uma evolução evoluem uma vez só e a Mega muda as skills de verdade', () => {
+  for (const id of ['onix', 'munchlax', 'buneary', 'riolu']) {
+    const p = ROSTER.find(x => x.id === id);
+    assert.equal(p.evoluciones.length, 1, id);
+  }
+  for (const p of ROSTER) {
+    const fin = p.evoluciones.at(-1);
+    if (!fin.mega) continue;
+    const l = nuevaLuta(p.id, 'munchlax', { etapas: [p.evoluciones.length, 0] });
+    const [a] = l.luchadores;
+    const antes = JSON.stringify(a.kit);
+    a.mega = true; a.kit = a.kitActual();
+    const cambian = ['lmb', 'rmb', 'esp', 'q', 'e'].filter(s => JSON.stringify(a.kit[s]) !== JSON.stringify(JSON.parse(antes)[s]));
+    assert.equal(cambian.length, 5, `${p.id}: a Mega deve mexer nas 5 skills`);
+    assert.notEqual(a.kit.lmb.nombre, JSON.parse(antes).lmb.nombre, `${p.id}: nome novo na Mega`);
+  }
+});

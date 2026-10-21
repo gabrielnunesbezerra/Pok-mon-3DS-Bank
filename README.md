@@ -10,6 +10,9 @@ Batalha 1 contra 1 de Pokémon em tempo real numa arena oval. Projeto de fã, se
 - **Modos**: VS CPU (easy, normal, hard), 2 PLAYERS no mesmo teclado, TRAINING (boneco que não morre) e TUTORIAL.
 - **Controles**: teclado e mouse, teclado do jogador 2, controle (gamepad) e toque no celular.
 - Pokédex com os estágios, Megas e as 5 skills de cada um.
+- **Celular em primeiro lugar**: a tela do jogo se estica até preencher o aparelho (de 16:9 até 25:9, sem faixas pretas), analógico flutuante à esquerda, botões redondos em arco à direita, cada um com o símbolo da skill, a cor do tipo, anel de recarga e custo de energia. Botão de EVO/MEGA aparece quando a evolução está pronta.
+- **Evolução com cena**: a forma antiga brilha até virar silhueta, uma coluna de luz sobe e a forma nova aparece (a Mega tem uma cena dourada mais longa). Linhas de uma só evolução evoluem uma vez.
+- **Megas de verdade**: cada Mega ganha versões novas das 5 skills (mais golpes, alcance, explosões, tipo Dragão no Charizard X), não só mais dano.
 
 ## Controles
 
