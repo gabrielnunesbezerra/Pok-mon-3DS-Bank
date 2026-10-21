@@ -19,31 +19,72 @@ export class Seleccion {
     this.modo = datos.modo ?? 'cpu';
     this.t = 0;
     const ant = app.ultimaSeleccion;
-    this.elegido = [ant?.[0] ?? 0, this.modo === 'entreno' ? 1 : (ant?.[1] ?? Math.floor(Math.random() * ROSTER.length))];
-    this.cursor = this.elegido[0];
-    this.lado = 0; // quem está sendo editado: 0 = jogador 1, 1 = oponente
+    const azar = () => Math.floor(Math.random() * ROSTER.length);
+    this.online = this.modo === 'online' ? app.online : null;
+    this.n = this.modo === 'arena' ? 3 : this.online ? this.online.n : 2;
+    this.mi = this.online ? this.online.lado : 0; // meu lugar na luta
+    this.elegido = this.online ? Array.from({ length: this.n }, (_, i) => (i === this.mi ? (ant?.[0] ?? 0) : -1)) : [ant?.[0] ?? 0, this.modo === 'entreno' ? 1 : (ant?.[1] ?? azar()), this.n === 3 ? (ant?.[2] ?? azar()) : -1];
+    this.arenaPronta = null;
+    this.cursor = this.elegido[this.mi];
+    this.lado = this.mi; // quem está sendo editado: 0 = jogador 1, 1 e 2 = oponentes
     this.nivel = app.ajustes.nivel ?? 'normal';
     this.arena = Math.max(0, ARENAS.findIndex(a => a.id === app.ajustes.arena));
     this.foco = 'grade'; // 'grade' | 'arena' | 'nivel' | 'luchar' | 'volver'
-    this.aleatorio = [false, this.modo !== 'versus'];
+    this.aleatorio = [false, this.modo !== 'versus' && !this.online, this.n === 3 && !this.online];
+    if (this.online) this.preparar();
   }
 
   entrar() { for (const p of ROSTER) { const f = [p, ...(p.evoluciones ?? [])]; for (const x of f) { this.app.bank.hoja(x.dex, 'Idle'); this.app.bank.retrato(x.dex); } } }
 
-  atras() { sfx('atras'); this.app.ir('titulo', { menu: 'jugar' }); }
+  atras() {
+    sfx('atras');
+    if (this.online) { this.online.cerrar(); this.app.online = null; return this.app.ir('titulo'); }
+    this.app.ir('titulo', { menu: 'jugar' });
+  }
+
+  // ---------------------------------------------------------------- online: cada um escolhe o seu; o anfitrião (lugar 0) sorteia a semente e manda começar
+  preparar() {
+    const o = this.online;
+    this.listo = false; this.esperaTxt = '';
+    o.alOtro = m => {
+      if (m.t === 'pick') { this.elegido[m.lado] = m.i; if (m.lado === 0 && m.arena != null) this.arenaPronta = m.arena; this.revisar(); }
+      else if (m.t === 'start') this.empezarOnline(m);
+    };
+    o.alCerrar = () => { this.esperaTxt = 'OPPONENT LEFT'; this.cerrado = true; setTimeout(() => this.atras(), 1600); };
+  }
+  revisar() {
+    const o = this.online;
+    if (!this.listo || this.elegido.some(i => i < 0) || this.mi !== 0) return;
+    const msg = { t: 'start', semilla: (Math.random() * 1e9) | 0, picks: this.elegido.map(i => ROSTER[i].id), arena: ARENAS[this.arena].id };
+    o.enviar(msg);
+    this.empezarOnline(msg);
+  }
+  empezarOnline(m) {
+    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, arena: m.arena, semilla: m.semilla });
+  }
   luchar() {
     const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
+    if (this.online) {
+      if (this.listo || this.cerrado) return;
+      sfx('confirmar');
+      this.listo = true; this.esperaTxt = 'WAITING FOR THE OTHERS...';
+      this.app.ultimaSeleccion = [this.elegido[this.mi]];
+      this.online.enviar({ t: 'pick', lado: this.mi, i: this.elegido[this.mi], arena: ARENAS[this.arena].id });
+      return this.revisar();
+    }
     this.app.ultimaSeleccion = [...this.elegido];
     this.app.ajustes.nivel = this.nivel; this.app.ajustes.arena = ARENAS[this.arena].id; this.app.guardarAjustes();
     sfx('confirmar');
-    this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, arena: ARENAS[this.arena].id, nivel: this.nivel });
+    const j = this.n === 3 && this.aleatorio[2] ? Math.floor(Math.random() * ROSTER.length) : this.elegido[2];
+    this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, p3: this.n === 3 ? ROSTER[j].id : null, arena: ARENAS[this.arena].id, nivel: this.nivel });
   }
 
   elegirCarta(i) {
+    if (this.online && this.listo) return;
     this.elegido[this.lado] = i;
     this.aleatorio[this.lado] = false;
     sfx('confirmar');
-    if (this.lado === 0 && this.modo !== 'entreno') { this.lado = 1; this.cursor = this.elegido[1]; }
+    if (!this.online && this.lado < this.n - 1 && this.modo !== 'entreno') { this.lado++; this.cursor = this.elegido[this.lado]; }
     else this.foco = 'luchar';
   }
 
@@ -51,8 +92,8 @@ export class Seleccion {
     if (!nueva) return;
     const n = ROSTER.length;
     if (c === 'Escape' || c === 'Backspace') return this.atras();
-    if (c === 'Tab') { if (this.modo !== 'entreno') { this.lado = 1 - this.lado; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
-    if (c === 'KeyR' && this.foco === 'grade' && this.lado === 1 && this.modo === 'cpu') { this.aleatorio[1] = true; this.elegido[1] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
+    if (c === 'Tab') { if (this.modo !== 'entreno' && !this.online) { this.lado = (this.lado + 1) % this.n; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
+    if (c === 'KeyR' && this.foco === 'grade' && this.lado >= 1 && (this.modo === 'cpu' || this.modo === 'arena')) { this.aleatorio[this.lado] = true; this.elegido[this.lado] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
     const dx = ['ArrowRight', 'KeyD'].includes(c) ? 1 : ['ArrowLeft', 'KeyA'].includes(c) ? -1 : 0;
     const dy = ['ArrowDown', 'KeyS'].includes(c) ? 1 : ['ArrowUp', 'KeyW'].includes(c) ? -1 : 0;
     const accion = ['Enter', 'Space', 'NumpadEnter'].includes(c);
@@ -61,7 +102,7 @@ export class Seleccion {
       if (dy) { const f = Math.floor(this.cursor / 3) + dy; if (f > 2) this.foco = 'arena'; else if (f >= 0) this.cursor = f * 3 + (this.cursor % 3); sfx('seleccion'); }
       if (accion) this.elegirCarta(this.cursor);
     } else {
-      const orden = this.modo === 'cpu' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
+      const orden = this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
       const i = orden.indexOf(this.foco);
       if (dy) { const j = i + dy; if (j < 0) this.foco = 'grade'; else if (j < orden.length) this.foco = orden[j]; sfx('seleccion'); }
       if (this.foco === 'arena' && dx) { this.arena = (this.arena + dx + ARENAS.length) % ARENAS.length; sfx('seleccion'); }
@@ -80,8 +121,8 @@ export class Seleccion {
     if (dentro(this.cajaLuchar())) return this.luchar();
     if (dentro(this.cajaArena(-1))) { this.arena = (this.arena - 1 + ARENAS.length) % ARENAS.length; sfx('seleccion'); return; }
     if (dentro(this.cajaArena(1))) { this.arena = (this.arena + 1) % ARENAS.length; sfx('seleccion'); return; }
-    if (this.modo === 'cpu') { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
-    if (this.modo !== 'entreno') { if (dentro({ x: 4, y: 38, w: 178, h: 24 })) { this.lado = 0; this.cursor = this.elegido[0]; sfx('seleccion'); } if (dentro({ x: 458, y: 38, w: 178, h: 24 })) { this.lado = 1; this.cursor = this.elegido[1]; sfx('seleccion'); } }
+    if (this.modo === 'cpu' || this.modo === 'arena') { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
+    if (this.modo !== 'entreno' && !this.online) { if (dentro({ x: 4, y: 38, w: 178, h: 24 })) { this.lado = 0; this.cursor = this.elegido[0]; sfx('seleccion'); } if (dentro({ x: 458, y: 38, w: 178, h: 24 })) { this.lado = this.lado === 1 && this.n === 3 ? 2 : 1; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } }
   }
   cajaVolver() { return { x: 4, y: 4, w: 70, h: 18 }; }
   cajaLuchar() { return { x: ANCHO / 2 - 64, y: 308, w: 128, h: 28 }; }
@@ -95,13 +136,16 @@ export class Seleccion {
     fondoMenu(g, ANCHO, ALTO);
     marco(g, 0, 0, ANCHO, 26, 'panel');
     const v = this.cajaVolver(); marco(g, v.x, v.y, v.w, v.h); texto(g, '< MENU', v.x + v.w / 2, v.y + v.h / 2, { tam: 7, align: 'center', base: 'middle' });
-    texto(g, this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
+    texto(g, this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : this.modo === 'arena' ? 'ARENA · 3 FIGHTERS' : this.online ? `ONLINE · ${this.n} PLAYERS` : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
     // painéis laterais
-    this.panel(g, 0, 4, t);
-    this.panel(g, 1, 458, t);
+    // painel esquerdo: o meu (ou o jogador 1). Direito: o oponente em edição (arena: 1 ou 2) ou o primeiro oponente online
+    const izq = this.online ? this.mi : 0;
+    const der = this.online ? [...this.elegido.keys()].find(k => k !== this.mi) : this.lado >= 1 ? this.lado : 1;
+    this.panel(g, izq, 4, t, 0);
+    this.panel(g, der, 458, t, 1);
     // grade
     ROSTER.forEach((p, i) => {
-      const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno';
+      const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno', sel2 = this.n === 3 && this.elegido[2] === i;
       const foco = this.cursor === i && this.foco === 'grade';
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
@@ -109,7 +153,8 @@ export class Seleccion {
       texto(g, p.nombre, c.x + 44, c.y + 8, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 48 });
       p.tipos.forEach((tp, k) => { rect(g, c.x + 44 + k * 14, c.y + 22, 12, 7, '#04102c'); rect(g, c.x + 45 + k * 14, c.y + 23, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
-      if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
+      if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
+      if (sel2) { rect(g, c.x - 2, c.y + c.h - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y + c.h - 4, 20, 8, '#4ade80'); texto(g, this.modo === 'arena' ? 'CPU2' : 'P3', c.x + 9, c.y + c.h, { tam: 5, align: 'center', base: 'middle' }); }
     });
     // opções
     const fila = (y, etiqueta, valor, enfocado, cajaIzq, cajaDer) => {
@@ -120,27 +165,29 @@ export class Seleccion {
       texto(g, '>', cajaDer.x + 10, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
     };
     fila(232, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
-    if (this.modo === 'cpu') fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
+    if (this.modo === 'cpu' || this.modo === 'arena') fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
     const l = this.cajaLuchar();
     marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
-    texto(g, 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
-    texto(g, this.modo === 'cpu' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE', ANCHO / 2, ALTO - 10, { tam: 6, color: UI.apagado, align: 'center' });
+    texto(g, this.online ? (this.listo ? 'WAITING...' : 'READY!') : 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
+    texto(g, this.esperaTxt || (this.modo === 'cpu' || this.modo === 'arena' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
   }
 
-  panel(g, lado, x0, t) {
+  panel(g, lado, x0, t, pos = lado) {
     const bank = this.app.bank;
-    if (lado === 1 && this.modo === 'entreno') { marco(g, x0, 30, 178, 270, 'panel'); texto(g, 'DUMMY', x0 + 89, 52, { tam: 10, align: 'center', color: UI.suave }); texto(g, 'Stands still, takes hits.\nNo timer.', x0 + 89, 80, { tam: 7, align: 'center', color: UI.suave }); return; }
-    const idx = lado === 1 && this.aleatorio[1] && this.modo === 'cpu' ? -1 : this.elegido[lado];
-    const activo = this.lado === lado && this.modo !== 'entreno';
+    if (pos === 1 && this.modo === 'entreno') { marco(g, x0, 30, 178, 270, 'panel'); texto(g, 'DUMMY', x0 + 89, 52, { tam: 10, align: 'center', color: UI.suave }); texto(g, 'Stands still, takes hits.\nNo timer.', x0 + 89, 80, { tam: 7, align: 'center', color: UI.suave }); return; }
+    const idx = lado >= 1 && this.aleatorio[lado] && (this.modo === 'cpu' || this.modo === 'arena') ? -1 : this.elegido[lado];
+    const activo = this.lado === lado && this.modo !== 'entreno' && !this.online;
     marco(g, x0, 30, 178, 270, 'panel');
-    rect(g, x0 + 2, 31, 174, 14, lado === 0 ? '#1f4f9a' : '#9a2a2a');
-    texto(g, lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2', x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });
+    const color = ['#1f4f9a', '#9a2a2a', '#2f7d46'][lado] ?? '#9a2a2a';
+    const nombre = this.online ? (lado === this.mi ? 'YOU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2';
+    rect(g, x0 + 2, 31, 174, 14, color);
+    texto(g, nombre, x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });
     if (activo) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(x0 + 1, 31, 176, 268); }
-    if (idx < 0) { texto(g, 'RANDOM', x0 + 89, 140, { tam: 14, align: 'center', color: '#ffd23c', borde: 3 }); texto(g, '?', x0 + 89, 110, { tam: 30, align: 'center', color: '#fff', borde: 4 }); return; }
+    if (idx < 0) { texto(g, this.online ? 'CHOOSING...' : 'RANDOM', x0 + 89, 140, { tam: 14, align: 'center', color: '#ffd23c', borde: 3 }); texto(g, '?', x0 + 89, 110, { tam: 30, align: 'center', color: '#fff', borde: 4 }); return; }
     const p = ROSTER[idx];
     const forma = [p, ...(p.evoluciones ?? [])];
     // sprite grande
-    const fila = lado === 0 ? 2 : 6;
+    const fila = pos === 0 ? 2 : 6;
     g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x0 + 89, 118, 26, 6, 0, 0, 7); g.fill();
     bank.dibujar(g, p.dex, 'Idle', t, x0 + 89, 118, 2, { fila });
     texto(g, p.nombre, x0 + 89, 126, { tam: 9, align: 'center', color: '#fff', borde: 3 });

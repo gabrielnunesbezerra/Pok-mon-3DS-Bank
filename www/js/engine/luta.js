@@ -8,7 +8,7 @@ import { Habilidades } from './habilidades.js';
 import { sembrar } from './util.js';
 
 export class Luta {
-  constructor({ p1, p2, etapas = [0, 0], modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
+  constructor({ p1, p2, p3 = null, etapas = [0, 0, 0], modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
     sembrar(semilla);
     this.modo = modo;
     this.arena = arena;
@@ -21,8 +21,8 @@ export class Luta {
     this.pausaGolpe = 0;
     this.escalaTiempo = 1;
     this.habilidades = new Habilidades(this);
-    this.luchadores = [p1, p2].map((def, i) => new Lutador(this, def, i, etapas[i] ?? 0));
-    this.victorias = [0, 0];
+    this.luchadores = [p1, p2, p3].filter(Boolean).map((def, i) => new Lutador(this, def, i, etapas[i] ?? 0));
+    this.victorias = this.luchadores.map(() => 0);
     this.numRonda = 1;
     this.reloj = REGLAS.tiempoRonda;
     this.fase = 'intro';
@@ -39,8 +39,9 @@ export class Luta {
 
   // clones (Double Team) e fumaça
   blancos(dueno) {
-    const r = dueno.rival;
-    return r ? [r, ...(r.clones ?? [])].filter(b => !b.ko) : [];
+    const lista = [];
+    for (const o of this.luchadores) if (o !== dueno && !o.ko) lista.push(o, ...(o.clones ?? []));
+    return lista.filter(b => !b.ko);
   }
   enHumo(l) { return this.entidades.some(e => e.tipo === 'humo' && e.dueno !== l && Math.hypot(e.x - l.x, e.y - l.y) < e.radio); }
   humoFrena(l) { return this.entidades.filter(e => e.tipo === 'humo' && e.dueno !== l).reduce((m, e) => Math.max(m, Math.hypot(e.x - l.x, e.y - l.y) < e.radio ? e.frena : 0), 0); }
@@ -52,12 +53,13 @@ export class Luta {
     const sep = 166;
     this.luchadores[0].reiniciar(OVALO.cx - sep, OVALO.cy);
     this.luchadores[1].reiniciar(OVALO.cx + sep, OVALO.cy);
+    this.luchadores[2]?.reiniciar(OVALO.cx, OVALO.cy + 112);
     if (this.entreno) this.luchadores[1].inmortal = true;
     this.reloj = REGLAS.tiempoRonda;
     this.escalaTiempo = 1;
     this.fase = 'intro';
     this.inicioRonda = this.t;
-    const final = this.victorias[0] === REGLAS.rondasParaGanar - 1 && this.victorias[1] === REGLAS.rondasParaGanar - 1;
+    const final = this.victorias.filter(v => v === REGLAS.rondasParaGanar - 1).length >= 2;
     this.emit({ t: 'ronda', n: this.numRonda, final });
     if (this.entreno) { this.emit({ t: 'anuncio', txt: 'TRAINING', color: '#f8c448' }); this.programar(0.9, () => { this.fase = 'lucha'; }); return; }
     if (this.rapido) { this.fase = 'lucha'; return; }
@@ -68,9 +70,12 @@ export class Luta {
 
   alKO(caido) {
     if (this.fase !== 'lucha') return;
+    const vivos = this.luchadores.filter(l => !l.ko);
+    // todos contra todos: a rodada só acaba quando sobra um lutador de pé
+    if (vivos.length > 1) { this.emit({ t: 'ko', l: caido, ganador: -1, parcial: true }); return; }
     this.fase = 'ko';
-    const ganador = 1 - caido.lado;
-    this.victorias[ganador]++;
+    const ganador = vivos.length ? vivos[0].lado : -1;
+    if (ganador >= 0) this.victorias[ganador]++;
     this.emit({ t: 'ko', l: caido, ganador });
     if (!this.rapido) { this.hitstop(160); this.escalaTiempo = 0.3; this.programar(1.3 * 0.3, () => { this.escalaTiempo = 1; }); }
     this.programar(this.rapido ? 0.01 : 2.6 * 0.3 + 0.5, () => this.siguiente());
@@ -78,17 +83,18 @@ export class Luta {
 
   tiempoAgotado() {
     this.fase = 'ko';
-    const [a, b] = this.luchadores, fa = a.hp / a.hpMax, fb = b.hp / b.hpMax;
-    const hay = Math.abs(fa - fb) > 0.001;
-    if (hay) this.victorias[fa > fb ? 0 : 1]++;
-    this.emit({ t: 'tiempo', ganador: hay ? (fa > fb ? 0 : 1) : -1 });
+    const fr = this.luchadores.map(l => (l.ko ? -1 : l.hp / l.hpMax)), mx = Math.max(...fr);
+    const lideres = fr.filter(f => Math.abs(f - mx) <= 0.001).length;
+    const ganador = lideres === 1 ? fr.indexOf(mx) : -1;
+    if (ganador >= 0) this.victorias[ganador]++;
+    this.emit({ t: 'tiempo', ganador });
     this.programar(this.rapido ? 0.01 : 2.2, () => this.siguiente());
   }
 
   siguiente() {
     if (Math.max(...this.victorias) >= REGLAS.rondasParaGanar) {
       this.fase = 'fin';
-      this.fin = { ganador: this.victorias[0] > this.victorias[1] ? 0 : 1 };
+      this.fin = { ganador: this.victorias.indexOf(Math.max(...this.victorias)) };
       this.emit({ t: 'fin', ganador: this.fin.ganador });
       return;
     }
@@ -103,7 +109,7 @@ export class Luta {
     this.t += dt;
     if (this.fase === 'fin') return;
     const activos = this.fase === 'lucha' || this.fase === 'ko';
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < this.luchadores.length; i++) {
       const l = this.luchadores[i];
       if (this.fase === 'intro') continue;
       l.update(dt, this.fase === 'lucha' ? intentos?.[i] ?? null : null);
@@ -129,15 +135,18 @@ export class Luta {
 
   // os dois lutadores não se atravessam (exceto em dash, salto, voo ou escondido)
   separar() {
-    const [a, b] = this.luchadores;
-    if (a.ko || b.ko || a.dash || b.dash || a.salto || b.salto || a.est.vuelo || b.est.vuelo) return;
-    let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
-    const min = RADIO * 2;
-    if (d >= min) return;
-    if (d < 0.01) { dx = 1; dy = 0; d = 1; }
-    const s = (min - d) / 2;
-    const pa = limitarCampo(a.x - (dx / d) * s, a.y - (dy / d) * s), pb = limitarCampo(b.x + (dx / d) * s, b.y + (dy / d) * s);
-    a.x = pa.x; a.y = pa.y; b.x = pb.x; b.y = pb.y;
+    const L = this.luchadores;
+    for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
+      const a = L[i], b = L[j];
+      if (a.ko || b.ko || a.dash || b.dash || a.salto || b.salto || a.est.vuelo || b.est.vuelo) continue;
+      let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+      const min = RADIO * 2;
+      if (d >= min) continue;
+      if (d < 0.01) { dx = 1; dy = 0; d = 1; }
+      const s = (min - d) / 2;
+      const pa = limitarCampo(a.x - (dx / d) * s, a.y - (dy / d) * s), pb = limitarCampo(b.x + (dx / d) * s, b.y + (dy / d) * s);
+      a.x = pa.x; a.y = pa.y; b.x = pb.x; b.y = pb.y;
+    }
   }
 
   // treino: dano por segundo, combo, recarga automática em 3 s e boneco que se cura

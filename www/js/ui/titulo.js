@@ -11,12 +11,14 @@ const MENUS = {
   principal: [
     { id: 'jugar', txt: 'PLAY', menu: 'jugar', ico: 'pokeball' },
     { id: 'pokedex', txt: 'POKÉDEX', escena: 'pokedex', ico: 'libro' },
+    { id: 'online', txt: 'ONLINE', escena: 'online', ico: 'dos' },
     { id: 'tutorial', txt: 'TUTORIAL', escena: 'combate', datos: { modo: 'tutorial' }, ico: 'ayuda' },
     { id: 'ajustes', txt: 'SETTINGS', menu: 'ajustes', ico: 'engranaje' },
     { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas' },
   ],
   jugar: [
     { id: 'cpu', txt: 'VS CPU', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot' },
+    { id: 'arena', txt: 'ARENA (3 FIGHTERS)', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas' },
     { id: 'versus', txt: '2 PLAYERS', escena: 'seleccion', datos: { modo: 'versus' }, ico: 'dos' },
     { id: 'entreno', txt: 'TRAINING', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana' },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },

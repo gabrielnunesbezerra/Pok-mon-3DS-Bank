@@ -2,7 +2,7 @@
 // e cuida de pausa e tela de resultado.
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, UI, FUENTE } from '../config.js';
 
-const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a'];
+const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80'];
 import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
@@ -16,6 +16,7 @@ import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
 import { ListaBotones } from './menus.js';
 import { sfx, silenciar, activarMusica, pararMusica } from '../audio.js';
+import { TICK } from '../config.js';
 
 const ANIMS_BASE = ['Idle', 'Walk', 'Attack', 'Hurt'];
 const formasDe = def => [def, ...(def.evoluciones ?? [])].flatMap(f => (f.mega ? [f.dex, f.mega.dex] : [f.dex]));
@@ -37,7 +38,7 @@ export class Combate {
 
   entrar() {
     const app = this.app, d = this.datos, bank = app.bank;
-    const defs = [defDe(d.p1), defDe(d.p2)];
+    const defs = [defDe(d.p1), defDe(d.p2), d.p3 ? defDe(d.p3) : null].filter(Boolean);
     for (const def of defs) for (const dex of formasDe(def)) {
       for (const n of ANIMS_BASE) bank.hoja(dex, bank.resolver(dex, n));
       bank.retrato(dex);
@@ -57,20 +58,33 @@ export class Combate {
 
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], etapas: d.etapas ?? [0, 0], modo: d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: (Math.random() * 1e9) | 0 });
+    const online = d.modo === 'online';
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, etapas: d.etapas ?? [0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
-    app.tactil.l = a; app.tactil.alPausa = () => this.alternarPausa();
+    this.lado = online ? d.lado : 0;
+    this.sesion = online ? app.online : null;
+    app.tactil.l = luta.luchadores[this.lado]; app.tactil.alPausa = () => this.alternarPausa();
     app.tactil.extras = d.modo === 'entreno' ? [
       { x: ANCHO - 208, y: 52, w: 62, h: 24, txt: () => 'RELOAD', al: () => this.recargar() },
       { x: ANCHO - 140, y: 52, w: 88, h: 24, txt: () => (this.ctrls[1]?.quieto ? 'DUMMY: STILL' : 'DUMMY: MOVES'), al: () => this.alternarMuneco() },
     ] : [];
-    this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
-    if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
-    else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
-    else this.ctrls.push(new IA(luta, b, d.nivel));
-    this.humanos = d.modo === 'versus' ? [0, 1] : [0];
+    if (online) {
+      this.ctrls = luta.luchadores.map((l, i) => (i === this.lado ? new ControlHumano(app, luta, l, tactil ? 'tactil' : 'kbm', this.camara) : null));
+      this.humanos = [this.lado];
+      this.sesion.reiniciar(d.semilla);
+      this.sesion.alOtro = m => this.mensajeOnline(m);
+      this.sesion.alCerrar = () => { this.rivalFuera = true; };
+      this.quiereOtra = new Set();
+    } else {
+      this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
+      if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
+      else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
+      else this.ctrls.push(new IA(luta, b, d.nivel));
+      if (luta.luchadores[2]) this.ctrls.push(new IA(luta, luta.luchadores[2], d.nivel));
+      this.humanos = d.modo === 'versus' ? [0, 1] : [0];
+    }
     if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
     if (!app.tactil.activo) app.canvas.style.cursor = 'none';
     this.menuPausa = null;
@@ -88,11 +102,12 @@ export class Combate {
   tecla(c, nueva) {
     if (!nueva) return;
     if (this.luta?.fase === 'fin') {
-      if (c === 'KeyR') return this.revancha();
-      if (c === 'Escape' || c === 'Backspace') return this.volver();
+      if (c === 'KeyR') return this.sesion ? this.pedirOtra() : this.revancha();
+      if (c === 'Escape' || c === 'Backspace') return this.sesion ? this.salirOnline() : this.volver();
       return this.resultado?.lista.tecla(c);
     }
-    if (c === 'Escape' || c === 'KeyP' && this.datos.modo !== 'versus') return this.alternarPausa();
+    if (this.menuSalir && c !== 'Escape') { this.menuSalir.tecla(c); return; }
+    if (c === 'Escape' || c === 'KeyP' && this.datos.modo !== 'versus' && !this.sesion) return this.alternarPausa();
     if (this.luta?.entreno && !this.pausado) { if (c === 'KeyT') this.recargar(); else if (c === 'KeyK') this.alternarMuneco(); }
     if (c === 'KeyM') { this.app.ajustes.sonido = !this.app.ajustes.sonido; silenciar(!this.app.ajustes.sonido); this.app.guardarAjustes(); }
     if (this.pausado) {
@@ -101,17 +116,49 @@ export class Combate {
     }
   }
   puntero(tipo, p, e) {
-    if (this.pausado && !this.verControles) this.menuPausa?.puntero(tipo, p);
+    if (this.menuSalir) this.menuSalir.puntero(tipo, p);
+    else if (this.pausado && !this.verControles) this.menuPausa?.puntero(tipo, p);
     else if (this.verControles && tipo === 'down') this.verControles = false;
     else if (this.luta?.fase === 'fin') this.resultado?.lista.puntero(tipo, p);
   }
 
   revancha() { this.app.ir('combate', this.datos); }
+
+  // ---------------------------------------------------------------- online
+  salirOnline() {
+    this.sesion?.enviar({ t: 'adios' });
+    this.sesion?.cerrar();
+    this.app.online = null;
+    this.app.ir('titulo');
+  }
+  mensajeOnline(m) {
+    if (m.t === 'rev') { this.quiereOtra.add(m.lado); this.revisarOtra(); }
+    else if (m.t === 'otra') this.app.ir('combate', { ...this.datos, semilla: m.semilla });
+  }
+  pedirOtra() {
+    if (this.quiereOtra.has(this.lado)) return;
+    this.quiereOtra.add(this.lado);
+    this.sesion.enviar({ t: 'rev', lado: this.lado });
+    sfx('confirmar');
+    this.revisarOtra();
+  }
+  revisarOtra() {
+    if (this.quiereOtra.size < this.luta.luchadores.length || this.lado !== 0) return;
+    const semilla = (Math.random() * 1e9) | 0;
+    this.sesion.enviar({ t: 'otra', semilla });
+    this.app.ir('combate', { ...this.datos, semilla });
+  }
   recargar() { this.luta.recargar(); sfx('confirmar'); }
   alternarMuneco() { const m = this.ctrls?.[1]; if (m instanceof Muneco) m.quieto = !m.quieto; }
 
   alternarPausa() {
     if (!this.cargado || this.luta.fase === 'fin') return;
+    // online a luta não para: só abre um aviso para sair
+    if (this.sesion) {
+      sfx('confirmar');
+      this.menuSalir = this.menuSalir ? null : new ListaBotones({ x: ANCHO / 2, y: ALTO / 2 - 4, w: 150, h: 24, paso: 28, ops: [{ txt: 'CONTINUE', id: 'seguir' }, { txt: 'QUIT', id: 'salir', atras: true }], alElegir: o => { if (o.id === 'seguir') this.menuSalir = null; else this.salirOnline(); } });
+      return;
+    }
     this.pausado = !this.pausado;
     this.verControles = false;
     sfx('confirmar');
@@ -143,6 +190,12 @@ export class Combate {
     if (!this.cargado || this.pausado) return;
     const luta = this.luta;
     this.app.tactil.actualizar();
+    if (this.sesion) {
+      if (this.rivalFuera || luta.fase === 'fin') return;
+      const r = this.sesion.paso(luta, () => this.ctrls[this.lado].intento(dt));
+      if (r) luta.paso(TICK, r);
+      return;
+    }
     const intentos = this.ctrls.map(c => c.intento(dt));
     if (this.tutorial) { luta.luchadores[0].ganarUlti(dt * 14); luta.luchadores[0].ganarExp(dt * 6); const it = intentos[0]; if (Math.hypot(it.mx, it.my) > 0.1) this.marcar('move'); if (it.mega && (luta.luchadores[0].puedeMega || luta.luchadores[0].puedeEvolucionar)) this.marcar('mega'); }
     luta.paso(dt, intentos);
@@ -160,8 +213,10 @@ export class Combate {
       if (e.t === 'habilidad' && e.l.humano) this.marcar(e.slot);
       if (e.t === 'evolucion' && e.l.humano) this.marcar('mega');
     }
+    if (this.rivalFuera && !this.saliendo) { this.saliendo = true; setTimeout(() => this.salirOnline(), 2200); }
     if (!this.pausado) this.fx.update(dt);
-    this.camara.actualizar(dt, luta.luchadores, true);
+    const vivos = luta.luchadores.filter(l => !l.ko);
+    this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, true);
   }
 
   marcar(id) { const p = this.tutorial?.pasos.find(x => x[0] === id); if (p && !p[2]) { p[2] = true; sfx('confirmar'); } }
@@ -169,11 +224,16 @@ export class Combate {
   armarResultado(ganador) {
     const d = this.datos;
     const l = this.luta.luchadores[ganador];
-    const titulo = d.modo === 'versus' ? `PLAYER ${ganador + 1} WINS!` : d.modo === 'cpu' ? (ganador === 0 ? 'VICTORY' : 'DEFEAT') : `${l.nombre} WINS`;
-    sfx(d.modo === 'cpu' && ganador === 1 ? 'derrota' : 'victoria');
+    const vs = d.modo === 'cpu' || d.modo === 'arena';
+    const titulo = d.modo === 'online' ? (ganador === this.lado ? 'VICTORY!' : `PLAYER ${ganador + 1} WINS`) : d.modo === 'versus' ? `PLAYER ${ganador + 1} WINS!` : vs ? (ganador === 0 ? 'VICTORY' : 'DEFEAT') : `${l.nombre} WINS`;
+    sfx(vs && ganador !== 0 || (d.modo === 'online' && ganador !== this.lado) ? 'derrota' : 'victoria');
     this.resultado = {
       ganador, titulo,
-      lista: new ListaBotones({
+      lista: new ListaBotones(this.sesion ? {
+        x: ANCHO / 2, y: 232, w: 170, h: 22, paso: 26,
+        ops: [{ txt: 'REMATCH', id: 'otra' }, { txt: 'MAIN MENU', id: 'menu' }],
+        alElegir: o => { if (o.id === 'otra') this.pedirOtra(); else this.salirOnline(); },
+      } : {
         x: ANCHO / 2, y: 232, w: 170, h: 22, paso: 26,
         ops: [{ txt: 'REMATCH', id: 'otra' }, { txt: 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' }],
         alElegir: o => { if (o.id === 'otra') this.revancha(); else if (o.id === 'cambiar') this.volver(); else this.app.ir('titulo'); },
@@ -214,7 +274,9 @@ export class Combate {
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
-    this.hud.barraSkills(g, luta, this.humanos, this.t, { 0: this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm, 1: CONTROLES.teclado2 });
+    const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
+    this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk } : { 0: tk, 1: CONTROLES.teclado2 });
+    if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
     if (luta.entreno) this.dibujarEntreno(g, luta);
     if (this.tutorial) this.dibujarTutorial(g);
@@ -340,6 +402,22 @@ export class Combate {
     }
   }
 
+  // online: ping, espera pelo outro jogador e aviso de divergência
+  dibujarRed(g) {
+    const s = this.sesion;
+    const ms = s.rtt == null ? null : Math.round(s.rtt);
+    const col = ms == null ? '#93acd4' : ms < 60 ? '#3ccf4e' : ms < 110 ? '#f2c230' : '#e8463a';
+    texto(g, `${s.via} ${ms ?? '--'} MS`, ANCHO / 2, HUD_ALTO + 4, { tam: 8, align: 'center', color: col, borde: 2 });
+    if (s.esperando > 24 && !this.rivalFuera) texto(g, 'WAITING FOR THE OTHER PLAYER...', ANCHO / 2, 120, { tam: 8, align: 'center', color: '#f8c448', borde: 3 });
+    if (s.desync) texto(g, 'OUT OF SYNC - PLEASE REMATCH', ANCHO / 2, 134, { tam: 8, align: 'center', color: '#ff7a7a', borde: 3 });
+    if (this.rivalFuera) texto(g, 'THE OTHER PLAYER LEFT', ANCHO / 2, 120, { tam: 9, align: 'center', color: '#ffd23c', borde: 3 });
+    if (this.menuSalir) {
+      rect(g, 0, 0, ANCHO, ALTO, 'rgba(4,10,28,0.6)');
+      texto(g, 'ONLINE: THE FIGHT GOES ON', ANCHO / 2, ALTO / 2 - 36, { tam: 9, align: 'center', color: '#ffd23c', borde: 3 });
+      this.menuSalir.dibujar(g, this.t);
+    }
+  }
+
   // colchetes no rival quando quem luta de perto está ao alcance; ponto de mira de quem joga sem mouse
   dibujarFijado(g, luta) {
     luta.luchadores.forEach((yo, i) => {
@@ -389,13 +467,14 @@ export class Combate {
     texto(g, r.titulo, ANCHO / 2, 70, { tam: 24, color: perd ? '#ff5a5a' : '#ffd23c', borde: 6, align: 'center', base: 'middle', peso: 700 });
     const w = luta.luchadores[r.ganador];
     texto(g, `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
+    const n = luta.luchadores.length;
     luta.luchadores.forEach((x, i) => {
-      const cx = ANCHO / 2 + (i ? 120 : -120);
-      texto(g, x.nombre, cx, 134, { tam: 8, color: i ? '#ff5a5a' : '#4aa8ff', align: 'center' });
+      const cx = n === 3 ? ANCHO / 2 + (i - 1) * 170 : ANCHO / 2 + (i ? 120 : -120);
+      texto(g, x.nombre, cx, 134, { tam: 8, color: COLOR_EQUIPO[i], align: 'center' });
       texto(g, `DAMAGE ${Math.round(x.stats.dano)}`, cx, 150, { tam: 8, align: 'center' });
       texto(g, `HITS ${x.stats.golpes}`, cx, 164, { tam: 8, align: 'center' });
     });
-    texto(g, 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
+    texto(g, this.sesion ? 'R  REMATCH      ESC  LEAVE' : 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
     r.lista.dibujar(g, this.t);
   }
 

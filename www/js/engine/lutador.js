@@ -49,7 +49,16 @@ export class Lutador {
   get puedeEvolucionar() { return this.etapa < this.etapasTotales - 1 && this.exp >= this.expNecesaria && !this.ko; }
   get puedeMega() { return !!this.forma.mega && !this.mega && !this.ko && this.ulti >= REGLAS.ultiMax; }
   get ultiLista() { return this.ulti >= REGLAS.ultiMax; }
-  get rival() { return this.luta.luchadores[1 - this.lado]; }
+  // alvo principal: o inimigo vivo mais perto (numa luta de 2 é sempre o outro lutador)
+  get rival() {
+    let mejor = null, dm = Infinity;
+    for (const o of this.luta.luchadores) {
+      if (o === this || o.ko) continue;
+      const d = Math.hypot(o.x - this.x, o.y - this.y);
+      if (d < dm) { dm = d; mejor = o; }
+    }
+    return mejor ?? this.luta.luchadores.find(o => o !== this);
+  }
   get cadencia() { return this.est.potencia?.cadencia ?? 1; }
   get pecho() { return { x: this.x, y: this.y - this.alto * 0.5 - this.salto }; }
   get invulnerable() { return !!this.est.invul || !!this.est.bloqueo; }
@@ -71,7 +80,7 @@ export class Lutador {
     this.evoVis = null;
     this.kit = this.kitActual();
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.empX = 0; this.empY = 0;
-    this.angulo = this.lado === 0 ? 0 : Math.PI;
+    this.angulo = this.lado === 1 ? Math.PI : this.lado === 2 ? -Math.PI / 2 : 0;
     this.ax = x; this.ay = y;
     this.hp = this.hpMax;
     this.energia = REGLAS.energiaInicial;

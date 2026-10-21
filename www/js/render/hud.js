@@ -4,7 +4,7 @@ import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, FUENTE, hex } from '../config.js';
 import { REGLAS, TIPOS, ESTADOS_TIPO } from '../data/regras.js';
 import { rect, texto, medir } from './pixel.js';
 
-const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a'];
+const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80'];
 const ANCHO_VIDA = 176;
 const RANURAS = ['lmb', 'rmb', 'esp', 'q', 'e'];
 const caso = s => s.charAt(0) + s.slice(1).toLowerCase();
@@ -12,7 +12,56 @@ const caso = s => s.charAt(0) + s.slice(1).toLowerCase();
 export class Hud {
   constructor(bank) { this.bank = bank; this.estela = [1, 1]; }
 
+  // arena com 3 lutadores: três colunas compactas e o relógio pendurado no meio
+  dibujar3(g, luta, t) {
+    const parpadeo = Math.floor(t * 4) % 2 === 0, w = ANCHO / 3;
+    rect(g, 0, 0, ANCHO, HUD_ALTO, '#0a1a38');
+    rect(g, 0, 0, ANCHO, 12, '#17122a');
+    rect(g, 0, HUD_ALTO - 2, ANCHO, 1, '#d6a63a');
+    rect(g, 0, HUD_ALTO - 1, ANCHO, 1, '#8a6a1c');
+    luta.luchadores.forEach((l, i) => {
+      const x0 = Math.round(i * w), cEq = COLOR_EQUIPO[i], muerto = l.ko;
+      if (i) rect(g, x0, 2, 1, HUD_ALTO - 6, 'rgba(255,255,255,0.12)');
+      g.globalAlpha = muerto ? 0.4 : 1;
+      rect(g, x0 + 3, 4, 34, 34, cEq); rect(g, x0 + 4, 5, 32, 32, '#0e1a36');
+      const img = this.bank.retrato(l.dex);
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x0 + 4, 5, 32, 32);
+      texto(g, l.nombre, x0 + 42, 3, { tam: 7, color: l.mega ? '#ffe14d' : '#ffffff', sombra: true, max: w - 70 });
+      let cx = x0 + 42 + Math.min(w - 70, medir(g, l.nombre, 7)) + 4;
+      for (const tp of l.tipos) { rect(g, cx, 4, 9, 6, '#000'); rect(g, cx + 1, 5, 7, 4, hex(TIPOS[tp] ?? 0xffffff)); cx += 11; }
+      const f = Math.max(0, l.hp / l.hpMax), bw = w - 48, bx = x0 + 42, by = 15;
+      this.estela[i] = this.estela[i] > f ? Math.max(f, this.estela[i] - 0.5 / 60) : f;
+      rect(g, bx - 1, by - 1, bw + 2, 9, '#000'); rect(g, bx, by, bw, 7, '#2a1d2a');
+      rect(g, bx, by, Math.round(bw * this.estela[i]), 7, 'rgba(255,255,255,0.85)');
+      rect(g, bx, by, Math.round(bw * f), 7, f > 0.5 ? '#3ccf4e' : f > 0.2 ? '#f2c230' : '#e8463a');
+      rect(g, bx, by, Math.round(bw * f), 2, 'rgba(255,255,255,0.35)');
+      texto(g, muerto ? 'K.O.' : `${Math.ceil(l.hp)}/${l.hpMax}`, bx + bw / 2, by - 1, { tam: 6, align: 'center', sombra: true });
+      const ew = Math.round(bw * 0.5);
+      rect(g, bx - 1, 25, ew + 2, 5, '#000'); rect(g, bx, 26, ew, 3, '#2a1d16');
+      rect(g, bx, 26, Math.round(ew * l.energia / REGLAS.energiaMax), 3, l.energia >= REGLAS.surgeUmbral ? '#ffd166' : '#f8a03f');
+      rect(g, bx + ew + 3, 25, bw - ew - 3 + 2, 5, '#000'); rect(g, bx + ew + 4, 26, bw - ew - 3, 3, '#1d1a30');
+      rect(g, bx + ew + 4, 26, Math.round((bw - ew - 3) * l.ulti / REGLAS.ultiMax), 3, l.ultiLista ? (parpadeo ? '#ffe9a8' : '#ffd166') : '#a855f7');
+      if (l.etapasTotales > 1) { const k = l.etapa >= l.etapasTotales - 1 ? 1 : Math.min(1, l.exp / l.expNecesaria); rect(g, bx - 1, 32, bw + 2, 3, '#000'); rect(g, bx, 33, Math.round(bw * k), 1, l.puedeEvolucionar ? (parpadeo ? '#fff' : '#7dd3fc') : '#38bdf8'); }
+      const est = [];
+      if (l.mega) est.push('MEGA');
+      else if (l.puedeEvolucionar && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'EVO!' : 'F:EVO');
+      else if (l.puedeMega && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'MEGA!' : 'F:MEGA');
+      if (l.ultiLista && !l.puedeMega) est.push('ULT!');
+      if (l.energia >= REGLAS.surgeUmbral) est.push('SURGE');
+      for (const et of Object.values(ESTADOS_TIPO)) if (l.est[et.est] && et.hud) est.push(et.hud);
+      if (l.est.quema) est.push('BRN'); if (l.est.veneno) est.push('PSN'); if (l.est.aturdido) est.push('STUN'); if (l.est.drenaje) est.push('SEED');
+      texto(g, est.join(' '), x0 + 3, 38, { tam: 6, color: '#c8c8d0', sombra: true, max: w - 8 });
+      for (let k = 0; k < REGLAS.rondasParaGanar; k++) { rect(g, x0 + w - 12 - k * 8, 4, 6, 6, '#d6a63a'); rect(g, x0 + w - 11 - k * 8, 5, 4, 4, k < luta.victorias[i] ? '#d6a63a' : '#2a2a40'); }
+      g.globalAlpha = 1;
+    });
+    // relógio pendurado embaixo do HUD
+    const tiempo = Math.max(0, Math.ceil(luta.reloj));
+    rect(g, ANCHO / 2 - 30, HUD_ALTO - 1, 60, 14, '#0a1a38'); rect(g, ANCHO / 2 - 30, HUD_ALTO + 12, 60, 1, '#8a6a1c');
+    texto(g, `R${luta.numRonda} · ${String(tiempo).padStart(2, '0')}`, ANCHO / 2, HUD_ALTO + 1, { tam: 8, align: 'center', color: tiempo <= 10 ? '#ff6a6a' : '#ffffff', sombra: true });
+  }
+
   dibujar(g, luta, t) {
+    if (luta.luchadores.length === 3) return this.dibujar3(g, luta, t);
     const parpadeo = Math.floor(t * 4) % 2 === 0;
     // faixa de cima
     rect(g, 0, 0, ANCHO, HUD_ALTO, '#0a1a38');
