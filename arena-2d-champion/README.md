@@ -4,15 +4,16 @@ Batalha de Pokémon em tempo real numa arena 2D vista de cima, inspirada no "Pok
 
 ## O que tem
 
-- **6 Pokémon**: Venusaur, Charizard, Blastoise, Weavile, Steelix e Gengar, com times de até 3.
-- **Todos os golpes que eles podem aprender**: 356 golpes no total (nível, TM, tutor, ovo e evento, de todas as gerações, contando as pré-evoluções). Cada um funciona como nos jogos: mesmo poder, precisão, tipo, categoria, efeitos secundários, prioridade, golpes de dois turnos, recarga do Hyper Beam, Protect, Substitute, Leech Seed, Rollout, Outrage, Counter, Baton Pass, Roar, Metronome, Sleep Talk, Perish Song, Destiny Bond, Trick Room e por aí vai.
+- **17 Pokémon**: Venusaur, Charizard, Blastoise, Weavile, Steelix, Gengar, Lucario, Gardevoir, Tyranitar, Absol, Manectric, Altaria, Alakazam, Houndoom, Gallade, Aerodactyl e Golisopod, com times de até 3.
+- **Golpes que valem a pena**: 323 golpes na Golpedex. Saíram os que quase ninguém usa (Tackle, Growl, Leer, Ember, Water Gun, Swagger, Metronome, golpes de nocaute instantâneo, golpes que só servem em batalha dupla e afins). Ficou o que aparece nos times de competição do Smogon, o que tem efeito útil e os golpes de dano com poder 60 ou mais e boa precisão. Cada um funciona como nos jogos: mesmo poder, precisão, tipo, categoria, efeitos secundários, prioridade, golpes de dois turnos, recarga do Hyper Beam, Protect, Substitute, Leech Seed, Wish, Future Sight, Spikes, terrenos, Trick Room e por aí vai.
+- **Efeito próprio para cada golpe**: socos, chutes, mordidas, garras, cortes, raios, projéteis e golpes de área têm desenhos diferentes (Fire Punch é um punho em chamas, Ice Fang são presas de gelo, Sacred Sword é uma espada dourada, Moonblast é uma lua, Draco Meteor faz meteoros caírem), em vez da mesma imagem com outra cor.
 - **Fórmula de dano dos jogos** (nível 50), conferida contra a calculadora do Smogon: STAB, tipos, crítico, clima, terreno, telas, habilidades e itens.
-- **Habilidades** de todos, inclusive as das Megas (Thick Fat, Tough Claws, Drought, Mega Launcher, Sand Force, Shadow Tag).
-- **Mega Evolução** de Venusaur, Charizard (X e Y), Blastoise, Steelix e Gengar, com sprites das Megas. A barra de Mega fica em volta do treinador e enche com dano causado, dano recebido e esquivas no último instante.
+- **Habilidades** de todos, inclusive as das Megas (Thick Fat, Tough Claws, Drought, Mega Launcher, Sand Force, Shadow Tag, Adaptability, Pixilate, Magic Bounce, Intimidate, Lightning Rod, Magic Guard e outras).
+- **17 Mega Evoluções**, uma para cada Pokémon com Mega (Charizard tem X e Y), todas animadas. A barra de Mega fica em volta do treinador e enche com dano causado, dano recebido e esquivas no último instante.
 - **Choque de Megas**: se os dois treinadores Mega Evoluem juntos, as Megas criam um clima especial (Sol Extremo, Chuva Torrencial, Tempestade Mega com raios, Tempestade de Areia...).
 - **Choque de raios**: quando dois golpes de raio se encontram (Solar Beam x Hydro Pump, Flamethrower x Hydro Pump...), começa um minigame de tocar rápido.
 - **Atributos temporários**: Swords Dance, Dragon Dance e companhia aumentam o atributo por um tempo, depois ele volta aos poucos.
-- **Esquiva em dash** com invencibilidade e rastro, **stamina e recarga** em cada golpe.
+- **Esquiva em dash** com invencibilidade e rastro, **stamina e recarga** em cada golpe. A stamina enche rápido (13 por segundo) para a luta ficar corrida.
 - **Treinadores dos jogos e do anime** (Ash, Red, Blue, Misty, Brock, Dawn, Cynthia, Lance, Steven, Iris e outros), com apresentação "VS" e corte de Mega Evolução.
 - **Estádio grande** com câmera que acompanha a luta. Surf, Earthquake, Heat Wave e outros golpes de área pegam boa parte do campo e deixam marcas no chão.
 - **Modos**: contra a CPU (3 dificuldades) e online com código de sala. Também dá para jogar com teclado ou controle.
@@ -52,11 +53,12 @@ www/                 o jogo (HTML + JavaScript puro, sem framework)
     ai.js            treinador do computador
   js/render/         desenho (canvas): arena, sprites, efeitos (pixel.js: camada em pixel art), HUD
   js/net/            modo online (lockstep.js: simulação sincronizada; online.js: salas)
+  js/render/title.js cena animada da tela inicial
   js/ui/menus.js     telas de menu
   vendor/            PeerJS (MIT)
   js/data/           dados gerados (golpes, aprendizado) e escritos à mão
 android/             projeto Android (Capacitor)
-scripts/             geração de dados, download de sprites, servidor local
+scripts/             geração de dados, download de sprites (gif-sheet.mjs converte GIF em pixel art), servidor local
 tests/               testes do motor
 ```
 
@@ -66,7 +68,8 @@ Os dados dos golpes vêm do Pokémon Showdown (`npm run gen-data` gera de novo) 
 
 - Dados: Pokémon Showdown (@pkmn/dex).
 - Sprites e retratos: PMD Sprite Repository (SpriteCollab), CC BY-NC 4.0. Os autores de cada sprite estão em `www/assets/credits.json` e na tela de créditos do jogo.
-- Treinadores e Megas no estilo Black/White (Mega Venusaur, Mega Charizard Y, Mega Blastoise): Smogon Sprite Project (smogon/sprites).
+- Treinadores: Smogon Sprite Project (smogon/sprites).
+- Mega Venusaur, Mega Charizard Y e Mega Blastoise: animações dos modelos 3D do Smogon Sprite Project, convertidas para pixel art. Mega Golisopod: imagem do Pokémon Champions no mesmo repositório, animada por partes.
 - Artes oficiais: PokeAPI/sprites.
 - Conexão online: PeerJS (MIT).
 - Fontes: Press Start 2P e Pixelify Sans (SIL OFL 1.1).

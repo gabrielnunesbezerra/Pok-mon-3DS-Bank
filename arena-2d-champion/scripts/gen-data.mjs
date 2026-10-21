@@ -1,16 +1,93 @@
 // Gera www/js/data/generated.js a partir dos dados do Pokémon Showdown (@pkmn/dex).
 // Rode com: npm run gen-data
-// O arquivo gerado tem os golpes que Venusaur, Charizard, Blastoise e Weavile podem aprender
-// (contando as pré-evoluções, golpes de ovo, TM, tutor e evento de todas as gerações),
-// os dados das espécies e das Megas, e a tabela de tipos.
+// O arquivo gerado tem os golpes que cada Pokémon do jogo pode aprender (contando as pré-evoluções,
+// golpes de ovo, TM, tutor e evento de todas as gerações) MENOS os que não servem para nada numa
+// batalha 1 contra 1 (ver keepMove), os dados das espécies e das Megas, e a tabela de tipos.
 import { Dex } from '@pkmn/dex';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar'];
-const FORMS = ['venusaurmega', 'charizardmegax', 'charizardmegay', 'blastoisemega', 'steelixmega', 'gengarmega'];
+const SPECIES = [
+  'venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar',
+  'lucario', 'gardevoir', 'tyranitar', 'absol', 'manectric', 'altaria', 'alakazam', 'houndoom', 'gallade', 'aerodactyl', 'golisopod',
+];
+const FORMS = [
+  'venusaurmega', 'charizardmegax', 'charizardmegay', 'blastoisemega', 'steelixmega', 'gengarmega',
+  'lucariomega', 'gardevoirmega', 'tyranitarmega', 'absolmega', 'manectricmega', 'altariamega', 'alakazammega', 'houndoommega',
+  'gallademega', 'aerodactylmega', 'golisopodmega',
+];
+
+// ---------------------------------------------------------------- quais golpes ficam
+// Golpes usados em sets competitivos (análises e estatísticas do Smogon, todas as gerações)
+const toId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+const require = createRequire(import.meta.url);
+const setsDir = dirname(require.resolve('@smogon/sets/package.json'));
+const USED = {};
+for (const file of readdirSync(setsDir).filter(f => /^gen\d.*\.json$/.test(f))) {
+  const data = JSON.parse(readFileSync(join(setsDir, file), 'utf8'));
+  for (const fmt of Object.values(data)) {
+    const add = (sp, mv) => { if (Array.isArray(mv)) mv.forEach(m => add(sp, m)); else (USED[toId(sp)] ||= new Set()).add(toId(mv).replace(/^hiddenpower.+/, 'hiddenpower')); };
+    for (const [sp, sets] of Object.entries(fmt.dex || {})) for (const set of Object.values(sets)) for (const mv of set.moves || []) add(sp, mv);
+    for (const [sp, info] of Object.entries(fmt.stats || {})) for (const [mv, w] of Object.entries(info?.moves || {})) if (w >= 0.03) add(sp, mv);
+  }
+}
+
+// Utilidade em batalha 1 contra 1, mesmo com pouco poder: status, aumento de atributo, cura,
+// armadilhas, troca, clima, prioridade, poder variável e os golpes com forma especial na arena
+const USEFUL = new Set(`
+swordsdance dragondance calmmind nastyplot bulkup shellsmash quiverdance agility rockpolish irondefense amnesia
+cottonguard curse coil honeclaws growth workup shiftgear bellydrum tailglow autotomize cosmicpower acidarmor barrier
+protect detect substitute kingsshield spikyshield banefulbunker
+recover roost synthesis morningsun moonlight rest sleeptalk slackoff softboiled milkdrink wish painsplit shoreup strengthsap
+leechseed lifedew ingrain aquaring
+toxic willowisp thunderwave glare stunspore sleeppowder spore hypnosis yawn lovelykiss toxicspikes spikes stealthrock stickyweb
+taunt encore trick switcheroo haze clearsmog roar whirlwind dragontail circlethrow defog rapidspin uturn voltswitch flipturn
+partingshot batonpass destinybond perishsong memento healingwish lightscreen reflect auroraveil safeguard tailwind healbell
+aromatherapy disable trickroom wonderroom sunnyday raindance sandstorm hail snowscape grassyterrain electricterrain
+psychicterrain mistyterrain magnetrise focuspunch futuresight
+knockoff pursuit suckerpunch fakeout firstimpression extremespeed bulletpunch machpunch vacuumwave iceshard aquajet
+shadowsneak quickattack accelerock feint
+nightshade seismictoss superfang endeavor counter mirrorcoat metalburst
+lowkick grassknot heavyslam heatcrash gyroball reversal flail return electroball storedpower powertrip acrobatics weatherball
+hex avalanche revenge payback assurance retaliate hiddenpower
+icywind electroweb mudshot rocktomb bulldoze snarl chargebeam flamecharge poweruppunch trailblaze smackdown
+gigadrain drainpunch hornleech leechlife drainingkiss paraboliccharge
+fly dig dive bounce phantomforce shadowforce skydrop solarbeam solarblade skyattack hyperbeam gigaimpact explosion
+outrage thrash petaldance rollout dreameater
+`.trim().split(/\s+/));
+
+// Fracos, imprecisos ou que só servem em dupla: saem mesmo se aparecerem em algum set antigo
+const JUNK = new Set(`
+helpinghand followme ragepowder allyswitch afteryou quash wideguard quickguard entrainment spotlight instruct coaching
+holdhands celebrate happyhour splash confide swagger flatter attract captivate metronome mimic sketch transform
+naturepower secretpower naturalgift fling bide rage skullbash razorwind selfdestruct doubleteam minimize lockon mindreader
+foresight odorsleuth miracleeye magiccoat snatch focusenergy laserfocus psychup imprison grudge snore nightmare endure
+stockpile spitup swallow recycle bestow lastresort round echoedvoice furycutter megapunch megakick strength cut headbutt
+slam takedown submission dizzypunch doubleslap cometpunch furyswipes furyattack spikecannon barrage eggbomb rocksmash
+`.trim().split(/\s+/));
+
+// Golpes com efeito próprio que o jogo ainda não sabe fazer: ficam de fora
+const UNSUPPORTED = new Set([]);
+
+function effectivePower(m) {
+  if (Array.isArray(m.multihit)) return m.basePower * (m.multihit[1] >= 5 ? 3.1 : m.multihit[1]);
+  if (m.multihit) return m.basePower * m.multihit;
+  return m.basePower;
+}
+
+function keepMove(m, used) {
+  if (!m.exists || JUNK.has(m.id) || UNSUPPORTED.has(m.id)) return false;
+  if (m.isNonstandard && !['Past', 'Unobtainable', 'Future'].includes(m.isNonstandard)) return false;
+  if (m.isZ || m.isMax) return false;
+  if (used.has(m.id) || USEFUL.has(m.id)) return true;
+  if (m.category === 'Status') return false;
+  if (m.priority > 0) return true;
+  const acc = m.accuracy === true ? 100 : m.accuracy;
+  return effectivePower(m) >= 60 && acc >= 70;
+}
 
 // Golpes que ninguém aprende mas que Nature Power e o cansaço (Struggle) podem usar
 const EXTRA_MOVES = ['triattack', 'struggle'];
@@ -36,12 +113,16 @@ function speciesData(sp) {
 
 const learnsets = {};
 const moveIds = new Set();
+const removed = {};
 for (const id of SPECIES) {
   const learned = {};
+  const used = new Set([...(USED[id] || []), ...FORMS.filter(f => Dex.species.get(f).baseSpecies === Dex.species.get(id).name).flatMap(f => [...(USED[f] || [])])]);
+  removed[id] = [];
   let cur = Dex.species.get(id);
   while (cur && cur.exists) {
     const ls = await Dex.learnsets.get(cur.id);
     for (const [moveId, sources] of Object.entries(ls?.learnset || {})) {
+      if (!keepMove(Dex.moves.get(moveId), used)) { if (!removed[id].includes(moveId)) removed[id].push(moveId); continue; }
       const entry = learned[moveId] || (learned[moveId] = { how: new Set(), via: new Set(), gens: new Set() });
       for (const src of sources) {
         const gen = parseInt(src, 10);
@@ -115,6 +196,9 @@ for (const id of [...moveIds, ...EXTRA_MOVES].sort()) {
     multiacc: m.multiaccuracy,
     ignoreAbility: m.ignoreAbility,
     hasCrashDamage: m.hasCrashDamage,
+    overrideDefensiveStat: m.overrideDefensiveStat,
+    ignoreDefensive: m.ignoreDefensive,
+    ignoreEvasion: m.ignoreEvasion,
   };
   for (const [k, v] of Object.entries(optional)) if (v !== undefined && v !== null && v !== false) out[k] = v;
   moves[id] = out;
@@ -150,4 +234,9 @@ const body =
   `export const TYPE_CHART = ${JSON.stringify(chart)};\n`;
 writeFileSync(join(root, 'www/js/data/generated.js'), body);
 console.log(`Golpes: ${Object.keys(moves).length}`);
-for (const id of SPECIES) console.log(`  ${id}: ${Object.keys(learnsets[id]).length}`);
+for (const id of SPECIES) console.log(`  ${id}: ${Object.keys(learnsets[id]).length} (fora: ${removed[id].length})`);
+if (process.argv.includes('--removed')) {
+  const all = new Set(Object.values(removed).flat());
+  for (const id of Object.values(learnsets).flatMap(Object.keys)) all.delete(id);
+  console.log('Removidos:', [...all].sort().join(' '));
+}

@@ -8,6 +8,7 @@ import { describeMove } from '../data/movetext.js';
 import { staminaCost, baseCooldown } from '../engine/actions.js';
 import { TRAINER_DATA } from '../data/sprites.js';
 import { cleanCode } from '../net/online.js';
+import { TitleScene } from '../render/title.js';
 
 const ui = () => document.getElementById('ui');
 
@@ -47,21 +48,27 @@ export function showLoading() {
 // ---------------------------------------------------------------- título
 export function showTitle(app) {
   app.sound.playMusic('menu');
+  const canvas = h('canvas', { class: 'title-bg' });
+  const stage = h('div', { class: 'title-stage' },
+    h('div', { class: 'title-plate' }, h('span', {}, 'MEGA VENUSAUR'), typeChip('Grass'), typeChip('Poison')));
   mount(h('div', { class: 'screen title' },
-    h('div', { class: 'art-row' }, ...BASE_SPECIES.map(sp => h('img', { src: artwork(app, sp), alt: SPECIES[sp].name }))),
-    h('div', { class: 'logo' },
-      h('div', { class: 'big' }, 'ARENA 2D'),
-      h('div', { class: 'top' }, 'CHAMPION'),
-      h('div', { class: 'sub' }, 'Batalha Pokémon em tempo real')),
-    h('div', { class: 'menu' },
-      h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app); } }, 'CONTRA A CPU'),
-      h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = 'online'; showTeamBuilder(app); } }, 'ONLINE')),
-    h('div', { class: 'menu sub' },
-      h('button', { class: 'gold small', onclick: () => { sfx(app); showDex(app); } }, 'GOLPEDEX'),
-      h('button', { class: 'small', onclick: () => { sfx(app); showHelp(app, () => showTitle(app)); } }, 'COMO JOGAR'),
-      h('button', { class: 'small', onclick: () => { sfx(app); showSettings(app, () => showTitle(app)); } }, 'OPÇÕES'),
-      h('button', { class: 'small', onclick: () => { sfx(app); showCredits(app); } }, 'CRÉDITOS')),
-    h('div', { class: 'footer-note' }, 'Projeto de fã, sem fins lucrativos. Pokémon © Nintendo, Creatures e GAME FREAK.')));
+    canvas,
+    stage,
+    h('div', { class: 'title-side' },
+      h('div', { class: 'logo' },
+        h('div', { class: 'big' }, 'ARENA 2D'),
+        h('div', { class: 'top' }, 'CHAMPION'),
+        h('div', { class: 'sub' }, 'Batalha Pokémon em tempo real')),
+      h('div', { class: 'menu' },
+        h('button', { class: 'primary', onclick: () => { sfx(app, 'select'); app.mode = '1p'; showTeamBuilder(app); } }, 'CONTRA A CPU'),
+        h('button', { class: 'blue', onclick: () => { sfx(app, 'select'); app.mode = 'online'; showTeamBuilder(app); } }, 'ONLINE')),
+      h('div', { class: 'menu sub' },
+        h('button', { class: 'gold small', onclick: () => { sfx(app); showDex(app); } }, 'GOLPEDEX'),
+        h('button', { class: 'small', onclick: () => { sfx(app); showHelp(app, () => showTitle(app)); } }, 'COMO JOGAR'),
+        h('button', { class: 'small', onclick: () => { sfx(app); showSettings(app, () => showTitle(app)); } }, 'OPÇÕES'),
+        h('button', { class: 'small', onclick: () => { sfx(app); showCredits(app); } }, 'CRÉDITOS')),
+      h('div', { class: 'footer-note' }, 'Projeto de fã, sem fins lucrativos. Pokémon © Nintendo, Creatures e GAME FREAK.'))));
+  new TitleScene(canvas, stage, app.bank.title).start();
 }
 
 // ---------------------------------------------------------------- montagem do time
@@ -123,8 +130,7 @@ function slotCard(app, team, slot, rerender) {
   if (!set) {
     if (slot > team.length) return h('div', { class: 'card empty' }, h('div', { class: 'hint' }, 'Vaga livre'));
     return h('div', { class: 'card empty' },
-      h('div', { class: 'hint' }, 'Adicionar Pokémon'),
-      h('div', { class: 'species-row', style: { width: '100%' } }, ...BASE_SPECIES.map(sp => h('button', { onclick: () => { sfx(app); team.push(defaultSet(sp)); rerender(); } }, h('img', { src: portrait(app, sp), alt: sp })))));
+      h('button', { class: 'primary', onclick: () => pickSpecies(app, team, slot, rerender) }, '+ ADICIONAR POKÉMON'));
   }
   const sp = SPECIES[set.species];
   const stones = MEGA_STONE_FOR[set.species];
@@ -133,10 +139,11 @@ function slotCard(app, team, slot, rerender) {
     ...Object.entries(ITEMS).filter(([id, it]) => !it.mega || stones.includes(id)).map(([id, it]) => h('option', { value: id, selected: id === (set.item || 'none') }, it.name)));
   const head = h('div', { class: 'card-head' },
     h('img', { src: artwork(app, megaId || set.species) }),
-    h('div', {},
+    h('div', { style: { flex: 1 } },
       h('div', { class: 'name' }, sp.name),
       h('div', { class: 'types' }, ...(megaId ? SPECIES[megaId].types : sp.types).map(typeChip)),
-      megaId ? h('div', { class: 'hint', style: { color: '#ff9ce8' } }, `Mega: ${displayName(megaId)} (${SPECIES[megaId].abilities[0]})`) : null));
+      megaId ? h('div', { class: 'hint', style: { color: '#ff9ce8' } }, `Mega: ${displayName(megaId)} (${SPECIES[megaId].abilities[0]})`) : null),
+    h('button', { class: 'small', onclick: () => pickSpecies(app, team, slot, rerender) }, 'TROCAR'));
   const abilityRow = h('div', { class: 'row' }, h('label', {}, 'Habilidade'),
     ...sp.abilities.map(a => h('button', { class: `small ${toId(a) === set.ability ? 'on' : ''}`, onclick: () => { set.ability = toId(a); rerender(); } }, a)));
   const genderRow = h('div', { class: 'row' }, h('label', {}, 'Gênero'),
@@ -155,10 +162,6 @@ function slotCard(app, team, slot, rerender) {
       h('select', { onchange: e => { set.hpType = e.target.value; } }, ...HIDDEN_POWER_TYPES.map(t => h('option', { value: t, selected: t === set.hpType }, TYPE_PT[t]))))
     : null;
   return h('div', { class: 'card' },
-    h('div', { class: 'species-row' }, ...BASE_SPECIES.map(s => h('button', {
-      class: s === set.species ? 'on' : '',
-      onclick: () => { if (s !== set.species) { team[slot] = defaultSet(s); sfx(app); rerender(); } },
-    }, h('img', { src: portrait(app, s), alt: s })))),
     head,
     moves,
     hp,
@@ -189,6 +192,33 @@ function moveRow(app, id, { species = null, taken = false, onclick = null, learn
       species ? h('div', { class: 'how' }, learnInfo(species, id)) : null,
       learners ? h('div', { class: 'how' }, learners) : null),
     h('div', { class: 'mstats', html: stats }));
+}
+
+// Lista dos Pokémon em grade (com 17 espécies não cabe mais uma fileira de ícones no cartão)
+function pickSpecies(app, team, slot, rerender) {
+  sfx(app);
+  const current = team[slot]?.species;
+  const close = () => { modal.remove(); rerender(); };
+  const choose = sp => {
+    sfx(app, 'select');
+    if (sp !== current) { if (team[slot]) team[slot] = defaultSet(sp); else team.push(defaultSet(sp)); }
+    close();
+  };
+  const modal = h('div', { class: 'modal' },
+    h('div', { class: 'topbar' },
+      h('button', { class: 'small ghost', onclick: () => { sfx(app, 'back'); close(); } }, '< VOLTAR'),
+      h('h2', {}, current ? `TROCAR ${SPECIES[current].name.toUpperCase()}` : 'ESCOLHA UM POKÉMON')),
+    h('div', { class: 'scroll' },
+      h('div', { class: 'species-grid' }, ...BASE_SPECIES.map(sp => {
+        const megas = MEGA_STONE_FOR[sp].map(id => displayName(ITEMS[id].mega.to)).join(' / ');
+        return h('button', { class: `species-opt ${sp === current ? 'cur' : ''}`, onclick: () => choose(sp) },
+          h('img', { src: portrait(app, sp), alt: '' }),
+          h('div', {},
+            h('div', { class: 'nm' }, SPECIES[sp].name),
+            h('div', { class: 'types' }, ...SPECIES[sp].types.map(typeChip)),
+            megas ? h('div', { class: 'mg' }, megas) : null));
+      }))));
+  mount(modal, true);
 }
 
 function pickMove(app, set, k, rerender) {
@@ -494,7 +524,8 @@ export async function showCredits(app) {
 <p>Golpes, aprendizado, atributos e tipos: Pokémon Showdown (pacote @pkmn/dex).</p>
 <h3>Sprites e retratos</h3>
 <p>PMD Sprite Repository (SpriteCollab), licença CC BY-NC 4.0. Artes oficiais via PokeAPI/sprites.</p>
-<p>Treinadores e Megas no estilo Black/White (Mega Venusaur, Mega Charizard Y e Mega Blastoise): Smogon Sprite Project (smogon/sprites) e os artistas creditados lá.</p>
+<p>Treinadores: Smogon Sprite Project (smogon/sprites) e os artistas creditados lá.</p>
+<p>Mega Venusaur, Mega Charizard Y e Mega Blastoise (inclusive a da tela inicial): animações dos modelos 3D do Smogon Sprite Project, convertidas para pixel art. Mega Golisopod: imagem do Pokémon Champions no mesmo repositório, animada por partes.</p>
 <h3>Online</h3>
 <p>PeerJS (licença MIT) para a conexão direta entre os aparelhos.</p>
 <p>${credits.map(c => `${c.what}: ${c.by.join(', ')}`).join('<br>')}</p>

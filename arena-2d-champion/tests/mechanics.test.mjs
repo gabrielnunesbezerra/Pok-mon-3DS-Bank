@@ -28,17 +28,17 @@ function fixedRolls(battle) {
 }
 
 test('Solar Beam carrega fora do sol e sai na hora no sol', () => {
-  const { battle, m0 } = duel([mon('venusaur', ['solarbeam'], { ability: 'overgrow' })], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('venusaur', ['solarbeam'], { ability: 'overgrow' })], [mon('blastoise', ['waterpulse'])]);
   executeMove(battle, m0, 'solarbeam', null, {});
   assert.equal(m0.action.type, 'charge');
-  const s = duel([mon('venusaur', ['solarbeam'], { ability: 'overgrow' })], [mon('blastoise', ['tackle'])]);
+  const s = duel([mon('venusaur', ['solarbeam'], { ability: 'overgrow' })], [mon('blastoise', ['waterpulse'])]);
   s.battle.setWeather('sunnyday', 5);
   executeMove(s.battle, s.m0, 'solarbeam', null, {});
   assert.equal(s.m0.action.type, 'channel');
 });
 
 test('Thick Fat corta pela metade o dano de Fogo', () => {
-  const { battle, m0, m1 } = duel([mon('charizard', ['flamethrower'])], [mon('venusaur', ['tackle'], { item: 'venusaurite' })]);
+  const { battle, m0, m1 } = duel([mon('charizard', ['flamethrower'])], [mon('venusaur', ['gigadrain'], { item: 'venusaurite' })]);
   fixedRolls(battle);
   const before = calcDamage(battle, m0, m1, liveMove(battle, m0, 'flamethrower')).damage;
   battle.megaEvolve(m1);
@@ -48,7 +48,7 @@ test('Thick Fat corta pela metade o dano de Fogo', () => {
 });
 
 test('Mega Charizard Y traz o sol com Drought', () => {
-  const { battle, m0 } = duel([mon('charizard', ['flamethrower'], { item: 'charizarditey' })], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('charizard', ['flamethrower'], { item: 'charizarditey' })], [mon('blastoise', ['waterpulse'])]);
   battle.sides[0].megaGauge = 100;
   assert.ok(battle.requestMega(0));
   run(battle, 2.5);
@@ -57,7 +57,7 @@ test('Mega Charizard Y traz o sol com Drought', () => {
 });
 
 test('Mega só uma vez por batalha e só com a barra cheia', () => {
-  const { battle } = duel([mon('charizard', ['flamethrower'], { item: 'charizarditex' })], [mon('blastoise', ['tackle'])]);
+  const { battle } = duel([mon('charizard', ['flamethrower'], { item: 'charizarditex' })], [mon('blastoise', ['waterpulse'])]);
   battle.sides[0].megaGauge = 50;
   assert.equal(battle.requestMega(0), false);
   battle.sides[0].megaGauge = 100;
@@ -119,7 +119,7 @@ test('Protect bloqueia o golpe', () => {
 });
 
 test('Golpes Terrestres não acertam Charizard, mas acertam depois de Smack Down', () => {
-  const { battle, m0, m1 } = duel([mon('blastoise', ['earthquake', 'smackdown'])], [mon('charizard', ['tackle'])]);
+  const { battle, m0, m1 } = duel([mon('blastoise', ['earthquake', 'smackdown'])], [mon('charizard', ['dragonclaw'])]);
   fixedRolls(battle);
   const eq = liveMove(battle, m0, 'earthquake');
   assert.equal(calcDamage(battle, m0, m1, eq).eff, 0);
@@ -128,21 +128,21 @@ test('Golpes Terrestres não acertam Charizard, mas acertam depois de Smack Down
 });
 
 test('Chlorophyll dobra a Velocidade no sol', () => {
-  const { battle, m0 } = duel([mon('venusaur', ['tackle'], { ability: 'chlorophyll' })], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('venusaur', ['gigadrain'], { ability: 'chlorophyll' })], [mon('blastoise', ['waterpulse'])]);
   const normal = getSpeed(battle, m0);
   battle.setWeather('sunnyday', 5);
   assert.equal(getSpeed(battle, m0), normal * 2);
 });
 
 test('Weather Ball vira Fogo no sol com poder dobrado', () => {
-  const { battle, m0 } = duel([mon('venusaur', ['weatherball'])], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('venusaur', ['weatherball'])], [mon('blastoise', ['waterpulse'])]);
   battle.setWeather('sunnyday', 5);
   const mv = liveMove(battle, m0, 'weatherball');
   assert.equal(mv.type, 'Fire');
 });
 
 test('Choice Scarf trava no primeiro golpe até trocar', () => {
-  const { battle, m0 } = duel([mon('weavile', ['iceshard', 'nightslash'], { item: 'choicescarf' })], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('weavile', ['iceshard', 'nightslash'], { item: 'choicescarf' })], [mon('blastoise', ['waterpulse'])]);
   assert.ok(useMove(battle, m0, 0));
   run(battle, 3);
   m0.gcd = 0;
@@ -151,7 +151,7 @@ test('Choice Scarf trava no primeiro golpe até trocar', () => {
 });
 
 test('Pickpocket rouba o item de quem encosta', () => {
-  const { battle, m0, m1 } = duel([mon('charizard', ['dragonclaw'], { item: 'leftovers' })], [mon('weavile', ['tackle'], { ability: 'pickpocket' })]);
+  const { battle, m0, m1 } = duel([mon('charizard', ['dragonclaw'], { item: 'leftovers' })], [mon('weavile', ['quickattack'], { ability: 'pickpocket' })]);
   m0.x = 430;
   executeMove(battle, m0, 'dragonclaw', null, {});
   battle.rng.chance = () => true;
@@ -161,14 +161,14 @@ test('Pickpocket rouba o item de quem encosta', () => {
 });
 
 test('Taunt impede golpes de status', () => {
-  const { battle, m0, m1 } = duel([mon('weavile', ['taunt'])], [mon('venusaur', ['synthesis', 'tackle'])]);
+  const { battle, m0, m1 } = duel([mon('weavile', ['taunt'])], [mon('venusaur', ['synthesis', 'gigadrain'])]);
   executeMove(battle, m0, 'taunt', null, {});
   assert.ok(m1.vol.taunt);
   assert.equal(useMove(battle, m1, 0), false);
 });
 
 test('Sleep Powder não afeta tipo Planta', () => {
-  const { battle, m0, m1 } = duel([mon('venusaur', ['sleeppowder'])], [mon('venusaur', ['tackle'])]);
+  const { battle, m0, m1 } = duel([mon('venusaur', ['sleeppowder'])], [mon('venusaur', ['gigadrain'])]);
   battle.rng.chance = () => true;
   executeMove(battle, m0, 'sleeppowder', null, {});
   run(battle, 1.5);
@@ -186,7 +186,7 @@ test('Fly deixa o usuário invulnerável e cai sobre o alvo', () => {
 });
 
 test('Atributos aumentados voltam ao normal com o tempo', () => {
-  const { battle, m0 } = duel([mon('weavile', ['swordsdance'])], [mon('blastoise', ['tackle'])]);
+  const { battle, m0 } = duel([mon('weavile', ['swordsdance'])], [mon('blastoise', ['waterpulse'])]);
   executeMove(battle, m0, 'swordsdance', null, {});
   assert.equal(m0.boosts.atk, 2);
   run(battle, 17);
@@ -196,7 +196,7 @@ test('Atributos aumentados voltam ao normal com o tempo', () => {
 });
 
 test('Stealth Rock machuca quem entra (Charizard leva 4x)', () => {
-  const { battle, m0 } = duel([mon('steelix', ['stealthrock'])], [mon('blastoise', ['tackle']), mon('charizard', ['tackle'])]);
+  const { battle, m0 } = duel([mon('steelix', ['stealthrock'])], [mon('blastoise', ['waterpulse']), mon('charizard', ['dragonclaw'])]);
   executeMove(battle, m0, 'stealthrock', null, {});
   assert.ok(battle.sides[1].hazards.stealthrock);
   battle.switchIn(1, 1);
@@ -205,9 +205,9 @@ test('Stealth Rock machuca quem entra (Charizard leva 4x)', () => {
 });
 
 test('Normal e Lutador não afetam Gengar; Shadow Tag impede a troca', () => {
-  const { battle, m0, m1 } = duel([mon('weavile', ['tackle', 'brickbreak']), mon('steelix', ['tackle'])], [mon('gengar', ['shadowball'], { item: 'gengarite' })]);
+  const { battle, m0, m1 } = duel([mon('weavile', ['quickattack', 'brickbreak']), mon('steelix', ['ironhead'])], [mon('gengar', ['shadowball'], { item: 'gengarite' })]);
   fixedRolls(battle);
-  assert.equal(calcDamage(battle, m0, m1, liveMove(battle, m0, 'tackle')).eff, 0);
+  assert.equal(calcDamage(battle, m0, m1, liveMove(battle, m0, 'quickattack')).eff, 0);
   battle.sides[1].megaGauge = 100;
   battle.requestMega(1);
   run(battle, 2.5);
@@ -229,7 +229,7 @@ test('Destiny Bond leva o atacante junto', () => {
 
 test('Trick Room deixa Steelix mais rápido que Weavile', async () => {
   const { getSpeed } = await import('../www/js/engine/mon.js');
-  const { battle } = duel([mon('steelix', ['trickroom'])], [mon('weavile', ['tackle'])]);
+  const { battle } = duel([mon('steelix', ['trickroom'])], [mon('weavile', ['quickattack'])]);
   const [s, w] = [battle.sides[0].active, battle.sides[1].active];
   assert.ok(getSpeed(battle, s) < getSpeed(battle, w));
   executeMove(battle, s, 'trickroom', null, {});

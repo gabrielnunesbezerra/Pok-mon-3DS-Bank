@@ -1,6 +1,6 @@
 {
   "name": "arena-2d-champion",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Arena 2D Champion: batalha de Pokémon em tempo real numa arena 2D (projeto de fã, sem fins lucrativos).",
   "type": "module",
@@ -17,6 +17,9 @@
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.3",
-    "@pkmn/dex": "0.10.11"
+    "@pkmn/dex": "0.10.11",
+    "@smogon/sets": "2.0.0",
+    "omggif": "^1.0.10",
+    "pngjs": "^7.0.0"
   }
 }

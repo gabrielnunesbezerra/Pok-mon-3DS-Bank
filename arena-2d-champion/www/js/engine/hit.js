@@ -23,6 +23,8 @@ export function liveMove(b, user, id) {
   }
   if (id === 'terrainpulse' && b.field.terrain && isGrounded(b, user)) mv.type = 'Grass';
   if (id === 'terablast' && getStat(b, user, 'atk') > getStat(b, user, 'spa')) mv.cat = 'Physical';
+  // Pixilate: golpes Normais viram Fada (e ficam 20% mais fortes em calcDamage)
+  if (hasAbility(user, 'pixilate') && mv.type === 'Normal' && mv.cat !== 'Status' && id !== 'struggle') { mv.type = 'Fairy'; mv.ate = true; }
   return mv;
 }
 
@@ -84,6 +86,11 @@ export function basePower(b, user, target, mv, ctx) {
     case 'weatherball': return weatherFor(b, user) ? 100 : 50;
     case 'round': return 60;
     case 'hex': return opp.status ? 130 : 65;
+    case 'storedpower': case 'powertrip': return 20 + 20 * Object.values(user.boosts).reduce((s, v) => s + Math.max(0, v), 0);
+    case 'electroball': {
+      const r = getSpeed(b, user) / Math.max(1, getSpeed(b, opp));
+      return r >= 4 ? 150 : r >= 3 ? 120 : r >= 2 ? 80 : r >= 1 ? 60 : 40;
+    }
     default: return bp;
   }
 }
@@ -119,12 +126,15 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (mv.id === 'seismictoss' || mv.id === 'nightshade') return { damage: LEVEL, eff: eff === 0 ? 0 : 1, crit: false };
   if (mv.id === 'psywave') return { damage: Math.max(1, Math.floor((LEVEL * b.rng.int(50, 150)) / 100)), eff: eff === 0 ? 0 : 1, crit: false };
   if (mv.ohko) return { damage: target.hp, eff: eff === 0 ? 0 : 1, crit: false, ohko: true };
+  if (mv.id === 'superfang') return { damage: Math.max(1, Math.floor(target.hp / 2)), eff: eff === 0 ? 0 : 1, crit: false };
+  if (mv.id === 'endeavor') return { damage: Math.max(0, target.hp - user.hp), eff: eff === 0 ? 0 : 1, crit: false };
   let bp = basePower(b, user, target, mv, ctx);
   if (!bp) return { damage: 0, eff, crit: false };
 
   // críticos
   let critStage = (mv.crit || 1) - 1;
   if (itemActive(user) === 'scopelens') critStage++;
+  if (hasAbility(user, 'superluck')) critStage++;
   if (user.vol.dragoncheer) critStage += hasType(user, 'Dragon') ? 2 : 1;
   let crit = mv.willCrit || !!user.vol.laserfocus || critStage >= 3 || b.rng.next() < [1 / 24, 1 / 8, 1 / 2][critStage];
   if (ctx.noCrit) crit = false;
@@ -139,9 +149,25 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (sheerForce(user, mv)) bp *= 1.3;
   if (hasAbility(user, 'sandforce') && weatherFor(b, user) === 'sandstorm' && ['Rock', 'Ground', 'Steel'].includes(mv.type)) bp *= 1.3;
   if (hasAbility(user, 'megalauncher') && mv.flags.includes('pulse')) bp *= 1.5;
-  if (b.field.terrain?.id === 'grassyterrain') {
+  if (mv.ate) bp *= 1.2;
+  if (hasAbility(user, 'sharpness') && mv.flags.includes('slicing')) bp *= 1.5;
+  if (user.vol.flashfire && mv.type === 'Fire') bp *= 1.5;
+  const terrain = b.field.terrain?.id;
+  if (terrain === 'grassyterrain') {
     if (mv.type === 'Grass' && isGrounded(b, user)) bp *= 1.3;
     if (['earthquake', 'bulldoze'].includes(mv.id) && isGrounded(b, target)) bp *= 0.5;
+  }
+  if (terrain === 'electricterrain' && isGrounded(b, user)) {
+    if (mv.type === 'Electric') bp *= 1.3;
+    if (mv.id === 'risingvoltage' && isGrounded(b, target)) bp *= 2;
+  }
+  if (terrain === 'psychicterrain' && isGrounded(b, user)) {
+    if (mv.type === 'Psychic') bp *= 1.3;
+    if (mv.id === 'expandingforce') bp *= 1.5;
+  }
+  if (terrain === 'mistyterrain') {
+    if (mv.type === 'Dragon' && isGrounded(b, target)) bp *= 0.5;
+    if (mv.id === 'mistyexplosion' && isGrounded(b, user)) bp *= 1.5;
   }
   if (b.field.mudsport > 0 && mv.type === 'Electric') bp /= 3;
   if (mv.id === 'solarbeam' && ['raindance', 'primordialsea', 'sandstorm', 'hail', 'snow'].includes(weatherFor(b, user))) bp *= 0.5;
@@ -157,9 +183,10 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   let atkSrc = user;
   if (mv.id === 'foulplay') atkSrc = target;
   if (mv.id === 'bodypress') atkKey = 'def';
-  const defKey = physical ? 'def' : 'spd';
+  // Psyshock e companhia são especiais mas batem na Defesa; Sacred Sword ignora a defesa aumentada
+  const defKey = mv.overrideDefensiveStat || (physical ? 'def' : 'spd');
   let A = getStat(b, atkSrc, atkKey, { ignoreNegative: crit });
-  let D = getStat(b, target, defKey, { ignorePositive: crit });
+  let D = getStat(b, target, defKey, { ignorePositive: crit, noBoost: !!mv.ignoreDefensive });
 
   const third = user.hp * 3 <= user.maxhp;
   if (third && ((hasAbility(user, 'overgrow') && mv.type === 'Grass') || (hasAbility(user, 'blaze') && mv.type === 'Fire') || (hasAbility(user, 'torrent') && mv.type === 'Water'))) A = Math.floor(A * 1.5);
@@ -174,7 +201,7 @@ export function calcDamage(b, user, target, mv, ctx = {}) {
   if (isRain(w) && isRain(wu)) { if (mv.type === 'Water') dmg = Math.floor(dmg * 1.5); if (mv.type === 'Fire') dmg = Math.floor(dmg * 0.5); }
   if (crit) dmg = Math.floor(dmg * 1.5);
   dmg = Math.floor((dmg * b.rng.int(85, 100)) / 100);
-  if (user.types.includes(mv.type)) dmg = Math.floor(dmg * 1.5);
+  if (user.types.includes(mv.type)) dmg = Math.floor(dmg * (hasAbility(user, 'adaptability') ? 2 : 1.5));
   dmg = Math.floor(dmg * eff);
   if (physical && user.status === 'brn' && mv.id !== 'facade') dmg = Math.floor(dmg * 0.5);
   const conds = b.sides[target.side].conds;
@@ -204,8 +231,12 @@ export function typeEffect(b, user, target, mv) {
 }
 
 // ---------------------------------------------------------------- PS
-export function damageMon(b, mon, amount, { source = null, mv = null, direct = false, silent = false, color = null } = {}) {
+// direct = dano que não vem de um golpe (clima, status, recuo, armadilha); selfCost = PS gastos de
+// propósito (Substitute, Belly Drum), que o Magic Guard não impede
+export function damageMon(b, mon, amount, { source = null, mv = null, direct = false, silent = false, color = null, selfCost = false } = {}) {
   if (mon.fainted || amount <= 0) return 0;
+  if (direct && !selfCost && hasAbility(mon, 'magicguard')) return 0;
+  const before = mon.hp;
   amount = Math.max(1, Math.floor(amount));
   if (!direct && mv && source && source !== mon && mon.vol.substitute && !bypassSub(mv)) {
     const sub = mon.vol.substitute;
@@ -249,6 +280,7 @@ export function damageMon(b, mon, amount, { source = null, mv = null, direct = f
     b.faint(mon, direct ? null : source);
   } else {
     checkBerry(b, mon);
+    if (hasAbility(mon, 'emergencyexit') && !selfCost && before * 2 > mon.maxhp && mon.hp * 2 <= mon.maxhp) b.emergencyExit(mon);
   }
   return amount;
 }
@@ -263,7 +295,14 @@ export function healMon(b, mon, amount, { silent = false } = {}) {
   return amount;
 }
 
+// Unnerve: o adversário fica nervoso demais para comer Berries
+export function unnerved(b, mon) {
+  const foe = b.foeActive?.(mon);
+  return !!foe && foe.onField && hasAbility(foe, 'unnerve');
+}
+
 function checkBerry(b, mon) {
+  if (unnerved(b, mon)) return;
   if (itemActive(mon) === 'sitrusberry' && mon.hp * 2 <= mon.maxhp) {
     consumeItem(b, mon);
     healMon(b, mon, mon.maxhp / 4);
@@ -295,13 +334,20 @@ export function applyStatus(b, target, status, source, mv, { fromMove = false, r
     ((status === 'psn' || status === 'tox') && (hasType(target, 'Poison') || hasType(target, 'Steel'))) ||
     (status === 'frz' && (hasType(target, 'Ice') || isSun(weatherFor(b, target)))) ||
     (status === 'slp' && (hasAbility(target, 'insomnia') || b.field.uproar > 0));
+  // terrenos protegem quem está no chão: Misty de tudo, Electric do sono
+  const terrain = b.field.terrain?.id;
+  const shielded = isGrounded(b, target) && (terrain === 'mistyterrain' || (terrain === 'electricterrain' && status === 'slp'));
+  if (shielded) {
+    if (loud) b.say(`O terreno protegeu ${target.name}!`);
+    return false;
+  }
   if (immune) {
     if (loud) b.say(`Não afeta ${target.name}...`);
     return false;
   }
   target.status = status;
   target.statusData = { toxicTurns: 0 };
-  if (status === 'slp') target.statusData.sleepLeft = rest ? ACTION_TURN * 2 : ACTION_TURN * b.rng.int(1, 3);
+  if (status === 'slp') target.statusData.sleepLeft = (rest ? ACTION_TURN * 2 : ACTION_TURN * b.rng.int(1, 3)) * (hasAbility(target, 'earlybird') ? 0.5 : 1);
   if (status === 'frz') target.statusData.frozenFor = 0;
   const msg = {
     brn: `${target.name} foi queimado!`, par: `${target.name} foi paralisado!`, psn: `${target.name} foi envenenado!`,
@@ -310,10 +356,15 @@ export function applyStatus(b, target, status, source, mv, { fromMove = false, r
   b.say(msg);
   b.emit({ t: 'status', mon: target, status });
   if (status === 'slp' || status === 'frz') b.interrupt(target);
-  if (itemActive(target) === 'lumberry') {
+  if (itemActive(target) === 'lumberry' && !unnerved(b, target)) {
     consumeItem(b, target);
     cureStatus(b, target);
     b.say(`${target.name} comeu a Lum Berry e se curou!`);
+  }
+  // Synchronize devolve queimadura, paralisia e veneno para quem causou
+  if (hasAbility(target, 'synchronize') && source && source !== target && ['brn', 'par', 'psn', 'tox'].includes(status) && target.status === status) {
+    b.say(`O Synchronize de ${target.name} passou o status para ${source.name}!`);
+    applyStatus(b, source, status, target, null);
   }
   return true;
 }
@@ -342,10 +393,11 @@ export function addVolatile(b, target, id, source, mv, { fromMove = false } = {}
       if (itemActive(target) === 'lumberry') { consumeItem(b, target); delete target.vol.confusion; b.say(`${target.name} comeu a Lum Berry!`); }
       return true;
     case 'flinch':
-      if (blockedBySub) return false;
+      if (blockedBySub || hasAbility(target, 'innerfocus')) return false;
       b.interrupt(target);
       b.stun(target, 0.55, 'flinch');
       b.say(`${target.name} recuou!`);
+      if (hasAbility(target, 'steadfast')) boost(b, target, { spe: 1 }, target, null);
       return true;
     case 'leechseed':
       if (hasType(target, 'Grass')) return fail(`Não afeta ${target.name}...`);
@@ -476,6 +528,7 @@ export function boost(b, mon, boosts, source, mv, { fromMove = false } = {}) {
     b.say(`${name} de ${mon.name} ${words[Math.min(2, Math.abs(delta) - 1)]}!`);
     b.emit({ t: 'boost', mon, stat, delta });
     if (delta < 0) mon.lastStatDropAt = b.time;
+    else mon.lastStatRiseAt = b.time;
   }
   if (itemActive(mon) === 'whiteherb' && Object.values(mon.boosts).some(v => v < 0)) {
     for (const k of Object.keys(mon.boosts)) if (mon.boosts[k] < 0) mon.boosts[k] = 0;

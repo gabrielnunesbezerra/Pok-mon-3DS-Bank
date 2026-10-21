@@ -3,7 +3,10 @@ import { SPECIES, LEARNSETS, MOVES, TYPE_CHART } from './generated.js';
 
 export { SPECIES, LEARNSETS, MOVES, TYPE_CHART };
 
-export const BASE_SPECIES = ['venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar'];
+export const BASE_SPECIES = [
+  'venusaur', 'charizard', 'blastoise', 'weavile', 'steelix', 'gengar',
+  'lucario', 'gardevoir', 'tyranitar', 'absol', 'manectric', 'altaria', 'alakazam', 'houndoom', 'gallade', 'aerodactyl', 'golisopod',
+];
 
 export const TYPE_PT = {
   Normal: 'Normal', Fire: 'Fogo', Water: 'Água', Grass: 'Planta', Electric: 'Elétrico', Ice: 'Gelo',
@@ -55,6 +58,29 @@ export const ABILITIES = {
   sandforce: { name: 'Sand Force', desc: 'Na tempestade de areia, golpes de Pedra, Terrestre e Aço ficam 30% mais fortes. Não sofre dano da areia.' },
   cursedbody: { name: 'Cursed Body', desc: '30% de chance de desativar o golpe que o acertou.' },
   shadowtag: { name: 'Shadow Tag', desc: 'O adversário não consegue trocar de Pokémon.' },
+  steadfast: { name: 'Steadfast', desc: 'Toda vez que recua, a Velocidade aumenta.' },
+  innerfocus: { name: 'Inner Focus', desc: 'Nunca recua e não sente o Intimidate.' },
+  justified: { name: 'Justified', desc: 'Levar um golpe Sombrio aumenta o Ataque.' },
+  synchronize: { name: 'Synchronize', desc: 'Quem queimar, paralisar ou envenenar este Pokémon recebe o mesmo status.' },
+  trace: { name: 'Trace', desc: 'Ao entrar, copia a habilidade do adversário.' },
+  telepathy: { name: 'Telepathy', desc: 'Só desvia de golpes de aliados (não faz nada numa batalha 1 contra 1).' },
+  sandstream: { name: 'Sand Stream', desc: 'Ao entrar (ou Mega Evoluir), começa uma tempestade de areia por 5 turnos.' },
+  unnerve: { name: 'Unnerve', desc: 'O adversário fica nervoso e não consegue comer Berries.' },
+  superluck: { name: 'Super Luck', desc: 'Aumenta a chance de acerto crítico.' },
+  static: { name: 'Static', desc: 'Quem encostar com um golpe de contato tem 30% de chance de ficar paralisado.' },
+  lightningrod: { name: 'Lightning Rod', desc: 'Atrai golpes Elétricos: fica imune a eles e o Ataque Especial aumenta.' },
+  minus: { name: 'Minus', desc: 'Só funciona em dupla com Plus (não faz nada numa batalha 1 contra 1).' },
+  naturalcure: { name: 'Natural Cure', desc: 'Sai de campo curado de qualquer status.' },
+  cloudnine: { name: 'Cloud Nine', desc: 'Enquanto está em campo, ninguém sente os efeitos do clima.' },
+  magicguard: { name: 'Magic Guard', desc: 'Só perde PS com golpes de ataque: nada de dano por clima, status, recuo, Life Orb ou armadilhas.' },
+  earlybird: { name: 'Early Bird', desc: 'Acorda na metade do tempo.' },
+  flashfire: { name: 'Flash Fire', desc: 'Imune a golpes de Fogo; ao ser acertado por um, os próprios golpes de Fogo ficam 50% mais fortes.' },
+  sharpness: { name: 'Sharpness', desc: 'Golpes de corte (Leaf Blade, Sacred Sword, Night Slash...) ficam 50% mais fortes.' },
+  emergencyexit: { name: 'Emergency Exit', desc: 'Quando os PS caem para menos da metade, foge da arena e chama outro Pokémon.' },
+  adaptability: { name: 'Adaptability', desc: 'O bônus de golpes do mesmo tipo (STAB) vira x2 em vez de x1,5.' },
+  pixilate: { name: 'Pixilate', desc: 'Golpes do tipo Normal viram Fada e ficam 20% mais fortes.' },
+  magicbounce: { name: 'Magic Bounce', desc: 'Golpes de status como Toxic, Taunt e Stealth Rock voltam para quem usou.' },
+  intimidate: { name: 'Intimidate', desc: 'Ao entrar (ou Mega Evoluir), o Ataque do adversário diminui.' },
 };
 
 export const toId = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -68,6 +94,17 @@ export const ITEMS = {
   blastoisinite: { name: 'Blastoisinite', desc: 'Mega Pedra: Blastoise vira Mega Blastoise.', fling: 80, mega: { from: 'blastoise', to: 'blastoisemega' } },
   steelixite: { name: 'Steelixite', desc: 'Mega Pedra: Steelix vira Mega Steelix.', fling: 80, mega: { from: 'steelix', to: 'steelixmega' } },
   gengarite: { name: 'Gengarite', desc: 'Mega Pedra: Gengar vira Mega Gengar.', fling: 80, mega: { from: 'gengar', to: 'gengarmega' } },
+  lucarionite: { name: 'Lucarionite', desc: 'Mega Pedra: Lucario vira Mega Lucario.', fling: 80, mega: { from: 'lucario', to: 'lucariomega' } },
+  gardevoirite: { name: 'Gardevoirite', desc: 'Mega Pedra: Gardevoir vira Mega Gardevoir.', fling: 80, mega: { from: 'gardevoir', to: 'gardevoirmega' } },
+  tyranitarite: { name: 'Tyranitarite', desc: 'Mega Pedra: Tyranitar vira Mega Tyranitar.', fling: 80, mega: { from: 'tyranitar', to: 'tyranitarmega' } },
+  absolite: { name: 'Absolite', desc: 'Mega Pedra: Absol vira Mega Absol.', fling: 80, mega: { from: 'absol', to: 'absolmega' } },
+  manectite: { name: 'Manectite', desc: 'Mega Pedra: Manectric vira Mega Manectric.', fling: 80, mega: { from: 'manectric', to: 'manectricmega' } },
+  altarianite: { name: 'Altarianite', desc: 'Mega Pedra: Altaria vira Mega Altaria.', fling: 80, mega: { from: 'altaria', to: 'altariamega' } },
+  alakazite: { name: 'Alakazite', desc: 'Mega Pedra: Alakazam vira Mega Alakazam.', fling: 80, mega: { from: 'alakazam', to: 'alakazammega' } },
+  houndoominite: { name: 'Houndoominite', desc: 'Mega Pedra: Houndoom vira Mega Houndoom.', fling: 80, mega: { from: 'houndoom', to: 'houndoommega' } },
+  galladite: { name: 'Galladite', desc: 'Mega Pedra: Gallade vira Mega Gallade.', fling: 80, mega: { from: 'gallade', to: 'gallademega' } },
+  aerodactylite: { name: 'Aerodactylite', desc: 'Mega Pedra: Aerodactyl vira Mega Aerodactyl.', fling: 80, mega: { from: 'aerodactyl', to: 'aerodactylmega' } },
+  golisopite: { name: 'Golisopite', desc: 'Mega Pedra: Golisopod vira Mega Golisopod.', fling: 80, mega: { from: 'golisopod', to: 'golisopodmega' } },
   leftovers: { name: 'Leftovers', desc: 'Recupera 1/16 dos PS por turno.', fling: 10 },
   blacksludge: { name: 'Black Sludge', desc: 'Tipo Venenoso recupera 1/16 por turno; os outros perdem 1/8.', fling: 30 },
   sitrusberry: { name: 'Sitrus Berry', desc: 'Com metade dos PS ou menos, recupera 1/4. Uma vez.', fling: 10, berry: { type: 'Psychic', bp: 80 } },
@@ -113,23 +150,51 @@ export const ITEMS = {
   toxicorb: { name: 'Toxic Orb', desc: 'Envenena gravemente o Pokémon depois de um turno em campo.', fling: 30 },
 };
 
-export const MEGA_STONE_FOR = { venusaur: ['venusaurite'], charizard: ['charizarditex', 'charizarditey'], blastoise: ['blastoisinite'], weavile: [], steelix: ['steelixite'], gengar: ['gengarite'] };
+export const MEGA_STONE_FOR = {
+  venusaur: ['venusaurite'], charizard: ['charizarditex', 'charizarditey'], blastoise: ['blastoisinite'], weavile: [], steelix: ['steelixite'],
+  gengar: ['gengarite'], lucario: ['lucarionite'], gardevoir: ['gardevoirite'], tyranitar: ['tyranitarite'], absol: ['absolite'],
+  manectric: ['manectite'], altaria: ['altarianite'], alakazam: ['alakazite'], houndoom: ['houndoominite'], gallade: ['galladite'],
+  aerodactyl: ['aerodactylite'], golisopod: ['golisopite'],
+};
 
-// Raio do corpo na arena, altura do voo (Charizard paira) e escala do sprite
-// bw: usa o sprite de frente/costas no estilo Black/White (Megas sem sprite PMD)
+// Raio do corpo na arena, altura do voo (Charizard paira) e escala do sprite.
+// sheet: 'gif' = animação de frente e de costas (Megas sem sprite PMD, vinda dos GIFs do Smogon);
+// 'rig' = imagem parada animada por partes (Mega Golisopod, que ainda não tem sprite animado)
 export const BODY = {
   venusaur: { radius: 25, hover: 0, scale: 2 },
-  venusaurmega: { radius: 29, hover: 0, scale: 1.25, bw: true },
+  venusaurmega: { radius: 29, hover: 0, scale: 1.6, sheet: 'gif' },
   charizard: { radius: 22, hover: 14, scale: 2 },
   charizardmegax: { radius: 24, hover: 14, scale: 2 },
-  charizardmegay: { radius: 25, hover: 16, scale: 1.2, bw: true },
+  charizardmegay: { radius: 25, hover: 16, scale: 1.4, sheet: 'gif' },
   blastoise: { radius: 23, hover: 0, scale: 2 },
-  blastoisemega: { radius: 27, hover: 0, scale: 1.25, bw: true },
+  blastoisemega: { radius: 27, hover: 0, scale: 1.6, sheet: 'gif' },
   weavile: { radius: 18, hover: 0, scale: 2 },
   steelix: { radius: 30, hover: 0, scale: 2 },
   steelixmega: { radius: 32, hover: 0, scale: 2 },
   gengar: { radius: 20, hover: 0, scale: 2 },
   gengarmega: { radius: 22, hover: 0, scale: 2 },
+  lucario: { radius: 19, hover: 0, scale: 2 },
+  lucariomega: { radius: 20, hover: 0, scale: 2 },
+  gardevoir: { radius: 19, hover: 0, scale: 2 },
+  gardevoirmega: { radius: 21, hover: 0, scale: 2 },
+  tyranitar: { radius: 27, hover: 0, scale: 2 },
+  tyranitarmega: { radius: 29, hover: 0, scale: 2 },
+  absol: { radius: 20, hover: 0, scale: 2 },
+  absolmega: { radius: 21, hover: 0, scale: 2 },
+  manectric: { radius: 21, hover: 0, scale: 2 },
+  manectricmega: { radius: 22, hover: 0, scale: 2 },
+  altaria: { radius: 22, hover: 14, scale: 2 },
+  altariamega: { radius: 24, hover: 14, scale: 2 },
+  alakazam: { radius: 19, hover: 0, scale: 2 },
+  alakazammega: { radius: 20, hover: 6, scale: 2 },
+  houndoom: { radius: 21, hover: 0, scale: 2 },
+  houndoommega: { radius: 22, hover: 0, scale: 2 },
+  gallade: { radius: 20, hover: 0, scale: 2 },
+  gallademega: { radius: 21, hover: 0, scale: 2 },
+  aerodactyl: { radius: 24, hover: 16, scale: 2 },
+  aerodactylmega: { radius: 26, hover: 16, scale: 2 },
+  golisopod: { radius: 25, hover: 0, scale: 2 },
+  golisopodmega: { radius: 28, hover: 0, scale: 1.6, sheet: 'rig' },
 };
 
 export const HIDDEN_POWER_TYPES = ['Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Fighting', 'Poison', 'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel'];
@@ -159,6 +224,50 @@ export const PRESETS = {
   gengar: [
     { name: 'Mega Sombra', ability: 'cursedbody', item: 'gengarite', moves: ['shadowball', 'sludgebomb', 'focusblast', 'destinybond'] },
     { name: 'Pesadelo', ability: 'cursedbody', item: 'lifeorb', moves: ['hypnosis', 'dreameater', 'shadowball', 'thunderbolt'] },
+  ],
+  lucario: [
+    { name: 'Mega Aura', ability: 'innerfocus', item: 'lucarionite', moves: ['aurasphere', 'flashcannon', 'nastyplot', 'vacuumwave'] },
+    { name: 'Punhos', ability: 'justified', item: 'lifeorb', moves: ['closecombat', 'meteormash', 'extremespeed', 'swordsdance'] },
+  ],
+  gardevoir: [
+    { name: 'Mega Fada', ability: 'trace', item: 'gardevoirite', moves: ['hypervoice', 'psyshock', 'calmmind', 'focusblast'] },
+    { name: 'Desejo', ability: 'synchronize', item: 'leftovers', moves: ['moonblast', 'psychic', 'willowisp', 'wish'] },
+  ],
+  tyranitar: [
+    { name: 'Mega Areia', ability: 'sandstream', item: 'tyranitarite', moves: ['stoneedge', 'crunch', 'dragondance', 'earthquake'] },
+    { name: 'Muralha', ability: 'sandstream', item: 'leftovers', moves: ['stoneedge', 'crunch', 'stealthrock', 'fireblast'] },
+  ],
+  absol: [
+    { name: 'Mega Desastre', ability: 'justified', item: 'absolite', moves: ['suckerpunch', 'knockoff', 'swordsdance', 'playrough'] },
+    { name: 'Super Sorte', ability: 'superluck', item: 'scopelens', moves: ['nightslash', 'psychocut', 'suckerpunch', 'swordsdance'] },
+  ],
+  manectric: [
+    { name: 'Mega Trovão', ability: 'lightningrod', item: 'manectite', moves: ['thunderbolt', 'flamethrower', 'voltswitch', 'snarl'] },
+    { name: 'Tempestade', ability: 'static', item: 'lifeorb', moves: ['thunder', 'raindance', 'discharge', 'wildcharge'] },
+  ],
+  altaria: [
+    { name: 'Mega Fada', ability: 'naturalcure', item: 'altarianite', moves: ['return', 'earthquake', 'dragondance', 'roost'] },
+    { name: 'Nuvem', ability: 'naturalcure', item: 'leftovers', moves: ['dragonpulse', 'flamethrower', 'cottonguard', 'roost'] },
+  ],
+  alakazam: [
+    { name: 'Mega Mente', ability: 'magicguard', item: 'alakazite', moves: ['psychic', 'shadowball', 'focusblast', 'calmmind'] },
+    { name: 'Mágico', ability: 'magicguard', item: 'lifeorb', moves: ['psyshock', 'dazzlinggleam', 'energyball', 'recover'] },
+  ],
+  houndoom: [
+    { name: 'Mega Inferno', ability: 'flashfire', item: 'houndoominite', moves: ['fireblast', 'darkpulse', 'nastyplot', 'sunnyday'] },
+    { name: 'Caçador', ability: 'flashfire', item: 'lifeorb', moves: ['flamethrower', 'crunch', 'suckerpunch', 'willowisp'] },
+  ],
+  gallade: [
+    { name: 'Mega Lâmina', ability: 'sharpness', item: 'galladite', moves: ['sacredsword', 'leafblade', 'psychocut', 'swordsdance'] },
+    { name: 'Justiceiro', ability: 'justified', item: 'lifeorb', moves: ['closecombat', 'zenheadbutt', 'shadowsneak', 'knockoff'] },
+  ],
+  aerodactyl: [
+    { name: 'Mega Fóssil', ability: 'rockhead', item: 'aerodactylite', moves: ['stoneedge', 'dualwingbeat', 'firefang', 'dragondance'] },
+    { name: 'Vento', ability: 'unnerve', item: 'focussash', moves: ['rockslide', 'skyattack', 'tailwind', 'stealthrock'] },
+  ],
+  golisopod: [
+    { name: 'Mega Armadura', ability: 'emergencyexit', item: 'golisopite', moves: ['firstimpression', 'liquidation', 'leechlife', 'swordsdance'] },
+    { name: 'Ninja', ability: 'emergencyexit', item: 'leftovers', moves: ['razorshell', 'aquajet', 'spikes', 'knockoff'] },
   ],
 };
 

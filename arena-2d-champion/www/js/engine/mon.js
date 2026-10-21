@@ -129,6 +129,8 @@ export function isGrounded(b, mon) {
 }
 
 export function weatherFor(b, mon) {
+  // Cloud Nine em campo: ninguém sente o clima
+  if (b.sides?.some(s => s.active?.onField && s.active.ability === 'cloudnine')) return null;
   // Utility Umbrella ignora sol e chuva para quem segura
   const w = b.field.weather?.id || null;
   if (mon && itemActive(mon) === 'utilityumbrella' && ['sunnyday', 'raindance', 'desolateland', 'primordialsea'].includes(w)) return null;

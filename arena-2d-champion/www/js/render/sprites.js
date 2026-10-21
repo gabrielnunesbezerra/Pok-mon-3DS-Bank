@@ -1,9 +1,9 @@
 // Carrega os sprites e desenha o quadro certo de cada animação.
 // - PMD (8 direções, com animações de andar, atacar, levar dano...)
-// - Megas sem sprite PMD: sprite de frente/costas no estilo Black/White, animado por código
+// - Megas sem sprite PMD: animação de frente e de costas (folhas feitas a partir dos GIFs do Smogon)
+// - Mega Golisopod: imagem parada animada por partes (garras, corpo e pernas)
 // - Treinadores: sprites dos jogos
-import { SPRITE_DATA, TRAINER_DATA } from '../data/sprites.js';
-import { BODY } from '../data/dex.js';
+import { SPRITE_DATA, TRAINER_DATA, TITLE_SPRITE } from '../data/sprites.js';
 
 const FALLBACK = {
   Idle: ['Idle', 'Walk'],
@@ -82,16 +82,33 @@ function bottomRow(img, sx = 0, sy = 0, w = img.width, h = img.height) {
   return h * 0.85;
 }
 
+function gifSheet(img, meta) {
+  const total = meta.durations.reduce((s, d) => s + d, 0);
+  return { img, ...meta, total };
+}
+
+// quadro da animação de uma folha de GIF no tempo t (segundos), em loop
+export function gifFrame(sh, t) {
+  let ms = ((t * 1000) % sh.total + sh.total) % sh.total;
+  for (let i = 0; i < sh.durations.length; i++) {
+    ms -= sh.durations[i];
+    if (ms < 0) return i;
+  }
+  return sh.durations.length - 1;
+}
+
 export class SpriteBank {
   constructor() {
     this.sheets = {};
-    this.bw = {};
+    this.gifs = {};
+    this.rigs = {};
     this.portraits = {};
     this.artwork = {};
     this.trainers = {};
     this.white = new Map();
     this.ice = new Map();
     this.feet = {};
+    this.title = null; // Mega Venusaur animada da tela inicial
   }
 
   async load(onProgress) {
@@ -106,17 +123,19 @@ export class SpriteBank {
           }));
         }
       }
-      if (data.bw) {
-        jobs.push(Promise.all([loadImage(data.bw.front), loadImage(data.bw.back)]).then(([front, back]) => {
-          if (front && back) this.bw[key] = { front, back, feetFront: bottomRow(front), feetBack: bottomRow(back) };
+      if (data.gif) {
+        jobs.push(Promise.all([loadImage(data.gif.front.src), loadImage(data.gif.back.src)]).then(([front, back]) => {
+          if (front && back) this.gifs[key] = { front: gifSheet(front, data.gif.front), back: gifSheet(back, data.gif.back) };
         }));
       }
+      if (data.rig) jobs.push(loadImage(data.rig.src).then(img => { if (img) this.rigs[key] = { img, ...data.rig }; }));
       if (data.portrait) jobs.push(loadImage(data.portrait).then(img => { this.portraits[key] = img; }));
       if (data.artwork) jobs.push(loadImage(data.artwork).then(img => { this.artwork[key] = img; }));
     }
     for (const [id, t] of Object.entries(TRAINER_DATA)) {
       jobs.push(loadImage(t.img).then(img => { if (img) this.trainers[id] = { img, name: t.name, feet: bottomRow(img), box: opaqueBox(img) }; }));
     }
+    if (TITLE_SPRITE) jobs.push(loadImage(TITLE_SPRITE.src).then(img => { if (img) this.title = gifSheet(img, TITLE_SPRITE); }));
     let done = 0;
     await Promise.all(jobs.map(j => j.then(() => onProgress?.(++done / jobs.length))));
     for (const [key, data] of Object.entries(SPRITE_DATA)) {
@@ -156,7 +175,8 @@ export class SpriteBank {
 
   // Desenha o Pokémon com os pés em (x, y). opts: flash (0..1), frozen, alpha, silhouette (cor do rastro)
   draw(g, key, anim, t, facing, x, y, scale, opts = {}) {
-    if (BODY[key]?.bw && this.bw[key]) return this.drawBW(g, key, anim, t, facing, x, y, scale, opts);
+    if (this.gifs[key]) return this.drawGif(g, key, anim, t, facing, x, y, scale, opts);
+    if (this.rigs[key]) return this.drawRig(g, key, anim, t, facing, x, y, scale, opts);
     const found = this.sheet(key, anim);
     if (!found) return null;
     const { s, name } = found;
@@ -173,27 +193,56 @@ export class SpriteBank {
     return { top: dy, height: dh };
   }
 
-  // Sprite de frente (olhando para baixo) ou de costas, espelhado conforme o lado, com animação por código
-  drawBW(g, key, anim, t, facing, x, y, scale, opts) {
-    const bw = this.bw[key];
+  // Mega com animação de frente (olhando para baixo) e de costas, espelhada conforme o lado.
+  // A animação dos jogos fica rodando; andar acelera, atacar dá um avanço, dano treme.
+  drawGif(g, key, anim, t, facing, x, y, scale, opts) {
+    const set = this.gifs[key];
     const front = Math.sin(facing) > -0.3;
-    const img = front ? bw.front : bw.back;
-    const feet = front ? bw.feetFront : bw.feetBack;
+    const sh = front ? set.front : set.back;
     // de frente o sprite olha para a esquerda; de costas, para a direita
     const flip = front ? Math.cos(facing) > 0.15 : Math.cos(facing) < -0.15;
-    let sx = 1, sy = 1, ox = 0, oy = 0;
-    const k = Math.sin(t * 7);
-    if (anim === 'Walk' || anim === 'Hop') { oy = -Math.abs(Math.sin(t * 12)) * 5; sx = 1 + 0.03 * k; }
-    else if (anim === 'Attack' || anim === 'Strike' || anim === 'Swing') { const p = Math.min(1, t / 0.25); ox = Math.sin(p * Math.PI) * 14 * (flip ? 1 : -1) * (front ? 1 : -1); sx = 1 + 0.08 * Math.sin(p * Math.PI); sy = 1 - 0.06 * Math.sin(p * Math.PI); }
-    else if (anim === 'Shoot' || anim === 'Charge') { sy = 1 + 0.05 * Math.sin(t * 20); sx = 1 - 0.03 * Math.sin(t * 20); }
-    else if (anim === 'Hurt') { ox = Math.sin(t * 60) * 4; }
-    else if (anim === 'Sleep') { sy = 0.94 + 0.03 * k; }
-    else { sy = 1 + 0.025 * k; sx = 1 - 0.015 * k; }
-    const dw = img.width * scale * sx, dh = img.height * scale * sy;
+    const speed = anim === 'Walk' || anim === 'Hop' ? 1.7 : anim === 'Sleep' ? 0.35 : anim === 'Charge' ? 1.4 : 1;
+    const frame = gifFrame(sh, t * speed + (opts.phase || 0));
+    let ox = 0, oy = 0;
+    if (anim === 'Walk' || anim === 'Hop') oy = -Math.round(Math.abs(Math.sin(t * 11)) * 2) * scale;
+    else if (anim === 'Attack' || anim === 'Strike' || anim === 'Swing' || anim === 'Shoot') {
+      const p = Math.min(1, t / 0.25);
+      ox = Math.round(Math.sin(p * Math.PI) * 4) * scale * (flip ? 1 : -1) * (front ? 1 : -1);
+    } else if (anim === 'Hurt') ox = Math.round(Math.sin(t * 60) * 1.5) * scale;
+    const dw = sh.w * scale, dh = sh.h * scale;
     const dx = Math.round(x - dw / 2 + ox);
-    const dy = Math.round(y - feet * scale * sy + oy);
-    this.blit(g, img, 0, 0, img.width, img.height, dx, dy, dw, dh, flip, opts);
+    const dy = Math.round(y - sh.feet * scale + oy);
+    const sx = (frame % sh.cols) * sh.w, sy = Math.floor(frame / sh.cols) * sh.h;
+    this.blit(g, sh.img, sx, sy, sh.w, sh.h, dx, dy, dw, dh, flip, opts);
     return { top: dy, height: dh };
+  }
+
+  // Imagem parada animada por partes: as garras de cima balançam, o corpo respira e as pernas
+  // alternam quando anda (Mega Golisopod ainda não tem sprite animado)
+  drawRig(g, key, anim, t, facing, x, y, scale, opts) {
+    const r = this.rigs[key];
+    const flip = Math.cos(facing) > 0.15;
+    const cuts = [0, Math.round(r.h * 0.36), Math.round(r.h * 0.7), r.h];
+    const walking = anim === 'Walk' || anim === 'Hop';
+    const attacking = anim === 'Attack' || anim === 'Strike' || anim === 'Swing' || anim === 'Shoot';
+    const atk = attacking ? Math.sin(Math.min(1, t / 0.25) * Math.PI) : 0;
+    const dir = flip ? 1 : -1;
+    const step = walking ? (Math.floor(t / 0.12) % 2 ? 1 : -1) : 0;
+    const bob = walking ? -Math.round(Math.abs(Math.sin(t * 10)) * 1.5) : 0;
+    const hurt = anim === 'Hurt' ? Math.round(Math.sin(t * 60) * 1.5) : 0;
+    const parts = [
+      { dx: Math.round(atk * 5) * dir + hurt, dy: Math.round(Math.sin(t * 3) * 1.2) + bob - Math.round(atk * 2) },
+      { dx: Math.round(atk * 3) * dir + hurt, dy: Math.round(Math.sin(t * 3 + 0.7) * 0.6) + bob },
+      { dx: step + hurt, dy: 0 },
+    ];
+    const dw = r.w * scale;
+    const x0 = Math.round(x - dw / 2), y0 = Math.round(y - r.feet * scale);
+    for (let i = 0; i < 3; i++) {
+      const sy = cuts[i], sh = cuts[i + 1] - cuts[i];
+      const p = parts[i];
+      this.blit(g, r.img, 0, sy, r.w, sh, x0 + p.dx * scale, y0 + (sy + p.dy) * scale, dw, sh * scale, flip, opts);
+    }
+    return { top: y0, height: r.h * scale };
   }
 
   blit(g, img, sx, sy, sw, sh, dx, dy, dw, dh, flip, opts) {
@@ -216,7 +265,8 @@ export class SpriteBank {
 
   // altura aproximada na tela (para barras e textos acima da cabeça)
   height(key, scale) {
-    if (BODY[key]?.bw && this.bw[key]) return this.bw[key].feetFront * scale * 0.95;
+    if (this.gifs[key]) return this.gifs[key].front.feet * scale * 0.95;
+    if (this.rigs[key]) return this.rigs[key].h * scale * 0.95;
     const f = this.feet[key];
     return f ? f.idle * scale * 0.9 : 50;
   }

@@ -129,7 +129,7 @@ export function useMove(b, mon, slot, aim = null) {
     const atk = getStat(b, mon, 'atk');
     const def = getStat(b, mon, 'def');
     const dmg = Math.floor(Math.floor((22 * 40 * atk) / def) / 50) + 2;
-    H.damageMon(b, mon, dmg, { direct: true, mv: self });
+    H.damageMon(b, mon, dmg, { direct: true, mv: self, selfCost: true });
     b.stun(mon, 0.6, 'confusion');
     return true;
   }
@@ -200,7 +200,7 @@ export function executeMove(b, user, id, aim, opts = {}) {
   const foe = b.foeActive(user);
 
   // condições de falha antes de soltar o golpe
-  if (id === 'fakeout' && (prevActed || b.time - user.enteredAt > 2.5)) return failMove(b, user);
+  if ((id === 'fakeout' || id === 'firstimpression') && (prevActed || b.time - user.enteredAt > 2.5)) return failMove(b, user);
   if (id === 'upperhand') {
     const a = foe?.action;
     if (!(a && (a.type === 'windup' || a.type === 'charge') && a.pri > 0)) return failMove(b, user);
@@ -307,7 +307,7 @@ export function selfMove(b, user, exec) {
       // Fantasma: gasta metade dos PS e amaldiçoa o alvo; outros tipos: Vel -1, Atq +1, Def +1
       if (hasType(user, 'Ghost')) {
         if (!foe || foe.vol.curse) return fail();
-        H.damageMon(b, user, user.maxhp / 2, { direct: true });
+        H.damageMon(b, user, user.maxhp / 2, { direct: true, selfCost: true });
         foe.vol.curse = {};
         b.say(`${user.name} cortou os próprios PS e amaldiçoou ${foe.name}!`);
         b.emit({ t: 'statusHit', mon: foe, by: user, mv });
@@ -348,11 +348,49 @@ export function selfMove(b, user, exec) {
       b.say('Todos que ouviram a canção vão desmaiar em 3 turnos!');
       return ok();
     }
-    case 'stealthrock': case 'toxicspikes': {
-      const hz = b.sides[1 - user.side].hazards;
-      if (id === 'stealthrock') { if (hz.stealthrock) return fail(); hz.stealthrock = true; b.say('Pedras pontudas flutuam em volta do lado adversário!'); }
-      else { if (hz.toxicspikes >= 2) return fail(); hz.toxicspikes++; b.say('Espinhos venenosos se espalharam pelo lado adversário!'); }
-      b.emit({ t: 'hazard', side: 1 - user.side, id });
+    case 'stealthrock': case 'toxicspikes': case 'spikes': {
+      // Magic Bounce joga a armadilha de volta para o lado de quem usou
+      const bounced = foe && hasAbility(foe, 'magicbounce');
+      const sideIdx = bounced ? user.side : 1 - user.side;
+      if (bounced) b.say(`${foe.name} devolveu ${mv.name} com Magic Bounce!`);
+      const hz = b.sides[sideIdx].hazards;
+      const where = bounced ? 'do próprio lado' : 'do lado adversário';
+      if (id === 'stealthrock') { if (hz.stealthrock) return fail(); hz.stealthrock = true; b.say(`Pedras pontudas flutuam em volta ${where}!`); }
+      else if (id === 'spikes') { if (hz.spikes >= 3) return fail(); hz.spikes++; b.say(`Espinhos se espalharam pelo chão ${where}!`); }
+      else { if (hz.toxicspikes >= 2) return fail(); hz.toxicspikes++; b.say(`Espinhos venenosos se espalharam ${where}!`); }
+      b.emit({ t: 'hazard', side: sideIdx, id });
+      return ok();
+    }
+    case 'electricterrain': case 'psychicterrain': case 'mistyterrain':
+      if (b.field.terrain?.id === id) return fail();
+      b.setTerrain(id, 5);
+      return ok();
+    case 'healbell': case 'aromatherapy': {
+      let any = false;
+      for (const m of b.sides[user.side].mons) if (m.status && !m.fainted) { H.cureStatus(b, m, true); any = true; }
+      b.say(id === 'healbell' ? 'Um sino tocou e curou o time!' : 'Um aroma calmante curou o time!');
+      return any ? ok() : undefined;
+    }
+    case 'wish': {
+      const side = b.sides[user.side];
+      if (side.wish) return fail();
+      side.wish = { t: FIELD_TURN, amount: user.maxhp / 2, from: user.name };
+      b.say(`${user.name} fez um pedido!`);
+      return ok();
+    }
+    case 'healingwish': {
+      if (!b.switchOptions(user.side).length) return fail();
+      b.sides[user.side].healingwish = true;
+      b.say(`${user.name} fez um pedido de cura para o próximo Pokémon!`);
+      ok();
+      user.hp = 0;
+      return b.faint(user);
+    }
+    case 'futuresight': {
+      const side = foe ? b.sides[foe.side] : null;
+      if (!side || side.futuresight) return fail();
+      side.futuresight = { t: FIELD_TURN * 2, user, id };
+      b.say(`${user.name} previu um ataque!`);
       return ok();
     }
     case 'trickroom':
@@ -370,7 +408,7 @@ export function selfMove(b, user, exec) {
       return H.boost(b, user, { atk: 1, spa: 1 }, user, mv, { fromMove: true });
     case 'bellydrum':
       if (user.hp * 2 <= user.maxhp || user.boosts.atk >= 6) return fail();
-      H.damageMon(b, user, Math.floor(user.maxhp / 2), { direct: true });
+      H.damageMon(b, user, Math.floor(user.maxhp / 2), { direct: true, selfCost: true });
       user.boosts.atk = 6;
       b.say(`${user.name} cortou os próprios PS e maximizou o Ataque!`);
       b.emit({ t: 'boost', mon: user, stat: 'atk', delta: 6 });
@@ -402,7 +440,7 @@ export function selfMove(b, user, exec) {
     case 'substitute':
       if (user.vol.substitute) return fail(`${user.name} já tem um substituto!`);
       if (user.hp <= user.maxhp / 4) return fail('Não tem PS suficiente para o substituto!');
-      H.damageMon(b, user, Math.floor(user.maxhp / 4), { direct: true });
+      H.damageMon(b, user, Math.floor(user.maxhp / 4), { direct: true, selfCost: true });
       user.vol.substitute = { hp: Math.floor(user.maxhp / 4) };
       delete user.vol.partiallytrapped;
       b.say(`${user.name} criou um substituto!`);
@@ -494,6 +532,18 @@ export function selfMove(b, user, exec) {
 // ---------------------------------------------------------------- golpe acertou o alvo
 // Retorna: 'hit', 'miss', 'blocked', 'immune', 'fail', 'none' (passou direto) ou 'dodged'
 export function strike(b, user, target, exec, ctx = {}) {
+  const res = strikeTarget(b, user, target, exec, ctx);
+  const mv = ctx.mv || exec.mv;
+  // High Jump Kick: errar (ou bater em proteção, imunidade, esquiva) machuca quem chutou
+  if (mv.hasCrashDamage && ['miss', 'blocked', 'immune', 'dodged'].includes(res) && !user.fainted && !exec.crashed) {
+    exec.crashed = true;
+    b.say(`${user.name} caiu de mau jeito!`);
+    H.damageMon(b, user, user.maxhp / 2 / HP_SCALE, { direct: true });
+  }
+  return res;
+}
+
+function strikeTarget(b, user, target, exec, ctx) {
   const mv = ctx.mv || exec.mv;
   if (!target || target.fainted || !target.onField) return 'none';
   if (target.semiInv && !H.hitsSemiInvulnerable(mv, target.semiInv)) return 'none';
@@ -513,6 +563,34 @@ export function strike(b, user, target, exec, ctx = {}) {
       b.emit({ t: 'protect', mon: target });
       return 'blocked';
     }
+  }
+  // Psychic Terrain: quem está no chão não leva golpes de prioridade
+  if (b.field.terrain?.id === 'psychicterrain' && mv.pri > 0 && isGrounded(b, target) && target !== user) {
+    b.say(`O Psychic Terrain protegeu ${target.name}!`);
+    return 'blocked';
+  }
+  // habilidades que anulam um tipo e ainda ganham algo com isso
+  if (hasAbility(target, 'lightningrod') && mv.type === 'Electric' && target !== user) {
+    b.say(`${target.name} atraiu o golpe com Lightning Rod!`);
+    b.text(target, 'Imune', '#ffe14a');
+    H.boost(b, target, { spa: 1 }, target, null);
+    return 'immune';
+  }
+  if (hasAbility(target, 'flashfire') && mv.type === 'Fire' && target !== user) {
+    if (!target.vol.flashfire) b.say(`O Flash Fire de ${target.name} deixou os golpes de Fogo mais fortes!`);
+    target.vol.flashfire = {};
+    b.text(target, 'Imune', '#ff9a3d');
+    return 'immune';
+  }
+  // Magic Bounce: golpes de status refletíveis voltam para quem usou
+  if (mv.cat === 'Status' && mv.flags.includes('reflectable') && hasAbility(target, 'magicbounce') && target !== user && !ctx.bounced) {
+    b.say(`${target.name} devolveu ${mv.name} com Magic Bounce!`);
+    b.emit({ t: 'bounce', mon: target });
+    return statusHit(b, target, user, exec, mv, { ...ctx, bounced: true });
+  }
+  if (mv.id === 'synchronoise' && !target.types.some(t => user.types.includes(t))) {
+    b.say(`Não afeta ${target.name}...`);
+    return 'immune';
   }
   const volley = ctx.volley;
   const firstOfVolley = !volley || !volley.checked;
@@ -644,8 +722,18 @@ export function strike(b, user, target, exec, ctx = {}) {
       b.emit({ t: 'item', mon: user });
     }
   }
+  // golpes que pegam quem acabou de aumentar atributos
+  if (dealt > 0 && !target.fainted && b.time - (target.lastStatRiseAt ?? -99) < FIELD_TURN) {
+    if (mv.id === 'burningjealousy') H.applyStatus(b, target, 'brn', user, mv);
+    if (mv.id === 'alluringvoice') H.addVolatile(b, target, 'confusion', user, mv);
+  }
   // reações do alvo
   if (dealt > 0 && !target.fainted) {
+    if (hasAbility(target, 'justified') && mv.type === 'Dark') H.boost(b, target, { atk: 1 }, target, null);
+    if (hasAbility(target, 'static') && mv.flags.includes('contact') && !user.fainted && b.rng.chance(30)) {
+      b.say(`O Static de ${target.name} deu choque em ${user.name}!`);
+      H.applyStatus(b, user, 'par', target, null);
+    }
     if (target.vol.rage) H.boost(b, target, { atk: 1 }, target, null);
     if (res.eff > 1 && itemActive(target) === 'weaknesspolicy') {
       H.consumeItem(b, target);
@@ -734,10 +822,17 @@ function statusHit(b, user, target, exec, mv, ctx) {
       b.say(`${user.name} aprendeu ${MOVES[last].name}!`);
       return done();
     }
-    case 'roar':
+    case 'roar': case 'whirlwind':
       if (!b.switchOptions(target.side).length || target.vol.ingrain) return fail();
       b.forceSwitch(target);
       return done();
+    case 'memento':
+      H.boost(b, target, { atk: -2, spa: -2 }, user, mv, loud);
+      exec.hitAny = true;
+      b.emit({ t: 'statusHit', mon: target, by: user, mv });
+      user.hp = 0;
+      b.faint(user);
+      return 'hit';
     case 'worryseed':
       if (target.ability === 'insomnia') return fail();
       target.ability = 'insomnia';
@@ -781,7 +876,7 @@ function statusHit(b, user, target, exec, mv, ctx) {
       [user.ability, target.ability] = [target.ability, user.ability];
       b.say(`${user.name} trocou de habilidade com ${target.name}!`);
       return done();
-    case 'trick': {
+    case 'trick': case 'switcheroo': {
       if ((!user.item && !target.item) || (user.item && !itemRemovable(user)) || (target.item && !itemRemovable(target))) return fail();
       [user.item, target.item] = [target.item, user.item];
       b.say(`${user.name} trocou de item com ${target.name}!`);
