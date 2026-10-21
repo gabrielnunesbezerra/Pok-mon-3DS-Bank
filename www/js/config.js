@@ -1,6 +1,8 @@
 // Constantes do PK confront. O mundo lógico tem 640 x 360 e a simulação roda a 60 passos por segundo.
 export const VERSION = '2.0.0';
-export const ANCHO = 640;
+// largura lógica: 640 em tela 16:9; em celulares compridos cresce até 900 para preencher a tela
+export let ANCHO = 640;
+export const setAncho = w => { ANCHO = w; };
 export const ALTO = 360;
 export const TICK = 1 / 60;
 export const FUENTE = '"Pixelify Sans", monospace';

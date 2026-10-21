@@ -5,6 +5,7 @@ import { texto, fondoMenu, rect, destello, medir } from '../render/pixel.js';
 import { FINALES, TODAS_LAS_FORMAS, filaDesdeAngulo } from '../render/sprites.js';
 import { ListaBotones } from './menus.js';
 import { sfx } from '../audio.js';
+import { centrada } from './centrar.js';
 
 const MENUS = {
   principal: [
@@ -50,7 +51,7 @@ export class Titulo {
     // dois Pokémon grandes nos lados (formas finais de duas linhas diferentes, que não sejam muito altas)
     const medianos = FINALES.filter(f => { const m = bank.medidas(f.dex); return (m.feet ?? 5) - (m.head ?? -16) <= 40; });
     const pool = [...medianos].sort(() => Math.random() - 0.5);
-    this.guardianes = [{ x: 110, f: pool[0], fila: 2 }, { x: 530, f: pool[1], fila: 6 }].filter(x => x.f);
+    this.guardianes = [{ x: 110 - (ANCHO - 640) / 4, f: pool[0], fila: 2 }, { x: 530 + (ANCHO - 640) / 4, f: pool[1], fila: 6 }].filter(x => x.f);
     for (const gd of this.guardianes) bank.precargar(gd.f.dex, ['Idle', 'Attack']);
     for (let i = 0; i < 5; i++) this.nuevoDesfile(true);
     this.abrir(this.menu);
@@ -90,14 +91,15 @@ export class Titulo {
     if ((m.feet ?? 5) - (m.head ?? -16) > 50 || !this.app.bank.tiene(forma.dex)) return;
     this.app.bank.precargar(forma.dex, ['Walk']);
     const derecha = Math.random() < 0.5;
-    const x = enMarcha ? azar(40, ANCHO - 40) : derecha ? -30 : ANCHO + 30;
+    const ex = (ANCHO - 640) / 2;
+    const x = enMarcha ? azar(-ex + 40, 640 + ex - 40) : derecha ? -ex - 30 : 640 + ex + 30;
     this.desfile.push({ forma, x, y: SUELO + Math.round(azar(-5, 5)), v: (derecha ? 1 : -1) * azar(24, 40), fila: derecha ? 2 : 6 });
   }
 
   actualizar(dt) {
     this.t += dt;
     for (const d of this.desfile) d.x += d.v * dt;
-    this.desfile = this.desfile.filter(d => d.x > -40 && d.x < ANCHO + 40);
+    this.desfile = this.desfile.filter(d => d.x > -(ANCHO - 640) / 2 - 40 && d.x < 640 + (ANCHO - 640) / 2 + 40);
     if (this.t - (this.ultimoDesfile ?? 0) > 1.5) { this.ultimoDesfile = this.t; this.nuevoDesfile(); }
     this.guardianes.forEach((gd, i) => {
       if (this.t > (gd.proximo ??= 3.2 + i * 1.6)) { gd.proximo = this.t + 3.2 + i * 1.6; gd.ataque = this.t; }
@@ -113,15 +115,14 @@ export class Titulo {
 
   dibujar(g) {
     const t = this.t, bank = this.app.bank;
-    fondoMenu(g, ANCHO, ALTO);
     // halo atrás do logo
     const hal = g.createRadialGradient(BX, 62 + BAJA, 10, BX, 62 + BAJA, 150);
     hal.addColorStop(0, 'rgba(120,190,255,0.32)'); hal.addColorStop(1, 'rgba(120,190,255,0)');
-    g.fillStyle = hal; g.fillRect(0, 0, ANCHO, 230);
+    g.fillStyle = hal; g.fillRect(-300, 0, 1240, 230);
     // chão
-    rect(g, 0, LINEA_SUELO + 1, ANCHO, 1, UI.contorno);
-    rect(g, 0, LINEA_SUELO, ANCHO, 1, 0x2a5a9a);
-    rect(g, 0, LINEA_SUELO + 2, ANCHO, ALTO - LINEA_SUELO - 2, 0x0a1830);
+    rect(g, -300, LINEA_SUELO + 1, 1240, 1, UI.contorno);
+    rect(g, -300, LINEA_SUELO, 1240, 1, 0x2a5a9a);
+    rect(g, -300, LINEA_SUELO + 2, 1240, ALTO - LINEA_SUELO - 2, 0x0a1830);
 
     // dois Pokémon grandes
     const suelo = 114 + BAJA;
@@ -181,3 +182,5 @@ export class Titulo {
     g.restore();
   }
 }
+
+centrada(Titulo);

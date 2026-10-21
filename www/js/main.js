@@ -1,5 +1,5 @@
 // Ponto de entrada: tela única em 640 x 360 com escala nítida, troca de cenas e laço principal.
-import { ANCHO, ALTO, TICK } from './config.js';
+import { ANCHO, ALTO, TICK, setAncho } from './config.js';
 import { Entrada } from './input.js';
 import { SpriteBank } from './render/sprites.js';
 import * as audio from './audio.js';
@@ -39,20 +39,24 @@ app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JS
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
 function medir() {
   const dpr = Math.min(3, devicePixelRatio || 1);
-  const z = Math.min(innerWidth / ANCHO, innerHeight / ALTO);
+  // a altura lógica é sempre 360; a largura acompanha a proporção da tela (640 a 900)
+  const W = Math.max(640, Math.min(900, Math.round((ALTO * innerWidth) / innerHeight)));
+  setAncho(W);
+  app.W = W;
+  const z = Math.min(innerWidth / W, innerHeight / ALTO);
   app.zoom = z;
-  canvas.width = Math.round(ANCHO * z * dpr);
+  canvas.width = Math.round(W * z * dpr);
   canvas.height = Math.round(ALTO * z * dpr);
-  canvas.style.width = `${ANCHO * z}px`;
+  canvas.style.width = `${W * z}px`;
   canvas.style.height = `${ALTO * z}px`;
-  app.k = canvas.width / ANCHO;
+  app.k = canvas.width / W;
 }
 addEventListener('resize', medir);
 medir();
 
 const aCoord = (cx, cy) => {
   const r = canvas.getBoundingClientRect();
-  return { x: ((cx - r.left) / r.width) * ANCHO, y: ((cy - r.top) / r.height) * ALTO };
+  return { x: ((cx - r.left) / r.width) * app.W, y: ((cy - r.top) / r.height) * ALTO };
 };
 app.aCoord = aCoord;
 app.entrada = new Entrada(canvas, aCoord);
@@ -75,7 +79,7 @@ function bucle(ahora) {
   g.setTransform(app.k, 0, 0, app.k, 0, 0);
   g.imageSmoothingEnabled = false;
   g.fillStyle = '#07060c';
-  g.fillRect(0, 0, ANCHO, ALTO);
+  g.fillRect(0, 0, app.W, ALTO);
   app.escena?.dibujar(g);
   requestAnimationFrame(bucle);
 }

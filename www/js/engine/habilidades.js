@@ -75,36 +75,42 @@ export class Habilidades {
   }
 
   // ---------------------------------------------------------------- evolução e Mega
+  // A troca de forma é aplicada na hora (o motor já luta com a forma nova); o desenho mostra a forma
+  // antiga brilhando até a metade da cena (evoVis) e só então revela a nova, com o anúncio.
+  iniciarEvo(l, mega, texto, cor) {
+    const luta = this.luta, dur = REGLAS.evoDuracion ?? 1.8;
+    l.evoVis = { t0: luta.t, dur, mega, desde: l.dex, escDesde: l.escala };
+    l.ponerEstado('invul', dur);
+    l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0 };
+    l.vx = 0; l.vy = 0;
+    luta.hitstop(mega ? 260 : 200);
+    luta.emit({ t: 'evoInicio', l, mega });
+    luta.programar(dur * 0.55, () => {
+      luta.emit({ t: 'evolucion', l, mega });
+      luta.emit({ t: 'anuncio', txt: texto, color: cor, tam: 24, dur: 1, quien: l.lado });
+    });
+  }
+
   evolucionar(l) {
-    const luta = this.luta;
     const gasto = l.expNecesaria;
     l.exp = Math.max(0, l.exp - gasto);
     const fracVida = l.hp / l.hpMax;
+    const antes = { dex: l.dex, esc: l.escala };
     l.etapa++;
     l.kit = l.kitActual();
     l.hp = Math.min(l.hpMax, fracVida * l.hpMax + REGLAS.curaEvolucion * l.hpMax);
-    l.ponerEstado('invul', 0.9);
-    l.accion = { hasta: luta.t + 0.9, bloquea: true, lento: 0 };
-    luta.hitstop(300);
-    luta.emit({ t: 'evolucion', l, mega: false });
-    luta.emit({ t: 'anuncio', txt: `${l.nombre}!`, color: '#7dd3fc', tam: 24, dur: 1, quien: l.lado });
+    this.iniciarEvo(l, false, `${l.nombre}!`, '#7dd3fc');
+    l.evoVis.desde = antes.dex; l.evoVis.escDesde = antes.esc;
   }
 
   megaevolucionar(l) {
-    const luta = this.luta, m = l.forma.mega;
+    const antes = { dex: l.dex, esc: l.escala };
     l.ulti = 0;
-    l.accion = { hasta: luta.t + 0.9, bloquea: true, lento: 0 };
-    l.ponerEstado('invul', 0.9);
-    luta.hitstop(350);
-    luta.emit({ t: 'megaInicio', l });
-    luta.emit({ t: 'anuncio', txt: 'MEGA EVOLUTION!', color: '#ffffff', tam: 24, dur: 1, quien: l.lado });
-    const activar = () => {
-      if (l.ko || !l.forma.mega) return;
-      l.mega = true;
-      l.kit = l.kitActual();
-      luta.emit({ t: 'evolucion', l, mega: true });
-    };
-    if (luta.rapido) activar(); else luta.programar(0.42, activar);
+    l.mega = true;
+    l.kit = l.kitActual();
+    this.iniciarEvo(l, true, 'MEGA EVOLUTION!', '#ffe27a');
+    l.evoVis.desde = antes.dex; l.evoVis.escDesde = antes.esc;
+    this.luta.emit({ t: 'megaInicio', l });
   }
 
   // ---------------------------------------------------------------- proyétil

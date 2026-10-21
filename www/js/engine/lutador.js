@@ -68,6 +68,7 @@ export class Lutador {
 
   reiniciar(x, y) {
     this.mega = false;
+    this.evoVis = null;
     this.kit = this.kitActual();
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.empX = 0; this.empY = 0;
     this.angulo = this.lado === 0 ? 0 : Math.PI;

@@ -6,6 +6,7 @@ import { TIPOS } from '../data/regras.js';
 import { fondoMenu, texto, marco, rect } from '../render/pixel.js';
 import { formasDe } from '../render/sprites.js';
 import { sfx } from '../audio.js';
+import { centrada } from './centrar.js';
 
 const NIVELES = ['facil', 'normal', 'dificil'];
 const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
@@ -161,3 +162,5 @@ export class Seleccion {
     });
   }
 }
+
+centrada(Seleccion);

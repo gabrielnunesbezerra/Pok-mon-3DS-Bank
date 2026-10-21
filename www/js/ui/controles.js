@@ -2,6 +2,7 @@
 import { ANCHO, ALTO, UI } from '../config.js';
 import { fondoMenu, texto, marco } from '../render/pixel.js';
 import { sfx } from '../audio.js';
+import { centrada } from './centrar.js';
 
 export const CONTROLES = {
   kbm: { mover: 'WASD', lmb: 'Left click', rmb: 'Right click', esp: 'Space', q: 'Q', e: 'E', mega: 'R' },
@@ -37,3 +38,5 @@ export class Controles {
     });
   }
 }
+
+centrada(Controles);

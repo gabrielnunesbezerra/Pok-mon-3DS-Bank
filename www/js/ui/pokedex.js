@@ -5,6 +5,7 @@ import { TIPOS } from '../data/regras.js';
 import { fondoMenu, texto, marco, rect } from '../render/pixel.js';
 import { etapaDe } from '../engine/lutador.js';
 import { sfx } from '../audio.js';
+import { centrada } from './centrar.js';
 
 const FORMA = {
   proyectil: 'Projectile', chorro: 'Beam', helice: 'Spiral beam', cono: 'Cone', pulso: 'Pulse', tajo: 'Melee combo', golpe: 'Melee strike',
@@ -96,3 +97,5 @@ export class Pokedex {
     });
   }
 }
+
+centrada(Pokedex);

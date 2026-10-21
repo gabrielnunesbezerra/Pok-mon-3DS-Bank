@@ -104,13 +104,13 @@ test('a evolução acontece em tempo real: exp cheia, tecla de evoluir, estágio
   assert.equal(a.nombre, 'IVYSAUR');
   assert.ok(a.hpMax > hpMaxAntes);
   assert.equal(a.kit.e.dano, 28);
-  a.ganarExp(500); correr(l, 1.2, [{ mx: 0, my: 0, ax: 0, ay: 0, mega: true }, null]);
+  a.ganarExp(500); correr(l, 2.2, [{ mx: 0, my: 0, ax: 0, ay: 0, mega: true }, null]);
   assert.equal(a.nombre, 'VENUSAUR');
   assert.equal(a.kit.rmb.nombre, 'Sludge Bomb');
 });
 
 test('Mega Evolução: ultimate cheia no último estágio troca forma, tipos e atributos', () => {
-  const l = nuevaLuta('riolu', 'munchlax', { etapas: [2, 0] });
+  const l = nuevaLuta('riolu', 'munchlax', { etapas: [1, 0] });
   const [a] = l.luchadores;
   assert.equal(a.nombre, 'LUCARIO');
   const atk0 = a.atk, vel0 = a.velBase;
@@ -126,7 +126,7 @@ test('Mega Evolução: ultimate cheia no último estágio troca forma, tipos e a
 });
 
 test('Mega Charizard X vira Fogo/Dragão e Mega Steelix fica maior', () => {
-  const l = nuevaLuta('charmander', 'onix', { etapas: [2, 2] });
+  const l = nuevaLuta('charmander', 'onix', { etapas: [2, 1] });
   const [a, b] = l.luchadores;
   a.ulti = 100; b.ulti = 100;
   correr(l, 0.1, [{ mx: 0, my: 0, ax: 0, ay: 0, mega: true }, { mx: 0, my: 0, ax: 0, ay: 0, mega: true }]);

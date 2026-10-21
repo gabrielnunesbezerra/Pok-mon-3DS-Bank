@@ -2,6 +2,7 @@
 import { ANCHO, ALTO, UI } from '../config.js';
 import { fondoMenu, texto, marco } from '../render/pixel.js';
 import { sfx } from '../audio.js';
+import { centrada } from './centrar.js';
 
 const LINEAS = [
   ['PK CONFRONT', 'Fan game 1v1, sem fins lucrativos. Não tem ligação com Nintendo, Creatures ou GAME FREAK.'],
@@ -31,3 +32,5 @@ export class Creditos {
     });
   }
 }
+
+centrada(Creditos);
