@@ -46,7 +46,6 @@ export class Combate {
     this.hud = new Hud(bank);
     this.fondo = crearArena(d.arena);
     this.luta = null;
-    if (!app.tactil) app.tactil = new PanelTactil(app);
   }
 
   listo() {
@@ -60,6 +59,7 @@ export class Combate {
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
+    app.tactil.l = a; app.tactil.alPausa = () => this.alternarPausa();
     this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
     if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
     else if (d.modo === 'entreno') this.ctrls.push(new Muneco());
@@ -97,7 +97,6 @@ export class Combate {
     if (this.pausado && !this.verControles) this.menuPausa?.puntero(tipo, p);
     else if (this.verControles && tipo === 'down') this.verControles = false;
     else if (this.luta?.fase === 'fin') this.resultado?.lista.puntero(tipo, p);
-    else if (tipo === 'down' && e?.pointerType === 'touch' && p.x > ANCHO - 40 && p.y < 36) this.alternarPausa();
   }
 
   revancha() { this.app.ir('combate', this.datos); }
@@ -204,11 +203,11 @@ export class Combate {
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
-    for (const i of this.humanos) {
-      const esquema = i === 0 ? (this.app.tactil.activo ? CONTROLES.kbm : CONTROLES.kbm) : CONTROLES.teclado2;
+    if (!this.app.tactil.activo) for (const i of this.humanos) {
+      const esquema = i === 0 ? CONTROLES.kbm : CONTROLES.teclado2;
       this.hud.barraSkills(g, luta.luchadores[i], i, this.t, esquema);
     }
-    if (this.app.tactil.activo) this.app.tactil.dibujar(g);
+    if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
     if (this.tutorial) this.dibujarTutorial(g);
     if (!this.app.tactil.activo && !this.pausado && this.luta.fase !== 'fin') this.dibujarMira(g);
     // anúncios do centro
@@ -233,6 +232,7 @@ export class Combate {
       if (!l.ko) { g.strokeStyle = l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
     }
     if (l.oculto) { if (Math.random() < 0.4) this.fx.polvo(l.x, l.y, 1, 4); return; }
+    if (l.evoVis && t - l.evoVis.t0 < l.evoVis.dur) { this.dibujarEvo(g, l, l.evoVis); return; }
     let nombre = 'Idle', tt = t, bucle = true;
     if (l.ko) { nombre = bank.resolver(l.dex, 'Faint'); tt = t - (l.koT ?? t); bucle = false; }
     else if (l.est.dormido) nombre = 'Sleep';
@@ -254,6 +254,53 @@ export class Combate {
     if (l.est.veneno && Math.random() < 0.15) this.fx.gotas(l.x, l.y - l.alto * 0.4, 0);
     if (l.est.potencia && Math.random() < 0.2) this.fx.add({ x: l.x + (Math.random() - 0.5) * 20, y: l.y - 4, vy: -40, size: 2, life: 0.5, color: '#86efac', forma: 'chispa' });
     if (l.est.drenaje && Math.random() < 0.2) this.fx.add({ x: l.x + (Math.random() - 0.5) * 14, y: l.y - l.alto * 0.5, vy: -26, size: 2, life: 0.5, color: '#86efac', forma: 'hoja' });
+  }
+  // Cena de evolução: a forma antiga brilha até virar silhueta, explode em luz e a nova aparece
+  dibujarEvo(g, l, ev) {
+    const t = this.luta.t, bank = this.app.bank, fx = this.fx;
+    const k = Math.min(1, (t - ev.t0) / ev.dur), mid = 0.55;
+    const cor = ev.mega ? [255, 214, 90] : [140, 215, 255];
+    const rgb = a => `rgba(${cor[0]},${cor[1]},${cor[2]},${a})`;
+    const cy = l.y - l.alto * 0.5, antes = k < mid;
+    const u = antes ? k / mid : 0, v = antes ? 0 : (k - mid) / (1 - mid);
+    // brilho no chão e coluna de luz
+    const raio = (antes ? 14 + u * 40 : 54 + v * 30) * (1 + 0.08 * Math.sin(t * 24));
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    const halo = g.createRadialGradient(l.x, cy, 2, l.x, cy, raio + l.alto * 0.4);
+    halo.addColorStop(0, rgb(antes ? 0.25 + 0.55 * u : 0.8 * (1 - v))); halo.addColorStop(1, rgb(0));
+    g.fillStyle = halo; g.beginPath(); g.arc(l.x, cy, raio + l.alto * 0.4, 0, 7); g.fill();
+    const largo = antes ? 4 + u * 20 : 24 * (1 - v);
+    const pilar = g.createLinearGradient(0, l.y - 190, 0, l.y);
+    pilar.addColorStop(0, rgb(0)); pilar.addColorStop(1, rgb(antes ? 0.2 + 0.5 * u : 0.7 * (1 - v)));
+    g.fillStyle = pilar; g.fillRect(l.x - largo / 2, l.y - 190, largo, 190);
+    g.strokeStyle = rgb(0.8 * (antes ? u : 1 - v)); g.lineWidth = 2;
+    for (let i = 0; i < 2; i++) { const r = ((t * 1.6 + i * 0.5) % 1); g.beginPath(); g.ellipse(l.x, l.y, 8 + r * 46, 3 + r * 20, 0, 0, 7); g.globalAlpha = 1 - r; g.stroke(); }
+    g.restore();
+    // sprite: antiga pulsando até silhueta, depois a nova saindo da luz
+    let dex, esc, flash, bucle = true;
+    if (antes) {
+      dex = ev.desde; esc = ev.escDesde;
+      const pulso = 0.5 + 0.5 * Math.sin(t * (10 + 40 * u * u));
+      flash = Math.min(1, u * u * 0.9 + pulso * 0.35 * u + (u > 0.88 ? 1 : 0));
+      esc *= 1 + 0.07 * u * Math.sin(t * 30);
+    } else {
+      dex = l.dex; esc = l.escala * (1 + 0.22 * (1 - v) * (1 - v));
+      flash = Math.max(0, 1 - v * 1.6);
+    }
+    const fila = filaDesdeAngulo(l.angulo);
+    const dy = antes ? -Math.sin(u * Math.PI * 0.5) * 6 : -Math.sin((1 - v) * Math.PI * 0.5) * 6;
+    if (!bank.dibujar(g, dex, 'Idle', t, l.x, l.y + dy, esc, { fila, bucle, flash })) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y, l.escala, { fila, flash });
+    // faíscas voltando para o centro durante a carga, e jorrando depois
+    const cores = ev.mega ? ['#ffe27a', '#fff6c8', '#ffb347', '#ffffff'] : ['#bfe9ff', '#ffffff', '#8fd3ff', '#d6c4ff'];
+    const n = antes ? 1 + Math.floor(u * 3) : 2;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * 6.283, d = antes ? 40 + Math.random() * 40 : 4;
+      const x0 = l.x + Math.cos(a) * d, y0 = cy + Math.sin(a) * d * 0.8;
+      const sp = antes ? 90 + 120 * u : 60 + Math.random() * 80;
+      fx.add({ x: x0, y: y0, vx: antes ? -Math.cos(a) * sp : Math.cos(a) * sp, vy: antes ? -Math.sin(a) * sp * 0.8 : Math.sin(a) * sp * 0.8 - 30, size: 1.5 + Math.random() * 2, life: antes ? d / sp : 0.5, color: cores[i % cores.length], forma: 'chispa' });
+    }
+    if (!antes && ev.mega && Math.random() < 0.35) fx.anillo(l.x, cy, 6, 30 + Math.random() * 20, cores[0], 0.5, 2);
   }
   dibujarClon(g, c) {
     const l = c.dueno, bank = this.app.bank;

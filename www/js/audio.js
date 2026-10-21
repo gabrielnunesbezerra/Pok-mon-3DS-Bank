@@ -50,6 +50,7 @@ const SONIDOS = {
   ko: () => { tono(300, 40, 0.5, 'sawtooth', 0.18); ruido(0.3, 0.2, 800); },
   victoria: () => [523, 659, 784, 1047].forEach((f, i) => tono(f, f, 0.16, 'square', 0.12, i * 0.12)),
   derrota: () => [392, 330, 262, 196].forEach((f, i) => tono(f, f * 0.95, 0.22, 'triangle', 0.12, i * 0.18)),
+  evoCarga: () => { tono(220, 900, 1.0, 'sawtooth', 0.07); tono(330, 1320, 1.0, 'square', 0.04, 0.05); },
   evolucion: () => [392, 494, 587, 784, 988].forEach((f, i) => tono(f, f, 0.14, 'square', 0.1, i * 0.08)),
   surge: () => tono(300, 1200, 0.3, 'sawtooth', 0.1),
   estado: () => tono(800, 500, 0.12, 'triangle', 0.1),

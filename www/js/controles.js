@@ -1,6 +1,8 @@
 // Quem manda no lutador: teclado e mouse (jogador 1), teclado do jogador 2, controle (gamepad) e toque.
 import { ANCHO, ALTO, UI, hex } from './config.js';
 import { marco, rect, texto } from './render/pixel.js';
+import { icono, tono } from './render/iconos.js';
+import { TIPOS } from './data/regras.js';
 
 export const CONTROLES = {
   kbm: { mover: 'WASD', lmb: 'LMB', rmb: 'RMB', esp: 'SPC', q: 'Q', e: 'E', mega: 'R' },
@@ -56,47 +58,182 @@ export class ControlHumano {
   }
 }
 
-// Controles de toque: analógico à esquerda e botões à direita (a mira é automática no rival)
+// Controles de toque: analógico flutuante à esquerda e botões em arco à direita (a mira é automática no rival)
+const SLOTS = {
+  lmb: { dx: 0, dy: 0, r: 38, rot: 'ATK' },
+  rmb: { dx: -86, dy: 10, r: 30, rot: 'SKILL' },
+  esp: { dx: -66, dy: -68, r: 28, rot: 'DASH' },
+  q: { dx: -146, dy: -46, r: 26, rot: 'UTIL' },
+  e: { dx: -8, dy: -104, r: 29, rot: 'ULT' },
+  mega: { dx: -152, dy: 36, r: 29, rot: 'EVO' },
+};
+
 export class PanelTactil {
   constructor(app) {
-    this.app = app; this.toques = new Map(); this.estado = VACIO(); this.activo = false;
-    this.stick = { cx: 70, cy: 270, r: 40 };
-    this.botones = [
-      { id: 'lmb', x: 574, y: 292, r: 24, txt: 'ATK' },
-      { id: 'rmb', x: 530, y: 318, r: 18, txt: 'SKL' },
-      { id: 'esp', x: 612, y: 238, r: 16, txt: 'DASH' },
-      { id: 'q', x: 524, y: 266, r: 16, txt: 'Q' },
-      { id: 'e', x: 566, y: 238, r: 18, txt: 'ULT' },
-      { id: 'mega', x: 480, y: 318, r: 14, txt: 'EVO' },
-    ];
+    this.app = app; this.toques = new Map(); this.estado = VACIO();
+    // em celular (ponteiro "grosso") o modo toque já nasce ligado, antes de qualquer toque na tela
+    this.activo = !!globalThis.matchMedia?.('(pointer: coarse)').matches;
+    this.l = null; this.alPausa = null;
+    this.stick = { cx: 80, cy: 282, r: 46, x0: 80, y0: 282 };
+    this.botones = Object.entries(SLOTS).map(([id, s]) => ({ id, r: s.r, x: 0, y: 0, txt: s.rot }));
+    this.pausa = { id: 'pausa', x: 0, y: 66, r: 15 };
+    this.colocar();
     const c = app.canvas;
-    const abajo = e => { if (e.pointerType !== 'touch') return; this.activo = true; this.toques.set(e.pointerId, { ...app.aCoord(e.clientX, e.clientY), inicio: app.aCoord(e.clientX, e.clientY), stick: false }); this.clasificar(this.toques.get(e.pointerId)); };
-    const mueve = e => { const t = this.toques.get(e.pointerId); if (!t) return; Object.assign(t, app.aCoord(e.clientX, e.clientY)); };
+    const abajo = e => {
+      if (e.pointerType !== 'touch') return;
+      this.activo = true;
+      const p = app.aCoord(e.clientX, e.clientY);
+      this.toques.set(e.pointerId, { ...p, stick: false });
+      this.clasificar(this.toques.get(e.pointerId));
+    };
+    const mueve = e => { const t = this.toques.get(e.pointerId); if (t) Object.assign(t, app.aCoord(e.clientX, e.clientY)); };
     const suelta = e => { this.toques.delete(e.pointerId); };
     c.addEventListener('pointerdown', abajo); c.addEventListener('pointermove', mueve);
     c.addEventListener('pointerup', suelta); c.addEventListener('pointercancel', suelta);
   }
-  clasificar(t) { if (t.x < ANCHO * 0.42) { t.stick = true; this.stick.cx = Math.max(54, Math.min(ANCHO * 0.4, t.x)); this.stick.cy = Math.max(120, Math.min(ALTO - 44, t.y)); } }
-  actualizar() {
-    const e = VACIO(), s = this.stick;
-    for (const t of this.toques.values()) {
-      if (t.stick) { const dx = t.x - s.cx, dy = t.y - s.cy, d = Math.hypot(dx, dy); if (d > 6) { const k = Math.min(1, d / s.r); e.mx = (dx / d) * k; e.my = (dy / d) * k; } }
-      else for (const b of this.botones) if (Math.hypot(t.x - b.x, t.y - b.y) < b.r + 8) e[b.id] = true;
+  // posições ancoradas na borda direita: acompanham a largura da tela
+  colocar() {
+    const W = ANCHO, ax = W - 74, ay = ALTO - 76;
+    for (const b of this.botones) { const s = SLOTS[b.id]; b.x = ax + s.dx; b.y = ay + s.dy; }
+    this.pausa.x = W - 24;
+    if (this.stick.x0 !== 80 || this.stick.y0 !== 282) { this.stick.x0 = 80; this.stick.y0 = 282; }
+  }
+  botonEn(t, extra = 12) {
+    let mejor = null, dm = Infinity;
+    for (const b of [...this.botones, this.pausa]) {
+      if (b.id === 'mega' && !this.mostrarMega()) continue;
+      const d = Math.hypot(t.x - b.x, t.y - b.y);
+      if (d < b.r + extra && d < dm) { mejor = b; dm = d; }
     }
+    return mejor;
+  }
+  mostrarMega() { return !!this.l && (this.l.puedeMega || this.l.puedeEvolucionar); }
+  clasificar(t) {
+    this.colocar();
+    const b = this.botonEn(t);
+    if (b?.id === 'pausa') { t.boton = 'pausa'; this.alPausa?.(); return; }
+    if (b) { t.boton = b.id; return; }
+    if (t.x < ANCHO * 0.45) {
+      t.stick = true;
+      this.stick.cx = Math.max(60, Math.min(ANCHO * 0.4, t.x));
+      this.stick.cy = Math.max(110, Math.min(ALTO - 50, t.y));
+    }
+  }
+  actualizar() {
+    this.colocar();
+    const e = VACIO(), s = this.stick;
+    this.stickActivo = false;
+    for (const t of this.toques.values()) {
+      if (t.stick) {
+        this.stickActivo = true;
+        const dx = t.x - s.cx, dy = t.y - s.cy, d = Math.hypot(dx, dy);
+        // quem arrasta além do raio leva a base junto, o dedo nunca "sai" do analógico
+        if (d > s.r * 1.5) { const k = (d - s.r * 1.5) / d; s.cx += dx * k; s.cy += dy * k; }
+        const d2 = Math.hypot(t.x - s.cx, t.y - s.cy);
+        if (d2 > 7) { const k = Math.min(1, (d2 - 7) / (s.r - 7)); e.mx = ((t.x - s.cx) / d2) * k; e.my = ((t.y - s.cy) / d2) * k; }
+      } else {
+        const b = this.botonEn(t, 16);
+        if (b && b.id !== 'pausa') { t.boton = b.id; e[b.id] = true; }
+      }
+    }
+    if (!this.stickActivo) { s.cx += (s.x0 - s.cx) * 0.2; s.cy += (s.y0 - s.cy) * 0.2; }
     this.estado = e;
   }
-  dibujar(g) {
+
+  dibujar(g, t = 0) {
     if (!this.activo) return;
-    const s = this.stick;
-    g.globalAlpha = 0.35; g.fillStyle = '#04102c'; g.beginPath(); g.arc(s.cx, s.cy, s.r, 0, 7); g.fill();
-    g.strokeStyle = '#8fd3ff'; g.lineWidth = 2; g.stroke();
-    g.globalAlpha = 0.7; g.fillStyle = '#8fd3ff'; g.beginPath(); g.arc(s.cx + this.estado.mx * s.r * 0.6, s.cy + this.estado.my * s.r * 0.6, 14, 0, 7); g.fill();
+    this.colocar();
+    const s = this.stick, l = this.l;
+    // analógico
+    g.save();
+    g.globalAlpha = this.stickActivo ? 0.95 : 0.55;
+    const base = g.createRadialGradient(s.cx, s.cy, 6, s.cx, s.cy, s.r);
+    base.addColorStop(0, 'rgba(20,50,100,0.55)'); base.addColorStop(1, 'rgba(10,30,70,0.85)');
+    g.fillStyle = base; g.beginPath(); g.arc(s.cx, s.cy, s.r, 0, 7); g.fill();
+    g.lineWidth = 3; g.strokeStyle = '#04102c'; g.stroke();
+    g.lineWidth = 1.5; g.strokeStyle = '#8fd3ff'; g.beginPath(); g.arc(s.cx, s.cy, s.r - 2, 0, 7); g.stroke();
+    g.fillStyle = 'rgba(143,211,255,0.55)';
+    for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; g.save(); g.translate(s.cx + Math.cos(a) * (s.r - 11), s.cy + Math.sin(a) * (s.r - 11)); g.rotate(a); g.beginPath(); g.moveTo(3, 0); g.lineTo(-3, -4); g.lineTo(-3, 4); g.fill(); g.restore(); }
+    const kx = s.cx + this.estado.mx * s.r * 0.62, ky = s.cy + this.estado.my * s.r * 0.62;
+    const knob = g.createRadialGradient(kx - 5, ky - 6, 2, kx, ky, 20);
+    knob.addColorStop(0, '#d6f0ff'); knob.addColorStop(1, '#3d86d6');
+    g.fillStyle = knob; g.beginPath(); g.arc(kx, ky, 19, 0, 7); g.fill();
+    g.lineWidth = 2.5; g.strokeStyle = '#04102c'; g.stroke();
+    g.restore();
+    // botões
     for (const b of this.botones) {
-      const on = this.estado[b.id];
-      g.globalAlpha = on ? 0.85 : 0.45; g.fillStyle = on ? '#f8c448' : '#225697'; g.beginPath(); g.arc(b.x, b.y, b.r, 0, 7); g.fill();
-      g.strokeStyle = '#04102c'; g.lineWidth = 2; g.stroke();
-      g.globalAlpha = 1; texto(g, b.txt, b.x, b.y, { tam: b.r > 20 ? 8 : 6, align: 'center', base: 'middle', borde: 2 });
+      if (b.id === 'mega' && !this.mostrarMega()) continue;
+      this.boton(g, b, l, t);
     }
+    this.botonPausa(g);
+  }
+
+  boton(g, b, l, t) {
+    const id = b.id, on = !!this.estado[id];
+    const h = l && id !== 'mega' ? l.kit[id] : null;
+    const cdMax = h?.cd || 1, cd = l && id !== 'mega' ? l.cd[id] ?? 0 : 0;
+    const esUlti = id === 'e';
+    const sobre = id === 'lmb' && l && l.luta && l.luta.t < l.sobrecargaHasta;
+    const sinEn = !!h && !esUlti && id !== 'lmb' && l.energia < (h.coste ?? h.energia ?? 0);
+    const ultiOk = esUlti ? l?.ultiLista : true;
+    const lista = !sobre && !sinEn && ultiOk && !(cd > 0 && cdMax > 1.2);
+    const tipo = h?.tipo ?? 'NORMAL';
+    let col = id === 'mega' ? (l?.puedeMega ? '#ffd23c' : '#46d6a0') : hex(TIPOS[tipo] ?? 0xa8a878);
+    if (esUlti) col = '#ffb703';
+    const forma = id === 'mega' ? (l?.puedeMega ? 'mega' : 'evo') : esUlti && !h?.forma ? 'ulti' : h?.forma ?? 'basico';
+    const r = b.r * (on ? 0.93 : 1), x = b.x, y = b.y;
+    const pulso = id === 'mega' || (esUlti && l?.ultiLista) ? 1 + 0.05 * Math.sin(t * 8) : 1;
+    g.save();
+    g.translate(x, y); g.scale(pulso, pulso); g.translate(-x, -y);
+    // sombra e halo
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x, y + r * 0.95, r * 0.9, r * 0.28, 0, 0, 7); g.fill();
+    if (on || (lista && (esUlti || id === 'mega'))) { g.fillStyle = `rgba(255,226,122,${on ? 0.45 : 0.25})`; g.beginPath(); g.arc(x, y, r + 7, 0, 7); g.fill(); }
+    // corpo: degradê do tipo
+    const cuerpo = g.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r);
+    if (lista) { cuerpo.addColorStop(0, tono(col, 0.35)); cuerpo.addColorStop(0.6, col); cuerpo.addColorStop(1, tono(col, -0.45)); }
+    else { cuerpo.addColorStop(0, '#5b6678'); cuerpo.addColorStop(1, '#262d3b'); }
+    g.globalAlpha = lista ? 0.96 : 0.9;
+    g.fillStyle = cuerpo; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.lineWidth = 3; g.strokeStyle = '#04102c'; g.stroke();
+    g.lineWidth = 1.6; g.strokeStyle = on ? '#fff6c8' : lista ? '#d6ecff' : '#7a8498'; g.beginPath(); g.arc(x, y, r - 2.2, 0, 7); g.stroke();
+    // brilho de vidro
+    g.globalAlpha = 0.22; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x - r * 0.18, y - r * 0.5, r * 0.55, r * 0.26, -0.3, 0, 7); g.fill();
     g.globalAlpha = 1;
+    // símbolo
+    icono(g, forma, x, y - r * 0.1, r * 0.52, lista ? '#ffffff' : '#aab4c8');
+    // recarga: fatia escura que vai girando + segundos
+    if (cd > 0 && cdMax > 0.01 && !esUlti) {
+      const f = Math.min(1, cd / cdMax);
+      g.fillStyle = 'rgba(4,10,28,0.62)'; g.beginPath(); g.moveTo(x, y); g.arc(x, y, r - 1, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.closePath(); g.fill();
+      if (cdMax > 1.2) texto(g, cd >= 10 ? String(Math.ceil(cd)) : cd.toFixed(1), x, y, { tam: r > 28 ? 11 : 9, align: 'center', base: 'middle', color: '#ffe58a', borde: 3, peso: 700 });
+    }
+    // ultimate / experiência: anel de progresso
+    if (esUlti && l) this.anel(g, x, y, r + 3.5, l.ulti / 100, l.ultiLista ? '#ffe27a' : '#e0a21a');
+    if (id === 'mega' && l) this.anel(g, x, y, r + 3.5, 1, '#fff6c8');
+    if (id === 'lmb' && l && l.calor > 6) this.anel(g, x, y, r + 3.5, Math.min(1, l.calor / 100), sobre ? '#ff3a2a' : '#ff9a2e');
+    // rótulo e custo
+    texto(g, b.txt, x, y + r * 0.72, { tam: r > 28 ? 7 : 6, align: 'center', base: 'middle', color: lista ? '#ffffff' : '#9aa6bd', borde: 3, peso: 700 });
+    const coste = h && !esUlti && id !== 'lmb' ? (h.coste ?? h.energia ?? 0) : 0;
+    if (coste) {
+      const bx = x + r * 0.72, by = y - r * 0.72;
+      g.fillStyle = sinEn ? '#b4332a' : '#2f7bd6'; g.beginPath(); g.arc(bx, by, 8, 0, 7); g.fill();
+      g.lineWidth = 2; g.strokeStyle = '#04102c'; g.stroke();
+      texto(g, String(coste), bx, by, { tam: 7, align: 'center', base: 'middle', color: '#fff', peso: 700 });
+    }
+    g.restore();
+  }
+  anel(g, x, y, r, f, cor) {
+    g.lineWidth = 3; g.strokeStyle = 'rgba(4,16,44,0.8)'; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke();
+    if (f <= 0) return;
+    g.strokeStyle = cor; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.min(1, f) * Math.PI * 2); g.stroke();
+  }
+  botonPausa(g) {
+    const p = this.pausa;
+    g.save();
+    g.globalAlpha = 0.8;
+    g.fillStyle = 'rgba(8,24,56,0.85)'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
+    g.lineWidth = 2; g.strokeStyle = '#8fd3ff'; g.stroke();
+    g.restore();
+    icono(g, 'pausa', p.x, p.y, p.r * 0.5, '#e8f6ff');
   }
 }

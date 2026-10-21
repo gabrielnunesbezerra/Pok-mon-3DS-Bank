@@ -9,6 +9,7 @@ import { Controles } from './ui/controles.js';
 import { Pokedex } from './ui/pokedex.js';
 import { Seleccion } from './ui/seleccion.js';
 import { Combate } from './ui/combate.js';
+import { PanelTactil } from './controles.js';
 
 const canvas = document.getElementById('game');
 const g = canvas.getContext('2d');
@@ -59,6 +60,7 @@ const aCoord = (cx, cy) => {
   return { x: ((cx - r.left) / r.width) * app.W, y: ((cy - r.top) / r.height) * ALTO };
 };
 app.aCoord = aCoord;
+app.tactil = new PanelTactil(app);
 app.entrada = new Entrada(canvas, aCoord);
 app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.musica(); app.escena?.tecla?.(c, nueva, e); };
 app.entrada.alPuntero = (tipo, p, e) => { if (tipo === 'down') { audio.iniciar(); app.musica(); } app.escena?.puntero?.(tipo, p, e); };

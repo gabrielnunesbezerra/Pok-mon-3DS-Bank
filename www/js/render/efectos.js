@@ -86,6 +86,7 @@ export class Efectos {
           this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, 'FAIRY', 30, 220, { life: 0.8 });
           this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#ffffff'; this.temblor = Math.max(this.temblor, 6);
           break;
+        case 'evoInicio': sfx('evoCarga'); this.temblor = Math.max(this.temblor, 2); break;
         case 'megaInicio': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 4, 40, '#ffe27a', 0.9, 3); break;
         case 'ko': this.flash = 0.5; this.flashColor = '#ffffff'; this.temblor = Math.max(this.temblor, 10); this.anuncio('K.O!', { color: '#ff4040', tam: 32, dur: 1.3 }); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#fff', 16, 420); break;
         case 'tiempo': this.anuncio('TIME!', { color: '#ffd23c', tam: 32, dur: 1.2 }); break;

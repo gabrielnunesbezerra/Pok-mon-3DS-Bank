@@ -19,7 +19,7 @@ export class Entrada {
     canvas.addEventListener('pointerdown', e => {
       mover(e);
       this.ptr.abajo = true;
-      if (e.button === 2) this.ptr.der = true; else this.ptr.izq = true;
+      if (e.pointerType === 'touch') { /* o toque é tratado pelo painel de toque */ } else if (e.button === 2) this.ptr.der = true; else this.ptr.izq = true;
       canvas.setPointerCapture?.(e.pointerId);
       this.alPuntero?.('down', this.ptr, e);
     });
