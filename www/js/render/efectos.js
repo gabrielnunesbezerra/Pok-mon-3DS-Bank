@@ -4,8 +4,10 @@ import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
 import { aleatorio as azar } from '../engine/util.js';
 import { sfx } from '../audio.js';
+import * as PX from './pixelfx.js';
 
 const ale = () => Math.random();
+const R = Math.round;
 const entre = (a, b) => a + ale() * (b - a);
 
 export function mezcla(c, k) {
@@ -17,6 +19,12 @@ export function mezcla(c, k) {
   return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
 }
 export const colorTipo = t => hex(TIPOS[t] ?? 0xffffff);
+// rampa [sombra, base, luz, brilho] do tipo, para os sprites
+const rampaTipo = t => { const [a, b, c, d] = paleta(t); return [d, c, b, a]; };
+const RAMPA_DRAGON = ['#2a1060', '#7a3cf0', '#c49cff', '#ffffff'];
+const rampaFuego = t => (t === 'DRAGON' ? RAMPA_DRAGON : t === 'GHOST' ? ['#2a1050', '#7a4cc0', '#b496ee', '#f0e4ff'] : t === 'PSYCHIC' || t === 'FAIRY' ? rampaTipo(t) : PX.RAMPA_FOGO);
+const tamSprite = s => [5, 6, 8, 10, 12, 16, 20, 24].find(v => v >= s * 2.6) ?? 24;
+const rampa4 = c => { const n = parseInt(c.slice(1), 16); void n; return [mezcla(c, -0.5), c, mezcla(c, 0.5), mezcla(c, 0.9)]; };
 export const paleta = t => { const c = colorTipo(t); return [mezcla(c, 0.7), mezcla(c, 0.35), c, mezcla(c, -0.35)]; };
 const BRILLA = new Set(['FIRE', 'ELECTRIC', 'PSYCHIC', 'FAIRY', 'DRAGON', 'GHOST', 'ICE']);
 
@@ -34,7 +42,8 @@ export class Efectos {
     const pal = paleta(tipo);
     for (let i = 0; i < n; i++) {
       const a = ale() * Math.PI * 2, s = vel * (0.3 + ale() * 0.8);
-      this.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7 - (op.arriba ?? 0), g: op.g ?? 120, drag: 2.5, size: (op.size ?? 2.5) * (0.6 + ale() * 0.8), life: (op.life ?? 0.45) * (0.6 + ale() * 0.8), color: pal[Math.floor(ale() * pal.length)], forma: formaDe(tipo) });
+      const forma = formaDe(tipo);
+      this.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7 - (op.arriba ?? 0), g: forma === 'llama' ? -30 : op.g ?? 120, drag: 2.5, size: (op.size ?? 2.5) * (0.6 + ale() * 0.8) * (forma === 'llama' ? 0.8 : 1), life: (op.life ?? 0.45) * (0.6 + ale() * 0.8), color: pal[Math.floor(ale() * pal.length)], forma, rampa: forma === 'llama' ? rampaFuego(tipo) : tipo === 'WATER' ? PX.RAMPA_AGUA : undefined });
     }
   }
   chispas(x, y, color = '#ffffff', n = 8, vel = 300) {
@@ -64,7 +73,8 @@ export class Efectos {
         case 'impacto': this.impacto(e); break;
         case 'anillo': this.anillo(e.x, e.y, 4, e.r ?? 22, e.color, 0.35); break;
         case 'explosion':
-          this.rafaga(e.x, e.y, e.tipo, 18, 200, { size: 3, life: 0.55 });
+          this.add({ x: e.x, y: e.y, size: Math.max(12, e.radio * 0.8), life: 0.34, color: '#ffffff', brillo: mezcla(colorTipo(e.tipo), 0.3), forma: 'estouro' });
+          this.rafaga(e.x, e.y, e.tipo, 14, 200, { size: 3, life: 0.55 });
           this.anillo(e.x, e.y, 4, e.radio, colorTipo(e.tipo), 0.3, 2);
           if (e.humo) this.humo(e.x, e.y, 6, 'rgba(230,230,240,0.55)', 10); else this.humo(e.x, e.y, 3, 'rgba(120,110,110,0.4)', 12);
           break;
@@ -104,9 +114,10 @@ export class Efectos {
 
   impacto(e) {
     const c = colorTipo(e.tipo);
-    this.chispas(e.x, e.y, '#ffffff', e.fuerte ? 12 : 7, e.fuerte ? 380 : 260);
-    this.rafaga(e.x, e.y, e.tipo, e.fuerte ? 14 : 8, e.fuerte ? 200 : 140);
-    this.anillo(e.x, e.y, 2, e.fuerte ? 22 : 14, c, 0.22, 2);
+    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.26 : 0.2, color: '#ffffff', brillo: mezcla(c, 0.25), forma: 'estouro' });
+    this.chispas(e.x, e.y, '#ffffff', e.fuerte ? 8 : 4, e.fuerte ? 380 : 260);
+    this.rafaga(e.x, e.y, e.tipo, e.fuerte ? 10 : 6, e.fuerte ? 200 : 140);
+    this.anillo(e.x, e.y, 2, e.fuerte ? 22 : 14, c, 0.22, 1);
     switch (e.tipo) {
       case 'WATER': this.gotas(e.x, e.y, e.fuerte ? 12 : 7); break;
       case 'FIRE': this.brasas(e.x, e.y, e.fuerte ? 10 : 6); break;
@@ -143,23 +154,29 @@ export class Efectos {
   dibujar(g) {
     // ondas de sopro e arcos de corte
     for (const o of this.ondas) {
-      const k = o.t / o.life;
-      g.strokeStyle = colorTipo(o.tipo); g.globalAlpha = 1 - k; g.lineWidth = 2;
-      for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(o.x, o.y, o.alcance * (0.35 + 0.65 * k) * (0.7 + i * 0.15), o.ang - o.ang2, o.ang + o.ang2); g.stroke(); }
+      const k = o.t / o.life, c = colorTipo(o.tipo), [, , claro] = rampaTipo(o.tipo);
+      g.globalAlpha = Math.min(1, (1 - k) * 1.6);
+      for (let i = 0; i < 3; i++) {
+        const r = o.alcance * (0.35 + 0.65 * k) * (0.7 + i * 0.15), a2 = o.ang2 * (0.8 + i * 0.1);
+        PX.arcoPix(g, o.x, o.y, r, o.ang - a2, o.ang + a2, '#04102c', 4);
+        PX.arcoPix(g, o.x, o.y, r, o.ang - a2 * 0.96, o.ang + a2 * 0.96, i === 1 ? '#ffffff' : c, 2);
+      }
     }
     for (const a of this.tajos) {
-      const k = a.t / a.life;
-      g.globalAlpha = 1 - k;
-      const arco = (r, w, col) => { g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'butt'; g.beginPath(); g.arc(a.x, a.y, r, a.ang - 0.9 + k * 0.5, a.ang + 0.9 - k * 0.3); g.stroke(); };
-      arco(a.r * 0.9, a.final ? 6 : 4, '#04102c');
-      arco(a.r * 0.9, a.final ? 4 : 2.5, a.color);
-      arco(a.r * 0.9, 1.2, '#ffffff');
+      const k = a.t / a.life, rr = a.r * 0.9, [, base, claro, brillo] = rampa4(a.color);
+      g.globalAlpha = Math.min(1, (1 - k) * 1.5);
+      const a0 = a.ang - 0.95 + k * 0.55, a1 = a.ang + 0.95 - k * 0.2, gro = a.final ? 7 : 5;
+      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0, a1, base, gro, rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.1, claro, Math.max(2, gro - 2), rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.25, a1 - 0.25, brillo, Math.max(1, gro - 4), rr * 0.82);
     }
     g.globalAlpha = 1;
     for (const a of this.anillos) {
       const k = a.t / a.dur, r = a.r0 + (a.r1 - a.r0) * Math.sqrt(k);
-      g.globalAlpha = 1 - k; g.strokeStyle = a.color; g.lineWidth = a.w;
-      g.beginPath(); g.ellipse(a.x, a.y, r, r * 0.8, 0, 0, Math.PI * 2); g.stroke();
+      g.globalAlpha = Math.min(1, (1 - k) * 1.4);
+      PX.anilloPix(g, a.x, a.y, r, r * 0.8, '#04102c', a.w + 1, 0);
+      PX.anilloPix(g, a.x, a.y, r, r * 0.8, a.color, a.w, r > 24 ? 7 : 0, Math.floor(a.t * 30));
     }
     g.globalAlpha = 1;
     for (const p of this.parts) {
@@ -167,13 +184,24 @@ export class Efectos {
       g.globalAlpha = Math.max(0, a);
       g.fillStyle = p.color;
       const s = Math.max(0.6, p.size);
+      const al = Math.max(0, a);
       switch (p.forma) {
-        case 'circulo': g.beginPath(); g.arc(p.x, p.y, s, 0, 7); g.fill(); break;
-        case 'gota': g.fillRect(p.x - s / 2, p.y - s, s, s * 1.8); break;
-        case 'raya': g.strokeStyle = p.color; g.lineWidth = s; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04); g.stroke(); break;
-        case 'hoja': g.save(); g.translate(p.x, p.y); g.rotate(p.rot); g.fillRect(-s * 1.2, -s * 0.5, s * 2.4, s); g.restore(); break;
-        case 'chispa': g.fillRect(p.x - s / 2, p.y - s * 1.5, s, s * 3); g.fillRect(p.x - s * 1.5, p.y - s / 2, s * 3, s); break;
-        default: g.save(); g.translate(p.x, p.y); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4)); g.fillRect(-s / 2, -s / 2, s, s); g.restore();
+        case 'llama': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, 0, 1, 1); break;
+        case 'gota': PX.carimbar(g, PX.gota(Math.max(5, Math.round(s * 3.2)), p.rampa), p.x, p.y, Math.atan2(p.vy, p.vx), 1, al); break;
+        case 'hoja': PX.carimbar(g, PX.hoja(Math.max(6, Math.round(s * 3.4))), p.x, p.y, p.rot, 1, al); break;
+        case 'chispa': PX.carimbar(g, PX.chispa(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#ffffff'), p.x, p.y, 0, 1, 1); break;
+        case 'burbuja': PX.carimbar(g, PX.burbuja(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#bfe9ff'), p.x, p.y, 0, 1, 1); break;
+        case 'estouro': PX.carimbar(g, PX.estouro(Math.floor((p.t / p.life) * 4), Math.max(6, Math.round(p.size)), p.color, p.brillo ?? '#ffd23c'), p.x, p.y, 0, 1, 1); break;
+        case 'humo': PX.carimbar(g, PX.humo(Math.max(3, Math.round(s * 0.9)), p.tono), p.x, p.y, 0, 1, p.alfa ?? 0.8); break;
+        case 'bola': { const r = Math.max(2, s); PX.esfera(g, p.x, p.y, r, p.rampa ?? PX.RAMPA_FOGO); break; }
+        case 'circulo': {
+          if (/^#/.test(p.color)) { PX.disco(g, p.x, p.y, Math.max(1, s * 0.8), p.color); break; }
+          const m = /([\d.]+)\)$/.exec(p.color);
+          PX.carimbar(g, PX.humo(Math.max(3, Math.round(s * 0.9))), p.x, p.y, 0, 1, Math.min(1, (m ? Number(m[1]) : 0.6) + 0.15));
+          break;
+        }
+        case 'raya': g.strokeStyle = p.color; g.lineWidth = Math.max(1, Math.round(s)); PX.lineaPix(g, p.x, p.y, p.x - p.vx * 0.04, p.y - p.vy * 0.04, p.color, Math.max(1, Math.round(s))); break;
+        default: g.save(); g.translate(R(p.x), R(p.y)); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4)); g.fillRect(-Math.round(s / 2), -Math.round(s / 2), Math.max(1, Math.round(s)), Math.max(1, Math.round(s))); g.restore();
       }
     }
     g.globalAlpha = 1;
@@ -199,10 +227,11 @@ export class Efectos {
 }
 
 function formaDe(tipo) {
-  if (tipo === 'WATER') return ale() < 0.4 ? 'gota' : 'circulo';
+  if (tipo === 'WATER') return ale() < 0.55 ? 'gota' : 'burbuja';
   if (tipo === 'GRASS' || tipo === 'BUG') return 'hoja';
-  if (tipo === 'ELECTRIC' || tipo === 'FAIRY' || tipo === 'STEEL') return 'chispa';
-  if (tipo === 'FIRE' || tipo === 'POISON' || tipo === 'GHOST' || tipo === 'DRAGON') return 'circulo';
+  if (tipo === 'ELECTRIC' || tipo === 'FAIRY' || tipo === 'STEEL' || tipo === 'PSYCHIC') return 'chispa';
+  if (tipo === 'FIRE' || tipo === 'DRAGON' || tipo === 'GHOST') return 'llama';
+  if (tipo === 'POISON') return 'burbuja';
   return 'sq';
 }
 
@@ -211,40 +240,50 @@ const px = v => Math.round(v);
 
 function sombra(g, x, y, r) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(px(x - r), px(y - r * 0.3), px(r * 2), Math.max(1, px(r * 0.6))); }
 
-function bolaPixel(g, x, y, r, col) {
-  const [c0, c1, c2, c3] = paleta(col);
-  g.fillStyle = '#04102c'; g.fillRect(px(x - r - 1), px(y - r - 1), px(r * 2 + 2), px(r * 2 + 2));
-  g.fillStyle = c3; g.fillRect(px(x - r), px(y - r), px(r * 2), px(r * 2));
-  g.fillStyle = c2; g.fillRect(px(x - r), px(y - r), px(r * 2 - 1), px(r * 2 - 1));
-  g.fillStyle = c0; g.fillRect(px(x - r * 0.6), px(y - r * 0.6), Math.max(1, px(r * 0.7)), Math.max(1, px(r * 0.7)));
-}
+function bolaPixel(g, x, y, r, tipo) { PX.esfera(g, px(x), px(y), Math.max(1.5, r), rampaTipo(tipo)); }
 
+// estela de cauda: bolinhas que encolhem atrás do tiro
+function cola(g, p, n, color, r0) {
+  for (let i = 1; i <= n; i++) {
+    const k = i / (n + 1), rr = Math.max(0.6, r0 * (1 - k));
+    PX.disco(g, px(p.x - Math.cos(p.ang) * i * 4), px(p.y - p.alt - Math.sin(p.ang) * i * 4 * 0.9), rr, color);
+  }
+}
+const AGUA = PX.RAMPA_AGUA;
 const ESTILOS_PROJ = {
-  hoja(g, p, t) { g.save(); g.translate(px(p.x), px(p.y - p.alt)); g.rotate(t * 14); g.fillStyle = '#04102c'; g.fillRect(-5, -3, 10, 6); g.fillStyle = '#4caf38'; g.fillRect(-4, -2, 8, 4); g.fillStyle = '#8be04e'; g.fillRect(-3, -2, 5, 2); g.restore(); },
-  semilla(g, p) { bolaPixel(g, p.x, p.y - p.alt, 3, 'GRASS'); g.fillStyle = '#c8a24a'; g.fillRect(px(p.x - 1), px(p.y - p.alt - 1), 2, 2); },
-  brasa(g, p, t) { llama(g, p, t, 3 * p.escala); },
-  fuego(g, p, t) { llama(g, p, t, 3.5 * p.escala); },
-  chorrito(g, p) { bolaPixel(g, p.x, p.y - p.alt, 2.5 * Math.min(1.6, p.escala), 'WATER'); },
-  espuma(g, p) { g.strokeStyle = '#04102c'; g.lineWidth = 3; g.beginPath(); g.arc(px(p.x), px(p.y - p.alt), 4 * p.escala, 0, 7); g.stroke(); g.strokeStyle = '#bfe9ff'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(px(p.x - 2), px(p.y - p.alt - 2), 2, 2); },
-  burbuja(g, p) { ESTILOS_PROJ.espuma(g, { ...p, escala: 0.8 }); },
-  pulsoAgua(g, p, t) { g.strokeStyle = '#04102c'; g.lineWidth = 4; for (let i = 0; i < 2; i++) { g.beginPath(); g.arc(px(p.x), px(p.y - p.alt), (3 + i * 3) * p.escala, 0, 7); g.stroke(); } g.strokeStyle = i2(t) ? '#9fdcff' : '#4aa3f0'; g.lineWidth = 2; for (let i = 0; i < 2; i++) { g.beginPath(); g.arc(px(p.x), px(p.y - p.alt), (3 + i * 3) * p.escala, 0, 7); g.stroke(); } },
-  cuchilla(g, p) { g.save(); g.translate(px(p.x), px(p.y - p.alt)); g.rotate(p.ang); g.fillStyle = '#04102c'; g.fillRect(-6, -3, 12, 6); g.fillStyle = '#eeeaff'; g.fillRect(-5, -2, 10, 4); g.fillStyle = '#a395ee'; g.fillRect(-5, 0, 10, 2); g.restore(); },
-  roca(g, p, t) { g.save(); g.translate(px(p.x), px(p.y - p.alt)); g.rotate(t * 9); const s = 3.5 * p.escala; g.fillStyle = '#04102c'; g.fillRect(-s - 1, -s - 1, s * 2 + 2, s * 2 + 2); g.fillStyle = '#a68c3a'; g.fillRect(-s, -s, s * 2, s * 2); g.fillStyle = '#c9b469'; g.fillRect(-s, -s, s, s); g.restore(); },
-  vacio(g, p, t) { g.strokeStyle = '#04102c'; g.lineWidth = 4; g.beginPath(); g.arc(px(p.x), px(p.y - p.alt), 5 * p.escala, p.ang - 1.2, p.ang + 1.2); g.stroke(); g.strokeStyle = '#e0623a'; g.lineWidth = 2; g.stroke(); },
-  aurasphere(g, p, t) { const r = 5 * p.escala * (1 + 0.1 * Math.sin(t * 20)); bolaPixel(g, p.x, p.y - p.alt, r, 'FIGHTING'); g.strokeStyle = 'rgba(111,208,255,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.arc(px(p.x), px(p.y - p.alt), r + 3, 0, 7); g.stroke(); },
-  corazon(g, p) { const x = px(p.x), y = px(p.y - p.alt), s = 2.2 * p.escala; g.fillStyle = '#04102c'; g.fillRect(x - s * 2 - 1, y - s - 1, s * 4 + 2, s * 2 + 2); g.fillStyle = '#ff6fa8'; g.fillRect(x - s * 2, y - s, s * 2 - 1, s * 1.5); g.fillRect(x + 1, y - s, s * 2 - 1, s * 1.5); g.fillRect(x - s * 1.5, y, s * 3, s); g.fillStyle = '#ffc2d8'; g.fillRect(x - s * 1.5, y - s, 2, 2); },
-  guijarro(g, p) { bolaPixel(g, p.x, p.y - p.alt, 2, 'ROCK'); },
-  shuriken(g, p, t) { g.save(); g.translate(px(p.x), px(p.y - p.alt)); g.rotate(t * 26); g.fillStyle = '#04102c'; g.fillRect(-5, -2, 10, 4); g.fillRect(-2, -5, 4, 10); g.fillStyle = '#9fdcff'; g.fillRect(-4, -1, 8, 2); g.fillRect(-1, -4, 2, 8); g.restore(); },
-  shurikenGigante(g, p, t) { g.save(); g.translate(px(p.x), px(p.y - p.alt)); g.rotate(t * 20); const s = 5 * p.escala; g.fillStyle = '#04102c'; g.fillRect(-s - 2, -s / 2 - 2, s * 2 + 4, s + 4); g.fillRect(-s / 2 - 2, -s - 2, s + 4, s * 2 + 4); g.fillStyle = '#4aa3f0'; g.fillRect(-s, -s / 2, s * 2, s); g.fillRect(-s / 2, -s, s, s * 2); g.fillStyle = '#d8f2ff'; g.fillRect(-s, -1, s * 2, 2); g.restore(); },
+  hoja(g, p, t) { PX.carimbar(g, PX.hoja(Math.round(9 * p.escala)), p.x, p.y - p.alt, t * 14 + p.x * 0.05); },
+  semilla(g, p) { PX.esfera(g, px(p.x), px(p.y - p.alt), 3, ['#5a3a12', '#9a6a22', '#d6a64a', '#fff0b0']); PX.disco(g, px(p.x + 1), px(p.y - p.alt + 1), 1, '#3f8a2a'); },
+  brasa(g, p, t) { llamaProj(g, p, t, 8 * p.escala); },
+  fuego(g, p, t) { llamaProj(g, p, t, 12 * p.escala); },
+  chorrito(g, p) { PX.carimbar(g, PX.gota(Math.round(7 * Math.min(1.8, p.escala)), AGUA), p.x, p.y - p.alt, p.ang); },
+  espuma(g, p, t) { PX.carimbar(g, PX.burbuja(Math.round(4 * p.escala)), p.x + Math.sin(t * 9 + p.x) * 0.6, p.y - p.alt); },
+  burbuja(g, p, t) { PX.carimbar(g, PX.burbuja(Math.round(3.4)), p.x, p.y - p.alt); },
+  pulsoAgua(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt), r = 4 * p.escala, f = Math.floor(t * 14) % 3;
+    PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#04102c', 2); PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#9fdcff', 1, 5, f);
+    PX.esfera(g, x, y, r, AGUA);
+  },
+  cuchilla(g, p) { PX.carimbar(g, PX.mediaLuna(6, ['#2a1f6a', '#a395ee', '#eeeaff', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
+  vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  aurasphere(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt), r = 5 * p.escala * (1 + 0.08 * Math.sin(t * 20));
+    PX.anilloPix(g, x, y, r + 4, r + 4, 'rgba(111,208,255,0.55)', 1, 3, Math.floor(t * 20));
+    PX.esfera(g, x, y, r, ['#2a6ac8', '#6fd0ff', '#d6f6ff', '#ffffff']);
+  },
+  corazon(g, p, t) { PX.carimbar(g, PX.corazon(Math.max(1, Math.round(1.6 * p.escala))), p.x, p.y - p.alt + Math.sin(t * 12) * 0.8); },
+  guijarro(g, p) { PX.carimbar(g, PX.roca(2, ['#4a4a52', '#7a7a88', '#a8a8b8', '#e0e0ec']), p.x, p.y - p.alt); },
+  shuriken(g, p, t) { PX.carimbar(g, PX.shuriken(5), p.x, p.y - p.alt, t * 26); },
+  shurikenGigante(g, p, t) { const x = px(p.x), y = px(p.y - p.alt); PX.anilloPix(g, x, y, 12 * p.escala, 12 * p.escala, 'rgba(159,220,255,0.5)', 1, 4, Math.floor(t * 18)); PX.carimbar(g, PX.shuriken(Math.round(9 * p.escala)), p.x, p.y - p.alt, t * 20); },
   bola(g, p) { bolaPixel(g, p.x, p.y - p.alt, 3 * p.escala, p.tipoAtq); },
 };
 const i2 = t => Math.floor(t * 12) % 2;
-function llama(g, p, t, r) {
-  const x = px(p.x), y = px(p.y - p.alt);
-  g.fillStyle = '#e8361c'; g.fillRect(x - r, y - r, r * 2, r * 2);
-  g.fillStyle = '#ff7a1f'; g.fillRect(x - r * 0.7 - (i2(t) ? 1 : 0), y - r * 0.9, r * 1.4, r * 1.6);
-  g.fillStyle = '#ffc23b'; g.fillRect(x - r * 0.4, y - r * 0.5, r * 0.8, r * 0.8);
-  g.fillStyle = '#fff6b0'; g.fillRect(x - 1, y - 1, 2, 2);
+// bola de fogo: chama virada para trás, núcleo claro na frente
+function llamaProj(g, p, t, tam) {
+  const x = p.x, y = p.y - p.alt, rampa = rampaFuego(p.tipoAtq);
+  const q = tamSprite(tam / 2.6);
+  PX.carimbar(g, PX.llama(Math.floor(t * 14 + p.x * 0.1), q, rampa), x - Math.cos(p.ang) * q * 0.45, y - Math.sin(p.ang) * q * 0.45, p.ang - Math.PI / 2);
+  PX.disco(g, px(x), px(y), Math.max(1, q * 0.18), rampa[3]);
 }
 
 export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
@@ -252,46 +291,72 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
     switch (e.tipo) {
       case 'charco': {
         const k = Math.min(1, (e.dur - e.t) / 0.6);
-        g.globalAlpha = 0.55 * k; g.fillStyle = '#7a2c92'; g.beginPath(); g.ellipse(px(e.x), px(e.y), e.radio, e.radio * 0.6, 0, 0, 7); g.fill();
-        g.fillStyle = '#c27ae0'; g.beginPath(); g.ellipse(px(e.x - 4), px(e.y - 2), e.radio * 0.4, e.radio * 0.2, 0, 0, 7); g.fill(); g.globalAlpha = 1;
-        if (ale() < 0.1) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -20, g: 0, size: 2, life: 0.6, color: '#c27ae0', forma: 'circulo' });
+        g.globalAlpha = 0.85 * k;
+        PX.elipsePix(g, px(e.x), px(e.y), e.radio + 1, e.radio * 0.6 + 1, '#2a0f3a');
+        PX.elipsePix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#7a2c92');
+        PX.elipsePix(g, px(e.x - e.radio * 0.1), px(e.y - 1), e.radio * 0.7, e.radio * 0.38, '#9b46bd');
+        PX.elipsePix(g, px(e.x - e.radio * 0.28), px(e.y - e.radio * 0.18), e.radio * 0.28, e.radio * 0.12, '#d68cf0');
+        PX.anilloPix(g, px(e.x), px(e.y), e.radio * 0.9, e.radio * 0.55, '#c27ae0', 1, 4, Math.floor(e.t * 8));
+        g.globalAlpha = 1;
+        if (ale() < 0.12) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -22, g: 0, size: 2, life: 0.7, color: '#d68cf0', forma: 'burbuja' });
         break;
       }
       case 'humo': {
         const k = Math.min(1, e.t / 0.3) * Math.min(1, (e.dur - e.t) / 0.6);
-        g.globalAlpha = 0.5 * k; g.fillStyle = '#6b6b80';
-        for (let i = 0; i < 9; i++) { const a = (i / 9) * 7 + e.t * 0.4; g.beginPath(); g.arc(px(e.x + Math.cos(a) * e.radio * 0.55), px(e.y + Math.sin(a) * e.radio * 0.4), e.radio * 0.4, 0, 7); g.fill(); }
+        const n = 9;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * 7 + e.t * 0.4;
+          PX.carimbar(g, PX.humo(Math.round(e.radio * 0.34)), px(e.x + Math.cos(a) * e.radio * 0.55), px(e.y + Math.sin(a) * e.radio * 0.4), 0, 1, 0.55 * k);
+        }
+        break;
+      }
+      case 'enredadera': {
+        const k = Math.min(1, e.t / 0.25), fade = Math.min(1, (e.dur - e.t) / 0.25), at = e.sobre ? { x: e.sobre.x, y: e.sobre.y } : e;
+        g.globalAlpha = fade;
+        for (let i = 0; i < 9; i++) {
+          const a = (i / 9) * Math.PI * 2 + i * 0.7, r = e.radio * (0.25 + 0.7 * ((i * 37) % 10) / 10), alto = (14 + (i * 11) % 14) * k;
+          const bx = px(at.x + Math.cos(a) * r), by = px(at.y + Math.sin(a) * r * 0.6);
+          PX.lineaPix(g, bx, by, bx + Math.sin(i * 2.1) * 3, by - alto, '#0f3a1c', 4);
+          PX.lineaPix(g, bx, by, bx + Math.sin(i * 2.1) * 3, by - alto, '#2e8a34', 2);
+          PX.lineaPix(g, bx, by - 1, bx + Math.sin(i * 2.1) * 3, by - alto + 1, '#8be04e', 1);
+          PX.disco(g, bx + Math.sin(i * 2.1) * 3, by - alto, 2, '#4caf38');
+        }
+        PX.anilloPix(g, px(at.x), px(at.y), e.radio * k, e.radio * 0.65 * k, '#4caf38', 1, 3, Math.floor(e.t * 10));
         g.globalAlpha = 1;
         break;
       }
       case 'marcas': {
         for (const p of e.puntos) {
           if (p.golpeado) continue;
-          const k = clampK((e.t - p.t0) / e.aviso);
-          if (e.t < p.t0) { g.globalAlpha = 0.25; }
-          else g.globalAlpha = 0.7;
-          g.strokeStyle = e.estilo === 'erupcion' || e.estilo === 'roca' ? '#ffd23c' : colorTipo(e.tipoAtq); g.lineWidth = 1.5;
-          g.beginPath(); g.ellipse(px(p.x), px(p.y), (p.radio ?? e.radio), (p.radio ?? e.radio) * 0.6, 0, 0, 7); g.stroke();
-          g.fillStyle = 'rgba(255,200,60,0.25)'; g.beginPath(); g.ellipse(px(p.x), px(p.y), (p.radio ?? e.radio) * k, (p.radio ?? e.radio) * 0.6 * k, 0, 0, 7); g.fill();
-          if (e.t >= p.t0 && e.estilo === 'roca') { const caida = (1 - k) * 90; g.globalAlpha = 1; g.fillStyle = '#04102c'; g.fillRect(px(p.x - 6), px(p.y - caida - 6), 12, 12); g.fillStyle = '#a68c3a'; g.fillRect(px(p.x - 5), px(p.y - caida - 5), 10, 10); g.fillStyle = '#c9b469'; g.fillRect(px(p.x - 5), px(p.y - caida - 5), 5, 5); }
+          const k = clampK((e.t - p.t0) / e.aviso), rad = p.radio ?? e.radio, col = e.estilo === 'erupcion' || e.estilo === 'roca' ? '#ffd23c' : colorTipo(e.tipoAtq);
+          g.globalAlpha = e.t < p.t0 ? 0.35 : 0.9;
+          PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, '#04102c', 2);
+          PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, col, 1, 4, Math.floor(e.t * 12));
+          if (e.t >= p.t0) { g.globalAlpha = 0.35; PX.elipsePix(g, px(p.x), px(p.y), rad * k, rad * 0.6 * k, 'rgba(255,150,40,0.7)'); }
+          if (e.t >= p.t0 && e.estilo === 'roca') { const caida = (1 - k) * 90; g.globalAlpha = 1; PX.carimbar(g, PX.roca(6), p.x, p.y - caida - 6); }
           g.globalAlpha = 1;
         }
         break;
       }
       case 'meteoro': {
         if (e.fase === 'apunta' || e.fase === 'baja') {
-          const k = e.fase === 'baja' ? 1 : e.k;
-          g.globalAlpha = 0.35 + 0.35 * k; g.fillStyle = '#ff5a3a'; g.beginPath(); g.ellipse(px(e.x), px(e.y), e.radio * (0.5 + 0.5 * k), e.radio * (0.5 + 0.5 * k) * 0.6, 0, 0, 7); g.fill();
-          g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.beginPath(); g.ellipse(px(e.x), px(e.y), e.radio, e.radio * 0.6, 0, 0, 7); g.stroke(); g.globalAlpha = 1;
+          const k = e.fase === 'baja' ? 1 : e.k, r = e.radio * (0.5 + 0.5 * k);
+          g.globalAlpha = 0.5 + 0.4 * k;
+          PX.elipsePix(g, px(e.x), px(e.y), r, r * 0.6, 'rgba(255,60,40,0.45)');
+          PX.anilloPix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#04102c', 2);
+          PX.anilloPix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#ffd23c', 1, 5, Math.floor(e.t * 14));
+          PX.anilloPix(g, px(e.x), px(e.y), r * 0.6, r * 0.36, '#ff5a3a', 1);
+          g.globalAlpha = 1;
         }
         break;
       }
       case 'caparazon': {
-        const l = e.dueno, a = e.ang;
-        g.strokeStyle = '#04102c'; g.lineWidth = 6; g.beginPath(); g.arc(px(l.x), px(l.y - l.alto * 0.4), e.h.alcance * 0.7, a, a + 2.6); g.stroke();
-        g.strokeStyle = '#9fdcff'; g.lineWidth = 3; g.stroke();
-        g.strokeStyle = '#04102c'; g.lineWidth = 6; g.beginPath(); g.arc(px(l.x), px(l.y - l.alto * 0.4), e.h.alcance * 0.7, a + Math.PI, a + Math.PI + 2.6); g.stroke();
-        g.strokeStyle = '#4aa3f0'; g.lineWidth = 3; g.stroke();
+        const l = e.dueno, a = e.ang, cx = px(l.x), cy = px(l.y - l.alto * 0.4), r = e.h.alcance * 0.7;
+        for (const [ini, col] of [[a, '#9fdcff'], [a + Math.PI, '#4aa3f0']]) {
+          PX.arcoPix(g, cx, cy, r, ini, ini + 2.6, '#04102c', 8, r * 0.8);
+          PX.arcoPix(g, cx, cy, r, ini + 0.05, ini + 2.55, col, 5, r * 0.8);
+          PX.arcoPix(g, cx, cy, r, ini + 0.4, ini + 2.2, '#ffffff', 2, r * 0.8);
+        }
         break;
       }
       default: break;
@@ -308,33 +373,44 @@ const clampK = k => Math.max(0, Math.min(1, k));
 
 function dibujarChorro(g, e, t, fx) {
   const d = e.dueno, b = e.boca(), alt = d.alto * 0.55;
-  const col = e.tipoAtq, [c0, c1, c2, c3] = paleta(col);
+  const col = e.tipoAtq, [c0, c1, c2, c3] = paleta(col), rampa = rampaTipo(col);
+  const ox = px(b.x), oy = px(b.y - alt);
   if (!e.activo) {
+    // carga: esfera de energia que cresce, faíscas entrando e uma linha fina de mira
     const k = e.t / e.carga;
-    g.globalAlpha = 0.6; g.fillStyle = c1; g.beginPath(); g.arc(px(b.x), px(b.y - alt), 3 + k * 8, 0, 7); g.fill();
-    g.globalAlpha = 1; g.fillStyle = '#fff'; g.fillRect(px(b.x - 1), px(b.y - alt - 1), 3, 3);
-    fx.chispas(b.x + Math.cos(e.ang) * 20 + (ale() - 0.5) * 30, b.y - alt + (ale() - 0.5) * 30, c1, 1, 40);
+    PX.esfera(g, ox, oy, 2 + k * 7, rampa);
+    const mx = b.x + Math.cos(e.ang) * 260, my = b.y - alt + Math.sin(e.ang) * 260;
+    g.globalAlpha = 0.35; PX.anilloPix(g, ox, oy, 4 + k * 12, 4 + k * 12, c1, 1, 3, Math.floor(t * 20)); g.globalAlpha = 1;
+    for (let i = 0; i < 18; i++) { const f = i / 18, ex = ox + (mx - ox) * f, ey = oy + (my - oy) * f; if (i % 2 === Math.floor(t * 12) % 2) { g.fillStyle = c1; g.globalAlpha = 0.5 * (1 - f); g.fillRect(px(ex), px(ey), 2, 1); } }
+    g.globalAlpha = 1;
+    const a = ale() * 6.28, rr = 22 + ale() * 14;
+    fx.add({ x: ox + Math.cos(a) * rr, y: oy + Math.sin(a) * rr, vx: -Math.cos(a) * rr * 4, vy: -Math.sin(a) * rr * 4, size: 1.6, life: 0.25, color: c1, forma: 'chispa' });
     return;
   }
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
   const x2 = b.x + Math.cos(e.ang) * e.largo, y2 = b.y + Math.sin(e.ang) * e.largo - alt;
-  const w = ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k);
-  g.save();
-  g.lineCap = 'butt';
-  const capa = (grosor, color, alfa = 1) => { g.globalAlpha = alfa; g.strokeStyle = color; g.lineWidth = grosor; g.beginPath(); g.moveTo(px(b.x), px(b.y - alt)); g.lineTo(px(x2), px(y2)); g.stroke(); };
-  capa(w + 6, '#04102c', 0.85); capa(w, c3); capa(w * 0.72, c2); capa(w * 0.42, c1); capa(w * 0.18, '#ffffff');
-  // pedaços que correm pelo raio
-  g.globalAlpha = 1;
-  const n = Math.floor(e.largo / 16);
-  for (let i = 0; i < n; i++) {
-    const f = (((i / n) + t * 2.2) % 1), ox = b.x + (x2 - b.x) * f, oy = b.y - alt + (y2 - (b.y - alt)) * f;
-    const s = 2 + ((i * 7) % 3);
-    g.fillStyle = i % 2 ? c0 : c1; g.fillRect(px(ox - s / 2 + Math.sin(t * 30 + i) * w * 0.25), px(oy - s / 2 + Math.cos(t * 28 + i) * w * 0.25), s, s);
+  const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
+  // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
+  const largoTotal = Math.hypot(px(x2) - ox, px(y2) - oy), nTr = Math.max(2, Math.ceil(largoTotal / 9));
+  const capas = [[4, '#04102c', 0.92, 1], [0, c3, 1, 1], [0, c2, 1, 0.74], [0, c1, 1, 0.46], [0, '#ffffff', 1, 0.2]];
+  for (const [extra, color, alfa, f] of capas) {
+    g.globalAlpha = alfa;
+    for (let i = 0; i < nTr; i++) {
+      const u0 = i / nTr, u1 = (i + 1) / nTr + 0.02, onda = 0.9 + 0.1 * Math.sin(t * 22 + i * 1.4) + (i % 3 === 0 ? 0.04 : 0);
+      const gro = Math.max(1, Math.round((w * f + (f === 1 ? extra : 0)) * onda * (i === 0 ? 0.8 : 1)));
+      PX.lineaPix(g, ox + (px(x2) - ox) * u0, oy + (px(y2) - oy) * u0, ox + (px(x2) - ox) * u1, oy + (px(y2) - oy) * u1, color, gro);
+    }
   }
-  g.restore();
   g.globalAlpha = 1;
-  g.fillStyle = c1; g.beginPath(); g.arc(px(b.x), px(b.y - alt), w * 0.5, 0, 7); g.fill();
-  g.fillStyle = '#fff'; g.beginPath(); g.arc(px(b.x), px(b.y - alt), w * 0.25, 0, 7); g.fill();
+  // nós de energia que correm pelo raio
+  const nx = Math.cos(e.ang), ny = Math.sin(e.ang), n = Math.floor(e.largo / 14);
+  for (let i = 0; i < n; i++) {
+    const f = (((i / n) + t * 2.4) % 1), cx = ox + (px(x2) - ox) * f, cy = oy + (px(y2) - oy) * f;
+    const lado = Math.sin(t * 30 + i * 1.7) * w * 0.3;
+    PX.disco(g, cx - ny * lado, cy + nx * lado, i % 3 === 0 ? 2 : 1, i % 2 ? c0 : '#ffffff');
+  }
+  // boca e ponta
+  PX.esfera(g, ox, oy, Math.max(3, w * 0.45), rampa);
   if (BRILLA.has(col) && ale() < 0.6) fx.chispas(x2 + (ale() - 0.5) * 8, y2 + (ale() - 0.5) * 8, c1, 1, 100);
   if (ale() < 0.5) fx.rafaga(x2, y2 + alt, col, 1, 80, { size: 2 });
 }
@@ -342,13 +418,23 @@ function dibujarChorro(g, e, t, fx) {
 function dibujarCono(g, e, t, fx) {
   const d = e.dueno, alt = d.alto * 0.5, h = e.h;
   const ox = d.x + Math.cos(e.ang) * 10, oy = d.y + Math.sin(e.ang) * 6 - alt;
-  const [c0, c1, c2] = paleta(h.tipo);
-  const k = clampK(1 - e.t / h.dur);
-  g.globalAlpha = 0.25 * k; g.fillStyle = c2;
-  g.beginPath(); g.moveTo(px(ox), px(oy)); g.arc(px(ox), px(oy), h.alcance, e.ang - (h.angulo * Math.PI) / 360, e.ang + (h.angulo * Math.PI) / 360); g.closePath(); g.fill(); g.globalAlpha = 1;
-  for (let i = 0; i < 3; i++) {
-    const a = e.ang + (ale() - 0.5) * (h.angulo * Math.PI) / 180, s = entre(80, 150);
-    fx.add({ x: ox + Math.cos(a) * 8, y: oy + Math.sin(a) * 8, vx: Math.cos(a) * s, vy: Math.sin(a) * s, drag: 1.2, size: entre(2, 4), grow: 3, life: entre(0.25, 0.45), color: [c0, c1, c2][i % 3], forma: 'circulo' });
+  const tipo = h.tipo, k = clampK(1 - e.t / h.dur), semi = (h.angulo * Math.PI) / 360;
+  // contorno do leque só no começo (mostra a área sem pintar um triângulo)
+  if (e.t < 0.18) {
+    g.globalAlpha = (1 - e.t / 0.18) * 0.7;
+    for (const lado of [-1, 1]) { const a = e.ang + lado * semi; for (let r = 14; r < h.alcance; r += 7) { g.fillStyle = '#ffffff'; g.fillRect(px(ox + Math.cos(a) * r), px(oy + Math.sin(a) * r), 2, 1); } }
+    PX.arcoPix(g, ox, oy, h.alcance, e.ang - semi, e.ang + semi, 'rgba(255,255,255,0.6)', 1);
+    g.globalAlpha = 1;
+  }
+  const fuego = tipo === 'FIRE' || tipo === 'DRAGON';
+  for (let i = 0; i < 4; i++) {
+    const a = e.ang + (ale() - 0.5) * 2 * semi * 0.85, s = h.alcance * entre(2.2, 3.4), r0 = entre(4, 14);
+    const base = { x: ox + Math.cos(a) * r0, y: oy + Math.sin(a) * r0, vx: Math.cos(a) * s, vy: Math.sin(a) * s, drag: 1.25, life: entre(0.4, 0.62) * (0.6 + 0.4 * k) };
+    if (fuego) fx.add({ ...base, size: entre(2.6, 3.6), grow: 7, g: -30, forma: 'llama', rampa: rampaFuego(tipo) });
+    else if (tipo === 'WATER') fx.add({ ...base, size: entre(1.6, 2.6), g: 80, forma: ale() < 0.6 ? 'gota' : 'burbuja', color: '#cfeeff', rampa: AGUA });
+    else if (tipo === 'GRASS' || tipo === 'BUG') fx.add({ ...base, size: entre(1.8, 2.8), forma: 'hoja', vr: 8 });
+    else if (tipo === 'POISON') fx.add({ ...base, size: entre(2, 3.2), forma: 'burbuja', color: '#d68cf0' });
+    else fx.add({ ...base, size: entre(1.6, 3), grow: 3, forma: 'circulo', color: mezcla(colorTipo(tipo), 0.2) });
   }
 }
 
@@ -359,5 +445,6 @@ export function dibujarProyectil(g, p, t) {
 }
 export function dibujarBomba(g, p) {
   sombra(g, p.x, p.y, 5);
-  bolaPixel(g, p.x, p.y - p.alt, 5, 'POISON');
+  PX.esfera(g, px(p.x), px(p.y - p.alt), 5, ['#4a1a62', '#9b3fbf', '#d68cf0', '#f6d6ff']);
+  PX.disco(g, px(p.x + 2), px(p.y - p.alt + 6), 1, '#9b3fbf');
 }
