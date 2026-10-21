@@ -1,0 +1,8 @@
+{
+  "appId": "com.gabrielnunesbezerra.arena2dchampion",
+  "appName": "PK confront",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#07060c"
+  }
+}
