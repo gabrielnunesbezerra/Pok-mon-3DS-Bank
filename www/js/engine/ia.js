@@ -47,9 +47,10 @@ export class IA {
     // movimento: aproxima, afasta e gira em volta
     if (t > this.cambioLado) { this.lado = -this.lado; this.cambioLado = t + entre(1.2, 3); }
     let mx = 0, my = 0;
-    const alvoD = Math.max(rango * 0.8, 36);
+    const rLmb0 = rangoDe(l.kit.lmb);
+    const alvoD = Math.max(24, Math.min(rango * 0.85, rLmb0 > 0 ? rLmb0 * 0.8 : rango));
     if (d > alvoD + 14) { mx = dx / d; my = dy / d; }
-    else if (d < alvoD - 18 && rango > 70) { mx = -dx / d; my = -dy / d; }
+    else if (d < alvoD - 22 && alvoD > 80) { mx = -dx / d; my = -dy / d; }
     const girar = d < rango + 60 ? 0.55 : 0.15;
     mx += (-dy / d) * this.lado * girar; my += (dx / d) * this.lado * girar;
     // evita a borda

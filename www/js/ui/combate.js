@@ -23,7 +23,7 @@ export class Combate {
   constructor(app, datos = {}) {
     this.app = app;
     this.datos = { modo: 'cpu', nivel: 'normal', ...datos };
-    if (this.datos.modo === 'tutorial') { this.datos.modo = 'entreno'; this.datos.p1 ??= 'riolu'; this.datos.p2 ??= 'munchlax'; }
+    if (this.datos.modo === 'tutorial') { this.datos.modo = 'entreno'; this.datos.tutorial = true; this.datos.p1 ??= 'riolu'; this.datos.p2 ??= 'munchlax'; }
     const azar = () => ROSTER[Math.floor(Math.random() * ROSTER.length)].id;
     this.datos.p1 = this.datos.p1 ?? azar();
     this.datos.p2 = this.datos.p2 ?? azar();
@@ -56,7 +56,7 @@ export class Combate {
 
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], modo: d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: (Math.random() * 1e9) | 0 });
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], etapas: d.etapas ?? [0, 0], modo: d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
@@ -65,6 +65,8 @@ export class Combate {
     else if (d.modo === 'entreno') this.ctrls.push(new Muneco());
     else this.ctrls.push(new IA(luta, b, d.nivel));
     this.humanos = d.modo === 'versus' ? [0, 1] : [0];
+    if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
+    if (!app.tactil.activo) app.canvas.style.cursor = 'none';
     this.menuPausa = null;
     this.resultado = null;
     this.cargado = true;
@@ -73,14 +75,15 @@ export class Combate {
     for (const def of this.defs) for (const dex of formasDe(def)) for (const n of Object.keys(bank.manifiesto[dex]?.anims ?? {})) bank.hoja(dex, n);
   }
 
-  salir(a = 'seleccion') { this.app.ir(a, { modo: this.datos.modo }); }
+  salir() { this.app.canvas.style.cursor = 'default'; }
+  volver(a = 'seleccion') { this.app.ir(this.datos.tutorial ? 'titulo' : a, { modo: this.datos.modo }); }
 
   // ---------------------------------------------------------------- entrada
   tecla(c, nueva) {
     if (!nueva) return;
     if (this.luta?.fase === 'fin') {
       if (c === 'KeyR') return this.revancha();
-      if (c === 'Escape' || c === 'Backspace') return this.salir();
+      if (c === 'Escape' || c === 'Backspace') return this.volver();
       return this.resultado?.lista.tecla(c);
     }
     if (c === 'Escape' || c === 'KeyP' && this.datos.modo !== 'versus') return this.alternarPausa();
@@ -120,7 +123,7 @@ export class Combate {
         else if (o.id === 'repetir') this.revancha();
         else if (o.id === 'sonido') { app.ajustes.sonido = !app.ajustes.sonido; silenciar(!app.ajustes.sonido); app.guardarAjustes(); this.armarPausa(); this.menuPausa.foco = 2; }
         else if (o.id === 'controles') this.verControles = true;
-        else if (o.id === 'cambiar') this.salir();
+        else if (o.id === 'cambiar') this.volver();
         else app.ir('titulo');
       },
     });
@@ -132,6 +135,7 @@ export class Combate {
     const luta = this.luta;
     this.app.tactil.actualizar();
     const intentos = this.ctrls.map(c => c.intento(dt));
+    if (this.tutorial) { luta.luchadores[0].ganarUlti(dt * 14); luta.luchadores[0].ganarExp(dt * 6); const it = intentos[0]; if (Math.hypot(it.mx, it.my) > 0.1) this.marcar('move'); if (it.mega && (luta.luchadores[0].puedeMega || luta.luchadores[0].puedeEvolucionar)) this.marcar('mega'); }
     luta.paso(dt, intentos);
   }
 
@@ -144,10 +148,14 @@ export class Combate {
     for (const e of evs) {
       if (e.t === 'fin') this.armarResultado(e.ganador);
       if (e.t === 'habilidad' && e.l.humano && e.slot === 'e') this.fx.temblor = Math.max(this.fx.temblor, 3);
+      if (e.t === 'habilidad' && e.l.humano) this.marcar(e.slot);
+      if (e.t === 'evolucion' && e.l.humano) this.marcar('mega');
     }
     if (!this.pausado) this.fx.update(dt);
     this.camara.actualizar(dt, luta.luchadores, true);
   }
+
+  marcar(id) { const p = this.tutorial?.pasos.find(x => x[0] === id); if (p && !p[2]) { p[2] = true; sfx('confirmar'); } }
 
   armarResultado(ganador) {
     const d = this.datos;
@@ -159,7 +167,7 @@ export class Combate {
       lista: new ListaBotones({
         x: ANCHO / 2, y: 232, w: 170, h: 22, paso: 26,
         ops: [{ txt: 'REMATCH', id: 'otra' }, { txt: 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' }],
-        alElegir: o => { if (o.id === 'otra') this.revancha(); else if (o.id === 'cambiar') this.salir(); else this.app.ir('titulo'); },
+        alElegir: o => { if (o.id === 'otra') this.revancha(); else if (o.id === 'cambiar') this.volver(); else this.app.ir('titulo'); },
       }),
     };
   }
@@ -201,6 +209,8 @@ export class Combate {
       this.hud.barraSkills(g, luta.luchadores[i], i, this.t, esquema);
     }
     if (this.app.tactil.activo) this.app.tactil.dibujar(g);
+    if (this.tutorial) this.dibujarTutorial(g);
+    if (!this.app.tactil.activo && !this.pausado && this.luta.fase !== 'fin') this.dibujarMira(g);
     // anúncios do centro
     for (const a of fx.anuncios) {
       const k = a.t / a.dur, esc = 1 + Math.max(0, 0.6 - k * 3), al = Math.min(1, (1 - k) * 3);
@@ -272,6 +282,20 @@ export class Combate {
         for (let i = 0; i < 3; i++) { const px = sx - 9 + i * 7; rect(g, px - 1, by - 11, 6, 6, '#000'); rect(g, px, by - 10, 4, 4, i < l.cargaTipo.n ? colorTipo(l.cargaTipo.tipo === 'CONFUSION' ? 'PSYCHIC' : l.cargaTipo.tipo) : '#2a3040'); }
       }
     }
+  }
+
+  dibujarTutorial(g) {
+    const ps = this.tutorial.pasos, x = 6, y = HUD_ALTO + 6;
+    marco(g, x, y, 112, 14 + ps.length * 11, 'panel');
+    texto(g, 'TUTORIAL', x + 6, y + 4, { tam: 6, color: UI.amarillo });
+    ps.forEach(([id, txt, ok], i) => texto(g, `${ok ? '✓' : '·'} ${txt}`, x + 6, y + 15 + i * 11, { tam: 6, color: ok ? '#86efac' : '#ffffff' }));
+    if (ps.every(p => p[2])) texto(g, 'DONE! ESC TO EXIT', ANCHO / 2, HUD_ALTO + 12, { tam: 8, align: 'center', color: '#ffd23c', borde: 3 });
+  }
+  dibujarMira(g) {
+    const p = this.app.entrada.ptr;
+    if (p.fuera || p.y < HUD_ALTO) return;
+    g.strokeStyle = '#04102c'; g.lineWidth = 3; g.beginPath(); g.arc(p.x, p.y, 5, 0, 7); g.moveTo(p.x - 9, p.y); g.lineTo(p.x - 3, p.y); g.moveTo(p.x + 3, p.y); g.lineTo(p.x + 9, p.y); g.moveTo(p.x, p.y - 9); g.lineTo(p.x, p.y - 3); g.moveTo(p.x, p.y + 3); g.lineTo(p.x, p.y + 9); g.stroke();
+    g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.stroke();
   }
 
   dibujarResultado(g) {

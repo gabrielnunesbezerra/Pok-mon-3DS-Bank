@@ -76,7 +76,7 @@ export class Titulo {
     if (o.ajuste) {
       this.app.ajustes[o.ajuste] = !this.app.ajustes[o.ajuste];
       this.app.guardarAjustes();
-      import('../audio.js').then(a => a.silenciar(!this.app.ajustes.sonido));
+      import('../audio.js').then(a => { a.silenciar(!this.app.ajustes.sonido); this.app.musica(); if (!this.app.ajustes.musica) a.pararMusica(); });
       this.refrescarAjustes();
       return;
     }

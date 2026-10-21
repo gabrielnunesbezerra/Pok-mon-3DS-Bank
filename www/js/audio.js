@@ -57,3 +57,40 @@ const SONIDOS = {
   explosion: () => { ruido(0.4, 0.3, 700); tono(120, 30, 0.4, 'sawtooth', 0.15); },
 };
 export function sfx(nombre) { SONIDOS[nombre]?.(); }
+
+// ---------------------------------------------------------------- música sintetizada (duas vozes + baixo)
+let musica = null;
+let musicaOn = true;
+export const musicaActiva = () => musicaOn;
+export function activarMusica(v) { musicaOn = v; if (!v) pararMusica(); }
+
+const NOTA = n => 440 * 2 ** ((n - 69) / 12);
+const TEMAS = {
+  menu: { bpm: 104, melodia: [72, 0, 76, 79, 76, 0, 74, 0, 72, 0, 69, 72, 71, 0, 67, 0, 69, 0, 72, 76, 74, 0, 71, 0, 72, 74, 76, 0, 79, 0, 76, 0], bajo: [48, 55, 52, 55, 45, 52, 48, 52, 41, 48, 45, 48, 43, 50, 47, 50], tipo: 'triangle' },
+  combate: { bpm: 148, melodia: [76, 76, 0, 79, 76, 0, 74, 76, 72, 72, 0, 76, 72, 0, 71, 72, 69, 69, 0, 72, 69, 0, 67, 69, 71, 74, 71, 67, 71, 74, 76, 0], bajo: [40, 40, 47, 40, 36, 36, 43, 36, 33, 33, 40, 33, 35, 35, 42, 35], tipo: 'square' },
+};
+export function tocarMusica(nombre) {
+  pararMusica();
+  if (!musicaOn || !ctx || !TEMAS[nombre]) return;
+  const tema = TEMAS[nombre];
+  const paso = 60 / tema.bpm / 2;
+  let i = 0, proximo = ctx.currentTime + 0.1;
+  const nota = (f, t, dur, tipo, vol) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = tipo; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * volumen, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + dur + 0.02);
+  };
+  const timer = setInterval(() => {
+    if (!ctx || mudo) { proximo = ctx ? ctx.currentTime + 0.1 : 0; return; }
+    while (proximo < ctx.currentTime + 0.4) {
+      const m = tema.melodia[i % tema.melodia.length], b = tema.bajo[Math.floor(i / 2) % tema.bajo.length];
+      if (m) nota(NOTA(m), proximo, paso * 0.9, tema.tipo, 0.05);
+      if (i % 2 === 0) nota(NOTA(b), proximo, paso * 1.8, 'triangle', 0.09);
+      proximo += paso; i++;
+    }
+  }, 100);
+  musica = { nombre, timer };
+}
+export function pararMusica() { if (musica) { clearInterval(musica.timer); musica = null; } }
+export const musicaActual = () => musica?.nombre ?? null;

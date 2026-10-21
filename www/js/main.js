@@ -21,6 +21,7 @@ const app = {
     this.escena = new E(this, datos);
     this.escena.entrar?.();
     this.nombre = nombre;
+    this.musica();
   },
 };
 const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, combate: Combate };
@@ -28,6 +29,11 @@ const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, poke
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }
 }
+app.musica = () => {
+  const que = app.nombre === 'combate' ? 'combate' : 'menu';
+  audio.activarMusica(app.ajustes.musica);
+  if (app.ajustes.musica && audio.musicaActual() !== que) audio.tocarMusica(que);
+};
 app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JSON.stringify(app.ajustes)); } catch { /* sem armazenamento */ } };
 
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
@@ -50,8 +56,8 @@ const aCoord = (cx, cy) => {
 };
 app.aCoord = aCoord;
 app.entrada = new Entrada(canvas, aCoord);
-app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.escena?.tecla?.(c, nueva, e); };
-app.entrada.alPuntero = (tipo, p, e) => { if (tipo === 'down') audio.iniciar(); app.escena?.puntero?.(tipo, p, e); };
+app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.musica(); app.escena?.tecla?.(c, nueva, e); };
+app.entrada.alPuntero = (tipo, p, e) => { if (tipo === 'down') { audio.iniciar(); app.musica(); } app.escena?.puntero?.(tipo, p, e); };
 audio.silenciar(!app.ajustes.sonido);
 
 let ultimo = performance.now();
