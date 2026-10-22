@@ -33,7 +33,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = [];
+    this.ondas = []; this.banners = []; this.cruces = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -59,9 +59,11 @@ export class Efectos {
   anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w }); }
   texto(x, y, txt, color = '#ffffff', op = {}) { this.textos.push({ x, y, txt, color, t: 0, life: op.dur ?? 0.9, vy: -(op.sube ?? 22), tam: op.tam ?? 8 }); }
   numero(x, y, dano, mult) { this.nums.push({ x: x + (ale() - 0.5) * 10, y, dano, mult, t: 0, life: 0.8 }); }
-  globo(l, txt) { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, t: 0, life: 1.1 }); }
-  tajo(x, y, ang, r, color, final, estilo) { this.tajos.push({ x, y, ang, r, color, final, estilo, t: 0, life: final ? 0.22 : 0.16 }); }
-  onda(x, y, ang, alcance, anguloDeg, tipo) { this.ondas.push({ x, y, ang, alcance, ang2: (anguloDeg * Math.PI) / 360, tipo, t: 0, life: 0.45 }); }
+  globo(l, txt, tipo = 'NORMAL') { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, tipo, t: 0, life: 1.1 }); }
+  banner(txt, tipo) { this.banners.push({ txt, tipo, t: 0, life: 1.15 }); }
+  cruz(x, y, ang, tipo, largo) { this.cruces.push({ x, y, ang, tipo, largo, t: 0, life: 0.45 }); }
+  tajo(x, y, ang, r, color, final, estilo, tipo) { this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, t: 0, life: final ? 0.24 : 0.17 }); }
+  onda(x, y, ang, alcance, anguloDeg, tipo, estilo) { this.ondas.push({ x, y, ang, alcance, ang2: (anguloDeg * Math.PI) / 360, tipo, estilo, t: 0, life: 0.45 }); }
   anuncio(txt, op = {}) { this.anuncios = this.anuncios.filter(a => a.quien !== op.quien || op.quien === undefined); this.anuncios.push({ txt, color: op.color ?? '#ffffff', tam: op.tam ?? 16, dur: op.dur ?? 0.8, t: 0, quien: op.quien }); }
 
   // ---------------------------------------------------------------- eventos do motor
@@ -85,8 +87,8 @@ export class Efectos {
           this.rafaga(e.x, e.y, e.tipo, 14, 160);
           if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
           break;
-        case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
-        case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo); break;
+        case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
+        case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
         case 'raices': for (let i = -3; i <= 3; i++) { const a = e.ang + i * 0.2; this.add({ x: e.x + Math.cos(a) * e.dist, y: e.y + Math.sin(a) * e.dist * 0.8, vy: -50, g: 100, size: 3, life: 0.5, color: i % 2 ? '#4caf38' : '#2e7d32', forma: 'hoja' }); } break;
         case 'humo': this.humo(e.x, e.y, 14, 'rgba(120,120,135,0.55)', e.radio * 0.5); break;
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
@@ -101,7 +103,8 @@ export class Efectos {
         case 'ko': this.flash = 0.5; this.flashColor = '#ffffff'; this.temblor = Math.max(this.temblor, 10); this.anuncio('K.O!', { color: '#ff4040', tam: 32, dur: 1.3 }); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#fff', 16, 420); break;
         case 'tiempo': this.anuncio('TIME!', { color: '#ffd23c', tam: 32, dur: 1.2 }); break;
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
-        case 'habilidad': if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`); break;
+        case 'habilidad': if (e.slot === 'e') this.banner(`${e.h.nombre}!`, e.h.tipo); else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo); break;
+        case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
         case 'temblor': this.temblor = Math.max(this.temblor, e.f * 900); break;
         case 'sobrecarga': this.humo(e.l.x, e.l.y - e.l.alto, 6, 'rgba(120,110,110,0.6)', 8); break;
         case 'finProyectil': this.rafaga(e.x, e.y, e.tipo, 6, 100, { size: 2 }); break;
@@ -114,7 +117,7 @@ export class Efectos {
 
   impacto(e) {
     const c = colorTipo(e.tipo);
-    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.26 : 0.2, color: '#ffffff', brillo: mezcla(c, 0.25), forma: 'estouro' });
+    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.28 : 0.22, color: '#ffffff', brillo: mezcla(c, 0.25), forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
     this.chispas(e.x, e.y, '#ffffff', e.fuerte ? 8 : 4, e.fuerte ? 380 : 260);
     this.rafaga(e.x, e.y, e.tipo, e.fuerte ? 10 : 6, e.fuerte ? 200 : 140);
     this.anillo(e.x, e.y, 2, e.fuerte ? 22 : 14, c, 0.22, 1);
@@ -147,6 +150,8 @@ export class Efectos {
     for (const x of this.nums) { x.t += dt; } this.nums = this.nums.filter(x => x.t < x.life);
     for (const b of this.globos) b.t += dt; this.globos = this.globos.filter(b => b.t < b.life);
     for (const a of this.anuncios) a.t += dt; this.anuncios = this.anuncios.filter(a => a.t < a.dur);
+    for (const b of this.banners) b.t += dt; this.banners = this.banners.filter(b => b.t < b.life);
+    for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
   }
@@ -154,24 +159,39 @@ export class Efectos {
   dibujar(g) {
     // ondas de sopro e arcos de corte
     for (const o of this.ondas) {
-      const k = o.t / o.life, c = colorTipo(o.tipo), [, , claro] = rampaTipo(o.tipo);
+      const k = o.t / o.life, c = colorTipo(o.tipo);
       g.globalAlpha = Math.min(1, (1 - k) * 1.6);
-      for (let i = 0; i < 3; i++) {
+      if (o.estilo === 'sonido') {
+        // ondas sonoras: anéis finos e claros que saem da boca e vão abrindo
+        for (let i = 0; i < 4; i++) {
+          const f = Math.min(1, k * 1.25 - i * 0.12); if (f <= 0) continue;
+          const d = o.alcance * f, rx = 3 + f * 5, ry = Math.tan(o.ang2) * d * 0.9 + 3;
+          const cx = o.x + Math.cos(o.ang) * d, cy = o.y + Math.sin(o.ang) * d * 0.9;
+          const ca = Math.cos(o.ang), sa = Math.sin(o.ang);
+          for (let j = 0; j < 22; j++) {
+            if (j % 3 === 2) continue;
+            const u = (j / 21 - 0.5) * 2, px_ = cx + (-sa) * u * ry + ca * (1 - u * u) * rx, py_ = cy + ca * u * ry + sa * (1 - u * u) * rx * 0.9;
+            g.fillStyle = j % 2 ? '#ffffff' : '#bfe0ff'; g.fillRect(R(px_), R(py_), 2, 2);
+          }
+        }
+      } else for (let i = 0; i < 3; i++) {
         const r = o.alcance * (0.35 + 0.65 * k) * (0.7 + i * 0.15), a2 = o.ang2 * (0.8 + i * 0.1);
         PX.arcoPix(g, o.x, o.y, r, o.ang - a2, o.ang + a2, '#04102c', 4);
         PX.arcoPix(g, o.x, o.y, r, o.ang - a2 * 0.96, o.ang + a2 * 0.96, i === 1 ? '#ffffff' : c, 2);
       }
     }
-    for (const a of this.tajos) {
-      const k = a.t / a.life, rr = a.r * 0.9, [, base, claro, brillo] = rampa4(a.color);
-      g.globalAlpha = Math.min(1, (1 - k) * 1.5);
-      const a0 = a.ang - 0.95 + k * 0.55, a1 = a.ang + 0.95 - k * 0.2, gro = a.final ? 7 : 5;
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, base, gro, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.1, claro, Math.max(2, gro - 2), rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.25, a1 - 0.25, brillo, Math.max(1, gro - 4), rr * 0.82);
-    }
+    for (const a of this.tajos) this.dibujarTajo(g, a);
     g.globalAlpha = 1;
+    for (const c of this.cruces) {
+      const k = c.t / c.life, alfa = Math.min(1, (1 - k) * 1.8), cx = c.x, cy = c.y, L = c.largo * (0.55 + 0.45 * Math.min(1, k * 4));
+      const ca = Math.cos(c.ang), sa = Math.sin(c.ang), [, c2, c1] = rampaTipo(c.tipo);
+      g.globalAlpha = alfa;
+      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, '#04102c', 5);
+      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, c2, 3);
+      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, c1, 1);
+      PX.disco(g, cx, cy, 2.5, '#ffffff');
+      g.globalAlpha = 1;
+    }
     for (const a of this.anillos) {
       const k = a.t / a.dur, r = a.r0 + (a.r1 - a.r0) * Math.sqrt(k);
       g.globalAlpha = Math.min(1, (1 - k) * 1.4);
@@ -191,6 +211,7 @@ export class Efectos {
         case 'hoja': PX.carimbar(g, PX.hoja(Math.max(6, Math.round(s * 3.4))), p.x, p.y, p.rot, 1, al); break;
         case 'chispa': PX.carimbar(g, PX.chispa(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#ffffff'), p.x, p.y, 0, 1, 1); break;
         case 'burbuja': PX.carimbar(g, PX.burbuja(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#bfe9ff'), p.x, p.y, 0, 1, 1); break;
+        case 'salpicadura': PX.carimbar(g, PX.salpicadura(Math.floor((p.t / p.life) * 4), Math.max(7, Math.round(p.size))), p.x, p.y - 2, 0, 1, 1); break;
         case 'estouro': PX.carimbar(g, PX.estouro(Math.floor((p.t / p.life) * 4), Math.max(6, Math.round(p.size)), p.color, p.brillo ?? '#ffd23c'), p.x, p.y, 0, 1, 1); break;
         case 'humo': PX.carimbar(g, PX.humo(Math.max(3, Math.round(s * 0.9)), p.tono), p.x, p.y, 0, 1, p.alfa ?? 0.8); break;
         case 'bola': { const r = Math.max(2, s); PX.esfera(g, p.x, p.y, r, p.rampa ?? PX.RAMPA_FOGO); break; }
@@ -203,6 +224,39 @@ export class Efectos {
         case 'raya': g.strokeStyle = p.color; g.lineWidth = Math.max(1, Math.round(s)); PX.lineaPix(g, p.x, p.y, p.x - p.vx * 0.04, p.y - p.vy * 0.04, p.color, Math.max(1, Math.round(s))); break;
         default: g.save(); g.translate(R(p.x), R(p.y)); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4)); g.fillRect(-Math.round(s / 2), -Math.round(s / 2), Math.max(1, Math.round(s)), Math.max(1, Math.round(s))); g.restore();
       }
+    }
+    g.globalAlpha = 1;
+  }
+
+  // cada tipo de golpe tem o seu desenho: asa, mordida, barra de aço, palma ou corte em lua
+  dibujarTajo(g, a) {
+    const k = a.t / a.life, rr = a.r * 0.9, [, base, claro, brillo] = rampa4(a.color);
+    const fx = a.x + Math.cos(a.ang) * rr * 0.85, fy = a.y + Math.sin(a.ang) * rr * 0.85 * 0.8;
+    g.globalAlpha = Math.min(1, (1 - k) * 1.5);
+    if (a.tipo === 'FLYING' && a.estilo !== 'rafaga') {
+      // asa: três penas em leque, brancas com borda azul
+      for (let i = -1; i <= 1; i++) {
+        const rad = rr * (0.95 - Math.abs(i) * 0.1), abre = a.ang + i * 0.5, a0 = abre - 0.55 + k * 0.3, a1 = abre + 0.55 - k * 0.1;
+        PX.arcoPix(g, a.x, a.y, rad, a0, a1, '#2a4a8a', 5, rad * 0.8);
+        PX.arcoPix(g, a.x, a.y, rad, a0 + 0.05, a1 - 0.05, '#cfe4ff', 3, rad * 0.8);
+        PX.arcoPix(g, a.x, a.y, rad, a0 + 0.15, a1 - 0.15, '#ffffff', 1, rad * 0.8);
+      }
+    } else if (a.tipo === 'BUG') {
+      PX.carimbar(g, PX.mordida(k, Math.max(8, Math.round(rr * 0.45))), fx, fy, a.ang);
+    } else if (a.tipo === 'STEEL') {
+      // barra metálica que cruza em diagonal
+      const dx = Math.cos(a.ang + 1.5708), dy = Math.sin(a.ang + 1.5708) * 0.8, mv = (k - 0.5) * rr * 0.7;
+      const x0 = fx - dx * rr * 0.55 + Math.cos(a.ang) * mv * 0.4, y0 = fy - dy * rr * 0.55, x1 = fx + dx * rr * 0.55 + Math.cos(a.ang) * mv * 0.4, y1 = fy + dy * rr * 0.55;
+      PX.lineaPix(g, x0, y0, x1, y1, '#04102c', 8); PX.lineaPix(g, x0, y0, x1, y1, '#8fa4b8', 6); PX.lineaPix(g, x0, y0, x1, y1, '#e0eaf2', 3); PX.lineaPix(g, x0, y0, x1, y1, '#ffffff', 1);
+    } else if (a.tipo === 'FIGHTING' && (a.estilo === 'aura' || a.estilo === 'golpe')) {
+      PX.carimbar(g, PX.estouro(Math.floor(k * 3), Math.max(9, Math.round(rr * 0.4)), '#ffffff', '#ff8a5a'), fx, fy);
+      PX.anilloPix(g, fx, fy, 6 + k * 14, 5 + k * 11, '#ffd0b0', 1, 3, Math.floor(a.t * 40));
+    } else {
+      const gro = a.final ? 7 : 5, a0 = a.ang - 0.95 + k * 0.55, a1 = a.ang + 0.95 - k * 0.2;
+      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0, a1, base, gro, rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.1, claro, Math.max(2, gro - 2), rr * 0.82);
+      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.25, a1 - 0.25, brillo, Math.max(1, gro - 4), rr * 0.82);
     }
     g.globalAlpha = 1;
   }
@@ -263,7 +317,7 @@ const ESTILOS_PROJ = {
     PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#04102c', 2); PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#9fdcff', 1, 5, f);
     PX.esfera(g, x, y, r, AGUA);
   },
-  cuchilla(g, p) { PX.carimbar(g, PX.mediaLuna(6, ['#2a1f6a', '#a395ee', '#eeeaff', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  cuchilla(g, p, t) { PX.carimbar(g, PX.anilloAire(7), p.x, p.y - p.alt, p.ang); for (let i = 1; i <= 3; i++) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.7 - i * 0.18; g.fillRect(px(p.x - Math.cos(p.ang) * i * 6 + Math.sin(p.ang) * Math.sin(t * 30 + i) * 3), px(p.y - p.alt - Math.sin(p.ang) * i * 5), 2, 2); } g.globalAlpha = 1; },
   roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
   vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
   aurasphere(g, p, t) {

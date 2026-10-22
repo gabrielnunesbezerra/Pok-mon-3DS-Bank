@@ -61,12 +61,12 @@ export class ControlHumano {
 
 // Controles de toque: analógico flutuante à esquerda e botões em arco à direita (a mira é automática no rival)
 const SLOTS = {
-  lmb: { dx: 0, dy: 0, r: 38, rot: 'ATK' },
-  rmb: { dx: -86, dy: 10, r: 30, rot: 'SKILL' },
-  esp: { dx: -66, dy: -68, r: 28, rot: 'DASH' },
-  q: { dx: -146, dy: -46, r: 26, rot: 'UTIL' },
-  e: { dx: -8, dy: -104, r: 29, rot: 'ULT' },
-  mega: { dx: -150, dy: -110, r: 29, rot: 'EVO' },
+  lmb: { dx: 0, dy: 0, r: 27, rot: 'ATK' },
+  rmb: { dx: -58, dy: 14, r: 21, rot: 'SKILL' },
+  esp: { dx: -48, dy: -46, r: 19, rot: 'DASH' },
+  q: { dx: -100, dy: -30, r: 18, rot: 'UTIL' },
+  e: { dx: -6, dy: -74, r: 20, rot: 'ULT' },
+  mega: { dx: -104, dy: -76, r: 20, rot: 'EVO' },
 };
 
 export class PanelTactil {
@@ -75,9 +75,9 @@ export class PanelTactil {
     // em celular (ponteiro "grosso") o modo toque já nasce ligado, antes de qualquer toque na tela
     this.activo = !!globalThis.matchMedia?.('(pointer: coarse)').matches;
     this.l = null; this.alPausa = null; this.extras = [];
-    this.stick = { cx: 80, cy: 282, r: 46, x0: 80, y0: 282 };
+    this.stick = { cx: 62, cy: 284, r: 34, x0: 62, y0: 284 };
     this.botones = Object.entries(SLOTS).map(([id, s]) => ({ id, r: s.r, x: 0, y: 0, txt: s.rot }));
-    this.pausa = { id: 'pausa', x: 0, y: 66, r: 15 };
+    this.pausa = { id: 'pausa', x: 0, y: 66, r: 12 };
     this.colocar();
     const c = app.canvas;
     const abajo = e => {
@@ -94,10 +94,10 @@ export class PanelTactil {
   }
   // posições ancoradas na borda direita: acompanham a largura da tela
   colocar() {
-    const W = ANCHO, ax = W - 74, ay = ALTO - 76;
+    const W = ANCHO, ax = W - 52, ay = BARRA_Y - 46;
     for (const b of this.botones) { const s = SLOTS[b.id]; b.x = ax + s.dx; b.y = ay + s.dy; }
-    this.pausa.x = W - 24;
-    if (this.stick.x0 !== 80 || this.stick.y0 !== 282) { this.stick.x0 = 80; this.stick.y0 = 282; }
+    this.pausa.x = W - 20;
+    if (this.stick.x0 !== 62 || this.stick.y0 !== 284) { this.stick.x0 = 62; this.stick.y0 = 284; }
   }
   botonEn(t, extra = 12) {
     let mejor = null, dm = Infinity;
@@ -118,7 +118,7 @@ export class PanelTactil {
     if (b) { t.boton = b.id; return; }
     if (t.x < ANCHO * 0.45) {
       t.stick = true;
-      this.stick.cx = Math.max(60, Math.min(ANCHO * 0.4, t.x));
+      this.stick.cx = Math.max(46, Math.min(ANCHO * 0.4, t.x));
       this.stick.cy = Math.max(110, Math.min(BARRA_Y - 52, t.y));
     }
   }
@@ -149,7 +149,7 @@ export class PanelTactil {
     const s = this.stick, l = this.l;
     // analógico
     g.save();
-    g.globalAlpha = this.stickActivo ? 0.95 : 0.55;
+    g.globalAlpha = this.stickActivo ? 0.8 : 0.38;
     const base = g.createRadialGradient(s.cx, s.cy, 6, s.cx, s.cy, s.r);
     base.addColorStop(0, 'rgba(20,50,100,0.55)'); base.addColorStop(1, 'rgba(10,30,70,0.85)');
     g.fillStyle = base; g.beginPath(); g.arc(s.cx, s.cy, s.r, 0, 7); g.fill();
@@ -158,9 +158,9 @@ export class PanelTactil {
     g.fillStyle = 'rgba(143,211,255,0.55)';
     for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; g.save(); g.translate(s.cx + Math.cos(a) * (s.r - 11), s.cy + Math.sin(a) * (s.r - 11)); g.rotate(a); g.beginPath(); g.moveTo(3, 0); g.lineTo(-3, -4); g.lineTo(-3, 4); g.fill(); g.restore(); }
     const kx = s.cx + this.estado.mx * s.r * 0.62, ky = s.cy + this.estado.my * s.r * 0.62;
-    const knob = g.createRadialGradient(kx - 5, ky - 6, 2, kx, ky, 20);
+    const knob = g.createRadialGradient(kx - 4, ky - 4, 2, kx, ky, 14);
     knob.addColorStop(0, '#d6f0ff'); knob.addColorStop(1, '#3d86d6');
-    g.fillStyle = knob; g.beginPath(); g.arc(kx, ky, 19, 0, 7); g.fill();
+    g.fillStyle = knob; g.beginPath(); g.arc(kx, ky, 13, 0, 7); g.fill();
     g.lineWidth = 2.5; g.strokeStyle = '#04102c'; g.stroke();
     g.restore();
     // botões
@@ -195,40 +195,30 @@ export class PanelTactil {
     g.save();
     g.translate(x, y); g.scale(pulso, pulso); g.translate(-x, -y);
     // sombra e halo
-    g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x, y + r * 0.95, r * 0.9, r * 0.28, 0, 0, 7); g.fill();
-    if (on || (lista && (esUlti || id === 'mega'))) { g.fillStyle = `rgba(255,226,122,${on ? 0.45 : 0.25})`; g.beginPath(); g.arc(x, y, r + 7, 0, 7); g.fill(); }
+    if (on || (lista && (esUlti || id === 'mega'))) { g.fillStyle = `rgba(255,226,122,${on ? 0.4 : 0.2})`; g.beginPath(); g.arc(x, y, r + 4, 0, 7); g.fill(); }
     // corpo: degradê do tipo
     const cuerpo = g.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r);
     if (lista) { cuerpo.addColorStop(0, tono(col, 0.35)); cuerpo.addColorStop(0.6, col); cuerpo.addColorStop(1, tono(col, -0.45)); }
     else { cuerpo.addColorStop(0, '#5b6678'); cuerpo.addColorStop(1, '#262d3b'); }
-    g.globalAlpha = lista ? 0.96 : 0.9;
+    g.globalAlpha = lista ? 0.72 : 0.6;
     g.fillStyle = cuerpo; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    g.lineWidth = 3; g.strokeStyle = '#04102c'; g.stroke();
-    g.lineWidth = 1.6; g.strokeStyle = on ? '#fff6c8' : lista ? '#d6ecff' : '#7a8498'; g.beginPath(); g.arc(x, y, r - 2.2, 0, 7); g.stroke();
+    g.lineWidth = 2; g.strokeStyle = '#04102c'; g.stroke();
+    g.lineWidth = 1.2; g.strokeStyle = on ? '#fff6c8' : lista ? '#d6ecff' : '#7a8498'; g.beginPath(); g.arc(x, y, r - 1.6, 0, 7); g.stroke();
     // brilho de vidro
     g.globalAlpha = 0.22; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x - r * 0.18, y - r * 0.5, r * 0.55, r * 0.26, -0.3, 0, 7); g.fill();
     g.globalAlpha = 1;
     // símbolo
-    icono(g, forma, x, y - r * 0.1, r * 0.52, lista ? '#ffffff' : '#aab4c8');
+    icono(g, forma, x, y, r * 0.5, lista ? '#ffffff' : '#aab4c8');
     // recarga: fatia escura que vai girando + segundos
     if (cd > 0 && cdMax > 0.01 && !esUlti) {
       const f = Math.min(1, cd / cdMax);
       g.fillStyle = 'rgba(4,10,28,0.62)'; g.beginPath(); g.moveTo(x, y); g.arc(x, y, r - 1, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.closePath(); g.fill();
-      if (cdMax > 1.2) texto(g, cd >= 10 ? String(Math.ceil(cd)) : cd.toFixed(1), x, y, { tam: r > 28 ? 11 : 9, align: 'center', base: 'middle', color: '#ffe58a', borde: 3, peso: 700 });
+      if (cdMax > 1.2) texto(g, cd >= 10 ? String(Math.ceil(cd)) : cd.toFixed(1), x, y, { tam: 7, align: 'center', base: 'middle', color: '#ffe58a', borde: 3, peso: 700 });
     }
     // ultimate / experiência: anel de progresso
     if (esUlti && l) this.anel(g, x, y, r + 3.5, l.ulti / 100, l.ultiLista ? '#ffe27a' : '#e0a21a');
     if (id === 'mega' && l) this.anel(g, x, y, r + 3.5, 1, '#fff6c8');
     if (id === 'lmb' && l && l.calor > 6) this.anel(g, x, y, r + 3.5, Math.min(1, l.calor / 100), sobre ? '#ff3a2a' : '#ff9a2e');
-    // rótulo e custo
-    texto(g, b.txt, x, y + r * 0.72, { tam: r > 28 ? 7 : 6, align: 'center', base: 'middle', color: lista ? '#ffffff' : '#9aa6bd', borde: 3, peso: 700 });
-    const coste = h && !esUlti && id !== 'lmb' ? (h.coste ?? h.energia ?? 0) : 0;
-    if (coste) {
-      const bx = x + r * 0.72, by = y - r * 0.72;
-      g.fillStyle = sinEn ? '#b4332a' : '#2f7bd6'; g.beginPath(); g.arc(bx, by, 8, 0, 7); g.fill();
-      g.lineWidth = 2; g.strokeStyle = '#04102c'; g.stroke();
-      texto(g, String(coste), bx, by, { tam: 7, align: 'center', base: 'middle', color: '#fff', peso: 700 });
-    }
     g.restore();
   }
   anel(g, x, y, r, f, cor) {

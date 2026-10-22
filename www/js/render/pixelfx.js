@@ -246,6 +246,57 @@ export function mediaLuna(r, rampa) {
   });
 }
 
+// disco de vento (Air Cutter): elipse fina e clara perpendicular ao voo, com faíscas
+export function anilloAire(r) {
+  return guardado(`aire${r}`, r * 2 + 8, r * 2 + 8, (g, W) => {
+    const c = Math.floor(W / 2);
+    for (const dx of [-3, 3]) {
+      anilloPix(g, c + dx, c, r * 0.42, r, 'rgba(120,170,255,0.9)', 2);
+      anilloPix(g, c + dx, c, r * 0.42, r, '#f4fbff', 1);
+    }
+    g.fillStyle = '#ffffff'; g.fillRect(c - 1, c - r - 1, 2, 2); g.fillRect(c - 1, c + r - 1, 2, 2);
+  });
+}
+
+// salpicadura de água: leque de jatos que sobem e abrem (4 quadros)
+export function salpicadura(frame, r, rampa = RAMPA_AGUA) {
+  return guardado(`salp${frame % 4}-${r}-${rampa.join()}`, r * 2 + 8, r * 2 + 8, (g, W) => {
+    const c = W / 2, k = [0.5, 0.85, 1, 0.75][frame % 4];
+    for (let i = -3; i <= 3; i++) {
+      const ang = -Math.PI / 2 + i * 0.34, alto = r * k * (1 - Math.abs(i) * 0.1);
+      const x1 = c + Math.cos(ang) * alto, y1 = c + 3 + Math.sin(ang) * alto;
+      lineaPix(g, c + i * 1.2, c + 4, x1, y1, CONTORNO, 4);
+    }
+    for (let i = -3; i <= 3; i++) {
+      const ang = -Math.PI / 2 + i * 0.34, alto = r * k * (1 - Math.abs(i) * 0.1);
+      const x1 = c + Math.cos(ang) * alto, y1 = c + 3 + Math.sin(ang) * alto;
+      lineaPix(g, c + i * 1.2, c + 4, x1, y1, rampa[1], 2);
+      lineaPix(g, c + i * 1.2, c + 3, x1, y1 + 1, rampa[2], 1);
+      disco(g, x1, y1 - 1, 1.3, rampa[3]);
+    }
+    elipsePix(g, c, c + 5, r * 0.55 * k, r * 0.18 * k + 1, rampa[1]);
+    elipsePix(g, c, c + 4, r * 0.35 * k, r * 0.1 * k + 1, rampa[3]);
+  });
+}
+
+// mordida: duas fileiras de presas que se fecham (k de 0 a 1); aponta para a direita
+export function mordida(k, r) {
+  return guardado(`mord${Math.round(k * 4)}-${r}`, r * 2 + 8, r * 2 + 8, (g, W) => {
+    const c = Math.floor(W / 2), abre = Math.round(r * 0.8 * (1 - Math.min(1, k * 1.2))) + 1, alto = Math.max(4, Math.round(r * 0.55));
+    for (const lado of [-1, 1]) for (let i = -1; i <= 1; i++) {
+      const x = c + i * Math.round(r * 0.5);
+      for (let j = 0; j < alto; j++) {
+        const w = Math.max(0, Math.round((alto - j) / alto * 3));
+        const y = c + lado * (abre + alto - j);
+        g.fillStyle = CONTORNO; g.fillRect(x - w - 1, y, w * 2 + 3, 1);
+        g.fillStyle = '#f4f7ec'; g.fillRect(x - w, y, w * 2 + 1, 1);
+      }
+      g.fillStyle = '#b6f26a'; g.fillRect(x, c + lado * (abre + alto) - (lado > 0 ? 0 : 0), 1, 1);
+    }
+    if (k > 0.55) { disco(g, c, c, 2, '#d8ff8a'); }
+  });
+}
+
 // carimba um sprite centrado (com giro opcional em passos de 22,5 graus para manter a cara de pixel)
 export function carimbar(g, img, x, y, ang = 0, escala = 1, alfa = 1) {
   g.save();

@@ -75,3 +75,19 @@ test('o comando é arredondado igual nos dois lados', () => {
   assert.deepEqual(v, [71, -71, 124, 80, 17]);
   assert.equal(typeof resumen(nueva(['riolu', 'munchlax'])), 'number');
 });
+
+test('Double Team: quando o tempo acaba os bonecos somem e não atiram mais', () => {
+  const l = new Luta({ p1: def('froakie'), p2: def('munchlax'), rapido: true, semilla: 3 });
+  const [a, b] = l.luchadores;
+  for (let i = 0; i < 90; i++) { l.paso(1 / 60, [null, null]); l.tomarEventos(); }
+  a.clones = null;
+  l.habilidades.clones(a, { ...a.kit.rmb, n: 2, dur: 1 });
+  assert.equal(a.clones.length, 2);
+  for (let i = 0; i < 90; i++) { l.paso(1 / 60, [null, null]); l.tomarEventos(); }
+  assert.equal(a.clones, null);
+  const antes = l.entidades.length;
+  a.cd.lmb = 0; a.ax = b.x; a.ay = b.y; l.habilidades.usar(a, 'lmb');
+  for (let i = 0; i < 12; i++) { l.paso(1 / 60, [null, null]); l.tomarEventos(); }
+  const tiros = l.entidades.filter(e => e.tipo === 'proj').length;
+  assert.ok(tiros <= 3, `só o lutador atira: ${tiros} tiros`);
+});

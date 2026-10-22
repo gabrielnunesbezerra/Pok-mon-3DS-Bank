@@ -11,6 +11,12 @@ import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
+import { TIPOS } from '../data/regras.js';
+import { hex } from '../config.js';
+import { medir } from '../render/pixel.js';
+import { mezcla } from '../render/efectos.js';
+const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
+const oscuro = (c, k) => mezcla(c, -k);
 import { filaDesdeAngulo } from '../render/sprites.js';
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
@@ -271,6 +277,7 @@ export class Combate {
     fx.dibujarTextos(g, FUENTE);
     for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
+    this.dibujarBanners(g);
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
@@ -380,11 +387,28 @@ export class Combate {
     bank.dibujar(g, l.dex, l.moviendo ? 'Walk' : 'Idle', this.luta.t, c.x, c.y, l.escala, { fila: filaDesdeAngulo(l.angulo) });
     g.globalAlpha = 1;
   }
+  // nome da skill num balão com a cor do tipo (como no site)
   dibujarGlobo(g, b) {
     const l = b.l, k = b.t / b.life;
     g.globalAlpha = Math.min(1, (1 - k) * 3);
-    texto(g, b.txt, l.x, l.y - l.alto - 22 - k * 6, { tam: 8, color: '#ffffff', borde: 4, align: 'center', base: 'middle', peso: 700 });
+    const col = hexTipo(b.tipo), w = Math.ceil(medir(g, b.txt, 7, 700)) + 8, x = Math.round(l.x - w / 2), y = Math.round(l.y - l.alto - 30 - k * 5);
+    rect(g, x - 1, y - 1, w + 2, 14, oscuro(col, 0.55)); rect(g, x, y, w, 12, col); rect(g, x, y, w, 1, 'rgba(255,255,255,0.35)');
+    texto(g, b.txt, l.x, y + 6.5, { tam: 7, color: '#ffffff', align: 'center', base: 'middle', peso: 700, sombra: true });
     g.globalAlpha = 1;
+  }
+  // faixa da ultimate: desliza da esquerda, escurece a cena e some
+  dibujarBanners(g) {
+    for (const b of this.fx.banners) {
+      const k = b.t / b.life, entra = Math.min(1, b.t / 0.14), sale = Math.min(1, (b.life - b.t) / 0.25), al = Math.min(entra, sale);
+      const y0 = HUD_ALTO + 8, h = 38, x0 = (1 - entra) * -ANCHO, col = hexTipo(b.tipo);
+      g.globalAlpha = Math.max(0, Math.min(1, al)) * 0.35; rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#000'); g.globalAlpha = Math.max(0, al);
+      g.save(); g.translate(x0, 0);
+      g.fillStyle = oscuro(col, 0.5); g.beginPath(); g.moveTo(0, y0 + 3); g.lineTo(ANCHO, y0 - 1); g.lineTo(ANCHO, y0 + h + 3); g.lineTo(0, y0 + h + 7); g.closePath(); g.fill();
+      g.fillStyle = col; g.beginPath(); g.moveTo(0, y0); g.lineTo(ANCHO, y0 - 4); g.lineTo(ANCHO, y0 + h - 3); g.lineTo(0, y0 + h + 1); g.closePath(); g.fill();
+      texto(g, b.txt, ANCHO / 2, y0 + h / 2 - 1, { tam: 17, color: '#ffffff', borde: 5, colorBorde: oscuro(col, 0.6), align: 'center', base: 'middle', peso: 700 });
+      g.restore();
+      g.globalAlpha = 1;
+    }
   }
   // barrinhas de calor, de estado e de "vida de baixo" em cima dos lutadores
   barrasMundo(g, luta) {

@@ -362,7 +362,8 @@ export class Clon {
   update(dt) {
     this.t += dt;
     const d = this.dueno;
-    if (this.ko || d.ko) return false;
+    if (this.ko) return false;
+    if (d.ko || this.t >= this.dur) { this.ko = true; this.luta.emit({ t: 'humo', x: this.x, y: this.y, radio: 14, discreto: true }); return false; }
     const a = d.angulo + Math.PI / 2;
     const p = fijarCampo(d.x + Math.cos(a) * this.desvio, d.y + Math.sin(a) * this.desvio * 0.6);
     this.x += (p.x - this.x) * Math.min(1, dt * 10);
