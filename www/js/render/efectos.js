@@ -545,7 +545,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
 const clampK = k => Math.max(0, Math.min(1, k));
 
 function dibujarChorro(g, e, t, fx) {
-  const d = e.dueno, b = e.boca(), alt = d.alto * 0.55;
+  const d = e.dueno, b = e.activo ? e.origenVis() : e.boca(), alt = d.alto * 0.55;
   const col = e.tipoAtq, [c0, c1, c2, c3] = paleta(col), rampa = rampaTipo(col);
   const ox = px(b.x), oy = px(b.y - alt);
   if (!e.activo) {
@@ -561,7 +561,8 @@ function dibujarChorro(g, e, t, fx) {
     return;
   }
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
-  const x2 = b.x + Math.cos(e.ang) * e.largo, y2 = b.y + Math.sin(e.ang) * e.largo - alt;
+  if (e.largoVis < 2) return;
+  const x2 = b.x + Math.cos(e.ang) * e.largoVis, y2 = b.y + Math.sin(e.ang) * e.largoVis - alt;
   const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
   const largoTotal = Math.hypot(px(x2) - ox, px(y2) - oy), ux = (px(x2) - ox) / (largoTotal || 1), uy = (px(y2) - oy) / (largoTotal || 1), nxp = -uy, nyp = ux;
   const paletaH = e.h.paleta;

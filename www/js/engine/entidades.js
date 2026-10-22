@@ -185,7 +185,7 @@ export class Chorro {
     this.carga = h.carga ?? 0.3;
     this.dur = h.dur ?? 1;
     this.ang = Math.atan2(dueno.ay - dueno.y, dueno.ax - dueno.x);
-    this.largo = h.largo; this.ancho = h.ancho;
+    this.largo = h.largo; this.ancho = h.ancho; this.frente = 0; this.cola = 0;
     this.acum = 0; this.tickEn = 0.1;
     this.tipoAtq = h.tipo;
     this.vivo = true;
@@ -193,33 +193,54 @@ export class Chorro {
     dueno.animar(h.anim ?? 'Charge', this.carga + this.dur);
   }
   get activo() { return this.t >= this.carga; }
+  // enquanto dispara, sai da boca; depois que para, fica onde estava e a cauda vai embora (como no site)
   boca() {
+    if (this.fijo) return this.fijo;
     const d = this.dueno;
     return { x: d.x + Math.cos(this.ang) * 12, y: d.y + Math.sin(this.ang) * 8 };
   }
+  // trecho visível do raio: a frente cresce da boca na velocidade dos pedaços e a cauda segue depois do disparo
+  origenVis() { const b = this.boca(); return { x: b.x + Math.cos(this.ang) * this.cola, y: b.y + Math.sin(this.ang) * this.cola }; }
+  get largoVis() { return Math.max(0, this.frente - this.cola); }
   update(dt) {
     const { dueno, h, luta } = this;
-    if (dueno.ko || dueno.est.aturdido) return false;
+    if (dueno.ko || dueno.est.aturdido) { if (!this.fijo || this.cola === 0) return false; }
     this.t += dt;
-    const objetivo = Math.atan2(dueno.ay - dueno.y, dueno.ax - dueno.x);
-    const giro = (h.giro ?? 2) * dt;
-    this.ang += clamp(difAng(objetivo, this.ang), -giro, giro);
+    const tc = this.t - this.carga, V = h.velTrozos ?? 420, dispara = tc < this.dur;
+    if (dispara || tc < 0) {
+      const objetivo = Math.atan2(dueno.ay - dueno.y, dueno.ax - dueno.x);
+      const giro = (h.giro ?? 2) * dt;
+      this.ang += clamp(difAng(objetivo, this.ang), -giro, giro);
+    } else if (!this.fijo) this.fijo = this.boca();
     if (this.h.amplitud) this.onda = Math.sin(this.t * 14) * h.amplitud;
-    if (!this.activo) return true;
+    if (!this.activo) { this.frente = 0; this.cola = 0; return true; }
+    this.frente = Math.min(this.h.largo, tc * V);
+    this.cola = dispara ? 0 : Math.min(this.h.largo, (tc - this.dur) * V);
+    this.largo = this.frente;
+    if (this.cola >= this.h.largo) return false;
+    // como no site: projétil inimigo que encosta no raio é destruído (CLASH)
+    {
+      const q = this.origenVis(), qx = q.x + Math.cos(this.ang) * this.largoVis, qy = q.y + Math.sin(this.ang) * this.largoVis;
+      for (const e of luta.entidades) {
+        if (e.tipo !== 'proj' || e.dueno === dueno || e.vivo === false) continue;
+        if (distSegmento(e.x, e.y, q.x, q.y, qx, qy) < this.ancho / 2 + 3) { e.vivo = false; luta.emit({ t: 'texto', x: e.x, y: e.y - 12, txt: 'CLASH', color: '#ffffff', dur: 0.5 }); luta.emit({ t: 'finProyectil', x: e.x, y: e.y, tipo: e.tipoAtq }); }
+      }
+    }
     // o raio empurra quem está dentro dele sem parar (a ultimate "arrasta" o alvo)
     if (h.empuje) {
-      const q = this.boca(), qx = q.x + Math.cos(this.ang) * this.largo, qy = q.y + Math.sin(this.ang) * this.largo;
+      const q = this.origenVis(), qx = q.x + Math.cos(this.ang) * this.largoVis, qy = q.y + Math.sin(this.ang) * this.largoVis;
       for (const b of luta.blancos(dueno)) {
         if (b.esClon || b.oculto || b.est?.vuelo || b.est?.blindaje || b.dash) continue;
         if (distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, q.x, q.y - 8, qx, qy - 8) < this.ancho / 2 + RADIO) { b.empX += Math.cos(this.ang) * h.empuje * dt * 14; b.empY += Math.sin(this.ang) * h.empuje * dt * 14; }
       }
     }
+    if (!dispara) return true;
     const back = h.retroceso ?? 0;
     if (back) { dueno.empX -= Math.cos(this.ang) * back * dt * 3; dueno.empY -= Math.sin(this.ang) * back * dt * 3; }
     this.acum += dt;
     if (this.acum >= this.tickEn) {
       this.acum -= this.tickEn;
-      const b0 = this.boca(), x2 = b0.x + Math.cos(this.ang) * this.largo, y2 = b0.y + Math.sin(this.ang) * this.largo;
+      const b0 = this.origenVis(), x2 = b0.x + Math.cos(this.ang) * this.largoVis, y2 = b0.y + Math.sin(this.ang) * this.largoVis;
       const ticks = this.dur / this.tickEn;
       for (const b of luta.blancos(dueno)) {
         if (b.oculto || b.est?.vuelo) continue;
@@ -229,7 +250,7 @@ export class Chorro {
         }
       }
     }
-    return this.t < this.carga + this.dur;
+    return true;
   }
 }
 
