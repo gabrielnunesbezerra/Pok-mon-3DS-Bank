@@ -203,9 +203,12 @@ export class Efectos {
       const k = c.t / c.life, alfa = Math.min(1, (1 - k) * 1.8), cx = c.x, cy = c.y, L = c.largo * (0.55 + 0.45 * Math.min(1, k * 4));
       const ca = Math.cos(c.ang), sa = Math.sin(c.ang), [, c2, c1] = rampaTipo(c.tipo);
       g.globalAlpha = alfa;
-      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, '#04102c', 5);
-      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, c2, 3);
-      PX.lineaPix(g, cx - ca * L, cy - sa * L * 0.8, cx + ca * L, cy + sa * L * 0.8, c1, 1);
+      // um X curto e grosso no alvo (duas barras cruzadas), com brilho do tipo
+      for (const s2 of [1, -1]) {
+        const bx = ca, by = sa * s2, x1 = cx - bx * L, y1 = cy - by * L, x2 = cx + bx * L, y2 = cy + by * L;
+        g.globalAlpha = alfa * 0.4; PX.lineaPix(g, x1, y1, x2, y2, c2, 10); g.globalAlpha = alfa;
+        PX.lineaPix(g, x1, y1, x2, y2, '#04102c', 6); PX.lineaPix(g, x1, y1, x2, y2, c2, 4); PX.lineaPix(g, x1, y1, x2, y2, c1, 2);
+      }
       PX.disco(g, cx, cy, 2.5, '#ffffff');
       g.globalAlpha = 1;
     }

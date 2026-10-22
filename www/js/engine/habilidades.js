@@ -666,7 +666,7 @@ export class Habilidades {
         const a = Math.atan2(dy, dx) + (h.cruz ? (i % 2 ? 0.7 : -0.7) : 0);
         const dd = Math.max(40, Math.min(d + (h.pasa ?? 40), 200));
         const ultimo = i === h.golpes - 1;
-        luta.emit({ t: 'cruz', x: r.x, y: r.y - r.alto * 0.45, ang: a + (h.cruz ? 0 : 0), tipo: h.tipo, largo: 70 });
+        luta.emit({ t: 'cruz', x: r.x, y: r.y - r.alto * 0.45, ang: a + (h.cruz ? 0 : 0), tipo: h.tipo, largo: 20 });
         l.empezarDash({ dist: dd, dur: h.dur, dano: h.dano, tipo: h.tipo, estilo: h.estilo, empuje: 30, aturde: ultimo ? h.aturdeFinal : undefined, invul: true, anim: 'Walk' }, a);
         l.dash.slot = extra.slot;
       });
