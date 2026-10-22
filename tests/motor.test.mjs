@@ -259,3 +259,14 @@ test('evoluir e Mega demoram: só depois de alguns segundos da rodada e com a ba
   assert.equal(b.puedeEvolucionar, false);
   assert.ok(b.expNecesaria >= 90, `exige mais exp que o site: ${b.expNecesaria}`);
 });
+
+test('voando (Fly) ou debaixo da terra (Dig) nenhuma skill sai, só emergir', () => {
+  for (const [id, slot] of [['charmander', 'esp'], ['onix', 'esp']]) {
+    const l = nuevaLuta(id, 'munchlax', { etapas: [id === 'charmander' ? 2 : 1, 0] });
+    const [a] = l.luchadores;
+    a.energia = 100; a.ulti = 100;
+    assert.equal(l.habilidades.usar(a, slot), true, id);
+    assert.ok(a.est.vuelo, id);
+    for (const s of ['lmb', 'rmb', 'q', 'e']) assert.equal(l.habilidades.usar(a, s), false, `${id} ${s} voando`);
+  }
+});

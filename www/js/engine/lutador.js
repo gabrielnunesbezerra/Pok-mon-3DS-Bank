@@ -446,7 +446,7 @@ export class Lutador {
       if (this.accion && t >= this.accion.hasta) { const a = this.accion; this.accion = null; a.fin?.(); }
     }
     // evolução / Mega
-    if (intento?.mega && !aturdido && !this.dash && !this.accion?.bloquea) {
+    if (intento?.mega && !aturdido && !this.dash && !this.est.vuelo && !this.accion?.bloquea) {
       if (this.puedeEvolucionar) luta.habilidades.evolucionar(this);
       else if (this.puedeMega) luta.habilidades.megaevolucionar(this);
     }

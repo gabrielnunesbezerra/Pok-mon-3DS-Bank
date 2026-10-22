@@ -36,6 +36,8 @@ export class Habilidades {
     const luta = this.luta;
     if (!h || l.cd[slot] > 0 || l.est.aturdido || l.est.dormido) return false;
     if (l.accion?.bloquea) return false;
+    // voando (Fly) ou debaixo da terra (Dig) só dá para sair da esquiva: nenhuma skill sai
+    if (l.est.vuelo) return false;
     const t = luta.t;
     if (slot === 'lmb' && t < l.sobrecargaHasta) return false;
     if (slot === 'esp' && l.est.sinDash) { if (l.humano) l.avisar('sinDash', () => l.texto('NO DASH', '#fde68a')); return false; }
