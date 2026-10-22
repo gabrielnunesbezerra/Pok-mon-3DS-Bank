@@ -334,7 +334,7 @@ const ESTILOS_PROJ = {
   fuego(g, p, t) { llamaProj(g, p, t, 12 * p.escala); },
   chorrito(g, p) { PX.carimbar(g, PX.gota(Math.round(7 * Math.min(1.8, p.escala)), AGUA), p.x, p.y - p.alt, p.ang); },
   espuma(g, p, t) { PX.carimbar(g, PX.burbuja(Math.round(4 * p.escala)), p.x + Math.sin(t * 9 + p.x) * 0.6, p.y - p.alt); },
-  burbuja(g, p, t) { PX.carimbar(g, PX.burbuja(Math.round(3.4)), p.x, p.y - p.alt); },
+  burbuja(g, p, t) { PX.carimbar(g, PX.burbujaLlena(4 + (Math.floor(p.x * 7 + p.y * 3) & 1)), p.x + Math.sin(t * 11 + p.y) * 0.8, p.y - p.alt); },
   pulsoAgua(g, p, t) {
     const x = px(p.x), y = px(p.y - p.alt), r = 4 * p.escala, f = Math.floor(t * 14) % 3;
     PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#04102c', 2); PX.anilloPix(g, x, y, r + 5 + f, r + 5 + f, '#9fdcff', 1, 5, f);
@@ -429,20 +429,21 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
         break;
       }
       case 'caparazon': {
-        const l = e.dueno, a = e.ang, cx = px(l.x), cy = px(l.y - l.alto * 0.4), r = e.h.alcance * 0.7;
-        g.globalAlpha = 0.28; PX.elipsePix(g, cx, cy + 2, r * 0.95, r * 0.7, '#4aa3f0'); g.globalAlpha = 1;
-        for (const [ini, col] of [[a, '#9fdcff'], [a + Math.PI, '#4aa3f0']]) {
-          PX.arcoPix(g, cx, cy, r, ini, ini + 2.6, '#04102c', 8, r * 0.8);
-          PX.arcoPix(g, cx, cy, r, ini + 0.05, ini + 2.55, col, 5, r * 0.8);
-          PX.arcoPix(g, cx, cy, r, ini + 0.4, ini + 2.2, '#ffffff', 2, r * 0.8);
-        }
-        // jatos de água que saem girando
+        // Hydro Typhoon como no site: quatro jatos curvos de água que giram em volta do casco, com espuma nas pontas
+        const l = e.dueno, a = e.ang, cx = px(l.x), cy = px(l.y - l.alto * 0.3), L = e.h.alcance, curva = e.h.curva ?? 1.1;
         for (let j = 0; j < 4; j++) {
-          const ang = a + j * Math.PI / 2 + 0.6, ca = Math.cos(ang), sa = Math.sin(ang);
-          for (let k = 0; k < 7; k++) {
-            const f = ((k / 7) + t * 2.2 + j * 0.25) % 1, d = r * (0.95 + f * 0.9);
-            PX.carimbar(g, PX.gota(Math.max(5, Math.round(7 - f * 3)), PX.RAMPA_AGUA), cx + ca * d, cy + sa * d * 0.8, ang, 1, 1 - f * 0.7);
+          const pts = [];
+          for (let k = 0; k <= 14; k++) { const u = k / 14, ang = a + j * Math.PI / 2 - u * curva, d = 8 + u * L; pts.push([cx + Math.cos(ang) * d, cy + Math.sin(ang) * d * 0.62, u]); }
+          // fios paralelos que abrem em leque até a ponta (água espirrando), sem contorno de cano
+          const FIOS = [[-2, '#1f5ec4'], [-1, '#5aa8f5'], [0, '#ffffff'], [1, '#8fd0ff'], [2, '#2f7fe0']];
+          for (const [o, cor] of FIOS) for (let k = 0; k < pts.length - 1; k++) {
+            const [x1, y1, u] = pts[k], [x2, y2, u2] = pts[k + 1], dx = x2 - x1, dy = y2 - y1, dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl;
+            const ab = (u + 0.05) * 11 * o, ab2 = (u2 + 0.05) * 11 * o, ond = Math.sin(t * 40 + k + o) * u;
+            PX.lineaPix(g, x1 + nx * (ab + ond), y1 + ny * (ab + ond), x2 + nx * (ab2 + ond), y2 + ny * (ab2 + ond), cor, o === 0 ? 2 : 2);
           }
+          for (let k = 4; k < pts.length; k += 2) { const [x1, y1, u] = pts[k]; PX.carimbar(g, PX.humo(Math.round(2 + u * 5), k % 2 ? ['#1f5ec4', '#4aa3f0', '#bfe4ff'] : ['#4aa3f0', '#bfe4ff', '#ffffff']), x1 + Math.sin(t * 30 + k) * 2, y1 + Math.cos(t * 26 + k) * 1.5, 0, 1, 1); }
+          const [xe, ye] = pts.at(-1);
+          if (ale() < 0.5) fx.add({ x: xe, y: ye, vx: entre(-60, 60), vy: entre(-70, -10), g: 260, size: 2, life: 0.4, color: '#cfeeff', forma: 'gota', rampa: AGUA });
         }
         break;
       }
@@ -515,17 +516,16 @@ function dibujarChorro(g, e, t, fx) {
     return;
   }
   if (col === 'WATER') {
-    // Hydro Pump / Hydro Cannon: ondas que rolam, com espuma, em vez de um cano liso
-    const base = Math.max(3, Math.round(w * 0.62));
-    g.globalAlpha = 0.95; PX.lineaPix(g, ox, oy, px(x2), px(y2), '#04102c', base + 3); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#1f5ec4', base); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#4aa3f0', Math.max(2, Math.round(base * 0.55))); g.globalAlpha = 1;
-    const N = Math.max(6, Math.floor(largoTotal / 13)), tam = Math.max(5, Math.round(w * 0.36));
+    // Hydro Pump / Hydro Cannon como no site: blocos grossos de água e espuma que crescem até a ponta
+    const N = Math.max(10, Math.floor(largoTotal / 7)), tonos = [['#123f9c', '#2f7fe0', '#8fd0ff'], ['#1f5ec4', '#5aa8f5', '#ffffff']];
     for (let i = N - 1; i >= 0; i--) {
-      const f = ((i / N) + t * 1.5) % 1, lado = Math.sin(i * 2.3 + t * 8) * w * 0.34, d = largoTotal * f;
-      PX.carimbar(g, PX.ola(tam, Math.floor(t * 9 + i)), ox + ux * d + nxp * lado, oy + uy * d + nyp * lado, Math.atan2(uy, ux), 1, Math.min(1, f * 6, (1 - f) * 4 + 0.3));
+      const f = ((i / N) + t * 2.2) % 1, d = largoTotal * f, lado = Math.sin(i * 2.3 + t * 9) * w * 0.28 * (0.4 + f);
+      const tam = Math.min(20, Math.round(5 + f * w * 0.75 + (i % 3)));
+      PX.carimbar(g, PX.humo(tam, tonos[i % 2]), ox + ux * d + nxp * lado, oy + uy * d + nyp * lado, 0, 1, Math.min(1, f * 8, (1 - f) * 5 + 0.6));
     }
-    for (let i = 0; i < 16; i++) { const f = ((i / 16) + t * 2.4) % 1, lado = Math.sin(i * 4.1 + t * 12) * w * 0.55; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, i % 3 ? 1 : 2, '#ffffff'); }
-    PX.esfera(g, ox, oy, Math.max(3, w * 0.4), PX.RAMPA_AGUA);
-    if (ale() < 0.8) fx.add({ x: px(x2), y: px(y2), vx: entre(-90, 90), vy: entre(-130, -30), g: 300, size: 2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
+    for (let i = 0; i < 18; i++) { const f = ((i / 18) + t * 2.8) % 1, lado = Math.sin(i * 4.1 + t * 12) * w * 0.6 * f; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, i % 3 ? 1 : 2, '#ffffff'); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.36), PX.RAMPA_AGUA);
+    if (ale() < 0.9) fx.add({ x: px(x2), y: px(y2), vx: entre(-110, 110), vy: entre(-140, -30), g: 300, size: 2.2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
     return;
   }
   // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano

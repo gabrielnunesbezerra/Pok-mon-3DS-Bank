@@ -175,6 +175,19 @@ export function burbuja(r, color = '#bfe9ff') {
   });
 }
 
+// bolha cheia e brilhante (Bubble Beam), como as do site
+export function burbujaLlena(r) {
+  return guardado(`burbujaL${r}`, r * 2 + 5, r * 2 + 5, (g, W) => {
+    const c = Math.floor(W / 2);
+    disco(g, c, c, r + 1, CONTORNO);
+    disco(g, c, c, r, '#2f7fe0');
+    disco(g, c - r * 0.15, c - r * 0.15, r * 0.78, '#5aa8f5');
+    disco(g, c - r * 0.3, c - r * 0.3, r * 0.45, '#9fd6ff');
+    disco(g, c - r * 0.4, c - r * 0.42, Math.max(1, r * 0.2), '#ffffff');
+    g.fillStyle = '#cfeaff'; g.fillRect(c + Math.round(r * 0.35), c + Math.round(r * 0.3), 1, 1);
+  });
+}
+
 // rocha irregular com faces
 export function roca(tam, tono = ['#6b5a1e', '#a68c3a', '#c9b469', '#efe3a8']) {
   return guardado(`roca${tam}-${tono.join()}`, tam * 2 + 4, tam * 2 + 4, (g, W) => {
