@@ -25,9 +25,16 @@ export const MEGA_KITS = {
   abra: {
     lmb: { nombre: 'Psystrike Bolts', dano: 3.2, rafaga: 4, cadaRafaga: 0.06, abanico: 0.07, escala: 1.6, teledirigido: 1.2 },
     rmb: { nombre: 'Psycho Boost', dano: 16, escala: 2, radio: 8, explosion: { radio: 34 }, confunde: 0.8 },
-    esp: { nombre: 'Mega Teleport', dist: 165, cd: 4, dano: 6, radio: 40 },
+    esp: { nombre: 'Mega Teleport', dist: 165, cd: 6, dano: 6, radio: 40 },
     q: { nombre: 'Future Sight x3', n: 3, area: 46, cada: 0.22, dano: 11 },
     e: { nombre: 'Psychic Hurl', dano: 34, vel: 480, alcance: 290, radio: 15, agarre: 0.5, lanza: 340, aturde: 0.9 },
+  },
+  tynamo: {
+    lmb: { nombre: 'Mega Thunder Punch', dano: 7, alcance: 66, combo: 4, remate: { dano: 5, empuje: 150, aturde: 0.35 } },
+    rmb: { nombre: 'Twin Zap Cannon', dano: 15, rafaga: 2, cadaRafaga: 0.18, escala: 2.6, explosion: { radio: 40 }, aturde: 0.6 },
+    esp: { nombre: 'Plasma Dash', dano: 9, dist: 160, empuje: 70 },
+    q: { nombre: 'Thunder Cage', dano: 9, radio: 104, ralentiza: 0.6, ralentizaDur: 2.5 },
+    e: { nombre: 'Plasma Lash', dano: 34, largo: 370, ancho: 32, anchoVisual: 46, dur: 1.15 },
   },
   buneary: {
     lmb: { nombre: 'Power-Up Punch', dano: 6.4, alcance: 62, combo: 4, remate: { dano: 5, empuje: 130, aturde: 0.2 } },

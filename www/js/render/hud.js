@@ -46,7 +46,7 @@ export class Hud {
       if (l.mega) est.push('MEGA');
       else if (l.puedeEvolucionar && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'EVO!' : 'F:EVO');
       else if (l.puedeMega && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'MEGA!' : 'F:MEGA');
-      if (l.ultiLista && !l.puedeMega) est.push('ULT!');
+      if (l.ultiLista && !l.puedeMega && !l.kit.e?.sinUlti) est.push('ULT!');
       if (l.energia >= REGLAS.surgeUmbral) est.push('SURGE');
       for (const et of Object.values(ESTADOS_TIPO)) if (l.est[et.est] && et.hud) est.push(et.hud);
       if (l.est.quema) est.push('BRN'); if (l.est.veneno) est.push('PSN'); if (l.est.aturdido) est.push('STUN'); if (l.est.drenaje) est.push('SEED');
@@ -152,7 +152,7 @@ export class Hud {
     else if (l.forma.mega && l.ultiLista && l.megaEn > 0 && l.etapa >= l.etapasTotales - 1) est.push(`MEGA ${Math.ceil(l.megaEn)}s`);
     else if (l.puedeEvolucionar && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'EVO!' : `${this.teclaDe(l, 'mega')}:EVO`);
     else if (l.puedeMega && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'MEGA!' : `${this.teclaDe(l, 'mega')}:MEGA`);
-    if (lista && !l.puedeMega) est.push('ULT!');
+    if (lista && !l.puedeMega && !l.kit.e?.sinUlti) est.push('ULT!');
     if (surge) est.push('SURGE');
     for (const et of Object.values(ESTADOS_TIPO)) if (l.est[et.est] && et.hud) est.push(et.hud);
     if (l.est.quema && !l.est.quemado) est.push('BRN');
@@ -198,7 +198,8 @@ export class Hud {
     if (!h) return;
     const cd = l.cd[slot], sobre = slot === 'lmb' && t < l.sobrecargaHasta;
     let st, cs;
-    if (slot === 'e') {
+    if (slot === 'e' && h.sinUlti) { st = 'EVOLVE'; cs = '#6b7280'; }
+    else if (slot === 'e') {
       if (l.ultiLista) { st = parpadeo ? 'READY' : 'ULT!'; cs = '#ffd166'; } else { st = `${Math.floor(l.ulti)}%`; cs = '#a855f7'; }
       rect(g, x + 3, y + 1, Math.round((w - 4) * l.ulti / REGLAS.ultiMax), 21, l.ultiLista ? 'rgba(255,209,102,0.25)' : 'rgba(168,85,247,0.18)');
     } else {

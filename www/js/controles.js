@@ -132,6 +132,7 @@ export class PanelTactil {
     let mejor = null, dm = Infinity;
     for (const b of [...this.botones, this.pausa]) {
       if (b.id === 'mega' && !this.mostrarMega()) continue;
+      if (b.id === 'e' && this.l?.kit?.e?.sinUlti && !this.editando) continue;
       const d = Math.hypot(t.x - b.x, t.y - b.y);
       if (d < b.r + extra && d < dm) { mejor = b; dm = d; }
     }
@@ -207,6 +208,7 @@ export class PanelTactil {
     // botões
     for (const b of this.botones) {
       if (b.id === 'mega' && !this.mostrarMega()) continue;
+      if (b.id === 'e' && this.l?.kit?.e?.sinUlti && !this.editando) continue;
       this.boton(g, b, l, t);
     }
     this.botonPausa(g);

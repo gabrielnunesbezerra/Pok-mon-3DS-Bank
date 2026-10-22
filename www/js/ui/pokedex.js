@@ -14,7 +14,7 @@ const FORMA = {
   plantaFeroz: 'Root waves', chapoteo: 'Nothing?', laco: 'Grab & throw', potenciar: 'Stack buff', escudo: 'Shield', explosion: 'Blast', trampa: 'Trap', torbellino: 'Tornado', arraigo: 'Root', crecimiento: 'Power up', descanso: 'Rest', clones: 'Decoys', humo: 'Smoke',
 };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
-const CARD = { w: 52, h: 52, gap: 6, x0: 10, y0: 36 };
+const CARD = { w: 50, h: 50, gap: 4, x0: 10, y0: 34 };
 
 export class Pokedex {
   constructor(app) { this.app = app; this.t = 0; this.cursor = 0; this.etapa = 0; }

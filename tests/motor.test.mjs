@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna'];
 
-test('o roster tem os 12 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie']);
+test('o roster tem os 14 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -149,6 +149,8 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
         a.energia = 100; a.ulti = 100; a.accion = null; a.dash = null; a.est = {}; a.calor = 0; for (const k in a.cd) a.cd[k] = 0;
         a.x = 380; a.y = 222; b.x = 520; b.y = 222; a.ax = b.x; a.ay = b.y;
         const ok = l.habilidades.usar(a, slot);
+        // formas bebê não têm ultimate: o botão existe mas não faz nada
+        if (a.kit[slot].sinUlti) { assert.equal(ok, false, `${p.id} etapa ${etapa} sem ultimate`); continue; }
         assert.ok(ok, `${p.id} etapa ${etapa}${mega ? ' mega' : ''} ${slot}`);
         usadas++;
         correr(l, 2.2, [{ mx: 0, my: 0, ax: b.x, ay: b.y }, null]);
@@ -334,4 +336,19 @@ test('Alakazam: Teleport reaparece na hora; Psychic Lasso prende, puxa e arremes
   correr(l, 1.2, [null, null]);
   assert.ok(b.hp < hp0, 'deu dano');
   assert.ok(b.x - a.x > 120, `arremessou longe (${Math.round(b.x - a.x)})`);
+});
+
+test('formas bebê sem ultimate; Eelektrik e Eelektross com ultimates diferentes', () => {
+  for (const [id, etapa] of [['abra', 0], ['abra', 1], ['poltchageist', 0], ['tynamo', 0]]) {
+    const a = nuevaLuta(id, 'munchlax', { etapas: [etapa, 0] }).luchadores[0];
+    a.ulti = 100;
+    assert.equal(a.luta.habilidades.usar(a, 'e'), false, `${id} ${etapa}`);
+  }
+  const k1 = nuevaLuta('tynamo', 'munchlax', { etapas: [1, 0] }).luchadores[0].kit.e, k2 = nuevaLuta('tynamo', 'munchlax', { etapas: [2, 0] }).luchadores[0].kit.e;
+  assert.notEqual(k1.nombre, k2.nombre);
+  assert.notEqual(k1.forma, k2.forma);
+  const ala = nuevaLuta('abra', 'munchlax', { etapas: [2, 0] }).luchadores[0];
+  ala.ulti = 100;
+  assert.equal(ala.luta.habilidades.usar(ala, 'e'), true);
+  assert.equal(ala.kit.esp.cd, 8);
 });

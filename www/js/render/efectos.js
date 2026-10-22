@@ -33,7 +33,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -86,6 +86,7 @@ export class Efectos {
           this.anillo(e.x, e.y, 6, e.radio, colorTipo(e.tipo), 0.4, 3);
           this.anillo(e.x, e.y, 2, e.radio * 0.7, '#ffffff', 0.3, 1);
           this.rafaga(e.x, e.y, e.tipo, 14, 160);
+          if (e.estilo === 'electrico') { this.flash = Math.max(this.flash, 0.2); this.flashColor = '#fff6a8'; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + ale() * 0.3, r = e.radio * (0.5 + ale() * 0.45); this.add({ x: e.x + Math.cos(a) * r, y: e.y - 6 + Math.sin(a) * r * 0.6, vx: Math.cos(a) * 60, vy: Math.sin(a) * 40, size: 3, life: 0.3, color: '#ffe066', forma: 'chispa' }); } this.rayos.push({ x: e.x, y: e.y - 6, radio: e.radio, t: 0, life: 0.35, semilla: Math.floor(ale() * 999) }); }
           if (e.estilo === 'fuego') for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2, r = e.radio * (0.75 + 0.15 * ale()); this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 110, vy: Math.cos(a) * 60 - 20, drag: 3, size: 2.2 + ale() * 1.4, life: 0.32 + ale() * 0.15, color: '#ff8a2a', forma: 'llama' }); }
           if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
@@ -180,6 +181,7 @@ export class Efectos {
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
     for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
     for (const z of this.zonas) z.t += dt; this.zonas = this.zonas.filter(z => z.t < z.life);
+    for (const c of this.rayos) c.t += dt; this.rayos = this.rayos.filter(c => c.t < c.life);
     for (const c of this.grietas) c.t += dt; this.grietas = this.grietas.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
@@ -217,7 +219,22 @@ export class Efectos {
     g.globalAlpha = 1;
   }
 
+  // raios elétricos que saem do centro (Thunder Wave, Discharge)
+  dibujarRayos(g) {
+    for (const c of this.rayos) {
+      let sd = c.semilla + Math.floor(c.t * 30);
+      const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
+      g.globalAlpha = Math.min(1, (c.life - c.t) / 0.15);
+      for (let i = 0; i < 7; i++) {
+        let a = (i / 7) * Math.PI * 2 + rnd() * 0.4, x = c.x, y = c.y;
+        for (let k = 0; k < 4; k++) { a += (rnd() - 0.5) * 1.1; const L = c.radio * 0.25, nx = x + Math.cos(a) * L, ny = y + Math.sin(a) * L * 0.6; PX.lineaPix(g, x, y, nx, ny, '#04102c', 4); PX.lineaPix(g, x, y, nx, ny, '#ffd23c', 2); PX.lineaPix(g, x, y, nx, ny, '#ffffff', 1); x = nx; y = ny; }
+      }
+    }
+    g.globalAlpha = 1;
+  }
+
   dibujar(g) {
+    this.dibujarRayos(g);
     // ondas de sopro e arcos de corte
     for (const o of this.ondas) {
       const k = o.t / o.life, c = colorTipo(o.tipo);
@@ -393,6 +410,22 @@ const ESTILOS_PROJ = {
   cuchilla(g, p, t) { PX.carimbar(g, PX.anilloAire(7), p.x, p.y - p.alt, p.ang); for (let i = 1; i <= 3; i++) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.7 - i * 0.18; g.fillRect(px(p.x - Math.cos(p.ang) * i * 6 + Math.sin(p.ang) * Math.sin(t * 30 + i) * 3), px(p.y - p.alt - Math.sin(p.ang) * i * 5), 2, 2); } g.globalAlpha = 1; },
   roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
   vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  // Thunder Shock: faísca em zigue-zague amarela com núcleo branco
+  rayito(g, p, t) {
+    const ca = Math.cos(p.ang), sa = Math.sin(p.ang), x = p.x, y = p.y - p.alt;
+    let x0 = x - ca * 12, y0 = y - sa * 12;
+    for (let i = 1; i <= 4; i++) { const f = i / 4, o = (i % 2 ? 1 : -1) * 3 * (Math.floor(t * 30) % 2 ? 1 : -1), x1 = x - ca * 12 * (1 - f) - sa * o * (i < 4 ? 1 : 0), y1 = y - sa * 12 * (1 - f) + ca * o * (i < 4 ? 1 : 0); PX.lineaPix(g, x0, y0, x1, y1, '#04102c', 4); PX.lineaPix(g, x0, y0, x1, y1, '#ffd23c', 2); PX.lineaPix(g, x0, y0, x1, y1, '#ffffff', 1); x0 = x1; y0 = y1; }
+    PX.carimbar(g, PX.chispa(3, '#fff6a8'), x, y, 0, 1, 1);
+  },
+  // Charge Beam / Zap Cannon: esfera amarela com raios saindo e girando
+  orbeElectrico(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt), r = 3.6 * p.escala;
+    g.globalAlpha = 0.35; PX.disco(g, x, y, r + 4, '#ffe066'); g.globalAlpha = 1;
+    PX.esfera(g, x, y, r, ['#8a5a00', '#ffc21a', '#fff29a', '#ffffff']);
+    for (let i = 0; i < 4; i++) { const a = t * 18 + i * 1.57 + Math.sin(t * 40 + i), r2 = r + 4 + (i % 2) * 2; PX.lineaPix(g, x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8, x + Math.cos(a + 0.3) * r2, y + Math.sin(a + 0.3) * r2, '#fff6a8', 1); }
+  },
+  // Matcha Shot: gota de chá verde com espuma clara
+  matcha(g, p, t) { PX.carimbar(g, PX.gota(Math.round(5 * p.escala), ['#2a4a12', '#5f8f2a', '#a8d060', '#eef8d0']), p.x, p.y - p.alt, p.ang, 1, 1); if (Math.floor(t * 20) % 2) PX.disco(g, px(p.x - Math.cos(p.ang) * 6), px(p.y - p.alt - Math.sin(p.ang) * 6), 1, '#dff0b8'); },
   // Confusion: bolinha rosa com anel que pulsa
   psico(g, p, t) {
     const x = px(p.x), y = px(p.y - p.alt), r = 3.2 * p.escala;
@@ -662,8 +695,20 @@ function dibujarChorro(g, e, t, fx) {
   // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
   const nTr = Math.max(2, Math.ceil(largoTotal / 9));
   const solar = paletaH === 'solar';
-  const hiper = paletaH === 'hiper';
-  const cA = solar ? '#b8860b' : hiper ? '#e0520a' : c3, cB = solar ? '#ffd23c' : hiper ? '#ffb347' : c2, cC = solar ? '#fff29a' : hiper ? '#fff6d0' : c1;
+  if (paletaH === 'electrico') {
+    // Thunderous Lash / Plasma Lash: relâmpago que treme, com brilho amarelo e núcleo branco
+    const N = Math.max(6, Math.floor(largoTotal / 14));
+    for (const [cor, lw, amp] of [['rgba(255,214,60,0.35)', w + 4, 1], ['#04102c', Math.max(4, w * 0.45), 1], ['#ffd23c', Math.max(3, w * 0.32), 1], ['#fff6c8', Math.max(1, w * 0.12), 0.6]]) {
+      let x0 = ox, y0 = oy, sd = Math.floor(t * 24);
+      const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
+      for (let i = 1; i <= N; i++) { const f = i / N, o = i === N ? 0 : (rnd() - 0.5) * w * 0.9 * amp, x1 = ox + ux * largoTotal * f + nxp * o, y1 = oy + uy * largoTotal * f + nyp * o; PX.lineaPix(g, x0, y0, x1, y1, cor, Math.round(lw)); x0 = x1; y0 = y1; }
+    }
+    for (let i = 0; i < 3; i++) { const f = ale(), x = ox + ux * largoTotal * f, y = oy + uy * largoTotal * f; fx.add({ x, y, vx: entre(-90, 90), vy: entre(-90, 60), size: 2.4, life: 0.25, color: '#fff6a8', forma: 'chispa' }); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.35), ['#8a5a00', '#ffc21a', '#fff29a', '#ffffff']);
+    return;
+  }
+  const hiper = paletaH === 'hiper', matcha = paletaH === 'matcha';
+  const cA = solar ? '#b8860b' : hiper ? '#e0520a' : matcha ? '#3f6b1e' : c3, cB = solar ? '#ffd23c' : hiper ? '#ffb347' : matcha ? '#8bc34a' : c2, cC = solar ? '#fff29a' : hiper ? '#fff6d0' : matcha ? '#eef8d0' : c1;
   const capas = [[4, '#04102c', 0.92, 1], [0, cA, 1, 1], [0, cB, 1, 0.74], [0, cC, 1, 0.46], [0, '#ffffff', 1, 0.2]];
   for (const [extra, color, alfa, f] of capas) {
     g.globalAlpha = alfa;

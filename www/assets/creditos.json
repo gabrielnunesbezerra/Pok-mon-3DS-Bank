@@ -728,5 +728,120 @@
    "Audino",
    "Morei"
   ]
+ },
+ {
+  "dex": "0602",
+  "sprite": [
+   "mosscoated"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0602s",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0603",
+  "sprite": [
+   "powercristal",
+   "Soulja",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0603s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0604",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "Gust",
+   "CeleryGuy",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0604-0001",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0604-0001s",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0604s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Gust",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "1012",
+  "sprite": [
+   "Shadowcrafts",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "1012s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "1013",
+  "sprite": [
+   "Shadowcrafts",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "1013s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
  }
 ]

@@ -34,7 +34,7 @@ export class Habilidades {
   usar(l, slot) {
     const h = l.kit[slot];
     const luta = this.luta;
-    if (!h || l.cd[slot] > 0 || l.est.aturdido || l.est.dormido) return false;
+    if (!h || h.sinUlti || l.cd[slot] > 0 || l.est.aturdido || l.est.dormido) return false;
     if (l.accion?.bloquea) return false;
     // voando (Fly) ou debaixo da terra (Dig) só dá para sair da esquiva: nenhuma skill sai
     if (l.est.vuelo) return false;
