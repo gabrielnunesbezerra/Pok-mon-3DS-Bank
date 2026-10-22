@@ -9,6 +9,7 @@ import { Controles } from './ui/controles.js';
 import { Pokedex } from './ui/pokedex.js';
 import { Seleccion } from './ui/seleccion.js';
 import { Online } from './ui/online.js';
+import { LayoutTactil } from './ui/layout.js';
 import { FxLab } from './ui/fxlab.js';
 import { Combate } from './ui/combate.js';
 import { PanelTactil } from './controles.js';
@@ -27,7 +28,7 @@ const app = {
     this.musica();
   },
 };
-const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, fxlab: FxLab, combate: Combate };
+const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }

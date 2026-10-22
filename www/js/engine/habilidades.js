@@ -99,15 +99,17 @@ export class Habilidades {
     l.exp = Math.max(0, l.exp - gasto);
     const fracVida = l.hp / l.hpMax;
     const antes = { dex: l.dex, esc: l.escala, nombre: l.nombre };
+    // mesma forma na etapa seguinte = "power up" (Steelix, Snorlax, Lopunny e Lucario no site)
+    const potenciar = etapaDe(l.def, l.etapa + 1).dex === l.forma.dex;
     l.etapa++;
     l.kit = l.kitActual();
     // cura uma parte da vida que faltava (60% nas linhas comuns)
-    const k = REGLAS.curaPerdida?.[tipoLinea(l.def)];
+    const k = REGLAS.curaPerdida?.[potenciar && tipoLinea(l.def) !== 'LEG' ? 'PU' : tipoLinea(l.def)];
     l.hp = k != null ? fracVida * l.hpMax + k * (1 - fracVida) * l.hpMax : Math.min(l.hpMax, fracVida * l.hpMax + REGLAS.curaEvolucion * l.hpMax);
     const curado = Math.round(100 * (l.hp / l.hpMax - fracVida));
-    l.texto(`WHAT? ${antes.nombre} IS EVOLVING!`, '#ffffff', { dy: 4 });
+    l.texto(potenciar ? `${antes.nombre} IS POWERING UP!` : `WHAT? ${antes.nombre} IS EVOLVING!`, '#ffffff', { dy: 4 });
     luta.programar(1.2, () => { if (!l.ko && curado > 0) l.texto(`+${curado}% HP`, '#3ccf4e'); });
-    this.iniciarEvo(l, false, `${l.nombre}!`, '#7dd3fc');
+    this.iniciarEvo(l, false, potenciar ? 'POWER UP!' : `${l.nombre}!`, potenciar ? '#fde047' : '#7dd3fc');
     l.evoVis.desde = antes.dex; l.evoVis.escDesde = antes.esc;
   }
 

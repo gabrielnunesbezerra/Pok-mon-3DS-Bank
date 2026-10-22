@@ -1,5 +1,5 @@
 // Quem manda no lutador: teclado e mouse (jogador 1), teclado do jogador 2, controle (gamepad) e toque.
-import { ANCHO, ALTO, BARRA_Y, UI, hex } from './config.js';
+import { ANCHO, ALTO, BARRA_Y, HUD_ALTO, UI, hex } from './config.js';
 import { marco, rect, texto } from './render/pixel.js';
 import { icono, tono } from './render/iconos.js';
 import { TIPOS } from './data/regras.js';
@@ -70,19 +70,27 @@ const SLOTS = {
   mega: { dx: -104, dy: -76, r: 20, rot: 'EVO' },
 };
 
+// Layout personalizável: deslocamentos em relação à posição padrão, tamanho e se o analógico fica fixo
+const CLAVE_LAYOUT = 'pkconfront.layout';
+const LAYOUT0 = () => ({ fijo: true, escala: 1, stick: { x: 0, y: 0 }, b: {} });
+const cargarLayout = () => {
+  try { const l = JSON.parse(localStorage.getItem(CLAVE_LAYOUT)); return l ? { ...LAYOUT0(), ...l, stick: { ...LAYOUT0().stick, ...l.stick }, b: { ...l.b } } : LAYOUT0(); } catch { return LAYOUT0(); }
+};
+
 export class PanelTactil {
   constructor(app) {
     this.app = app; this.toques = new Map(); this.estado = VACIO();
     // em celular (ponteiro "grosso") o modo toque já nasce ligado, antes de qualquer toque na tela
     this.activo = !!globalThis.matchMedia?.('(pointer: coarse)').matches;
     this.l = null; this.alPausa = null; this.extras = [];
+    this.lay = cargarLayout(); this.editando = false;
     this.stick = { cx: 62, cy: 284, r: 34, x0: 62, y0: 284 };
     this.botones = Object.entries(SLOTS).map(([id, s]) => ({ id, r: s.r, x: 0, y: 0, txt: s.rot }));
     this.pausa = { id: 'pausa', x: 0, y: 66, r: 12 };
     this.colocar();
     const c = app.canvas;
     const abajo = e => {
-      if (e.pointerType !== 'touch') return;
+      if (e.pointerType !== 'touch' || this.editando) return;
       this.activo = true;
       const p = app.aCoord(e.clientX, e.clientY);
       this.toques.set(e.pointerId, { ...p, stick: false });
@@ -93,13 +101,30 @@ export class PanelTactil {
     c.addEventListener('pointerdown', abajo); c.addEventListener('pointermove', mueve);
     c.addEventListener('pointerup', suelta); c.addEventListener('pointercancel', suelta);
   }
-  // posições ancoradas na borda direita: acompanham a largura da tela
-  colocar() {
-    const W = ANCHO, ax = W - 52, ay = BARRA_Y - 46;
-    for (const b of this.botones) { const s = SLOTS[b.id]; b.x = ax + s.dx; b.y = ay + s.dy; }
-    this.pausa.x = W - 20;
-    if (this.stick.x0 !== 62 || this.stick.y0 !== 284) { this.stick.x0 = 62; this.stick.y0 = 284; }
+  // posição padrão de cada botão (ancorada na borda direita, acompanha a largura da tela) sem o ajuste do jogador
+  defecto(id) {
+    const k = this.lay.escala, ax = ANCHO - 52, ay = BARRA_Y - 46;
+    if (id === 'stick') return { x: 62, y: 284 };
+    const s = SLOTS[id];
+    return { x: ax + s.dx * k, y: ay + s.dy * k };
   }
+  colocar() {
+    const k = this.lay.escala;
+    for (const b of this.botones) {
+      const d = this.defecto(b.id), o = this.lay.b[b.id] ?? { x: 0, y: 0 };
+      b.r = SLOTS[b.id].r * k;
+      b.x = Math.max(b.r + 2, Math.min(ANCHO - b.r - 2, d.x + o.x));
+      b.y = Math.max(HUD_ALTO + b.r + 2, Math.min(ALTO - b.r - 2, d.y + o.y));
+    }
+    this.pausa.x = ANCHO - 20;
+    const st = this.stick, d = this.defecto('stick'), o = this.lay.stick;
+    st.r = 34 * k;
+    st.x0 = Math.max(st.r + 2, Math.min(ANCHO - st.r - 2, d.x + o.x));
+    st.y0 = Math.max(HUD_ALTO + st.r + 2, Math.min(ALTO - st.r - 2, d.y + o.y));
+    if (this.lay.fijo) { st.cx = st.x0; st.cy = st.y0; }
+  }
+  guardarLayout() { try { localStorage.setItem(CLAVE_LAYOUT, JSON.stringify(this.lay)); } catch { /* sem armazenamento */ } }
+  restaurarLayout() { this.lay = LAYOUT0(); this.guardarLayout(); }
   botonEn(t, extra = 12) {
     let mejor = null, dm = Infinity;
     for (const b of [...this.botones, this.pausa]) {
@@ -109,7 +134,7 @@ export class PanelTactil {
     }
     return mejor;
   }
-  mostrarMega() { return !!this.l && (this.l.puedeMega || this.l.puedeEvolucionar); }
+  mostrarMega() { return this.editando || !!this.l && (this.l.puedeMega || this.l.puedeEvolucionar); }
   clasificar(t) {
     this.colocar();
     const b = this.botonEn(t);
@@ -117,7 +142,10 @@ export class PanelTactil {
     const ex = this.extras.find(e => t.x >= e.x - 4 && t.x <= e.x + e.w + 4 && t.y >= e.y - 4 && t.y <= e.y + e.h + 4);
     if (ex) { t.boton = 'extra'; ex.al(); return; }
     if (b) { t.boton = b.id; return; }
-    if (t.x < ANCHO * 0.45) {
+    if (this.lay.fijo) {
+      // analógico fixo: a base nunca anda; vale tocar perto dela
+      if (Math.hypot(t.x - this.stick.x0, t.y - this.stick.y0) < this.stick.r * 2.6) t.stick = true;
+    } else if (t.x < ANCHO * 0.45) {
       t.stick = true;
       this.stick.cx = Math.max(46, Math.min(ANCHO * 0.4, t.x));
       this.stick.cy = Math.max(110, Math.min(BARRA_Y - 52, t.y));
@@ -132,7 +160,7 @@ export class PanelTactil {
         this.stickActivo = true;
         const dx = t.x - s.cx, dy = t.y - s.cy, d = Math.hypot(dx, dy);
         // quem arrasta além do raio leva a base junto, o dedo nunca "sai" do analógico
-        if (d > s.r * 1.5) { const k = (d - s.r * 1.5) / d; s.cx += dx * k; s.cy += dy * k; }
+        if (!this.lay.fijo && d > s.r * 1.5) { const k = (d - s.r * 1.5) / d; s.cx += dx * k; s.cy += dy * k; }
         const d2 = Math.hypot(t.x - s.cx, t.y - s.cy);
         if (d2 > 7) { const k = Math.min(1, (d2 - 7) / (s.r - 7)); e.mx = ((t.x - s.cx) / d2) * k; e.my = ((t.y - s.cy) / d2) * k; }
       } else {
@@ -146,12 +174,13 @@ export class PanelTactil {
         }
       }
     }
-    if (!this.stickActivo) { s.cx += (s.x0 - s.cx) * 0.2; s.cy += (s.y0 - s.cy) * 0.2; }
+    if (this.lay.fijo) { s.cx = s.x0; s.cy = s.y0; }
+    else if (!this.stickActivo) { s.cx += (s.x0 - s.cx) * 0.2; s.cy += (s.y0 - s.cy) * 0.2; }
     this.estado = e;
   }
 
   dibujar(g, t = 0) {
-    if (!this.activo) return;
+    if (!this.activo && !this.editando) return;
     this.colocar();
     const s = this.stick, l = this.l;
     // analógico

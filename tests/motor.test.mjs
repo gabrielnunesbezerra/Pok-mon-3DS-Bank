@@ -110,7 +110,7 @@ test('a evolução acontece em tempo real: exp cheia, tecla de evoluir, estágio
 });
 
 test('Mega Evolução: ultimate cheia no último estágio troca forma, tipos e atributos', () => {
-  const l = nuevaLuta('riolu', 'munchlax', { etapas: [1, 0] });
+  const l = nuevaLuta('riolu', 'munchlax', { etapas: [2, 0] });
   const [a] = l.luchadores;
   assert.equal(a.nombre, 'LUCARIO');
   const atk0 = a.atk, vel0 = a.velBase;
@@ -126,7 +126,7 @@ test('Mega Evolução: ultimate cheia no último estágio troca forma, tipos e a
 });
 
 test('Mega Charizard X vira Fogo/Dragão e Mega Steelix fica maior', () => {
-  const l = nuevaLuta('charmander', 'onix', { etapas: [2, 1] });
+  const l = nuevaLuta('charmander', 'onix', { etapas: [2, 2] });
   const [a, b] = l.luchadores;
   a.ulti = 100; b.ulti = 100;
   correr(l, 0.1, [{ mx: 0, my: 0, ax: 0, ay: 0, mega: true }, { mx: 0, my: 0, ax: 0, ay: 0, mega: true }]);
@@ -219,11 +219,20 @@ test('treino: sem relógio e o boneco não morre', () => {
   assert.equal(l.reloj, r0);
 });
 
-test('linhas de uma evolução evoluem uma vez só e a Mega muda as skills de verdade', () => {
+test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {
   for (const id of ['onix', 'munchlax', 'buneary', 'riolu']) {
     const p = ROSTER.find(x => x.id === id);
-    assert.equal(p.evoluciones.length, 1, id);
+    assert.equal(p.evoluciones.length, 2, id);
+    assert.equal(p.evoluciones[0].dex, p.evoluciones[1].dex, `${id}: o segundo estágio repete a forma (Power Up)`);
   }
+  const l = nuevaLuta('onix', 'munchlax', { etapas: [1, 0] });
+  const [a] = l.luchadores;
+  a.hp = a.hpMax * 0.5; a.exp = 9999;
+  const vida0 = a.hp, esc0 = a.escala;
+  correr(l, 0.1, [{ mx: 0, my: 0, ax: 0, ay: 0, mega: true }, null]);
+  correr(l, 2.2, [null, null]);
+  assert.equal(a.etapa, 2);
+  assert.ok(a.escala > esc0 && a.hp > vida0, 'Power Up cresce e cura');
   for (const p of ROSTER) {
     const fin = p.evoluciones.at(-1);
     if (!fin.mega) continue;
@@ -240,7 +249,7 @@ test('linhas de uma evolução evoluem uma vez só e a Mega muda as skills de ve
 test('evoluir e Mega demoram: só depois de alguns segundos da rodada e com a barra cheia', () => {
   const l = nuevaLuta('riolu', 'munchlax', { conEspera: true });
   const [a] = l.luchadores;
-  a.etapa = 1; a.ulti = 100; a.exp = 9999;
+  a.etapa = 2; a.ulti = 100; a.exp = 9999;
   assert.equal(a.puedeMega, false, 'Mega bloqueada no começo da rodada');
   assert.ok(a.megaEn > 30);
   l.t += 36;

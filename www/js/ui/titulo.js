@@ -25,6 +25,7 @@ const MENUS = {
   ],
   ajustes: [
     { id: 'controles', txt: 'CONTROLS', escena: 'controles', ico: 'engranaje' },
+    { id: 'layout', txt: 'TOUCH LAYOUT', escena: 'layout', ico: 'engranaje' },
     { id: 'sonido', txt: 'SOUND', ajuste: 'sonido', ico: 'ayuda' },
     { id: 'musica', txt: 'MUSIC', ajuste: 'musica', ico: 'ayuda' },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },
