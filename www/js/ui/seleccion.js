@@ -11,7 +11,8 @@ import { centrada } from './centrar.js';
 const NIVELES = ['facil', 'normal', 'dificil'];
 const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
-const CARD = { w: 80, h: 44, gap: 8, x0: 190, y0: 58 };
+const CARD = { w: 80, h: 34, gap: 5, x0: 190, y0: 58 };
+const SHINY_TOQUES = 20;
 
 export class Seleccion {
   constructor(app, datos = {}) {
@@ -47,6 +48,7 @@ export class Seleccion {
     const o = this.online;
     this.listo = false; this.esperaTxt = '';
     o.alOtro = m => {
+      if (m.t === 'shiny') { (this.shiny ??= [])[m.lado] = m.on; return; }
       if (m.t === 'pick') { this.elegido[m.lado] = m.i; if (m.lado === 0 && m.arena != null) this.arenaPronta = m.arena; this.revisar(); }
       else if (m.t === 'start') this.empezarOnline(m);
     };
@@ -55,12 +57,12 @@ export class Seleccion {
   revisar() {
     const o = this.online;
     if (!this.listo || this.elegido.some(i => i < 0) || this.mi !== 0) return;
-    const msg = { t: 'start', semilla: (Math.random() * 1e9) | 0, picks: this.elegido.map(i => ROSTER[i].id), arena: ARENAS[this.arena].id };
+    const msg = { t: 'start', semilla: (Math.random() * 1e9) | 0, picks: this.elegido.map(i => ROSTER[i].id), shiny: this.elegido.map((_, k) => !!this.shiny?.[k]), arena: ARENAS[this.arena].id };
     o.enviar(msg);
     this.empezarOnline(msg);
   }
   empezarOnline(m) {
-    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, p4: m.picks[3] ?? null, arena: m.arena, semilla: m.semilla });
+    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, p4: m.picks[3] ?? null, shiny: m.shiny, arena: m.arena, semilla: m.semilla });
   }
   luchar() {
     const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
@@ -76,11 +78,25 @@ export class Seleccion {
     this.app.ajustes.nivel = this.nivel; this.app.ajustes.arena = ARENAS[this.arena].id; this.app.guardarAjustes();
     sfx('confirmar');
     const j = this.n === 3 && this.aleatorio[2] ? Math.floor(Math.random() * ROSTER.length) : this.elegido[2];
-    this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, p3: this.n === 3 ? ROSTER[j].id : null, arena: ARENAS[this.arena].id, nivel: this.nivel });
+    this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, p3: this.n === 3 ? ROSTER[j].id : null, shiny: [!!this.shiny?.[0], !!this.shiny?.[1], !!this.shiny?.[2]], arena: ARENAS[this.arena].id, nivel: this.nivel });
   }
 
   elegirCarta(i) {
     if (this.online && this.listo) return;
+    // segredo: tocar 20 vezes seguidas no mesmo Pokémon troca o seu para a versão shiny
+    this.toquesShiny = this.ultimaCarta === i ? (this.toquesShiny ?? 0) + 1 : 1;
+    this.ultimaCarta = i;
+    if (this.toquesShiny >= SHINY_TOQUES) {
+      const yo = this.online ? this.mi : 0;
+      this.toquesShiny = 0;
+      this.shiny ??= [];
+      this.shiny[yo] = !this.shiny[yo];
+      this.elegido[yo] = i;
+      this.avisoShiny = { t0: this.t, on: this.shiny[yo] };
+      sfx('evoCarga');
+      if (this.online) this.online.enviar({ t: 'shiny', lado: yo, on: this.shiny[yo] });
+      return;
+    }
     this.elegido[this.lado] = i;
     this.aleatorio[this.lado] = false;
     sfx('confirmar');
@@ -99,7 +115,7 @@ export class Seleccion {
     const accion = ['Enter', 'Space', 'NumpadEnter'].includes(c);
     if (this.foco === 'grade') {
       if (dx) { this.cursor = (this.cursor + dx + n) % n; sfx('seleccion'); }
-      if (dy) { const f = Math.floor(this.cursor / 3) + dy; if (f > 2) this.foco = 'arena'; else if (f >= 0) this.cursor = f * 3 + (this.cursor % 3); sfx('seleccion'); }
+      if (dy) { const f = Math.floor(this.cursor / 3) + dy, filas = Math.ceil(n / 3); if (f > filas - 1) this.foco = 'arena'; else if (f >= 0) this.cursor = Math.min(n - 1, f * 3 + (this.cursor % 3)); sfx('seleccion'); }
       if (accion) this.elegirCarta(this.cursor);
     } else {
       const orden = this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
@@ -149,9 +165,9 @@ export class Seleccion {
       const foco = this.cursor === i && this.foco === 'grade';
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 4, c.y + 4, 36, 36);
-      texto(g, p.nombre, c.x + 44, c.y + 8, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 48 });
-      p.tipos.forEach((tp, k) => { rect(g, c.x + 44 + k * 14, c.y + 22, 12, 7, '#04102c'); rect(g, c.x + 45 + k * 14, c.y + 23, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 3, 28, 28);
+      texto(g, p.nombre, c.x + 35, c.y + 7, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 38 });
+      p.tipos.forEach((tp, k) => { rect(g, c.x + 35 + k * 14, c.y + 20, 12, 7, '#04102c'); rect(g, c.x + 36 + k * 14, c.y + 21, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel3) { rect(g, c.x + c.w - 14, c.y + c.h - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y + c.h - 4, 14, 8, '#fbbf24'); texto(g, 'P4', c.x + c.w - 6, c.y + c.h, { tam: 5, align: 'center', base: 'middle', color: '#04102c' }); }
@@ -170,6 +186,7 @@ export class Seleccion {
     const l = this.cajaLuchar();
     marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
     texto(g, this.online ? (this.listo ? 'WAITING...' : 'READY!') : 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
+    if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.4) texto(g, this.avisoShiny.on ? 'SHINY UNLOCKED!' : 'SHINY OFF', ANCHO / 2, 222, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
     texto(g, this.esperaTxt || (this.modo === 'cpu' || this.modo === 'arena' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
   }
 
@@ -190,7 +207,8 @@ export class Seleccion {
     // sprite grande
     const fila = pos === 0 ? 2 : 6;
     g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(x0 + 89, 118, 26, 6, 0, 0, 7); g.fill();
-    bank.dibujar(g, p.dex, 'Idle', t, x0 + 89, 118, 2, { fila });
+    bank.dibujar(g, this.shiny?.[lado] ? p.dex + 's' : p.dex, 'Idle', t, x0 + 89, 118, 2, { fila });
+    if (this.shiny?.[lado]) { for (let k = 0; k < 4; k++) { const a = t * 3 + k * 1.57; rect(g, Math.round(x0 + 89 + Math.cos(a) * 30), Math.round(96 + Math.sin(a) * 16), 2, 2, k % 2 ? '#fff6a8' : '#ffffff'); } texto(g, 'SHINY', x0 + 89, 60, { tam: 7, align: 'center', color: '#ffe27a', borde: 2 }); }
     texto(g, p.nombre, x0 + 89, 126, { tam: 9, align: 'center', color: '#fff', borde: 3 });
     p.tipos.forEach((tp, k) => { const x = x0 + 89 - p.tipos.length * 15 + k * 30; rect(g, x - 1, 141, 30, 11, '#04102c'); rect(g, x, 142, 28, 9, hex(TIPOS[tp] ?? 0xffffff)); texto(g, tp, x + 14, 146.5, { tam: 5, align: 'center', base: 'middle', borde: 1 }); });
     texto(g, `${ROLES[p.rol].nombre} · ${p.lema}`, x0 + 89, 157, { tam: 5.5, align: 'center', color: UI.suave, max: 168 });

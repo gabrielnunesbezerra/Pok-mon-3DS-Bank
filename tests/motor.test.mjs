@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino'];
 
-test('o roster tem exatamente os 9 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'onix', 'munchlax', 'buneary', 'riolu', 'froakie']);
+test('o roster tem os 11 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -284,4 +284,35 @@ test('Frenzy Plant: atordoa e dá dano perto, no meio e na borda da área (não 
     assert.ok(b.hp < hp0, `dano em (${dx},${dy})`);
     assert.ok(atordoou, `atordoa em (${dx},${dy})`);
   }
+});
+
+test('Magikarp: Splash não faz nada mas enche a exp; Gyarados acumula Dragon Dance e recarrega depois do Hyper Beam', () => {
+  const l = nuevaLuta('magikarp', 'munchlax');
+  const [a] = l.luchadores;
+  a.ulti = 100;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 1.6, [null, null]);
+  assert.ok(a.exp >= a.expNecesaria, 'exp cheia depois do Splash');
+  const g = nuevaLuta('magikarp', 'munchlax', { etapas: [1, 0] }).luchadores[0];
+  g.energia = 100;
+  assert.equal(g.nombre, 'GYARADOS');
+  g.luta.habilidades.usar(g, 'q'); correr(g.luta, 0.5, [null, null]); g.cd.q = 0; g.luta.habilidades.usar(g, 'q');
+  assert.equal(g.est.potencia.n, 2);
+});
+
+test('Seedot: Grass Knot prende quem pisa; Shiftry: Leaf Tornado dá dano', () => {
+  const l = nuevaLuta('seedot', 'munchlax');
+  const [a, b] = l.luchadores;
+  a.energia = 100; b.x = a.x + 80; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  const hp0 = b.hp; let preso = false;
+  for (let i = 0; i < 60; i++) { l.paso(1 / 60, [null, null]); l.tomarEventos(); if (b.est.aturdido) preso = true; }
+  assert.ok(b.hp < hp0 && preso);
+  const s = nuevaLuta('seedot', 'munchlax', { etapas: [2, 0] });
+  const [c, d] = s.luchadores;
+  d.x = c.x + 90; d.y = c.y; c.ax = d.x; c.ay = d.y; c.ulti = 100;
+  const hp1 = d.hp;
+  assert.equal(s.habilidades.usar(c, 'e'), true);
+  correr(s, 2.5, [null, null]);
+  assert.ok(d.hp < hp1, 'o redemoinho alcança o alvo');
 });

@@ -25,6 +25,8 @@ export class SpriteBank {
 
   async cargar() {
     this.manifiesto = await (await fetch('assets/pmd/manifest.json')).json();
+    // forma sem sprite shiny no PMD: usa a normal
+    for (const k of Object.keys(this.manifiesto)) if (!k.endsWith('s') && !this.manifiesto[k + 's']) this.manifiesto[k + 's'] = { ...this.manifiesto[k], alias: k };
   }
 
   tiene(dex) { return !!this.manifiesto[dex]; }
@@ -49,7 +51,7 @@ export class SpriteBank {
 
   retrato(dex) {
     let img = this.retratos.get(dex);
-    if (!img) { img = new Image(); img.src = `assets/pmd/${dex}/portrait.png`; this.retratos.set(dex, img); }
+    if (!img) { img = new Image(); img.src = `assets/pmd/${this.manifiesto[dex]?.alias ?? dex}/portrait.png`; this.retratos.set(dex, img); }
     return img.complete && img.naturalWidth ? img : null;
   }
 

@@ -97,6 +97,12 @@ export class IA {
       case 'humo': return d < 180;
       case 'caparazon': return d < h.alcance + 40;
       case 'vuelo': return d < 230 && d > 50;
+      case 'potenciar': return (!l.est.potencia || l.est.potencia.n < (h.acumula ?? 1)) && d > 60;
+      case 'escudo': return d < 120;
+      case 'chapoteo': return true;
+      case 'explosion': return d < h.radio;
+      case 'trampa': return d < h.alcance + 20;
+      case 'torbellino': return d < h.alcance;
       default: { const rango = rangoDe(h); return rango > 0 && d < rango; }
     }
   }

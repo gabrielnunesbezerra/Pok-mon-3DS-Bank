@@ -23,7 +23,7 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
@@ -486,6 +486,119 @@ export class Habilidades {
     l.ponerEstado('arraigo', h.dur, { reduce: h.reduce, cura: h.cura, desde: luta.t });
     l.accion = { hasta: luta.t + 0.3, lento: 0 };
     luta.emit({ t: 'raizarse', l, dur: h.dur });
+  }
+
+  // ---------------------------------------------------------------- Splash (Magikarp): não acontece nada... mas a exp para evoluir enche
+  chapoteo(l, h) {
+    const luta = this.luta, saltos = h.saltos ?? 4, cada = h.dur / saltos;
+    let t = 0;
+    l.ponerEstado('invul', h.dur);
+    l.accion = { hasta: luta.t + h.dur, bloquea: true, lento: 0, update: dt => { t += dt; l.salto = Math.round(Math.abs(Math.sin((t / cada) * Math.PI)) * 12); }, fin: () => { l.salto = 0; } };
+    for (let i = 0; i < saltos; i++) luta.programar(i * cada, () => { if (l.ko) return; l.animar(h.anim ?? 'Hop', cada); luta.emit({ t: 'chapoteo', x: l.x, y: l.y }); luta.emit({ t: 'sonido', n: 'disparo' }); });
+    luta.programar(h.dur * 0.55, () => { if (!l.ko) luta.emit({ t: 'anuncio', txt: 'BUT NOTHING HAPPENED!', color: '#bfe9ff', tam: 16, dur: 1.1 }); });
+    luta.programar(h.dur, () => { if (!l.ko && l.etapa < l.etapasTotales - 1) l.ganarExp(l.expNecesaria); });
+  }
+
+  // ---------------------------------------------------------------- Dragon Dance: acumula força, velocidade e cadência
+  potenciar(l, h) {
+    const luta = this.luta, max = h.acumula ?? 1, n = Math.min(max, (l.est.potencia?.n ?? 0) + 1), pn = h.porNivel ?? {};
+    l.ponerEstado('potencia', h.dur ?? 6, { n, mult: (pn.mult ?? 0) * n, cadencia: 1 + (pn.cadencia ?? 0) * n, vel: (pn.vel ?? 0) * n, reduce: 0, color: '#a78bfa' });
+    l.animar(h.anim ?? 'Charge', 0.6);
+    l.accion = { hasta: luta.t + (h.quieto ?? 0.4), bloquea: true, lento: 0.3 };
+    l.texto(`${h.texto ?? 'POWER UP'} x${n}${n >= max ? '!' : ''}`, '#c4b5fd');
+    luta.emit({ t: 'potenciar', l, tipo: h.tipo, n });
+    luta.emit({ t: 'sonido', n: 'cura' });
+  }
+
+  // ---------------------------------------------------------------- Harden: escudo que absorve dano
+  escudo(l, h) {
+    const luta = this.luta;
+    l.escudo = Math.max(l.escudo ?? 0, (h.absorbe ?? 10) * (REGLAS.vidaGlobal ?? 1));
+    l.ponerEstado('escudo', h.dur ?? 2.5);
+    l.animar(h.anim ?? 'Withdraw', 0.5);
+    l.accion = { hasta: luta.t + 0.3, lento: h.lento ?? 0.5 };
+    l.texto('HARDEN', '#d6dbe4');
+    luta.emit({ t: 'endurecer', l });
+  }
+
+  // ---------------------------------------------------------------- Explosion: carrega, explode em volta e tira um pouco da própria vida
+  explosion(l, h, extra) {
+    const luta = this.luta, c = h.carga ?? 0.6;
+    l.animar(h.anim ?? 'Charge', c + 0.2);
+    l.accion = { hasta: luta.t + c + 0.15, bloquea: true, lento: 0 };
+    luta.emit({ t: 'cargaExplosion', l, dur: c });
+    luta.programar(c, () => {
+      if (l.ko) return;
+      areaCirculo(luta, l, l.x, l.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, empuje: 150 }));
+      luta.emit({ t: 'autoExplosion', x: l.x, y: l.y, radio: h.radio });
+      luta.emit({ t: 'temblor', f: 0.02 });
+      luta.hitstop(120);
+      if (h.autodano) l.hp = Math.max(1, l.hp - l.hpMax * h.autodano);
+    });
+  }
+
+  // ---------------------------------------------------------------- Grass Knot: armadilha no chão que prende quem pisa
+  trampa(l, h, extra) {
+    const luta = this.luta, ang = angApunte(l), d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const p = fijarCampo(l.x + Math.cos(ang) * d, l.y + Math.sin(ang) * d);
+    const mias = luta.entidades.filter(e => e.tipo === 'trampa' && e.dueno === l && e.vivo);
+    if (mias.length >= (h.max ?? 2)) mias[0].vivo = false;
+    l.animar(h.anim ?? 'Charge', 0.3);
+    l.accion = { hasta: luta.t + 0.2, lento: 0.3 };
+    const tr = {
+      tipo: 'trampa', dueno: l, vivo: true, x: p.x, y: p.y, radio: h.radio, t: 0, arma: h.arma ?? 0.4, dur: h.dur ?? 8, tipoAtq: h.tipo,
+      update: dt => {
+        tr.t += dt;
+        if (!tr.vivo || tr.t >= tr.dur || l.ko) return false;
+        if (tr.t < tr.arma) return true;
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || b.est?.vuelo || b.salto > 0) continue;
+          if (Math.hypot(b.x - tr.x, b.y - tr.y) < tr.radio + RADIO) {
+            atingir(l, b, pacote(h, extra, Math.atan2(b.y - tr.y, b.x - tr.x), { empuje: 0 }));
+            luta.emit({ t: 'trampaSalta', x: tr.x, y: tr.y });
+            return (tr.vivo = false);
+          }
+        }
+        return true;
+      },
+    };
+    luta.add(tr);
+  }
+
+  // ---------------------------------------------------------------- Leaf Tornado: um redemoinho que anda atrás do alvo e puxa
+  torbellino(l, h, extra) {
+    const luta = this.luta;
+    let ang = angApunte(l);
+    const vida = h.alcance / h.vel, cada = h.tick ?? 0.2, porTick = h.dano / Math.max(1, Math.round(vida / cada));
+    l.animar(h.anim ?? 'Charge', 0.5);
+    l.accion = { hasta: luta.t + 0.3, lento: 0.3, angulo: ang };
+    const tb = {
+      tipo: 'torbellino', dueno: l, vivo: true, x: l.x + Math.cos(ang) * 20, y: l.y + Math.sin(ang) * 20, radio: h.radio, t: 0, acum: 0, tipoAtq: h.tipo, vida,
+      update: dt => {
+        tb.t += dt;
+        if (l.ko || tb.t >= vida) {
+          for (const b of luta.blancos(l)) { const dx = b.x - tb.x, dy = b.y - tb.y, d = Math.hypot(dx, dy) || 1; if (d < tb.radio + RADIO && !b.esClon) { b.empX += (dx / d) * (h.suelta ?? 80) * 3; b.empY += (dy / d) * (h.suelta ?? 80) * 3; } }
+          return false;
+        }
+        const r = l.rival;
+        if (r && !r.ko && !r.oculto) { const quiere = Math.atan2(r.y - tb.y, r.x - tb.x); ang += clamp(difAng(quiere, ang), -(h.persigue ?? 1.5) * dt, (h.persigue ?? 1.5) * dt); }
+        const p = fijarCampo(tb.x + Math.cos(ang) * h.vel * dt, tb.y + Math.sin(ang) * h.vel * dt);
+        tb.x = p.x; tb.y = p.y;
+        tb.acum += dt;
+        const golpea = tb.acum >= cada;
+        if (golpea) tb.acum -= cada;
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || b.est?.vuelo) continue;
+          const dx = tb.x - b.x, dy = tb.y - b.y, d = Math.hypot(dx, dy) || 1;
+          if (d > tb.radio + RADIO) continue;
+          if (!b.esClon) { b.empX += (dx / d) * (h.tiron ?? 80) * dt * 6; b.empY += (dy / d) * (h.tiron ?? 80) * dt * 6; }
+          if (golpea) atingir(l, b, pacote(h, extra, Math.atan2(-dy, -dx), { dano: porTick, empuje: 0, tick: true }));
+        }
+        return true;
+      },
+    };
+    luta.add(tb);
+    luta.emit({ t: 'sonido', n: 'disparo' });
   }
 
   // ---------------------------------------------------------------- bomba lançada (Sludge Bomb)

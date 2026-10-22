@@ -35,7 +35,8 @@ export class Lutador {
 
   // ---------------------------------------------------------------- dados derivados
   get forma() { return etapaDe(this.def, this.etapa); }
-  get dex() { return this.mega ? this.forma.mega.dex : this.forma.dex; }
+  // shiny: a mesma forma com "s" no fim (pasta dos sprites shiny do PMD)
+  get dex() { return (this.mega ? this.forma.mega.dex : this.forma.dex) + (this.shiny ? 's' : ''); }
   get nombre() { return this.mega ? this.forma.mega.nombre : this.forma.nombre; }
   get tipos() { return (this.mega && this.forma.mega.tipos) || this.forma.tipos; }
   get hpMax() { return Math.round(this.forma.hp * REGLAS.vidaGlobal); }

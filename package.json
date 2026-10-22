@@ -1,6 +1,6 @@
 {
   "name": "pk-confront",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "description": "PK confront: batalha 1 contra 1 de Pokémon em tempo real numa arena 2D (projeto de fã, sem fins lucrativos).",
   "type": "module",

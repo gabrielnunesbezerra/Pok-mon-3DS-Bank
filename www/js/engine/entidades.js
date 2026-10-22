@@ -189,7 +189,7 @@ export class Chorro {
     this.acum = 0; this.tickEn = 0.1;
     this.tipoAtq = h.tipo;
     this.vivo = true;
-    dueno.accion = { hasta: luta.t + this.carga + this.dur + 0.05, bloquea: false, lento: 0.35, angulo: this.ang, update: () => { dueno.accion && (dueno.accion.angulo = this.ang); }, fin: () => { this.vivo = false; } };
+    dueno.accion = { hasta: luta.t + this.carga + this.dur + 0.05, bloquea: false, lento: 0.35, angulo: this.ang, update: () => { dueno.accion && (dueno.accion.angulo = this.ang); }, fin: () => { this.vivo = false; if (h.recarga && !dueno.ko) luta.programar(0, () => { dueno.accion = { hasta: luta.t + h.recarga, bloquea: true, lento: 0.7 }; dueno.texto('RECHARGE', '#ffd166'); }); } };
     dueno.animar(h.anim ?? 'Charge', this.carga + this.dur);
   }
   get activo() { return this.t >= this.carga; }

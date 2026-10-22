@@ -90,6 +90,17 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'chapoteo': this.rafaga(e.x, e.y - 2, 'WATER', 7, 110); this.add({ x: e.x, y: e.y - 2, size: 12, life: 0.3, forma: 'salpicadura' }); break;
+        case 'potenciar': { const c = colorTipo(e.tipo); for (let i = 0; i < 3; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6 + i * 5, 26 + i * 8, i % 2 ? '#ffffff' : c, 0.35 + i * 0.08, 2); for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 12, y: e.l.y - 4 + Math.sin(a) * 6, vx: Math.cos(a) * 30, vy: -60 - ale() * 50, drag: 2, size: 2.6, life: 0.55, color: c, forma: 'llama', rampa: ['#2a1060', '#6d3fd8', '#a78bfa', '#ede9fe'] }); } this.temblor = Math.max(this.temblor, 2); break; }
+        case 'endurecer': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, e.l.alto * 0.9, e.l.alto * 0.55, '#d6dbe4', 0.3, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 5, 120); break;
+        case 'cargaExplosion': for (let i = 0; i < 3; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 40 - i * 8, 6, i % 2 ? '#ffffff' : '#ffb347', e.dur * (0.7 + i * 0.15), 2); break;
+        case 'autoExplosion':
+          this.flash = 0.7; this.flashColor = '#fff6d8'; this.temblor = Math.max(this.temblor, 9);
+          this.anillo(e.x, e.y, 8, e.radio, '#ffd23c', 0.4, 4); this.anillo(e.x, e.y, 4, e.radio * 0.75, '#ffffff', 0.3, 2);
+          for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2, r = e.radio * (0.2 + ale() * 0.55); this.add({ x: e.x + Math.cos(a) * r, y: e.y - 8 + Math.sin(a) * r * 0.6, size: 14 + ale() * 8, life: 0.45 + ale() * 0.2, forma: 'estouro', color: '#ff7a1a', brillo: '#ffe27a' }); }
+          this.humo(e.x, e.y - 6, 10, 'rgba(90,80,80,0.6)', 12); this.debris(e.x, e.y, 'ROCK', 8);
+          break;
+        case 'trampaSalta': for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; this.add({ x: e.x, y: e.y - 3, vx: Math.cos(a) * 70, vy: Math.sin(a) * 40 - 60, g: 260, size: 2.4, life: 0.45, color: '#7ac74c', forma: 'hoja' }); } this.anillo(e.x, e.y, 4, 20, '#7ac74c', 0.25, 2); break;
         case 'zonaRaiz': this.zonas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: e.dur + 0.35 }); break;
         case 'raices': { const o = e.onda ?? 0, n = 6 + o * 4; for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + o * 0.35 + (ale() - 0.5) * 0.2, d = e.dist + (ale() - 0.5) * 8; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: 15 + o * 3 + Math.round(ale() * 6), semilla: i + o * 7, vid: true, t: -i * 0.018, life: 0.75 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.polvo(e.x, e.y, 6 + (e.onda ?? 0) * 3, 6); this.temblor = Math.max(this.temblor, 3 + (e.onda ?? 0) * 2); break; }
         case 'humo': this.humo(e.x, e.y, 14, 'rgba(120,120,135,0.55)', e.radio * 0.5); break;
@@ -366,6 +377,24 @@ function llamaProj(g, p, t, tam) {
   PX.disco(g, px(x), px(y), Math.max(1, q * 0.18), rampa[3]);
 }
 
+// Leaf Tornado: um funil de vento verde com folhas girando em volta
+export function dibujarTorbellino(g, e, t, fx) {
+  const k = Math.min(1, e.t / 0.2, (e.vida - e.t) / 0.25), alto = 56, base = e.radio;
+  g.globalAlpha = 0.35 * k; PX.elipsePix(g, px(e.x), px(e.y), base * 0.8, base * 0.35, '#2f5a1e'); g.globalAlpha = k;
+  for (let i = 0; i < 5; i++) {
+    const f = i / 4, y = e.y - f * alto, r = base * (0.35 + f * 0.75), gira = t * 14 + i;
+    PX.arcoPix(g, e.x, y, r, gira, gira + 2.6, '#04102c', 5, r * 0.35);
+    PX.arcoPix(g, e.x, y, r, gira + 0.05, gira + 2.55, i % 2 ? '#b6f07a' : '#5fae3a', 3, r * 0.35);
+    PX.arcoPix(g, e.x, y, r, gira + 3.2, gira + 4.6, '#3f7a26', 2, r * 0.35);
+  }
+  for (let i = 0; i < 18; i++) {
+    const f = ((i / 18) + t * 0.9) % 1, a = t * 10 + i * 2.1, r = base * (0.3 + f * 0.8), y = e.y - f * alto;
+    PX.carimbar(g, PX.hoja(i % 3 ? 6 : 8), e.x + Math.cos(a) * r, y + Math.sin(a) * r * 0.35, a, 1, k);
+  }
+  g.globalAlpha = 1;
+  if (ale() < 0.3) fx.polvo(e.x + entre(-base, base) * 0.6, e.y, 1, 5);
+}
+
 export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
   for (const e of luta.entidades) {
     switch (e.tipo) {
@@ -379,6 +408,17 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
         PX.anilloPix(g, px(e.x), px(e.y), e.radio * 0.9, e.radio * 0.55, '#c27ae0', 1, 4, Math.floor(e.t * 8));
         g.globalAlpha = 1;
         if (ale() < 0.12) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -22, g: 0, size: 2, life: 0.7, color: '#d68cf0', forma: 'burbuja' });
+        break;
+      }
+      case 'trampa': {
+        // Grass Knot: um nó de capim no chão; pisca quando fica armado
+        const armada = e.t >= e.arma, k = Math.min(1, e.t / 0.2), fim = Math.min(1, (e.dur - e.t) / 0.5);
+        g.globalAlpha = k * fim;
+        PX.elipsePix(g, px(e.x), px(e.y), e.radio * 0.9, e.radio * 0.5, 'rgba(30,70,20,0.35)');
+        for (let i = 0; i < 5; i++) { const a = (i / 5) * Math.PI * 2 + 0.3, hx = e.x + Math.cos(a) * e.radio * 0.55, hy = e.y + Math.sin(a) * e.radio * 0.3; PX.carimbar(g, PX.vid(7 + (i % 2) * 3, i), hx, hy - 4, 0, 1, 1); }
+        PX.anilloPix(g, px(e.x), px(e.y - 3), 5, 3, '#04102c', 3, 0); PX.anilloPix(g, px(e.x), px(e.y - 3), 5, 3, '#7ac74c', 2, 0);
+        if (armada && Math.floor(e.t * 3) % 2 === 0) PX.anilloPix(g, px(e.x), px(e.y), e.radio, e.radio * 0.55, '#b6f07a', 1, 6, Math.floor(e.t * 10));
+        g.globalAlpha = 1;
         break;
       }
       case 'humo': {
@@ -534,7 +574,8 @@ function dibujarChorro(g, e, t, fx) {
   // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
   const nTr = Math.max(2, Math.ceil(largoTotal / 9));
   const solar = paletaH === 'solar';
-  const cA = solar ? '#b8860b' : c3, cB = solar ? '#ffd23c' : c2, cC = solar ? '#fff29a' : c1;
+  const hiper = paletaH === 'hiper';
+  const cA = solar ? '#b8860b' : hiper ? '#e0520a' : c3, cB = solar ? '#ffd23c' : hiper ? '#ffb347' : c2, cC = solar ? '#fff29a' : hiper ? '#fff6d0' : c1;
   const capas = [[4, '#04102c', 0.92, 1], [0, cA, 1, 1], [0, cB, 1, 0.74], [0, cC, 1, 0.46], [0, '#ffffff', 1, 0.2]];
   for (const [extra, color, alfa, f] of capas) {
     g.globalAlpha = alfa;

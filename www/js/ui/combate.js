@@ -9,7 +9,7 @@ import { Luta } from '../engine/luta.js';
 import { IA, Muneco } from '../engine/ia.js';
 import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
-import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, colorTipo } from '../render/efectos.js';
+import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
@@ -67,7 +67,7 @@ export class Combate {
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
     const online = d.modo === 'online';
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, etapas: d.etapas ?? [0, 0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, shiny: d.shiny ?? [], etapas: d.etapas ?? [0, 0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
@@ -176,7 +176,7 @@ export class Combate {
     const app = this.app;
     const ops = [
       { txt: 'RESUME', id: 'seguir' }, { txt: 'RESTART FIGHT', id: 'repetir' },
-      { txt: `SOUND: ${app.ajustes.sonido ? 'ON' : 'OFF'}`, id: 'sonido' }, { txt: `MUSIC: ${app.ajustes.musica ? 'ON' : 'OFF'}`, id: 'musica' },
+      { txt: `SOUND: ${app.ajustes.sonido ? 'ON' : 'OFF'}`, id: 'sonido' }, { txt: `MUSIC: ${app.ajustes.musica ? 'ON' : 'OFF'}`, id: 'musica' }, { txt: `AIM GUIDE: ${app.ajustes.mira !== false ? 'ON' : 'OFF'}`, id: 'mira' },
       { txt: 'CONTROLS', id: 'controles' }, { txt: this.datos.tutorial ? 'EXIT TUTORIAL' : 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' },
     ];
     this.menuPausa = new ListaBotones({
@@ -186,6 +186,7 @@ export class Combate {
         else if (o.id === 'repetir') this.revancha();
         else if (o.id === 'sonido') { app.ajustes.sonido = !app.ajustes.sonido; silenciar(!app.ajustes.sonido); app.guardarAjustes(); this.armarPausa(); this.menuPausa.foco = i; }
         else if (o.id === 'musica') { app.ajustes.musica = !app.ajustes.musica; app.guardarAjustes(); if (app.ajustes.musica) { activarMusica(true); app.musica(); } else pararMusica(); this.armarPausa(); this.menuPausa.foco = i; }
+        else if (o.id === 'mira') { app.ajustes.mira = app.ajustes.mira === false; app.guardarAjustes(); this.armarPausa(); this.menuPausa.foco = i; }
         else if (o.id === 'controles') this.verControles = true;
         else if (o.id === 'cambiar') this.volver();
         else app.ir('titulo');
@@ -272,10 +273,12 @@ export class Combate {
       if (e.tipo === 'clon') cosas.push({ y: e.y, f: () => this.dibujarClon(g, e) });
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => dibujarProyectil(g, e, this.t) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => dibujarBomba(g, e) });
+      else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => dibujarTorbellino(g, e, this.t, fx) });
     }
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());
     fx.dibujar(g);
-    this.dibujarFijado(g, luta);
+    // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
+    if (this.app.ajustes.mira !== false) this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
     fx.dibujarTextos(g, FUENTE);
     for (const b of fx.globos) this.dibujarGlobo(g, b);
@@ -405,6 +408,7 @@ export class Combate {
     const girar = (r, cols, grosor, n) => { for (let k = 0; k < n; k++) { const a0 = t * 24 + (k / n) * Math.PI * 2; PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, '#04102c', grosor + 2, r * 0.8); PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, cols[0], grosor, r * 0.8); PX.arcoPix(g, cx, cy, r, a0 + 0.2, a0 + 1.1, cols[1], Math.max(1, grosor - 2), r * 0.8); } };
     if (e === 'agua') { girar(l.alto * 0.62, ['#4aa3f0', '#ffffff'], 4, 3); if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 16, y: cy + (Math.random() - 0.5) * 16, vx: -Math.cos(a) * 50 + (Math.random() - 0.5) * 80, vy: -Math.sin(a) * 30 - 40, g: 260, size: 1.8, life: 0.45, color: '#cfeeff', forma: 'gota', rampa: PX.RAMPA_AGUA }); }
     else if (e === 'veneno') { for (let k = 0; k < 5; k++) { const off = (k - 2) * 4, ln = 16 + (k % 3) * 8; PX.lineaPix(g, cx - Math.sin(a) * off, cy + Math.cos(a) * off, cx - Math.cos(a) * ln - Math.sin(a) * off, cy - Math.sin(a) * ln + Math.cos(a) * off, k % 2 ? '#e070ff' : '#8a2bb8', 2); } if (Math.random() < 0.7) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 10, vx: -Math.cos(a) * 60, vy: -Math.sin(a) * 60, size: 2.4, life: 0.35, color: '#d68cf0', forma: 'burbuja' }); }
+    else if (e === 'rodar') { girar(l.alto * 0.5, ['#a0783c', '#e8c890'], 3, 2); if (Math.random() < 0.6) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 5); }
     else if (e === 'acero') { girar(l.alto * 0.62, ['#9aa8bc', '#ffffff'], 4, 3); if (Math.random() < 0.6) fx.chispas(cx + (Math.random() - 0.5) * 20, cy + 6, '#ffe9a8', 1, 160); }
     else if (e === 'rapido') for (let k = 0; k < 4; k++) { const off = (k - 1.5) * 5, ln = 18 + k * 5; PX.lineaPix(g, cx - Math.cos(a) * 8 - Math.sin(a) * off, cy - Math.sin(a) * 6 + Math.cos(a) * off * 0.8, cx - Math.cos(a) * (8 + ln), cy - Math.sin(a) * (6 + ln * 0.8) + Math.cos(a) * off * 0.8, k % 2 ? '#ffffff' : '#bfe9ff', 1); }
     else if (e === 'golpe') { if (Math.random() < 0.7) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 6); if (Math.random() < 0.4) fx.chispas(cx + Math.cos(a) * 14, cy, '#ffe9a8', 1, 200); PX.carimbar(g, PX.estouro(Math.floor(t * 20) % 4, 8, '#ffffff', '#ffd23c'), cx + Math.cos(a) * 16, cy + Math.sin(a) * 9); }

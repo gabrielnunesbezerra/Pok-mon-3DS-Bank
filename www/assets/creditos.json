@@ -275,5 +275,373 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0001s",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "ShyStarryRain"
+  ]
+ },
+ {
+  "dex": "0002s",
+  "sprite": [
+   "SilverDeoxys563"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0003s",
+  "sprite": [
+   "SilverDeoxys563"
+  ],
+  "retrato": [
+   "Emboarger",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0004s",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "Moo",
+   "Morei",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0005s",
+  "sprite": [
+   "ShyStarryRain",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "ShyStarryRain"
+  ]
+ },
+ {
+  "dex": "0006-0001s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0006s",
+  "sprite": [
+   "SilverDeoxys563",
+   "Emboarger",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Adrian",
+   "SuperFabbioGuy",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0007s",
+  "sprite": [
+   "SilverDeoxys563",
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "ShyStarryRain"
+  ]
+ },
+ {
+  "dex": "0008s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0009s",
+  "sprite": [
+   "SilverDeoxys563"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0041s",
+  "sprite": [
+   "Tacocoa"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "fledermaus"
+  ]
+ },
+ {
+  "dex": "0042s",
+  "sprite": [
+   "Tacocoa"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0095s",
+  "sprite": [
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "Moo",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0129",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "JemDragons"
+  ]
+ },
+ {
+  "dex": "0129s",
+  "sprite": [
+   "Scizivire",
+   "Noo"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "JemDragons"
+  ]
+ },
+ {
+  "dex": "0130",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0130s",
+  "sprite": [
+   "Noo",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "G〜",
+   "Magu"
+  ]
+ },
+ {
+  "dex": "0143s",
+  "sprite": [
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "El_Pangoro_Parse"
+  ]
+ },
+ {
+  "dex": "0169s",
+  "sprite": [
+   "Chi"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0208-0001s",
+  "sprite": [
+   "Pokejavi."
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0208s",
+  "sprite": [
+   "Lovi"
+  ],
+  "retrato": [
+   "Lovi"
+  ]
+ },
+ {
+  "dex": "0273",
+  "sprite": [
+   "CHUNSOFT",
+   "Caitemis"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "<@!589906152708505648>"
+  ]
+ },
+ {
+  "dex": "0273s",
+  "sprite": [
+   "Moo",
+   "Caitemis"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0274",
+  "sprite": [
+   "CHUNSOFT",
+   "JFain"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0274s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0275",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Tainted#3886",
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0275s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "Morei",
+   "Moo"
+  ]
+ },
+ {
+  "dex": "0427s",
+  "sprite": [
+   "Lovi",
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "Lovi",
+   "<@!589906152708505648>",
+   "ShyStarryRain"
+  ]
+ },
+ {
+  "dex": "0428-0001s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0428s",
+  "sprite": [
+   "Lovi"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0446s",
+  "sprite": [
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "Lovi"
+  ]
+ },
+ {
+  "dex": "0447s",
+  "sprite": [
+   "Anonymous"
+  ],
+  "retrato": [
+   "Anonymous",
+   "Fearless-Quit",
+   "Emboarger"
+  ]
+ },
+ {
+  "dex": "0448-0001s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0448s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "Deeshura",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0656s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0657s",
+  "sprite": [
+   "Caitemis"
+  ],
+  "retrato": [
+   "◥θ┴θ◤",
+   "NOLASMOR",
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0658s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
  }
 ]

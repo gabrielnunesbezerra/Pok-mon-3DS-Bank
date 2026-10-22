@@ -28,6 +28,7 @@ const MENUS = {
     { id: 'layout', txt: 'TOUCH LAYOUT', escena: 'layout', ico: 'engranaje' },
     { id: 'sonido', txt: 'SOUND', ajuste: 'sonido', ico: 'ayuda' },
     { id: 'musica', txt: 'MUSIC', ajuste: 'musica', ico: 'ayuda' },
+    { id: 'mira', txt: 'AIM GUIDE', ajuste: 'mira', ico: 'diana' },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },
   ],
 };
@@ -73,12 +74,12 @@ export class Titulo {
   }
 
   refrescarAjustes() {
-    for (const o of this.lista.ops) if (o.ajuste) o.txt = `${o.id === 'sonido' ? 'SOUND' : 'MUSIC'}: ${this.app.ajustes[o.ajuste] ? 'ON' : 'OFF'}`;
+    for (const o of this.lista.ops) if (o.ajuste) o.txt = `${{ sonido: 'SOUND', musica: 'MUSIC', mira: 'AIM GUIDE' }[o.id]}: ${this.app.ajustes[o.ajuste] !== false && (o.id === 'mira' || this.app.ajustes[o.ajuste]) ? 'ON' : 'OFF'}`;
   }
 
   elegirOpcion(o) {
     if (o.ajuste) {
-      this.app.ajustes[o.ajuste] = !this.app.ajustes[o.ajuste];
+      this.app.ajustes[o.ajuste] = o.ajuste === 'mira' ? this.app.ajustes.mira === false : !this.app.ajustes[o.ajuste];
       this.app.guardarAjustes();
       import('../audio.js').then(a => { a.silenciar(!this.app.ajustes.sonido); this.app.musica(); if (!this.app.ajustes.musica) a.pararMusica(); });
       this.refrescarAjustes();

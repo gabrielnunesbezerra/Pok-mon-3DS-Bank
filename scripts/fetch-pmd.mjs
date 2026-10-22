@@ -15,7 +15,11 @@ const ANIMS = ['Idle', 'Walk', 'Attack', 'Strike', 'Shoot', 'Hurt', 'Sleep', 'Ch
 const ref = JSON.parse(readFileSync(join(root, 'docs/referencia/ref9.json'), 'utf8'));
 const dexs = new Set();
 for (const p of ref.roster) for (const f of [p, ...(p.evoluciones ?? [])]) { dexs.add(f.dex); if (f.mega) dexs.add(f.mega.dex); }
-const pathOf = d => d.replace('-', '/');
+// linhas novas (Magikarp e Seedot)
+for (const d of ['0129', '0130', '0273', '0274', '0275']) dexs.add(d);
+// versão shiny de cada forma: mesma pasta com "s" no fim (0006-0001s)
+for (const d of [...dexs]) dexs.add(d + 's');
+const pathOf = d => (d.endsWith('s') ? (d.includes('-') ? d.slice(0, -1).replace('-', '/') + '/0001' : d.slice(0, -1) + '/0000/0001') : d.replace('-', '/'));
 
 async function get(url, binary = true) {
   for (let i = 0; i < 4; i++) {
@@ -65,14 +69,20 @@ for (const line of (await get(`${COLLAB}/credit_names.txt`, false)).split('\n').
 const nodeOf = path => { const [id, ...sub] = path.split('/'); let n = tracker[id]; for (const s of sub) n = n?.subgroups?.[s]; return n; };
 const nome = c => (c ? names[c] || c : null);
 
-rmSync(out, { recursive: true, force: true });
-const manifest = {};
-const creditos = [];
+// incremental: o que já foi baixado fica
+let manifest = {};
+try { manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8')); } catch { /* primeira vez */ }
+let creditos = [];
+try { creditos = JSON.parse(readFileSync(join(root, 'www/assets/creditos.json'), 'utf8')); } catch { /* primeira vez */ }
+void rmSync;
 for (const dex of [...dexs].sort()) {
+  if (manifest[dex]) continue;
   const path = pathOf(dex);
   const dir = join(out, dex);
   mkdirSync(dir, { recursive: true });
-  const anims = parseAnimData(await get(`${COLLAB}/sprite/${path}/AnimData.xml`, false));
+  const xml = await get(`${COLLAB}/sprite/${path}/AnimData.xml`, false);
+  if (!xml) { console.log(dex, 'sem sprite'); continue; }
+  const anims = parseAnimData(xml);
   const kept = {};
   for (const name of ANIMS) {
     const a = anims[name];
@@ -89,7 +99,7 @@ for (const dex of [...dexs].sort()) {
     if (real !== name) kept[name] = kept[real];
   }
   const { __medidas, ...animsOk } = kept;
-  const portrait = await get(`${COLLAB}/portrait/${path}/Normal.png`) || await get(`${COLLAB}/portrait/${path.split('/')[0]}/Normal.png`);
+  const portrait = await get(`${COLLAB}/portrait/${path}/Normal.png`) || (dex.endsWith('s') ? await get(`${COLLAB}/portrait/${pathOf(dex.slice(0, -1))}/Normal.png`) : null) || await get(`${COLLAB}/portrait/${path.split('/')[0]}/Normal.png`);
   if (portrait) writeFileSync(join(dir, 'portrait.png'), portrait);
   manifest[dex] = { ...__medidas, anims: animsOk };
   const n = nodeOf(path);
