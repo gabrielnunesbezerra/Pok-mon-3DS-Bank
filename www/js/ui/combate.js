@@ -18,6 +18,7 @@ import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
 const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
 const oscuro = (c, k) => mezcla(c, -k);
+const claro = (c, k) => mezcla(c, k);
 import { filaDesdeAngulo } from '../render/sprites.js';
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
@@ -279,7 +280,7 @@ export class Combate {
     fx.dibujarTextos(g, FUENTE);
     for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
-    this.dibujarBanners(g);
+    this.dibujarOscuro(g);
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
@@ -288,6 +289,7 @@ export class Combate {
     if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
     if (luta.entreno) this.dibujarEntreno(g, luta);
+    this.dibujarBanners(g);
     if (this.tutorial) this.dibujarTutorial(g);
     if (!this.app.tactil.activo && !this.pausado && this.luta.fase !== 'fin') this.dibujarMira(g);
     // anúncios do centro
@@ -433,19 +435,33 @@ export class Combate {
     g.globalAlpha = 1;
   }
   // faixa da ultimate: desliza da esquerda, escurece a cena e some
+  // a tela (só a arena) escurece enquanto a ultimate é anunciada e clareia devagar
+  dibujarOscuro(g) {
+    for (const b of this.fx.banners) rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#02050f', Math.max(0, Math.min(1, Math.min(b.t / 0.1, (b.life - b.t) / 0.5))) * 0.55);
+    g.globalAlpha = 1;
+  }
+  // faixa da ultimate como no site: entra pela esquerda, borda direita inclinada, nome grande alinhado à esquerda
   dibujarBanners(g) {
     for (const b of this.fx.banners) {
-      const k = b.t / b.life, entra = Math.min(1, b.t / 0.14), sale = Math.min(1, (b.life - b.t) / 0.25), al = Math.min(entra, sale);
-      const y0 = HUD_ALTO + 8, h = 38, x0 = (1 - entra) * -ANCHO, col = hexTipo(b.tipo);
-      // a tela escurece enquanto a ultimate é anunciada e clareia devagar
-      rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#02050f', Math.max(0, Math.min(1, Math.min(b.t / 0.1, (b.life - b.t) / 0.5))) * 0.55); g.globalAlpha = Math.max(0, al);
-      g.save(); g.translate(x0, 0);
-      g.fillStyle = oscuro(col, 0.5); g.beginPath(); g.moveTo(0, y0 + 3); g.lineTo(ANCHO, y0 - 1); g.lineTo(ANCHO, y0 + h + 3); g.lineTo(0, y0 + h + 7); g.closePath(); g.fill();
-      g.fillStyle = col; g.beginPath(); g.moveTo(0, y0); g.lineTo(ANCHO, y0 - 4); g.lineTo(ANCHO, y0 + h - 3); g.lineTo(0, y0 + h + 1); g.closePath(); g.fill();
-      texto(g, b.txt, ANCHO / 2, y0 + h / 2 - 1, { tam: 17, color: '#ffffff', borde: 3, colorBorde: oscuro(col, 0.6), align: 'center', base: 'middle', peso: 700 });
+      const entra = Math.min(1, b.t / 0.16), sale = Math.min(1, (b.life - b.t) / 0.25), al = Math.max(0, Math.min(entra, sale));
+      const y0 = HUD_ALTO + 6, h = 40, w = Math.min(ANCHO * 0.62, 420), ease = 1 - (1 - entra) ** 3, x0 = Math.round((ease - 1) * (w + 30)), col = hexTipo(b.tipo);
+      g.save(); g.globalAlpha = al; g.translate(x0, 0);
+      const slab = (dx, dy, c) => { g.fillStyle = c; g.beginPath(); g.moveTo(0, y0 + dy); g.lineTo(w + dx, y0 + dy); g.lineTo(w + dx - 22, y0 + h + dy); g.lineTo(0, y0 + h + dy); g.closePath(); g.fill(); };
+      slab(4, 4, 'rgba(2,5,15,0.6)');
+      slab(0, 0, oscuro(col, 0.45));
+      g.save(); g.beginPath(); g.moveTo(0, y0); g.lineTo(w - 3, y0); g.lineTo(w - 25, y0 + h - 3); g.lineTo(0, y0 + h - 3); g.closePath(); g.clip();
+      const grad = g.createLinearGradient(0, y0, 0, y0 + h); grad.addColorStop(0, claro(col, 0.25)); grad.addColorStop(1, col);
+      g.fillStyle = grad; g.fillRect(0, y0, w, h);
+      // brilho que atravessa a faixa
+      const bx = ((b.t * 900) % (w + 200)) - 100;
+      g.globalAlpha = al * 0.35; g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(bx, y0); g.lineTo(bx + 26, y0); g.lineTo(bx + 4, y0 + h); g.lineTo(bx - 22, y0 + h); g.closePath(); g.fill();
+      g.globalAlpha = al;
+      g.fillStyle = 'rgba(255,255,255,0.35)'; g.fillRect(0, y0 + 2, w, 2);
       g.restore();
-      g.globalAlpha = 1;
+      texto(g, b.txt, 16, y0 + h / 2, { tam: 22, color: '#ffffff', borde: 4, colorBorde: oscuro(col, 0.7), base: 'middle', peso: 700, max: w - 40 });
+      g.restore();
     }
+    g.globalAlpha = 1;
   }
   // barrinhas de calor, de estado e de "vida de baixo" em cima dos lutadores
   barrasMundo(g, luta) {

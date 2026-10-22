@@ -336,13 +336,13 @@ export function vid(alto, semilla = 0) {
     for (const [grow, color] of [[1.4, '#2a1406'], [0, '#7a4a1e']]) {
       g.fillStyle = color;
       for (let y = 0; y < alto; y++) {
-        const u = y / alto, w = Math.round(4.2 * (1 - u * 0.8) + 0.8 + grow), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
+        const u = y / alto, w = Math.round(2.8 * (1 - u * 0.8) + 0.8 + grow), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
         g.fillRect(x - w, base - y - 1, w * 2 + 1, 1);
         if (y % 11 === 6 && !grow) { g.fillRect(x + w, base - y - 2, 3, 2); g.fillRect(x - w - 2, base - y - 4, 3, 2); }
       }
     }
     for (let y = 1; y < alto - 1; y++) {
-      const u = y / alto, w = Math.round(4.2 * (1 - u * 0.8) + 0.8), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
+      const u = y / alto, w = Math.round(2.8 * (1 - u * 0.8) + 0.8), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
       g.fillStyle = '#b8742f'; g.fillRect(x - w + 1, base - y - 1, Math.max(1, Math.round(w * 0.8)), 1);
       if (y % 3 === 0) { g.fillStyle = '#e0a055'; g.fillRect(x - w + 1, base - y - 1, 1, 1); }
     }

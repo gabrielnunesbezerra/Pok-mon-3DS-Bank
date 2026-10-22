@@ -85,12 +85,13 @@ export class Efectos {
           this.anillo(e.x, e.y, 6, e.radio, colorTipo(e.tipo), 0.4, 3);
           this.anillo(e.x, e.y, 2, e.radio * 0.7, '#ffffff', 0.3, 1);
           this.rafaga(e.x, e.y, e.tipo, 14, 160);
+          if (e.estilo === 'fuego') for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2, r = e.radio * (0.75 + 0.15 * ale()); this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 110, vy: Math.cos(a) * 60 - 20, drag: 3, size: 2.2 + ale() * 1.4, life: 0.32 + ale() * 0.15, color: '#ff8a2a', forma: 'llama' }); }
           if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
         case 'zonaRaiz': this.zonas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: e.dur + 0.35 }); break;
-        case 'raices': { const n = Math.max(6, Math.round((Math.PI * 2 * e.dist) / 17)); const gira = ale() * 6; for (let i = 0; i < n; i++) { const a = gira + (i / n) * Math.PI * 2 + (ale() - 0.5) * 0.15, d = e.dist + (ale() - 0.5) * 10; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: e.dist < 50 ? 34 + Math.round(ale() * 14) : e.dist < 90 ? 24 + Math.round(ale() * 10) : 15 + Math.round(ale() * 8), semilla: i, vid: e.dist < 90 || i % 2 === 0, t: -ale() * 0.05, life: 0.7 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.polvo(e.x, e.y, 6 + (e.onda ?? 0) * 3, 6); this.temblor = Math.max(this.temblor, 3 + (e.onda ?? 0) * 2); break; }
+        case 'raices': { const o = e.onda ?? 0, n = 6 + o * 4; for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + o * 0.35 + (ale() - 0.5) * 0.2, d = e.dist + (ale() - 0.5) * 8; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: 15 + o * 3 + Math.round(ale() * 6), semilla: i + o * 7, vid: true, t: -i * 0.018, life: 0.75 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.polvo(e.x, e.y, 6 + (e.onda ?? 0) * 3, 6); this.temblor = Math.max(this.temblor, 3 + (e.onda ?? 0) * 2); break; }
         case 'humo': this.humo(e.x, e.y, 14, 'rgba(120,120,135,0.55)', e.radio * 0.5); break;
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
         case 'desaparece': this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
@@ -493,21 +494,24 @@ function dibujarChorro(g, e, t, fx) {
     return;
   }
   if (e.h.forma === 'helice') {
-    // Blast Burn: duas fitas trançadas, uma de fogo e outra azul, em volta de um núcleo claro
-    const amp = (e.h.amplitud ?? 11) * 1.25, N = Math.max(12, Math.floor(largoTotal / 6));
-    const fogo = rampaFuego(col), azul = ['#0c2a7a', '#2f6fe0', '#8fc4ff', '#ffffff'];
-    g.globalAlpha = 0.95; PX.lineaPix(g, ox, oy, px(x2), px(y2), '#04102c', Math.max(3, Math.round(w * 0.34))); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#ffd9a0', Math.max(2, Math.round(w * 0.2))); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#ffffff', Math.max(1, Math.round(w * 0.09))); g.globalAlpha = 1;
-    for (let i = N - 1; i >= 0; i--) {
-      const f = i / N, fase = f * 12 - t * 16, d = largoTotal * f, env = 0.3 + f * 0.7;
-      for (const [sgn, rampa] of [[1, fogo], [-1, azul]]) {
-        const off = Math.sin(fase) * amp * sgn * env, frente = Math.cos(fase) * sgn > 0;
-        const tam = tamSprite((w * 0.16 + f * 2.4) * (frente ? 1.15 : 0.85));
-        PX.carimbar(g, PX.llama(Math.floor(t * 14 + i), tam, rampa), ox + ux * d + nxp * off, oy + uy * d + nyp * off, Math.atan2(uy, ux) - Math.PI / 2, 1, frente ? 1 : 0.8);
+    // Blast Burn como no site: duas fitas finas que se trançam, uma de fogo e outra azul, com brilhos no cruzamento
+    const amp = (e.h.amplitud ?? 11) * 0.55, paso = 3, N = Math.max(8, Math.floor(largoTotal / paso));
+    const fitas = [[1, ['#e0400a', '#ffa62a', '#fff3b0']], [-1, ['#2a5fd8', '#86c2ff', '#ffffff']]];
+    const ponto = (i, sgn) => { const f = i / N, d = largoTotal * f, env = 0.35 + 0.65 * Math.min(1, f * 3); const fase = d / 9 - t * 22, off = Math.sin(fase) * amp * sgn * env; return [ox + ux * d + nxp * off, oy + uy * d + nyp * off, Math.cos(fase) * sgn]; };
+    // primeiro os trechos que estão "atrás", depois os da frente
+    for (const frente of [false, true]) for (const [sgn, [c0, c1, c2]] of fitas) {
+      for (let i = 0; i < N; i++) {
+        const [x1, y1, z] = ponto(i, sgn), [x2b, y2b] = ponto(i + 1, sgn);
+        if ((z > 0) !== frente) continue;
+        g.globalAlpha = frente ? 1 : 0.75;
+        g.globalAlpha *= 0.35; PX.lineaPix(g, x1, y1, x2b, y2b, c1, 11); g.globalAlpha = frente ? 1 : 0.75; PX.lineaPix(g, x1, y1, x2b, y2b, c0, 7); PX.lineaPix(g, x1, y1, x2b, y2b, c1, 5); PX.lineaPix(g, x1, y1, x2b, y2b, c2, frente ? 2 : 1);
       }
     }
-    PX.esfera(g, ox, oy, Math.max(3, w * 0.42), fogo);
-    PX.anilloPix(g, px(x2), px(y2), 7 + Math.sin(t * 40) * 2, 6, '#ffd9a0', 1, 3, Math.floor(t * 30));
-    if (ale() < 0.7) fx.add({ x: px(x2) + entre(-5, 5), y: px(y2) + entre(-5, 5), vx: entre(-80, 80), vy: entre(-80, 40), size: 2.4, life: 0.4, color: ale() < 0.5 ? '#ffd23c' : '#8fc4ff', forma: 'chispa' });
+    g.globalAlpha = 1;
+    for (let i = 0; i < N; i += 4) { const f = i / N; if (Math.abs(Math.sin(largoTotal * f / 9 - t * 22)) < 0.3) PX.carimbar(g, PX.chispa(3, '#ffffff'), ox + ux * largoTotal * f, oy + uy * largoTotal * f, 0, 1, 1); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.3), rampaFuego(col));
+    PX.anilloPix(g, px(x2), px(y2), 6 + Math.sin(t * 40) * 2, 5, '#bfe4ff', 1, 3, Math.floor(t * 30));
+    if (ale() < 0.6) fx.add({ x: px(x2) + entre(-4, 4), y: px(y2) + entre(-4, 4), vx: entre(-80, 80), vy: entre(-80, 40), size: 2.2, life: 0.35, color: ale() < 0.5 ? '#ffd23c' : '#8fc4ff', forma: 'chispa' });
     return;
   }
   if (col === 'WATER') {
