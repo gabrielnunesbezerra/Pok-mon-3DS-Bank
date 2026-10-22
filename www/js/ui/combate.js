@@ -316,7 +316,17 @@ export class Combate {
       g.fillStyle = 'rgba(0,0,0,0.42)'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx, ry, 0, 0, 7); g.fill();
       if (!l.ko) { g.strokeStyle = l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
     }
-    if (l.oculto) { if (Math.random() < 0.4) this.fx.polvo(l.x, l.y, 1, 4); return; }
+    if (l.oculto) {
+      // Dig: um monte de terra que anda e um anel azul marcando onde ele vai sair, como no site
+      const pul = 0.5 + 0.5 * Math.sin(this.t * 10), x = Math.round(l.x), y = Math.round(l.y);
+      g.globalAlpha = 0.85;
+      PX.anilloPix(g, x, y, 27 + pul * 2, 16 + pul, '#8fd0ff', 2, 0);
+      PX.anilloPix(g, x, y, 18, 10.5, '#bfe4ff', 1, 0);
+      g.globalAlpha = 1;
+      PX.elipsePix(g, x, y, 9, 4, '#3a2410'); PX.elipsePix(g, x, y - 1, 7, 3, '#7a5228'); PX.elipsePix(g, x - 1, y - 2, 4, 1.5, '#a87a44');
+      if (Math.random() < 0.5) this.fx.polvo(l.x, l.y, 1, 4);
+      return;
+    }
     if (l.evoVis && t - l.evoVis.t0 < l.evoVis.dur) { this.dibujarEvo(g, l, l.evoVis); return; }
     let nombre = 'Idle', tt = t, bucle = true;
     if (l.ko) { nombre = bank.resolver(l.dex, 'Faint'); tt = t - (l.koT ?? t); bucle = false; }
