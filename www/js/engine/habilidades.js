@@ -23,7 +23,7 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
@@ -213,6 +213,27 @@ export class Habilidades {
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
     luta.emit({ t: 'sonido', n: 'dash' });
+  }
+
+  // ---------------------------------------------------------------- Matcha Geyser: água verde sobe debaixo do alvo e o joga para perto de quem lançou
+  geiser(l, h, extra) {
+    const luta = this.luta, r = l.rival;
+    let x, y;
+    if (r && !r.ko && !r.oculto && dist(r, l) <= h.alcance + 40) { x = r.x; y = r.y; }
+    else { const a = angApunte(l), d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y)); x = l.x + Math.cos(a) * d; y = l.y + Math.sin(a) * d; }
+    const p = fijarCampo(x, y);
+    l.animar(h.anim ?? 'Charge', 0.5);
+    l.accion = { hasta: luta.t + 0.3, lento: 0.4 };
+    luta.emit({ t: 'geiserAviso', x: p.x, y: p.y, radio: h.radio, dur: h.aviso, l });
+    luta.programar(h.aviso, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'geiser', x: p.x, y: p.y, radio: h.radio });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo || Math.hypot(b.x - p.x, b.y - p.y) >= h.radio + RADIO) continue;
+        const dx = l.x - b.x, dy = l.y - b.y;
+        atingir(l, b, pacote(h, extra, Math.atan2(dy, dx), { empuje: h.tiron ?? 110, pesado: true }));
+      }
+    });
   }
 
   // ---------------------------------------------------------------- Teleport: some e reaparece na hora, sem atravessar o caminho
@@ -735,8 +756,17 @@ export class Habilidades {
         else {
           l.salto = 0; delete l.est.vuelo;
           areaCirculo(luta, l, l.x, l.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, empuje: 80, alcanzaVuelo: false }));
-          luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: 'aterrizaje' });
+          luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: h.estilo === 'rayo' ? 'electrico' : 'aterrizaje' });
           luta.emit({ t: 'temblor', f: 0.012 });
+          // Thunder Crash: raios caem em volta do impacto
+          if (h.estilo === 'rayo') luta.emit({ t: 'tormentaImpacto', x: l.x, y: l.y, radio: h.radio });
+          // Pancake: quem está perto é puxado para o lugar do impacto
+          if (h.atrae) for (const b of luta.blancos(l)) {
+            if (b.esClon || b.oculto || b.est?.vuelo) continue;
+            const dx = l.x - b.x, dy = l.y - b.y, d = Math.hypot(dx, dy) || 1;
+            if (d < h.atrae && d > 8) { b.empX += (dx / d) * (h.tiron ?? 60) * 5; b.empY += (dy / d) * (h.tiron ?? 60) * 5; }
+          }
+          if (h.atrae) luta.emit({ t: 'succion', x: l.x, y: l.y, radio: h.atrae });
           return false;
         }
         ent.x = l.x; ent.y = l.y;
@@ -805,7 +835,7 @@ export class Habilidades {
   descanso(l, h) {
     const luta = this.luta;
     l.animar('Sleep', h.dur);
-    l.ponerEstado('dormido', h.dur, { cura: (h.cura * l.hpMax) / h.dur, acum: 0 });
+    l.ponerEstado('dormido', h.dur, { cura: (h.cura * l.hpMax) / h.dur, acum: 0, refleja: h.refleja ?? 0 });
     l.cortarAccion();
     l.accion = null;
     l.texto('ZZZ...', '#bfdbfe');

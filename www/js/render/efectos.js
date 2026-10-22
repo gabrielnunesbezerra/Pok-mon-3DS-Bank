@@ -28,6 +28,7 @@ const rampa4 = c => { const n = parseInt(c.slice(1), 16); void n; return [mezcla
 export const paleta = t => { const c = colorTipo(t); return [mezcla(c, 0.7), mezcla(c, 0.35), c, mezcla(c, -0.35)]; };
 const BRILLA = new Set(['FIRE', 'ELECTRIC', 'PSYCHIC', 'FAIRY', 'DRAGON', 'GHOST', 'ICE']);
 
+const MATCHA = ['#2a4a12', '#5f8f2a', '#a8d060', '#eef8d0'];
 export class Efectos {
   constructor() {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
@@ -93,6 +94,29 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'geiserAviso': {
+          this.zonas.push({ x: e.x, y: e.y, radio: e.radio + 4, t: 0, life: e.dur + 0.15 });
+          // água verde girando em volta da Sinistcha quando ela chama o gêiser
+          for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 18, y: e.l.y - 4 + Math.sin(a) * 9, vx: -Math.sin(a) * 70, vy: Math.cos(a) * 35 - 30, drag: 2, size: 2.4, life: 0.5, color: '#a8d060', forma: 'gota', rampa: MATCHA }); }
+          break;
+        }
+        case 'geiser': {
+          // coluna de água verde que sobe debaixo do alvo
+          for (let i = 0; i < 26; i++) { const a = ale() * Math.PI * 2, r = ale() * e.radio * 0.6; this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.5, vx: Math.cos(a) * 40, vy: -160 - ale() * 160, g: 420, size: 2.4 + ale() * 1.6, life: 0.6 + ale() * 0.3, color: '#a8d060', forma: 'gota', rampa: MATCHA }); }
+          this.humo(e.x, e.y - 10, 6, 'rgba(160,210,110,0.55)', 9);
+          this.anillo(e.x, e.y, 4, e.radio * 1.3, '#8bc34a', 0.35, 3); this.anillo(e.x, e.y, 2, e.radio, '#eef8d0', 0.3, 1);
+          this.temblor = Math.max(this.temblor, 4);
+          break;
+        }
+        case 'tormentaImpacto': {
+          for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2 + ale() * 0.5, r = e.radio * (0.4 + ale() * 0.6); this.relampagos.push({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.6, t: -i * 0.04, life: 0.24, semilla: Math.floor(ale() * 999) }); }
+          this.relampagos.push({ x: e.x, y: e.y, t: 0, life: 0.3, semilla: 7 });
+          this.rayos.push({ x: e.x, y: e.y - 4, radio: e.radio * 1.2, t: 0, life: 0.4, semilla: Math.floor(ale() * 999) });
+          this.flash = 0.5; this.flashColor = '#fff6a8'; this.temblor = Math.max(this.temblor, 8);
+          break;
+        }
+        case 'succion': this.anillo(e.x, e.y, e.radio, 8, '#ffffff', 0.35, 2); this.anillo(e.x, e.y, e.radio * 0.7, 6, '#cfd8e6', 0.3, 1); break;
+        case 'reflejo': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, e.l.alto * 0.8, '#bfdbfe', 0.25, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 5, 160); break;
         case 'teleport': {
           // some num brilho e reaparece com anéis, como o Teleport do jogo
           for (const [x, y, k] of [[e.x0, e.y0, 0], [e.x1, e.y1, 1]]) {
@@ -225,6 +249,7 @@ export class Efectos {
   dibujarRayos(g) {
     // raio que cai do céu (Thunder Storm): zigue-zague grosso amarelo com núcleo branco e clarão no chão
     for (const c of this.relampagos) {
+      if (c.t < 0) continue;
       const a = Math.min(1, (c.life - c.t) / 0.12);
       let sd = c.semilla + Math.floor(c.t * 40);
       const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);

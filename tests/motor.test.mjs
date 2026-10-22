@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser'];
 
 test('o roster tem os 14 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo']);
@@ -351,4 +351,30 @@ test('formas bebê sem ultimate; Eelektrik e Eelektross com ultimates diferentes
   ala.ulti = 100;
   assert.equal(ala.luta.habilidades.usar(ala, 'e'), true);
   assert.equal(ala.kit.esp.cd, 8);
+});
+
+test('Snorlax dormindo devolve os golpes; Matcha Geyser puxa o alvo; jato do Blastoise atordoa', () => {
+  const l = nuevaLuta('munchlax', 'charmander', { etapas: [1, 0] });
+  const [a, b] = l.luchadores;
+  a.energia = 100;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  const hpA = a.hp, hpB = b.hp;
+  a.recibir(b, { dano: 10, tipo: 'FIRE', dirX: 1, dirY: 0 });
+  assert.equal(a.hp >= hpA, true, 'Snorlax não leva o golpe');
+  assert.ok(b.hp < hpB, 'o golpe volta para quem atacou');
+  assert.equal(a.kit.q.cd, 30);
+  const s = nuevaLuta('poltchageist', 'munchlax', { etapas: [1, 0] });
+  const [c, d] = s.luchadores;
+  c.energia = 100; d.x = c.x + 160; d.y = c.y;
+  const d0 = d.x - c.x;
+  assert.equal(s.habilidades.usar(c, 'q'), true);
+  correr(s, 1.2, [null, null]);
+  assert.ok(d.x - c.x < d0 - 40, `o gêiser joga o alvo para perto (${Math.round(d.x - c.x)})`);
+  const w = nuevaLuta('squirtle', 'munchlax', { etapas: [2, 0] });
+  const [e, f] = w.luchadores;
+  e.energia = 100; f.x = e.x + 50; f.y = e.y;
+  w.habilidades.usar(e, 'q');
+  let atordoou = false;
+  for (let i = 0; i < 90; i++) { w.paso(1 / 60, [null, null]); w.tomarEventos(); if (f.est.aturdido) atordoou = true; }
+  assert.ok(atordoou, 'jato do Hydro Typhoon atordoa');
 });

@@ -216,6 +216,12 @@ export class Lutador {
   recibir(fuente, g) {
     if (this.ko) return 'nada';
     const luta = this.luta, t = luta.t;
+    // Rest do Snorlax: dormindo, os golpes ricocheteiam em quem atacou
+    if (this.est.dormido?.refleja && fuente && fuente !== this && !fuente.ko && !g.reflejado && g.dano > 0) {
+      fuente.recibir(this, { ...g, dano: g.dano * this.est.dormido.refleja, reflejado: true, dirX: -(g.dirX ?? 0), dirY: -(g.dirY ?? 0), aturde: undefined });
+      this.avisar('reflejo', () => { this.texto('REFLECT!', '#bfdbfe'); luta.emit({ t: 'reflejo', l: this }); }, 0.3);
+      return 'miss';
+    }
     if (g.silencioso) {
       if (this.invulnerable || this.est.vuelo) return 'miss';
       this.aplicarEfectos(fuente, g);
