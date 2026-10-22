@@ -33,7 +33,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -143,6 +143,7 @@ export class Efectos {
   }
 
   impacto(e) {
+    if (e.estilo === 'rayo') { this.relampagos.push({ x: e.x, y: e.y, t: 0, life: 0.22, semilla: Math.floor(ale() * 999) }); this.rayos.push({ x: e.x, y: e.y - 4, radio: 40, t: 0, life: 0.25, semilla: Math.floor(ale() * 999) }); this.flash = Math.max(this.flash, 0.18); this.flashColor = '#fff6a8'; this.temblor = Math.max(this.temblor, 3); }
     const c = colorTipo(e.tipo);
     this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.28 : 0.22, color: '#ffffff', brillo: mezcla(c, 0.25), forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
     this.chispas(e.x, e.y, '#ffffff', e.fuerte ? 8 : 4, e.fuerte ? 380 : 260);
@@ -181,6 +182,7 @@ export class Efectos {
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
     for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
     for (const z of this.zonas) z.t += dt; this.zonas = this.zonas.filter(z => z.t < z.life);
+    for (const c of this.relampagos) c.t += dt; this.relampagos = this.relampagos.filter(c => c.t < c.life);
     for (const c of this.rayos) c.t += dt; this.rayos = this.rayos.filter(c => c.t < c.life);
     for (const c of this.grietas) c.t += dt; this.grietas = this.grietas.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
@@ -221,6 +223,20 @@ export class Efectos {
 
   // raios elétricos que saem do centro (Thunder Wave, Discharge)
   dibujarRayos(g) {
+    // raio que cai do céu (Thunder Storm): zigue-zague grosso amarelo com núcleo branco e clarão no chão
+    for (const c of this.relampagos) {
+      const a = Math.min(1, (c.life - c.t) / 0.12);
+      let sd = c.semilla + Math.floor(c.t * 40);
+      const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
+      g.globalAlpha = a * 0.4; PX.elipsePix(g, c.x, c.y, 18, 10, '#fff6a8'); g.globalAlpha = a;
+      for (const [cor, lw] of [['rgba(255,214,60,0.45)', 9], ['#04102c', 5], ['#ffd23c', 3], ['#ffffff', 1]]) {
+        let sd2 = sd, x0 = c.x + 10, y0 = c.y - 170;
+        const r2 = () => ((sd2 = (sd2 * 9301 + 49297) % 233280) / 233280);
+        for (let k = 1; k <= 7; k++) { const x1 = k === 7 ? c.x : c.x + 10 - k * 1.4 + (r2() - 0.5) * 16, y1 = c.y - 170 + k * (170 / 7); PX.lineaPix(g, x0, y0, x1, y1, cor, lw); x0 = x1; y0 = y1; }
+      }
+      void rnd;
+    }
+    g.globalAlpha = 1;
     for (const c of this.rayos) {
       let sd = c.semilla + Math.floor(c.t * 30);
       const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
@@ -558,6 +574,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
           PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, '#04102c', 2);
           PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, col, 1, 4, Math.floor(e.t * 12));
           if (e.t >= p.t0) { g.globalAlpha = 0.35; PX.elipsePix(g, px(p.x), px(p.y), rad * k, rad * 0.6 * k, 'rgba(255,150,40,0.7)'); }
+          if (e.t >= p.t0 && e.estilo === 'rayo') { g.globalAlpha = 0.5 + 0.5 * k; PX.anilloPix(g, px(p.x), px(p.y), rad * (1.2 - 0.4 * k), rad * 0.6 * (1.2 - 0.4 * k), '#fff6a8', 1, 0); if (k > 0.6 && Math.floor(e.t * 30) % 2) PX.lineaPix(g, p.x + 3, p.y - 60, p.x, p.y - 30, '#ffe066', 1); }
           if (e.t >= p.t0 && e.estilo === 'psico') { const caida = (1 - k) * 110; g.globalAlpha = 0.5 + 0.5 * k; PX.esfera(g, px(p.x), px(p.y - caida - 8), 4 + k * 3, ['#7a1f6a', '#e055b0', '#ffc2ea', '#ffffff']); PX.lineaPix(g, p.x, p.y - caida - 14, p.x, p.y - caida - 34, '#ffc2ea', 1); }
           if (e.t >= p.t0 && e.estilo === 'roca') { const caida = (1 - k) * 90; g.globalAlpha = 1; PX.carimbar(g, PX.roca(6), p.x, p.y - caida - 6); }
           g.globalAlpha = 1;

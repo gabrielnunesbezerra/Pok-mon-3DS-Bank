@@ -34,7 +34,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Twin Zap Cannon', dano: 15, rafaga: 2, cadaRafaga: 0.18, escala: 2.6, explosion: { radio: 40 }, aturde: 0.6 },
     esp: { nombre: 'Plasma Dash', dano: 9, dist: 160, empuje: 70 },
     q: { nombre: 'Thunder Cage', dano: 9, radio: 104, ralentiza: 0.6, ralentizaDur: 2.5 },
-    e: { nombre: 'Plasma Lash', dano: 34, largo: 370, ancho: 32, anchoVisual: 46, dur: 1.15 },
+    e: { nombre: 'Plasma Storm', dano: 4.6, n: 14, area: 92, radio: 26, cada: 0.1, aturdeFinal: 0.7 },
   },
   buneary: {
     lmb: { nombre: 'Power-Up Punch', dano: 6.4, alcance: 62, combo: 4, remate: { dano: 5, empuje: 130, aturde: 0.2 } },

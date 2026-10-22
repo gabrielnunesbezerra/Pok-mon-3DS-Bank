@@ -198,7 +198,8 @@ export class Lutador {
       if (h.dano) {
         r.recibir(this, {
           dano: h.dano, tipo: h.tipo, empuje: h.empuje ?? 60, aturde: h.aturde, velocista: h.velocista,
-          dirX: c, dirY: s, slot: d.slot ?? 'esp', pesado: !!h.aturde,
+          dirX: c, dirY: s, slot: d.slot ?? 'esp', pesado: !!h.aturde || (h.empuje ?? 0) > 150,
+          ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined,
         });
         this.luta.emit({ t: 'impacto', x: (r.x + this.x) / 2, y: r.y - r.alto * 0.5, tipo: h.tipo, estilo: h.estilo });
       }
