@@ -24,7 +24,10 @@ export class ControlHumano {
     const l = this.l, ent = this.app.entrada, r = l.rival;
     const it = VACIO();
     const mira = () => { it.ax = r ? r.x : l.x + 100; it.ay = r ? r.y : l.y; };
-    if (this.esquema === 'kbm') {
+    // celular que não foi reconhecido como toque no começo da luta: assim que há toque, vale o esquema de toque
+    // (senão o dedo do analógico virava a "mira do mouse" e o golpe saía para o lado errado)
+    const esquema = this.esquema === 'kbm' && this.app.tactil?.activo ? 'tactil' : this.esquema;
+    if (esquema === 'kbm') {
       it.mx = (ent.abajo('KeyD') ? 1 : 0) - (ent.abajo('KeyA') ? 1 : 0);
       it.my = (ent.abajo('KeyS') ? 1 : 0) - (ent.abajo('KeyW') ? 1 : 0);
       it.lmb = ent.ptr.izq || ent.abajo('KeyJ');
@@ -32,12 +35,12 @@ export class ControlHumano {
       it.esp = ent.abajo('Space'); it.q = ent.abajo('KeyQ'); it.e = ent.abajo('KeyE'); it.mega = ent.abajo('KeyF') || ent.abajo('KeyR');
       if (!ent.ptr.fuera && this.camara) { const p = this.camara.aMundo(ent.ptr.x, ent.ptr.y); it.ax = p.x; it.ay = p.y; this.hayMouse = true; }
       else mira();
-    } else if (this.esquema === 'teclado2') {
+    } else if (esquema === 'teclado2') {
       it.mx = (ent.abajo('ArrowRight') ? 1 : 0) - (ent.abajo('ArrowLeft') ? 1 : 0);
       it.my = (ent.abajo('ArrowDown') ? 1 : 0) - (ent.abajo('ArrowUp') ? 1 : 0);
       it.lmb = ent.abajo('KeyK'); it.rmb = ent.abajo('KeyL'); it.esp = ent.abajo('Enter'); it.q = ent.abajo('KeyI'); it.e = ent.abajo('KeyO'); it.mega = ent.abajo('KeyP');
       mira();
-    } else if (this.esquema === 'tactil') {
+    } else if (esquema === 'tactil') {
       const s = this.app.tactil?.estado ?? VACIO();
       Object.assign(it, s);
       mira();
@@ -93,7 +96,7 @@ export class PanelTactil {
       if (e.pointerType !== 'touch' || this.editando) return;
       this.activo = true;
       const p = app.aCoord(e.clientX, e.clientY);
-      this.toques.set(e.pointerId, { ...p, stick: false });
+      this.toques.set(e.pointerId, { ...p, x0: p.x, y0: p.y, stick: false });
       this.clasificar(this.toques.get(e.pointerId));
     };
     const mueve = e => { const t = this.toques.get(e.pointerId); if (t) Object.assign(t, app.aCoord(e.clientX, e.clientY)); };
@@ -169,8 +172,10 @@ export class PanelTactil {
         const b = fijo ?? this.botonEn(t, 16);
         if (b && b.id !== 'pausa') {
           t.boton = b.id; e[b.id] = true;
-          const dx = t.x - b.x, dy = t.y - b.y, d = Math.hypot(dx, dy);
-          if (d > 12) e.apunta = { x: dx / d, y: dy / d, id: b.id };
+          // só mira à mão quem ARRASTA o dedo (16 px desde onde tocou); um toque simples, mesmo na borda do
+          // botão, mira sozinho no rival
+          const dx = t.x - b.x, dy = t.y - b.y, d = Math.hypot(dx, dy), arrasto = Math.hypot(t.x - (t.x0 ?? t.x), t.y - (t.y0 ?? t.y));
+          if (arrasto > 16 && d > 10) e.apunta = { x: dx / d, y: dy / d, id: b.id };
         }
       }
     }
