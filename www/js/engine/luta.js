@@ -8,7 +8,7 @@ import { Habilidades } from './habilidades.js';
 import { sembrar } from './util.js';
 
 export class Luta {
-  constructor({ p1, p2, p3 = null, etapas = [0, 0, 0], modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
+  constructor({ p1, p2, p3 = null, p4 = null, etapas = [0, 0, 0, 0], modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
     sembrar(semilla);
     this.modo = modo;
     this.arena = arena;
@@ -21,7 +21,7 @@ export class Luta {
     this.pausaGolpe = 0;
     this.escalaTiempo = 1;
     this.habilidades = new Habilidades(this);
-    this.luchadores = [p1, p2, p3].filter(Boolean).map((def, i) => new Lutador(this, def, i, etapas[i] ?? 0));
+    this.luchadores = [p1, p2, p3, p4].filter(Boolean).map((def, i) => new Lutador(this, def, i, etapas[i] ?? 0));
     this.victorias = this.luchadores.map(() => 0);
     this.numRonda = 1;
     this.reloj = REGLAS.tiempoRonda;
@@ -54,6 +54,7 @@ export class Luta {
     this.luchadores[0].reiniciar(OVALO.cx - sep, OVALO.cy);
     this.luchadores[1].reiniciar(OVALO.cx + sep, OVALO.cy);
     this.luchadores[2]?.reiniciar(OVALO.cx, OVALO.cy + 112);
+    this.luchadores[3]?.reiniciar(OVALO.cx, OVALO.cy - 100);
     if (this.entreno) this.luchadores[1].inmortal = true;
     this.reloj = REGLAS.tiempoRonda;
     this.escalaTiempo = 1;

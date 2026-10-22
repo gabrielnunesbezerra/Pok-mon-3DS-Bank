@@ -72,10 +72,12 @@ A chave `android/app/arena-debug.keystore` é de depuração pública (senha `an
 
 O jogo online roda igual nos dois (ou três) aparelhos: cada um manda só os comandos de cada passo e o motor, que usa a mesma semente, calcula tudo. Por isso a luta é igual para todos e o atraso fica pequeno (cerca de 100 ms de folga). Se os aparelhos divergirem, o jogo avisa na tela.
 
-**Mesma rede Wi-Fi (o jeito mais simples)**
+**Sala por código só com os celulares (até 4 jogadores)**
+ONLINE > CREATE ROOM mostra um código de 4 letras; os amigos usam JOIN ROOM e digitam o código. Não precisa de computador nem de servidor seu: o código é registrado no serviço público de sinalização do PeerJS e depois os celulares conversam direto (WebRTC), com o anfitrião no centro. Com 4 jogadores a luta começa sozinha; com 2 ou 3 o anfitrião aperta START. Se o serviço público estiver fora do ar ou a rede bloquear, use as opções abaixo.
+
+**Servidor próprio (Wi-Fi local ou internet)**
 1. No computador: `npm install` e `npm run serve`. O terminal mostra um endereço como `http://192.168.0.10:8080`.
-2. Todo mundo abre esse endereço no navegador (celular ou PC).
-3. ONLINE > CREATE ROOM. Os amigos usam JOIN ROOM com o código de 4 letras. Com 2 pessoas o anfitrião aperta START; com 3 começa sozinho.
+2. Todo mundo abre esse endereço e, em ONLINE > MORE OPTIONS > OWN SERVER, coloca `ws://ENDERECO:8080/relay`.
 
 **Pela internet sem servidor (P2P, só 2 jogadores)**
 ONLINE > NO SERVER. Quem cria envia o código que aparece (já copiado); o amigo cola, recebe um código de resposta e devolve. Funciona direto entre os celulares (WebRTC com servidores STUN públicos). Redes de operadora muito restritas podem bloquear; nesse caso use a sala por código.

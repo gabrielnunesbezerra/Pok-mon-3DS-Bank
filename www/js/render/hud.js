@@ -10,11 +10,11 @@ const RANURAS = ['lmb', 'rmb', 'esp', 'q', 'e'];
 const caso = s => s.charAt(0) + s.slice(1).toLowerCase();
 
 export class Hud {
-  constructor(bank) { this.bank = bank; this.estela = [1, 1]; }
+  constructor(bank) { this.bank = bank; this.estela = [1, 1, 1, 1]; }
 
   // arena com 3 lutadores: três colunas compactas e o relógio pendurado no meio
   dibujar3(g, luta, t) {
-    const parpadeo = Math.floor(t * 4) % 2 === 0, w = ANCHO / 3;
+    const parpadeo = Math.floor(t * 4) % 2 === 0, w = ANCHO / luta.luchadores.length;
     rect(g, 0, 0, ANCHO, HUD_ALTO, '#0a1a38');
     rect(g, 0, 0, ANCHO, 12, '#17122a');
     rect(g, 0, HUD_ALTO - 2, ANCHO, 1, '#d6a63a');
@@ -61,7 +61,7 @@ export class Hud {
   }
 
   dibujar(g, luta, t) {
-    if (luta.luchadores.length === 3) return this.dibujar3(g, luta, t);
+    if (luta.luchadores.length >= 3) return this.dibujar3(g, luta, t);
     const parpadeo = Math.floor(t * 4) % 2 === 0;
     // faixa de cima
     rect(g, 0, 0, ANCHO, HUD_ALTO, '#0a1a38');

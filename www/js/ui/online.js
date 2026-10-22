@@ -2,13 +2,14 @@
 import { ANCHO, ALTO, UI } from '../config.js';
 import { fondoMenu, texto, marco } from '../render/pixel.js';
 import { ListaBotones } from './menus.js';
-import { TransporteWS, TransporteP2P } from '../online/transporte.js';
+import { TransporteWS, TransporteP2P, TransporteNube } from '../online/transporte.js';
 import { Sesion } from '../online/sesion.js';
 import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
 
 const servidorPorDefecto = () => (/^https?:/.test(location.protocol) ? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/relay` : '');
 const copiar = txt => { try { navigator.clipboard?.writeText(txt).catch(() => {}); } catch { /* sem área de transferência */ } };
+const MAXJ = 4;
 const pedir = (msg, def = '') => { try { return window.prompt(msg, def); } catch { return null; } };
 
 export class Online {
@@ -22,8 +23,10 @@ export class Online {
   armar(que) {
     this.menu = que;
     const ops = que === 'principal' ? [
-      { id: 'crear', txt: 'CREATE ROOM' }, { id: 'unir', txt: 'JOIN ROOM' }, { id: 'p2p', txt: 'NO SERVER (P2P CODES)' },
-      { id: 'servidor', txt: this.servidor() ? 'SERVER: CHANGE' : 'SERVER: SET ADDRESS' }, { id: 'atras', txt: 'BACK', atras: true },
+      { id: 'crear', txt: 'CREATE ROOM' }, { id: 'unir', txt: 'JOIN ROOM' }, { id: 'avanzado', txt: 'MORE OPTIONS' }, { id: 'atras', txt: 'BACK', atras: true },
+    ] : que === 'avanzado' ? [
+      { id: 'p2p', txt: 'NO SERVER (P2P CODES)' },
+      { id: 'servidor', txt: this.app.ajustes.servidor ? 'OWN SERVER: CHANGE' : 'OWN SERVER: SET ADDRESS' }, { id: 'atras', txt: 'BACK', atras: true },
     ] : [
       { id: 'p2pHost', txt: 'HOST: CREATE CODE' }, { id: 'p2pUnir', txt: 'JOIN: PASTE CODE' }, { id: 'atras', txt: 'BACK', atras: true },
     ];
@@ -35,10 +38,11 @@ export class Online {
   elegir(o) {
     if (this.ocupado) return;
     if (o.id === 'atras') return this.volver();
+    if (o.id === 'avanzado') return this.armar('avanzado');
     if (o.id === 'p2p') return this.armar('p2p');
     if (o.id === 'servidor') {
-      const v = pedir('SERVER ADDRESS (example: ws://192.168.0.10:8080/relay)\nLeave empty to use this site.', this.app.ajustes.servidor || servidorPorDefecto());
-      if (v != null) { this.app.ajustes.servidor = v.trim(); this.app.guardarAjustes(); this.armar('principal'); }
+      const v = pedir('SERVER ADDRESS (example: ws://192.168.0.10:8080/relay)\nLeave empty to use the free cloud rooms.', this.app.ajustes.servidor || servidorPorDefecto());
+      if (v != null) { this.app.ajustes.servidor = v.trim(); this.app.guardarAjustes(); this.armar('avanzado'); }
       return;
     }
     if (o.id === 'crear' || o.id === 'unir') return this.sala(o.id);
@@ -49,29 +53,32 @@ export class Online {
   volver() {
     sfx('atras');
     if (this.estado === 'sala') { this.tr?.cerrar(); this.tr = null; this.estado = 'menu'; this.decir(''); return; }
-    if (this.menu === 'p2p') return this.armar('principal');
+    if (this.menu === 'p2p') return this.armar('avanzado');
+    if (this.menu === 'avanzado') return this.armar('principal');
     this.app.ir('titulo');
   }
 
   async sala(id) {
-    const url = this.servidor();
-    if (!url) return this.decir('SET THE SERVER ADDRESS FIRST', true);
+    const propio = this.app.ajustes.servidor;
     let accion = { crear: true };
     if (id === 'unir') {
       const c = pedir('ROOM CODE (4 LETTERS)');
       if (!c) return;
       accion = { unir: c.trim().toUpperCase() };
     }
+    if (accion.unir && !/^[A-Z]{4}$/.test(accion.unir)) return this.decir('THE CODE HAS 4 LETTERS', true);
     this.ocupado = true; this.decir('CONNECTING...');
     try {
-      const tr = await TransporteWS.conectar(url, accion);
-      this.tr = tr; this.codigo = tr.codigo; this.jugadores = 1; this.estado = 'sala';
+      const tr = propio
+        ? await TransporteWS.conectar(propio, accion)
+        : accion.crear ? await TransporteNube.crear() : await TransporteNube.unir(accion.unir);
+      this.tr = tr; this.codigo = tr.codigo; this.jugadores = tr.n ?? 1; this.estado = 'sala';
       this.decir(tr.rol === 'host' ? 'WAITING FOR YOUR FRIENDS' : 'WAITING FOR THE HOST TO START');
       if (tr.rol === 'host') copiar(tr.codigo);
       tr.alCerrar = () => { if (this.estado === 'sala') { this.estado = 'menu'; this.decir('THE ROOM WAS CLOSED', true); } };
-      tr.alPar = n => { this.jugadores = n; if (tr.rol === 'host' && n >= 3) this.comenzar(); };
+      tr.alPar = n => { this.jugadores = n; if (tr.rol === 'host' && n >= MAXJ) this.comenzar(); };
       tr.alMensaje = m => { if (m.t === 'ir') this.emparejar(tr, m.n); else if (m.t === 'salio') this.jugadores = m.n; };
-    } catch (e) { this.decir(e.message, true); }
+    } catch (e) { this.decir(e.message === 'ID-TAKEN' ? 'TRY AGAIN' : e.message, true); }
     this.ocupado = false;
   }
 
@@ -141,8 +148,8 @@ export class Online {
     if (this.estado === 'sala') {
       texto(g, 'ROOM CODE', ANCHO / 2, 96, { tam: 9, align: 'center', color: UI.suave });
       texto(g, this.codigo, ANCHO / 2, 150, { tam: 36, align: 'center', base: 'middle', color: '#ffd23c', borde: 6, peso: 700 });
-      texto(g, 'Friends join with this code (JOIN ROOM). Up to 3 players.', ANCHO / 2, 190, { tam: 8, align: 'center', color: '#fff' });
-      texto(g, `PLAYERS ${this.jugadores}/3`, ANCHO / 2, 208, { tam: 9, align: 'center', color: '#ffd23c', borde: 2 });
+      texto(g, 'Friends join with this code (JOIN ROOM). Up to 4 players.', ANCHO / 2, 190, { tam: 8, align: 'center', color: '#fff' });
+      texto(g, `PLAYERS ${this.jugadores}/4`, ANCHO / 2, 208, { tam: 9, align: 'center', color: '#ffd23c', borde: 2 });
       texto(g, this.msg + '.'.repeat(1 + Math.floor(this.t * 2) % 3), ANCHO / 2, 226, { tam: 8, align: 'center', color: '#7dd3fc' });
       if (this.tr?.rol === 'host') {
         const ok = this.jugadores >= 2;
@@ -155,7 +162,7 @@ export class Online {
     }
     this.lista.dibujar(g, this.t);
     if (this.msg) texto(g, this.msg, ANCHO / 2, 296, { tam: 8, align: 'center', color: this.error ? '#ff7a7a' : '#7dd3fc', borde: 2 });
-    texto(g, this.menu === 'principal' ? 'Play with a friend: same Wi-Fi, or anywhere with P2P codes.' : 'No server needed. Works best when both are on normal Wi-Fi or 4G.', ANCHO / 2, 318, { tam: 7, align: 'center', color: UI.apagado });
+    texto(g, this.menu === 'principal' ? 'Create a room, friends join with the 4-letter code. Up to 4 players.' : 'No account needed. Only the phones are used.', ANCHO / 2, 318, { tam: 7, align: 'center', color: UI.apagado });
   }
 }
 

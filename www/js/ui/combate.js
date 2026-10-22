@@ -2,7 +2,7 @@
 // e cuida de pausa e tela de resultado.
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, UI, FUENTE } from '../config.js';
 
-const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80'];
+const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80', '#fbbf24'];
 import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
@@ -45,7 +45,7 @@ export class Combate {
 
   entrar() {
     const app = this.app, d = this.datos, bank = app.bank;
-    const defs = [defDe(d.p1), defDe(d.p2), d.p3 ? defDe(d.p3) : null].filter(Boolean);
+    const defs = [defDe(d.p1), defDe(d.p2), d.p3 ? defDe(d.p3) : null, d.p4 ? defDe(d.p4) : null].filter(Boolean);
     for (const def of defs) for (const dex of formasDe(def)) {
       for (const n of ANIMS_BASE) bank.hoja(dex, bank.resolver(dex, n));
       bank.retrato(dex);
@@ -66,7 +66,7 @@ export class Combate {
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
     const online = d.modo === 'online';
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, etapas: d.etapas ?? [0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, etapas: d.etapas ?? [0, 0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
@@ -536,7 +536,7 @@ export class Combate {
     texto(g, `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
     const n = luta.luchadores.length;
     luta.luchadores.forEach((x, i) => {
-      const cx = n === 3 ? ANCHO / 2 + (i - 1) * 170 : ANCHO / 2 + (i ? 120 : -120);
+      const cx = n >= 3 ? ANCHO / 2 + (i - (n - 1) / 2) * (n === 4 ? 140 : 170) : ANCHO / 2 + (i ? 120 : -120);
       texto(g, x.nombre, cx, 134, { tam: 8, color: COLOR_EQUIPO[i], align: 'center' });
       texto(g, `DAMAGE ${Math.round(x.stats.dano)}`, cx, 150, { tam: 8, align: 'center' });
       texto(g, `HITS ${x.stats.golpes}`, cx, 164, { tam: 8, align: 'center' });

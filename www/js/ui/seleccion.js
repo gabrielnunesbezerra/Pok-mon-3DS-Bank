@@ -60,7 +60,7 @@ export class Seleccion {
     this.empezarOnline(msg);
   }
   empezarOnline(m) {
-    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, arena: m.arena, semilla: m.semilla });
+    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, p4: m.picks[3] ?? null, arena: m.arena, semilla: m.semilla });
   }
   luchar() {
     const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
@@ -145,7 +145,7 @@ export class Seleccion {
     this.panel(g, der, 458, t, 1);
     // grade
     ROSTER.forEach((p, i) => {
-      const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno', sel2 = this.n === 3 && this.elegido[2] === i;
+      const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno', sel2 = this.n >= 3 && this.elegido[2] === i, sel3 = this.n === 4 && this.elegido[3] === i;
       const foco = this.cursor === i && this.foco === 'grade';
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
@@ -154,6 +154,7 @@ export class Seleccion {
       p.tipos.forEach((tp, k) => { rect(g, c.x + 44 + k * 14, c.y + 22, 12, 7, '#04102c'); rect(g, c.x + 45 + k * 14, c.y + 23, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
+      if (sel3) { rect(g, c.x + c.w - 14, c.y + c.h - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y + c.h - 4, 14, 8, '#fbbf24'); texto(g, 'P4', c.x + c.w - 6, c.y + c.h, { tam: 5, align: 'center', base: 'middle', color: '#04102c' }); }
       if (sel2) { rect(g, c.x - 2, c.y + c.h - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y + c.h - 4, 20, 8, '#4ade80'); texto(g, this.modo === 'arena' ? 'CPU2' : 'P3', c.x + 9, c.y + c.h, { tam: 5, align: 'center', base: 'middle' }); }
     });
     // opções
@@ -178,7 +179,7 @@ export class Seleccion {
     const idx = lado >= 1 && this.aleatorio[lado] && (this.modo === 'cpu' || this.modo === 'arena') ? -1 : this.elegido[lado];
     const activo = this.lado === lado && this.modo !== 'entreno' && !this.online;
     marco(g, x0, 30, 178, 270, 'panel');
-    const color = ['#1f4f9a', '#9a2a2a', '#2f7d46'][lado] ?? '#9a2a2a';
+    const color = ['#1f4f9a', '#9a2a2a', '#2f7d46', '#9a7a1a'][lado] ?? '#9a2a2a';
     const nombre = this.online ? (lado === this.mi ? 'YOU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2';
     rect(g, x0 + 2, 31, 174, 14, color);
     texto(g, nombre, x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });

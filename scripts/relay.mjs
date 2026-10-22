@@ -20,7 +20,7 @@ export function anexarRelay(server, ruta = '/relay') {
   const salas = new Map();
   const codigo = () => { for (;;) { const c = Array.from({ length: 4 }, () => LETRAS[Math.floor(Math.random() * LETRAS.length)]).join(''); if (!salas.has(c)) return c; } };
 
-  const MAX = 3;
+  const MAX = 4;
   function salir(c) {
     if (c.cerrado) return;
     c.cerrado = true;
