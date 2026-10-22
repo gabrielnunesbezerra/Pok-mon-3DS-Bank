@@ -263,6 +263,7 @@ export class Combate {
     g.drawImage(this.fondo, 0, 0);
     // chão: avisos, poças, fumaça
     dibujarEntidades(g, luta, fx, this.t, null);
+    fx.dibujarSuelo(g);
     // lutadores, clones e projéteis ordenados pela profundidade
     const cosas = [];
     for (const l of luta.luchadores) cosas.push({ y: l.y, f: () => this.dibujarLutador(g, l) });

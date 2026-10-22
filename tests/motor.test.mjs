@@ -270,3 +270,18 @@ test('voando (Fly) ou debaixo da terra (Dig) nenhuma skill sai, só emergir', ()
     for (const s of ['lmb', 'rmb', 'q', 'e']) assert.equal(l.habilidades.usar(a, s), false, `${id} ${s} voando`);
   }
 });
+
+test('Frenzy Plant: atordoa e dá dano perto, no meio e na borda da área (não só na ponta)', () => {
+  for (const [dx, dy] of [[30, 0], [70, 0], [100, 0], [0, 50], [-60, 30]]) {
+    const l = nuevaLuta('bulbasaur', 'munchlax', { etapas: [2, 0] });
+    const [a, b] = l.luchadores;
+    b.x = a.x + dx; b.y = a.y + dy; b.vx = 0; b.vy = 0;
+    const hp0 = b.hp;
+    a.ulti = 100;
+    assert.equal(l.habilidades.usar(a, 'e'), true);
+    let atordoou = false;
+    for (let i = 0; i < 60; i++) { l.paso(1 / 60, [null, null]); l.tomarEventos(); if (b.est.aturdido) atordoou = true; }
+    assert.ok(b.hp < hp0, `dano em (${dx},${dy})`);
+    assert.ok(atordoou, `atordoa em (${dx},${dy})`);
+  }
+});

@@ -33,7 +33,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -89,7 +89,8 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
-        case 'raices': { const n = Math.max(6, Math.round((Math.PI * 2 * e.dist) / 17)); const gira = ale() * 6; for (let i = 0; i < n; i++) { const a = gira + (i / n) * Math.PI * 2 + (ale() - 0.5) * 0.15, d = e.dist + (ale() - 0.5) * 10; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: e.dist < 50 ? 34 + Math.round(ale() * 14) : e.dist < 90 ? 24 + Math.round(ale() * 10) : 15 + Math.round(ale() * 8), semilla: i, vid: e.dist < 90 || i % 2 === 0, t: -ale() * 0.05, life: 0.7 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.temblor = Math.max(this.temblor, 3); break; }
+        case 'zonaRaiz': this.zonas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: e.dur + 0.35 }); break;
+        case 'raices': { const n = Math.max(6, Math.round((Math.PI * 2 * e.dist) / 17)); const gira = ale() * 6; for (let i = 0; i < n; i++) { const a = gira + (i / n) * Math.PI * 2 + (ale() - 0.5) * 0.15, d = e.dist + (ale() - 0.5) * 10; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: e.dist < 50 ? 34 + Math.round(ale() * 14) : e.dist < 90 ? 24 + Math.round(ale() * 10) : 15 + Math.round(ale() * 8), semilla: i, vid: e.dist < 90 || i % 2 === 0, t: -ale() * 0.05, life: 0.7 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.polvo(e.x, e.y, 6 + (e.onda ?? 0) * 3, 6); this.temblor = Math.max(this.temblor, 3 + (e.onda ?? 0) * 2); break; }
         case 'humo': this.humo(e.x, e.y, 14, 'rgba(120,120,135,0.55)', e.radio * 0.5); break;
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
         case 'desaparece': this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
@@ -153,8 +154,22 @@ export class Efectos {
     for (const b of this.banners) b.t += dt; this.banners = this.banners.filter(b => b.t < b.life);
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
     for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
+    for (const z of this.zonas) z.t += dt; this.zonas = this.zonas.filter(z => z.t < z.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
+  }
+
+  // marcas no chão (área da Frenzy Plant): aparecem antes das raízes, para dar para fugir
+  dibujarSuelo(g) {
+    for (const z of this.zonas) {
+      const a = Math.min(1, z.t / 0.12) * Math.min(1, (z.life - z.t) / 0.3), pul = 0.5 + 0.5 * Math.sin(z.t * 18);
+      g.globalAlpha = a * 0.22; g.fillStyle = '#3f8f2a';
+      g.beginPath(); g.ellipse(R(z.x), R(z.y), z.radio, z.radio * 0.62, 0, 0, 7); g.fill();
+      g.globalAlpha = a * (0.6 + 0.3 * pul);
+      PX.anilloPix(g, z.x, z.y, z.radio, z.radio * 0.62, '#04102c', 3, 0);
+      PX.anilloPix(g, z.x, z.y, z.radio, z.radio * 0.62, '#84cc16', 2, 9, Math.floor(z.t * 20));
+    }
+    g.globalAlpha = 1;
   }
 
   dibujar(g) {

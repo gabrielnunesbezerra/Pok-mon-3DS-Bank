@@ -458,17 +458,22 @@ export class Habilidades {
     l.animar(h.anim ?? 'Charge', 0.9);
     l.accion = { hasta: luta.t + (h.carga ?? 0.3) + h.ondas.length * h.cada, lento: 0.2, angulo: ang };
     if (h.escudo) { l.escudo = h.escudo; l.ponerEstado('escudo', h.escudoDur ?? 4); }
+    // como no site: a área é uma elipse (perspectiva do chão); a 1ª onda pega tudo que está dentro e as
+    // outras pegam quem estiver na faixa da onda. Cada alvo leva o golpe inteiro (dano e atordoamento) uma vez só.
+    const x0 = l.x, y0 = l.y, atingidos = new Set();
+    luta.emit({ t: 'zonaRaiz', x: x0, y: y0, radio: h.ondas.at(-1) + h.banda / 2, dur: (h.carga ?? 0.3) + h.ondas.length * h.cada });
     h.ondas.forEach((dd, i) => {
       luta.programar((h.carga ?? 0.3) + i * h.cada, () => {
         if (l.ko) return;
-        const ultimo = i === h.ondas.length - 1;
-        luta.emit({ t: 'raices', x: l.x, y: l.y, ang, dist: dd, banda: h.banda });
+        luta.emit({ t: 'raices', x: x0, y: y0, ang, dist: dd, banda: h.banda, onda: i });
         for (const b of luta.blancos(l)) {
-          const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy);
-          // as raízes saem em volta do lutador, em todas as direções
-          if (Math.abs(d - dd) < h.banda / 2 + RADIO) {
-            atingir(l, b, pacote(h, extra, ang, { dano: h.dano / h.ondas.length, aturde: ultimo ? h.aturde : undefined, empuje: undefined, tick: !ultimo }));
-          }
+          if (atingidos.has(b) || b.est?.vuelo) continue;
+          const dx = b.x - x0, dy = b.y - y0, d = Math.hypot(dx, dy / 0.62);
+          const dentro = i === 0 ? d < dd + h.banda / 2 + RADIO : Math.abs(d - dd) < h.banda / 2 + RADIO;
+          if (!dentro) continue;
+          atingidos.add(b);
+          const dl = Math.hypot(dx, dy) || 1;
+          atingir(l, b, pacote(h, extra, Math.atan2(dy / dl, dx / dl), { aturde: h.aturde, empuje: 12, pesado: true }));
         }
       });
     });
