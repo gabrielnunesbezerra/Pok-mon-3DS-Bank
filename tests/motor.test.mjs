@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco'];
 
-test('o roster tem os 11 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie']);
+test('o roster tem os 12 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -315,4 +315,23 @@ test('Seedot: Grass Knot prende quem pisa; Shiftry: Leaf Tornado dá dano', () =
   assert.equal(s.habilidades.usar(c, 'e'), true);
   correr(s, 2.5, [null, null]);
   assert.ok(d.hp < hp1, 'o redemoinho alcança o alvo');
+});
+
+test('Alakazam: Teleport reaparece na hora; Psychic Lasso prende, puxa e arremessa longe', () => {
+  const l = nuevaLuta('abra', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  const x0 = a.x;
+  a.ax = a.x - 200; a.ay = a.y;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(x0 - a.x > 100, 'teleportou na hora');
+  correr(l, 0.5, [null, null]);
+  b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.ulti = 100;
+  const hp0 = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 0.45, [null, null]);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 70, 'puxou para perto');
+  a.ax = a.x + 300; a.ay = a.y;
+  correr(l, 1.2, [null, null]);
+  assert.ok(b.hp < hp0, 'deu dano');
+  assert.ok(b.x - a.x > 120, `arremessou longe (${Math.round(b.x - a.x)})`);
 });

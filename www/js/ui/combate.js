@@ -9,7 +9,7 @@ import { Luta } from '../engine/luta.js';
 import { IA, Muneco } from '../engine/ia.js';
 import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
-import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, colorTipo } from '../render/efectos.js';
+import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
@@ -273,6 +273,7 @@ export class Combate {
       if (e.tipo === 'clon') cosas.push({ y: e.y, f: () => this.dibujarClon(g, e) });
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => dibujarProyectil(g, e, this.t) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => dibujarBomba(g, e) });
+      else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
       else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => dibujarTorbellino(g, e, this.t, fx) });
     }
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());

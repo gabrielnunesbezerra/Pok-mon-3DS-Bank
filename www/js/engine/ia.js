@@ -100,6 +100,7 @@ export class IA {
       case 'potenciar': return (!l.est.potencia || l.est.potencia.n < (h.acumula ?? 1)) && d > 60;
       case 'escudo': return d < 120;
       case 'chapoteo': return true;
+      case 'laco': return d < h.alcance;
       case 'explosion': return d < h.radio;
       case 'trampa': return d < h.alcance + 20;
       case 'torbellino': return d < h.alcance;

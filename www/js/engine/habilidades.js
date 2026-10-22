@@ -23,7 +23,7 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
@@ -205,6 +205,7 @@ export class Habilidades {
       if (d > 1) ang = Math.atan2(dy, dx);
       h = { ...h, dist: Math.max(h.distMin ?? 24, Math.min(h.dist, d)) };
     }
+    if (h.teleport) return this.teletransporte(l, h, extra, ang);
     l.empezarDash(h, ang);
     l.dash.slot = extra?.slot;
     l.accion = null;
@@ -212,6 +213,78 @@ export class Habilidades {
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
     luta.emit({ t: 'sonido', n: 'dash' });
+  }
+
+  // ---------------------------------------------------------------- Teleport: some e reaparece na hora, sem atravessar o caminho
+  teletransporte(l, h, extra, ang) {
+    const luta = this.luta, x0 = l.x, y0 = l.y;
+    const p = fijarCampo(l.x + Math.cos(ang) * h.dist, l.y + Math.sin(ang) * h.dist);
+    l.x = p.x; l.y = p.y; l.vx = 0; l.vy = 0; l.empX = 0; l.empY = 0;
+    l.angulo = ang;
+    l.ponerEstado('invul', 0.25);
+    l.accion = { hasta: luta.t + (h.dur ?? 0.12), bloquea: true, lento: 0 };
+    luta.emit({ t: 'teleport', l, x0, y0, x1: p.x, y1: p.y });
+    luta.emit({ t: 'sonido', n: 'dash' });
+    // a Mega solta uma onda psíquica onde reaparece
+    if (h.dano) areaCirculo(luta, l, p.x, p.y, h.radio ?? 36, pacote(h, extra, ang, { dirX: undefined, dirY: undefined, empuje: 60 }));
+  }
+
+  // ---------------------------------------------------------------- Psychic Lasso: um laço psíquico que, se prende, puxa e arremessa longe
+  laco(l, h, extra) {
+    const luta = this.luta;
+    const ang = asistir(l, angApunte(l), h.alcance + 20, 0.6);
+    l.animar(h.anim ?? 'Charge', 0.8);
+    l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0, angulo: ang };
+    const la = {
+      tipo: 'laco', dueno: l, vivo: true, x: l.x, y: l.y, ang, t: 0, d: 0, fase: 'va', preso: null, tipoAtq: h.tipo, radio: h.radio,
+      update: dt => {
+        la.t += dt;
+        if (l.ko) return false;
+        if (la.fase === 'va' || la.fase === 'vuelve') {
+          la.d += (la.fase === 'va' ? h.vel : -h.vel * 1.6) * dt;
+          if (la.fase === 'vuelve' && la.d <= 0) return false;
+          if (la.d >= h.alcance) la.fase = 'vuelve';
+          la.x = l.x + Math.cos(ang) * la.d; la.y = l.y + Math.sin(ang) * la.d;
+          if (la.fase === 'va') for (const b of luta.blancos(l)) {
+            if (b.oculto || b.est?.vuelo) continue;
+            if (Math.hypot(b.x - la.x, b.y - la.y) >= la.radio + RADIO) continue;
+            if (b.esClon) { atingir(l, b, {}); continue; }
+            la.preso = b; la.fase = 'tira'; la.t2 = 0;
+            atingir(l, b, pacote(h, extra, ang, { dano: h.dano * 0.3, aturde: (h.agarre ?? 0.4) + 0.3, empuje: 0 }));
+            luta.emit({ t: 'lacoAgarra', x: b.x, y: b.y });
+            l.accion = { hasta: luta.t + (h.agarre ?? 0.4) + 0.1, bloquea: true, lento: 0, angulo: ang };
+            break;
+          }
+          return true;
+        }
+        if (la.fase === 'tira') {
+          const b = la.preso;
+          la.t2 += dt;
+          if (b.ko) return false;
+          // puxa o alvo para perto e o faz flutuar
+          const tx = l.x + Math.cos(ang) * 34, ty = l.y + Math.sin(ang) * 22;
+          const p = fijarCampo(b.x + (tx - b.x) * Math.min(1, dt * 7), b.y + (ty - b.y) * Math.min(1, dt * 7));
+          b.x = p.x; b.y = p.y; b.vx = 0; b.vy = 0; b.empX = 0; b.empY = 0;
+          b.salto = Math.round(Math.min(1, la.t2 / 0.2) * 14);
+          la.x = b.x; la.y = b.y;
+          if (la.t2 >= (h.agarre ?? 0.4)) {
+            // arremessa para onde o jogador está mirando
+            const a2 = angApunte(l);
+            b.salto = 0;
+            atingir(l, b, pacote(h, extra, a2, { dano: h.dano * 0.7, empuje: h.lanza ?? 220, aturde: h.aturde, pesado: true }));
+            luta.emit({ t: 'lacoLanza', x: b.x, y: b.y, ang: a2 });
+            luta.emit({ t: 'temblor', f: 0.012 });
+            luta.hitstop(90);
+            la.fase = 'suelta'; la.t3 = 0;
+          }
+          return true;
+        }
+        la.t3 += dt;
+        return la.t3 < 0.2;
+      },
+    };
+    luta.add(la);
+    luta.emit({ t: 'sonido', n: 'disparo' });
   }
 
   // ---------------------------------------------------------------- raio

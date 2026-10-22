@@ -92,6 +92,17 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'teleport': {
+          // some num brilho e reaparece com anéis, como o Teleport do jogo
+          for (const [x, y, k] of [[e.x0, e.y0, 0], [e.x1, e.y1, 1]]) {
+            this.anillo(x, y - 12, k ? 18 : 2, k ? 2 : 20, '#ff9ad8', 0.3, 2);
+            this.anillo(x, y - 12, k ? 10 : 2, k ? 1 : 12, '#ffffff', 0.25, 1);
+            for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; this.add({ x: x + Math.cos(a) * (k ? 16 : 4), y: y - 12 + Math.sin(a) * (k ? 10 : 3), vx: Math.cos(a) * (k ? -50 : 70), vy: Math.sin(a) * (k ? -30 : 40), size: 2, life: 0.3, color: i % 2 ? '#ffffff' : '#ff9ad8', forma: 'chispa' }); }
+          }
+          break;
+        }
+        case 'lacoAgarra': this.anillo(e.x, e.y - 10, 4, 22, '#ff9ad8', 0.3, 2); this.chispas(e.x, e.y - 10, '#ffd6f2', 8, 180); break;
+        case 'lacoLanza': this.anillo(e.x, e.y - 10, 6, 34, '#e055b0', 0.35, 3); this.anillo(e.x, e.y - 10, 2, 22, '#ffffff', 0.25, 1); this.chispas(e.x, e.y - 10, '#ffffff', 10, 260); this.flash = 0.25; this.flashColor = '#ffd6f2'; break;
         case 'chapoteo': this.rafaga(e.x, e.y - 2, 'WATER', 7, 110); this.add({ x: e.x, y: e.y - 2, size: 12, life: 0.3, forma: 'salpicadura' }); break;
         case 'potenciar': { const c = colorTipo(e.tipo); for (let i = 0; i < 3; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6 + i * 5, 26 + i * 8, i % 2 ? '#ffffff' : c, 0.35 + i * 0.08, 2); for (let i = 0; i < 14; i++) { const a = (i / 14) * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 12, y: e.l.y - 4 + Math.sin(a) * 6, vx: Math.cos(a) * 30, vy: -60 - ale() * 50, drag: 2, size: 2.6, life: 0.55, color: c, forma: 'llama', rampa: ['#2a1060', '#6d3fd8', '#a78bfa', '#ede9fe'] }); } this.temblor = Math.max(this.temblor, 2); break; }
         case 'endurecer': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, e.l.alto * 0.9, e.l.alto * 0.55, '#d6dbe4', 0.3, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 5, 120); break;
@@ -382,6 +393,20 @@ const ESTILOS_PROJ = {
   cuchilla(g, p, t) { PX.carimbar(g, PX.anilloAire(7), p.x, p.y - p.alt, p.ang); for (let i = 1; i <= 3; i++) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.7 - i * 0.18; g.fillRect(px(p.x - Math.cos(p.ang) * i * 6 + Math.sin(p.ang) * Math.sin(t * 30 + i) * 3), px(p.y - p.alt - Math.sin(p.ang) * i * 5), 2, 2); } g.globalAlpha = 1; },
   roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
   vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  // Confusion: bolinha rosa com anel que pulsa
+  psico(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt), r = 3.2 * p.escala;
+    g.globalAlpha = 0.35; PX.disco(g, x, y, r + 3, '#f7a8d8'); g.globalAlpha = 1;
+    PX.esfera(g, x, y, r, ['#7a1f6a', '#e055b0', '#ffc2ea', '#ffffff']);
+    PX.anilloPix(g, x, y, r + 2 + Math.sin(t * 25) * 1, r + 2 + Math.sin(t * 25) * 1, '#ffd6f2', 1, 4, Math.floor(t * 24));
+  },
+  // Psybeam: anéis coloridos em sequência, como uma onda
+  psiOnda(g, p, t) {
+    const ca = Math.cos(p.ang), sa = Math.sin(p.ang), cores = ['#ff7ad0', '#ffd23c', '#7ad8ff'];
+    for (let i = 0; i < 3; i++) { const d = i * 6, x = p.x - ca * d, y = p.y - p.alt - sa * d, r = (4 - i * 0.8) * p.escala; PX.anilloPix(g, x, y, r * 0.55, r, '#04102c', 3, 0); PX.anilloPix(g, x, y, r * 0.55, r, cores[(i + Math.floor(t * 12)) % 3], 2, 0); }
+  },
+  // Psycho Cut: lâmina rosa em meia-lua
+  psicorte(g, p) { PX.carimbar(g, PX.mediaLuna(Math.round(7 * p.escala * 0.8), ['#5a1050', '#d13c9c', '#ff9ad8', '#ffffff']), p.x, p.y - p.alt, p.ang); },
   aurasphere(g, p, t) {
     const x = px(p.x), y = px(p.y - p.alt), r = 5 * p.escala * (1 + 0.08 * Math.sin(t * 20));
     g.globalAlpha = 0.35; PX.disco(g, x, y, r + 5, '#6fd0ff'); g.globalAlpha = 1;
@@ -402,6 +427,25 @@ function llamaProj(g, p, t, tam) {
   const q = tamSprite(tam / 2.6);
   PX.carimbar(g, PX.llama(Math.floor(t * 14 + p.x * 0.1), q, rampa), x - Math.cos(p.ang) * q * 0.45, y - Math.sin(p.ang) * q * 0.45, p.ang - Math.PI / 2);
   PX.disco(g, px(x), px(y), Math.max(1, q * 0.18), rampa[3]);
+}
+
+// Psychic Lasso: corda de energia rosa que ondula da mão até o laço; quando prende, o laço aperta em volta do alvo
+export function dibujarLaco(g, e, t) {
+  const l = e.dueno, x0 = l.x + Math.cos(e.ang) * 10, y0 = l.y - l.alto * 0.55, x1 = e.x, y1 = e.y - (e.preso ? e.preso.alto * 0.5 + (e.preso.salto ?? 0) : 12);
+  if (e.fase === 'suelta') return;
+  const n = 18, dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+  const amp = e.fase === 'tira' ? 2 : 5;
+  let px0 = x0, py0 = y0;
+  for (let i = 1; i <= n; i++) {
+    const f = i / n, o = Math.sin(f * 10 - t * 30) * amp * Math.sin(f * Math.PI);
+    const x = x0 + dx * f + nx * o, y = y0 + dy * f + ny * o;
+    g.globalAlpha = 0.4; PX.lineaPix(g, px0, py0, x, y, '#ff9ad8', 5); g.globalAlpha = 1;
+    PX.lineaPix(g, px0, py0, x, y, '#e055b0', 3); PX.lineaPix(g, px0, py0, x, y, '#ffe0f4', 1);
+    px0 = x; py0 = y;
+  }
+  const r = e.fase === 'tira' ? 12 + Math.sin(t * 30) : 7;
+  PX.anilloPix(g, x1, y1, r, r * 0.6, '#04102c', 4, 0); PX.anilloPix(g, x1, y1, r, r * 0.6, '#e055b0', 2, 0); PX.anilloPix(g, x1, y1, r - 2, r * 0.6 - 1, '#ffe0f4', 1, 5, Math.floor(t * 20));
+  if (e.fase === 'tira') for (let i = 0; i < 4; i++) { const a = t * 8 + i * 1.57; PX.carimbar(g, PX.chispa(2, '#ffffff'), x1 + Math.cos(a) * (r + 3), y1 + Math.sin(a) * (r + 3) * 0.6, 0, 1, 1); }
 }
 
 // Leaf Tornado: um funil de vento verde com folhas girando em volta
@@ -481,6 +525,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
           PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, '#04102c', 2);
           PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, col, 1, 4, Math.floor(e.t * 12));
           if (e.t >= p.t0) { g.globalAlpha = 0.35; PX.elipsePix(g, px(p.x), px(p.y), rad * k, rad * 0.6 * k, 'rgba(255,150,40,0.7)'); }
+          if (e.t >= p.t0 && e.estilo === 'psico') { const caida = (1 - k) * 110; g.globalAlpha = 0.5 + 0.5 * k; PX.esfera(g, px(p.x), px(p.y - caida - 8), 4 + k * 3, ['#7a1f6a', '#e055b0', '#ffc2ea', '#ffffff']); PX.lineaPix(g, p.x, p.y - caida - 14, p.x, p.y - caida - 34, '#ffc2ea', 1); }
           if (e.t >= p.t0 && e.estilo === 'roca') { const caida = (1 - k) * 90; g.globalAlpha = 1; PX.carimbar(g, PX.roca(6), p.x, p.y - caida - 6); }
           g.globalAlpha = 1;
         }

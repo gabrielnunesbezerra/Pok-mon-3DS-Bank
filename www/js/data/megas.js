@@ -22,6 +22,13 @@ export const MEGA_KITS = {
     q: { nombre: 'Flurry Combat', dano: 22, golpes: 9, dur: 1, alcance: 60 },
     e: { nombre: 'Aura Cataclysm', dano: 33, largo: 345, ancho: 36, anchoVisual: 54, dur: 1.05 },
   },
+  abra: {
+    lmb: { nombre: 'Psystrike Bolts', dano: 3.2, rafaga: 4, cadaRafaga: 0.06, abanico: 0.07, escala: 1.6, teledirigido: 1.2 },
+    rmb: { nombre: 'Psycho Boost', dano: 16, escala: 2, radio: 8, explosion: { radio: 34 }, confunde: 0.8 },
+    esp: { nombre: 'Mega Teleport', dist: 165, cd: 4, dano: 6, radio: 40 },
+    q: { nombre: 'Future Sight x3', n: 3, area: 46, cada: 0.22, dano: 11 },
+    e: { nombre: 'Psychic Hurl', dano: 34, vel: 480, alcance: 290, radio: 15, agarre: 0.5, lanza: 340, aturde: 0.9 },
+  },
   buneary: {
     lmb: { nombre: 'Power-Up Punch', dano: 6.4, alcance: 62, combo: 4, remate: { dano: 5, empuje: 130, aturde: 0.2 } },
     rmb: { nombre: 'Mega High Jump Kick', dano: 23, alcance: 165, radio: 36, choque: 13 },

@@ -643,5 +643,90 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0063",
+  "sprite": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "JFain",
+   "cosmosully"
+  ]
+ },
+ {
+  "dex": "0063s",
+  "sprite": [
+   "Tacocoa",
+   "3Monika4",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "Noo",
+   "cosmosully"
+  ]
+ },
+ {
+  "dex": "0064",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "0palite",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0064s",
+  "sprite": [
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0065",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0065-0001",
+  "sprite": [
+   "Michael12",
+   "baronessfaron"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0065-0001s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0065s",
+  "sprite": [
+   "Morei",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Audino",
+   "Morei"
+  ]
  }
 ]

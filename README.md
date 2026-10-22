@@ -18,6 +18,7 @@ Batalha 1 contra 1 de Pokémon em tempo real numa arena oval. Projeto de fã, se
 
 ## Novidades da versão 2.3
 
+- **Abra > Kadabra > Alakazam > Mega Alakazam**: Confusion, Psybeam, Psycho Cut, Teleport (some e reaparece na hora), Reflect, Future Sight e a ultimate Psychic Lasso, que prende o rival, puxa e arremessa para onde você mira.
 - **Magikarp** (Gyarados) e **Seedot** (Nuzleaf, Shiftry), com os golpes do site: Splash, Dragon Dance, Hyper Beam com recarga, Grass Knot, Harden, Explosion e Leaf Tornado.
 - **Shiny secreto**: na tela de escolha, toque 20 vezes seguidas no mesmo Pokémon. Os sprites shiny são do PMD SpriteCollab.
 - **AIM GUIDE** em SETTINGS e na pausa: liga ou desliga a marcação do alvo e a linha de mira.
