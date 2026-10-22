@@ -33,7 +33,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -89,7 +89,7 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
-        case 'raices': for (let i = -3; i <= 3; i++) { const a = e.ang + i * 0.2; this.add({ x: e.x + Math.cos(a) * e.dist, y: e.y + Math.sin(a) * e.dist * 0.8, vy: -50, g: 100, size: 3, life: 0.5, color: i % 2 ? '#4caf38' : '#2e7d32', forma: 'hoja' }); } break;
+        case 'raices': { const n = Math.max(6, Math.round((Math.PI * 2 * e.dist) / 17)); const gira = ale() * 6; for (let i = 0; i < n; i++) { const a = gira + (i / n) * Math.PI * 2 + (ale() - 0.5) * 0.15, d = e.dist + (ale() - 0.5) * 10; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: e.dist < 50 ? 34 + Math.round(ale() * 14) : e.dist < 90 ? 24 + Math.round(ale() * 10) : 15 + Math.round(ale() * 8), semilla: i, vid: e.dist < 90 || i % 2 === 0, t: -ale() * 0.05, life: 0.7 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.temblor = Math.max(this.temblor, 3); break; }
         case 'humo': this.humo(e.x, e.y, 14, 'rgba(120,120,135,0.55)', e.radio * 0.5); break;
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
         case 'desaparece': this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
@@ -152,6 +152,7 @@ export class Efectos {
     for (const a of this.anuncios) a.t += dt; this.anuncios = this.anuncios.filter(a => a.t < a.dur);
     for (const b of this.banners) b.t += dt; this.banners = this.banners.filter(b => b.t < b.life);
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
+    for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
   }
@@ -199,6 +200,12 @@ export class Efectos {
       PX.anilloPix(g, a.x, a.y, r, r * 0.8, a.color, a.w, r > 24 ? 7 : 0, Math.floor(a.t * 30));
     }
     g.globalAlpha = 1;
+    for (const sp of [...this.espinas].sort((a, b) => a.y - b.y)) {
+      if (sp.t < 0) continue;
+      const k = sp.t / sp.life, sube = Math.min(1, sp.t / 0.1), baja = Math.min(1, (sp.life - sp.t) / 0.16), h = Math.max(3, Math.round(sp.alto * Math.min(sube, baja)));
+      PX.carimbar(g, sp.vid ? PX.vid(h, sp.semilla) : PX.espina(h), sp.x, sp.y - h / 2 + 2, 0, 1, 1);
+      void k;
+    }
     for (const p of this.parts) {
       const a = 1 - p.t / p.life;
       g.globalAlpha = Math.max(0, a);
@@ -241,7 +248,7 @@ export class Efectos {
         PX.arcoPix(g, a.x, a.y, rad, a0 + 0.05, a1 - 0.05, '#cfe4ff', 3, rad * 0.8);
         PX.arcoPix(g, a.x, a.y, rad, a0 + 0.15, a1 - 0.15, '#ffffff', 1, rad * 0.8);
       }
-    } else if (a.tipo === 'BUG') {
+    } else if (a.tipo === 'BUG' || a.tipo === 'DARK') {
       PX.carimbar(g, PX.mordida(k, Math.max(8, Math.round(rr * 0.45))), fx, fy, a.ang);
     } else if (a.tipo === 'STEEL') {
       // barra metálica que cruza em diagonal
@@ -394,22 +401,32 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
       }
       case 'meteoro': {
         if (e.fase === 'apunta' || e.fase === 'baja') {
-          const k = e.fase === 'baja' ? 1 : e.k, r = e.radio * (0.5 + 0.5 * k);
-          g.globalAlpha = 0.5 + 0.4 * k;
-          PX.elipsePix(g, px(e.x), px(e.y), r, r * 0.6, 'rgba(255,60,40,0.45)');
-          PX.anilloPix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#04102c', 2);
-          PX.anilloPix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#ffd23c', 1, 5, Math.floor(e.t * 14));
-          PX.anilloPix(g, px(e.x), px(e.y), r * 0.6, r * 0.36, '#ff5a3a', 1);
+          const k = e.fase === 'baja' ? 1 : e.k, R_ = e.radio, cx = px(e.x), cy = px(e.y), gira = Math.floor(t * 14);
+          g.globalAlpha = 0.3 + 0.25 * k; PX.elipsePix(g, cx, cy, R_ * (0.4 + 0.6 * k), R_ * 0.6 * (0.4 + 0.6 * k), e.tipoAtq === 'FLYING' ? '#ffb02e' : '#ff4a3a');
           g.globalAlpha = 1;
+          PX.anilloPix(g, cx, cy, R_ + 2, R_ * 0.6 + 2, '#04102c', 2);
+          PX.anilloPix(g, cx, cy, R_, R_ * 0.6, '#ff6a5a', 1, 4, gira);
+          PX.anilloPix(g, cx, cy, R_ * 0.55, R_ * 0.33, '#ffd0c0', 1, 3, gira + 1);
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { PX.lineaPix(g, cx + dx * (R_ - 3), cy + dy * (R_ * 0.6 - 2), cx + dx * (R_ + 8), cy + dy * (R_ * 0.6 + 6), '#ff6a5a', 2); }
+          PX.disco(g, cx, cy, 1.5, '#ffffff');
         }
         break;
       }
       case 'caparazon': {
         const l = e.dueno, a = e.ang, cx = px(l.x), cy = px(l.y - l.alto * 0.4), r = e.h.alcance * 0.7;
+        g.globalAlpha = 0.28; PX.elipsePix(g, cx, cy + 2, r * 0.95, r * 0.7, '#4aa3f0'); g.globalAlpha = 1;
         for (const [ini, col] of [[a, '#9fdcff'], [a + Math.PI, '#4aa3f0']]) {
           PX.arcoPix(g, cx, cy, r, ini, ini + 2.6, '#04102c', 8, r * 0.8);
           PX.arcoPix(g, cx, cy, r, ini + 0.05, ini + 2.55, col, 5, r * 0.8);
           PX.arcoPix(g, cx, cy, r, ini + 0.4, ini + 2.2, '#ffffff', 2, r * 0.8);
+        }
+        // jatos de água que saem girando
+        for (let j = 0; j < 4; j++) {
+          const ang = a + j * Math.PI / 2 + 0.6, ca = Math.cos(ang), sa = Math.sin(ang);
+          for (let k = 0; k < 7; k++) {
+            const f = ((k / 7) + t * 2.2 + j * 0.25) % 1, d = r * (0.95 + f * 0.9);
+            PX.carimbar(g, PX.gota(Math.max(5, Math.round(7 - f * 3)), PX.RAMPA_AGUA), cx + ca * d, cy + sa * d * 0.8, ang, 1, 1 - f * 0.7);
+          }
         }
         break;
       }
@@ -444,9 +461,59 @@ function dibujarChorro(g, e, t, fx) {
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
   const x2 = b.x + Math.cos(e.ang) * e.largo, y2 = b.y + Math.sin(e.ang) * e.largo - alt;
   const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
+  const largoTotal = Math.hypot(px(x2) - ox, px(y2) - oy), ux = (px(x2) - ox) / (largoTotal || 1), uy = (px(y2) - oy) / (largoTotal || 1), nxp = -uy, nyp = ux;
+  const paletaH = e.h.paleta;
+  if (paletaH === 'aura') {
+    // sopro de manchas prateadas: nuvens de metal claro que correm pelo raio
+    const N = Math.max(8, Math.floor(largoTotal / 5)), tonos = [['#6f9cc4', '#bfe2f6', '#f4fcff'], ['#8aa8c8', '#d6ecf8', '#ffffff']];
+    for (let i = 0; i < N; i++) {
+      const f = ((i / N) + t * 1.7) % 1, a1 = Math.sin(i * 12.9898) * 43758.5453, rnd = a1 - Math.floor(a1);
+      const lado = (rnd - 0.5) * w * 0.7 * (0.5 + 0.5 * Math.sin(t * 9 + i));
+      const tam = [4, 6, 8, 10, 12][Math.min(4, Math.floor(w * 0.18 * (0.6 + rnd * 0.8) / 2.2))] ?? 8;
+      PX.carimbar(g, PX.humo(tam, tonos[i % 2]), ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, 0, 1, 0.95 * Math.min(1, (1 - f) * 3));
+    }
+    for (let i = 0; i < 14; i++) { const f = ((i / 14) + t * 2.6) % 1; PX.disco(g, ox + ux * f * largoTotal + nxp * Math.sin(i * 3 + t * 20) * w * 0.25, oy + uy * f * largoTotal + nyp * Math.sin(i * 3 + t * 20) * w * 0.25, 1.2, '#ffffff'); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.4), ['#6a7894', '#b9c6dc', '#eef4ff', '#ffffff']);
+    if (ale() < 0.5) fx.add({ x: px(x2), y: px(y2), vx: entre(-60, 60), vy: entre(-60, 60), size: 2.2, life: 0.35, color: '#e8f0ff', forma: 'chispa' });
+    return;
+  }
+  if (e.h.forma === 'helice') {
+    // Blast Burn: duas fitas trançadas, uma de fogo e outra azul, em volta de um núcleo claro
+    const amp = (e.h.amplitud ?? 11) * 1.25, N = Math.max(12, Math.floor(largoTotal / 6));
+    const fogo = rampaFuego(col), azul = ['#0c2a7a', '#2f6fe0', '#8fc4ff', '#ffffff'];
+    g.globalAlpha = 0.95; PX.lineaPix(g, ox, oy, px(x2), px(y2), '#04102c', Math.max(3, Math.round(w * 0.34))); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#ffd9a0', Math.max(2, Math.round(w * 0.2))); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#ffffff', Math.max(1, Math.round(w * 0.09))); g.globalAlpha = 1;
+    for (let i = N - 1; i >= 0; i--) {
+      const f = i / N, fase = f * 12 - t * 16, d = largoTotal * f, env = 0.3 + f * 0.7;
+      for (const [sgn, rampa] of [[1, fogo], [-1, azul]]) {
+        const off = Math.sin(fase) * amp * sgn * env, frente = Math.cos(fase) * sgn > 0;
+        const tam = tamSprite((w * 0.16 + f * 2.4) * (frente ? 1.15 : 0.85));
+        PX.carimbar(g, PX.llama(Math.floor(t * 14 + i), tam, rampa), ox + ux * d + nxp * off, oy + uy * d + nyp * off, Math.atan2(uy, ux) - Math.PI / 2, 1, frente ? 1 : 0.8);
+      }
+    }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.42), fogo);
+    PX.anilloPix(g, px(x2), px(y2), 7 + Math.sin(t * 40) * 2, 6, '#ffd9a0', 1, 3, Math.floor(t * 30));
+    if (ale() < 0.7) fx.add({ x: px(x2) + entre(-5, 5), y: px(y2) + entre(-5, 5), vx: entre(-80, 80), vy: entre(-80, 40), size: 2.4, life: 0.4, color: ale() < 0.5 ? '#ffd23c' : '#8fc4ff', forma: 'chispa' });
+    return;
+  }
+  if (col === 'WATER') {
+    // Hydro Pump / Hydro Cannon: ondas que rolam, com espuma, em vez de um cano liso
+    const base = Math.max(3, Math.round(w * 0.62));
+    g.globalAlpha = 0.95; PX.lineaPix(g, ox, oy, px(x2), px(y2), '#04102c', base + 3); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#1f5ec4', base); PX.lineaPix(g, ox, oy, px(x2), px(y2), '#4aa3f0', Math.max(2, Math.round(base * 0.55))); g.globalAlpha = 1;
+    const N = Math.max(6, Math.floor(largoTotal / 13)), tam = Math.max(5, Math.round(w * 0.36));
+    for (let i = N - 1; i >= 0; i--) {
+      const f = ((i / N) + t * 1.5) % 1, lado = Math.sin(i * 2.3 + t * 8) * w * 0.34, d = largoTotal * f;
+      PX.carimbar(g, PX.ola(tam, Math.floor(t * 9 + i)), ox + ux * d + nxp * lado, oy + uy * d + nyp * lado, Math.atan2(uy, ux), 1, Math.min(1, f * 6, (1 - f) * 4 + 0.3));
+    }
+    for (let i = 0; i < 16; i++) { const f = ((i / 16) + t * 2.4) % 1, lado = Math.sin(i * 4.1 + t * 12) * w * 0.55; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, i % 3 ? 1 : 2, '#ffffff'); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.4), PX.RAMPA_AGUA);
+    if (ale() < 0.8) fx.add({ x: px(x2), y: px(y2), vx: entre(-90, 90), vy: entre(-130, -30), g: 300, size: 2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
+    return;
+  }
   // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
-  const largoTotal = Math.hypot(px(x2) - ox, px(y2) - oy), nTr = Math.max(2, Math.ceil(largoTotal / 9));
-  const capas = [[4, '#04102c', 0.92, 1], [0, c3, 1, 1], [0, c2, 1, 0.74], [0, c1, 1, 0.46], [0, '#ffffff', 1, 0.2]];
+  const nTr = Math.max(2, Math.ceil(largoTotal / 9));
+  const solar = paletaH === 'solar';
+  const cA = solar ? '#b8860b' : c3, cB = solar ? '#ffd23c' : c2, cC = solar ? '#fff29a' : c1;
+  const capas = [[4, '#04102c', 0.92, 1], [0, cA, 1, 1], [0, cB, 1, 0.74], [0, cC, 1, 0.46], [0, '#ffffff', 1, 0.2]];
   for (const [extra, color, alfa, f] of capas) {
     g.globalAlpha = alfa;
     for (let i = 0; i < nTr; i++) {
@@ -456,6 +523,7 @@ function dibujarChorro(g, e, t, fx) {
     }
   }
   g.globalAlpha = 1;
+  if (col === 'WATER') for (let i = 0; i < 12; i++) { const f = ((i / 12) + t * 2.2) % 1, lado = (i % 2 ? 1 : -1) * w * 0.5; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, 1.8, '#ffffff'); }
   // nós de energia que correm pelo raio
   const nx = Math.cos(e.ang), ny = Math.sin(e.ang), n = Math.floor(e.largo / 14);
   for (let i = 0; i < n; i++) {

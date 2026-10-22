@@ -461,7 +461,8 @@ export class Habilidades {
         luta.emit({ t: 'raices', x: l.x, y: l.y, ang, dist: dd, banda: h.banda });
         for (const b of luta.blancos(l)) {
           const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy);
-          if (Math.abs(d - dd) < h.banda / 2 + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < 0.75) {
+          // as raízes saem em volta do lutador, em todas as direções
+          if (Math.abs(d - dd) < h.banda / 2 + RADIO) {
             atingir(l, b, pacote(h, extra, ang, { dano: h.dano / h.ondas.length, aturde: ultimo ? h.aturde : undefined, empuje: undefined, tick: !ultimo }));
           }
         }
@@ -473,7 +474,7 @@ export class Habilidades {
   arraigo(l, h) {
     const luta = this.luta;
     l.animar(h.anim ?? 'Charge', 0.5);
-    l.ponerEstado('arraigo', h.dur, { reduce: h.reduce, cura: h.cura });
+    l.ponerEstado('arraigo', h.dur, { reduce: h.reduce, cura: h.cura, desde: luta.t });
     l.accion = { hasta: luta.t + 0.3, lento: 0 };
     luta.emit({ t: 'raizarse', l, dur: h.dur });
   }

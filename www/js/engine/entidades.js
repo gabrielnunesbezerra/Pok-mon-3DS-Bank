@@ -206,7 +206,14 @@ export class Chorro {
     this.ang += clamp(difAng(objetivo, this.ang), -giro, giro);
     if (this.h.amplitud) this.onda = Math.sin(this.t * 14) * h.amplitud;
     if (!this.activo) return true;
-    if (h.retroceso || h.retroceso === 0) { /* nome alternativo */ }
+    // o raio empurra quem está dentro dele sem parar (a ultimate "arrasta" o alvo)
+    if (h.empuje) {
+      const q = this.boca(), qx = q.x + Math.cos(this.ang) * this.largo, qy = q.y + Math.sin(this.ang) * this.largo;
+      for (const b of luta.blancos(dueno)) {
+        if (b.esClon || b.oculto || b.est?.vuelo || b.est?.blindaje || b.dash) continue;
+        if (distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, q.x, q.y - 8, qx, qy - 8) < this.ancho / 2 + RADIO) { b.empX += Math.cos(this.ang) * h.empuje * dt * 14; b.empY += Math.sin(this.ang) * h.empuje * dt * 14; }
+      }
+    }
     const back = h.retroceso ?? 0;
     if (back) { dueno.empX -= Math.cos(this.ang) * back * dt * 3; dueno.empY -= Math.sin(this.ang) * back * dt * 3; }
     this.acum += dt;
@@ -219,7 +226,6 @@ export class Chorro {
         if (distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, b0.x, b0.y - 8, x2, y2 - 8) < this.ancho / 2 + RADIO) {
           const g = pacote(h, this.extra, this.ang, { dano: h.dano / ticks, tick: true, empuje: (h.empuje ?? 0) / ticks, aturde: undefined, pesado: false });
           atingir(dueno, b, g);
-          if (b.est && !b.ko && h.empuje) { b.empX += Math.cos(this.ang) * h.empuje * dt * 3; b.empY += Math.sin(this.ang) * h.empuje * dt * 3; }
         }
       }
     }

@@ -9,7 +9,7 @@ import { REGLAS } from '../www/js/data/regras.js';
 import { sembrar } from '../www/js/engine/util.js';
 
 const def = id => ROSTER.find(p => p.id === id);
-const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra });
+const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
 const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo'];
 
@@ -235,4 +235,18 @@ test('linhas de uma evolução evoluem uma vez só e a Mega muda as skills de ve
     assert.equal(cambian.length, 5, `${p.id}: a Mega deve mexer nas 5 skills`);
     assert.notEqual(a.kit.lmb.nombre, JSON.parse(antes).lmb.nombre, `${p.id}: nome novo na Mega`);
   }
+});
+
+test('evoluir e Mega demoram: só depois de alguns segundos da rodada e com a barra cheia', () => {
+  const l = nuevaLuta('riolu', 'munchlax', { conEspera: true });
+  const [a] = l.luchadores;
+  a.etapa = 1; a.ulti = 100; a.exp = 9999;
+  assert.equal(a.puedeMega, false, 'Mega bloqueada no começo da rodada');
+  assert.ok(a.megaEn > 30);
+  l.t += 36;
+  assert.equal(a.puedeMega, true);
+  const b = nuevaLuta('bulbasaur', 'munchlax', { conEspera: true }).luchadores[0];
+  b.exp = 9999;
+  assert.equal(b.puedeEvolucionar, false);
+  assert.ok(b.expNecesaria >= 90, `exige mais exp que o site: ${b.expNecesaria}`);
 });

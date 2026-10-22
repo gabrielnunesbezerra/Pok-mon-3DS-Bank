@@ -41,6 +41,7 @@ export class ControlHumano {
       const s = this.app.tactil?.estado ?? VACIO();
       Object.assign(it, s);
       mira();
+      if (s.apunta) { it.ax = l.x + s.apunta.x * 220; it.ay = l.y + s.apunta.y * 220; }
     }
     // controle: funciona junto com qualquer esquema do jogador 1
     const pad = ent.mando(this.esquema === 'teclado2' ? 1 : 0);
@@ -135,8 +136,14 @@ export class PanelTactil {
         const d2 = Math.hypot(t.x - s.cx, t.y - s.cy);
         if (d2 > 7) { const k = Math.min(1, (d2 - 7) / (s.r - 7)); e.mx = ((t.x - s.cx) / d2) * k; e.my = ((t.y - s.cy) / d2) * k; }
       } else {
-        const b = this.botonEn(t, 16);
-        if (b && b.id !== 'pausa') { t.boton = b.id; e[b.id] = true; }
+        // o dedo que começou num botão continua nele mesmo ao arrastar; arrastar para fora do centro mira
+        const fijo = t.boton && t.boton !== 'pausa' && t.boton !== 'extra' ? this.botones.find(x => x.id === t.boton) : null;
+        const b = fijo ?? this.botonEn(t, 16);
+        if (b && b.id !== 'pausa') {
+          t.boton = b.id; e[b.id] = true;
+          const dx = t.x - b.x, dy = t.y - b.y, d = Math.hypot(dx, dy);
+          if (d > 12) e.apunta = { x: dx / d, y: dy / d, id: b.id };
+        }
       }
     }
     if (!this.stickActivo) { s.cx += (s.x0 - s.cx) * 0.2; s.cy += (s.y0 - s.cy) * 0.2; }

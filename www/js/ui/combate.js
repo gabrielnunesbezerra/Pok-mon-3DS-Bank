@@ -13,6 +13,7 @@ import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, colorTipo } 
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
+import * as PX from '../render/pixelfx.js';
 import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
 const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
@@ -321,8 +322,12 @@ export class Combate {
     const flash = l.flash && t - l.flash < 0.1 ? 1 - (t - l.flash) / 0.1 : 0;
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
     const fila = filaDesdeAngulo(l.angulo);
+    if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
+    if (l.dash?.def.estilo === 'sombra') for (let k = 3; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - Math.cos(l.dash.ang) * k * 9, l.y - Math.sin(l.dash.ang) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.28 - k * 0.05 });
     const ok = bank.dibujar(g, l.dex, nombre, tt, l.x, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - l.salto, sc, { fila, flash });
+    if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
+    if (l.dash) this.dibujarDash(g, l);
     // estados visíveis
     if (l.est.escudo || l.escudo > 0) { g.strokeStyle = 'rgba(125,211,252,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.45 + 4, l.alto * 0.55 + 3, 0, 0, 7); g.stroke(); }
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }
@@ -380,6 +385,36 @@ export class Combate {
     }
     if (!antes && ev.mega && Math.random() < 0.35) fx.anillo(l.x, cy, 6, 30 + Math.random() * 20, cores[0], 0.5, 2);
   }
+  // raízes marrons em volta dos pés enquanto o Ingrain está ativo (crescem em 0,4 s) e brilhos de cura subindo
+  dibujarRaicesPie(g, l, frente) {
+    const ar = l.est.arraigo, t = this.luta.t, crece = Math.min(1, (t - (ar.desde ?? t - 1)) / 0.4), n = 11, rx = 15 * l.escala, ry = 7 * l.escala;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + 0.4, y = l.y + Math.sin(a) * ry;
+      if ((Math.sin(a) > 0) !== frente) continue;
+      PX.carimbar(g, PX.raizPie(i), l.x + Math.cos(a) * rx * crece, y - 1, a * 0.3, 1, crece);
+    }
+    if (frente && Math.random() < 0.2) this.fx.add({ x: l.x + (Math.random() - 0.5) * 22, y: l.y - 2, vy: -26, size: 1.6, life: 0.7, color: '#8be09a', forma: 'chispa' });
+  }
+
+  // desenho por estilo de dash: giro de água, giro de aço, linhas de velocidade, poeira e o chicote de vinha
+  dibujarDash(g, l) {
+    const d = l.dash, e = d.def.estilo, t = this.t, cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, fx = this.fx, a = d.ang;
+    const girar = (r, cols, grosor, n) => { for (let k = 0; k < n; k++) { const a0 = t * 24 + (k / n) * Math.PI * 2; PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, '#04102c', grosor + 2, r * 0.8); PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, cols[0], grosor, r * 0.8); PX.arcoPix(g, cx, cy, r, a0 + 0.2, a0 + 1.1, cols[1], Math.max(1, grosor - 2), r * 0.8); } };
+    if (e === 'agua') { girar(l.alto * 0.62, ['#4aa3f0', '#ffffff'], 4, 3); if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 16, y: cy + (Math.random() - 0.5) * 16, vx: -Math.cos(a) * 50 + (Math.random() - 0.5) * 80, vy: -Math.sin(a) * 30 - 40, g: 260, size: 1.8, life: 0.45, color: '#cfeeff', forma: 'gota', rampa: PX.RAMPA_AGUA }); }
+    else if (e === 'acero') { girar(l.alto * 0.62, ['#9aa8bc', '#ffffff'], 4, 3); if (Math.random() < 0.6) fx.chispas(cx + (Math.random() - 0.5) * 20, cy + 6, '#ffe9a8', 1, 160); }
+    else if (e === 'rapido') for (let k = 0; k < 4; k++) { const off = (k - 1.5) * 5, ln = 18 + k * 5; PX.lineaPix(g, cx - Math.cos(a) * 8 - Math.sin(a) * off, cy - Math.sin(a) * 6 + Math.cos(a) * off * 0.8, cx - Math.cos(a) * (8 + ln), cy - Math.sin(a) * (6 + ln * 0.8) + Math.cos(a) * off * 0.8, k % 2 ? '#ffffff' : '#bfe9ff', 1); }
+    else if (e === 'golpe') { if (Math.random() < 0.7) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 6); if (Math.random() < 0.4) fx.chispas(cx + Math.cos(a) * 14, cy, '#ffe9a8', 1, 200); PX.carimbar(g, PX.estouro(Math.floor(t * 20) % 4, 8, '#ffffff', '#ffd23c'), cx + Math.cos(a) * 16, cy + Math.sin(a) * 9); }
+    else if (e === 'sombra') { if (Math.random() < 0.7) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 18, vy: -20, size: 2, life: 0.4, color: '#a46ee0', forma: 'chispa' }); }
+    else if (e === 'hoja' && d.def.latigo) {
+      // chicote de vinha: curva verde com folha na ponta, aparece no meio do dash
+      const u0 = Math.min(1, Math.max(0, (d.t - d.dur * 0.2) / (d.dur * 0.8))), L = d.def.latigo.alcance * u0;
+      if (u0 > 0) {
+        const pts = []; for (let k = 0; k <= 12; k++) { const u = k / 12; pts.push([cx + Math.cos(a) * L * u - Math.sin(a) * Math.sin(u * 6 + t * 30) * 7 * (1 - u) * u * 2, cy + Math.sin(a) * L * u * 0.8 + Math.cos(a) * Math.sin(u * 6 + t * 30) * 5 * (1 - u) * u * 2]); }
+        for (const [col, w] of [['#0f3a1c', 5], ['#2e8a34', 3], ['#8be04e', 1]]) for (let k = 0; k < pts.length - 1; k++) PX.lineaPix(g, pts[k][0], pts[k][1], pts[k + 1][0], pts[k + 1][1], col, w);
+        PX.carimbar(g, PX.hoja(9), pts[12][0], pts[12][1], a);
+      }
+    }
+  }
   dibujarClon(g, c) {
     const l = c.dueno, bank = this.app.bank;
     g.globalAlpha = 0.65;
@@ -401,11 +436,12 @@ export class Combate {
     for (const b of this.fx.banners) {
       const k = b.t / b.life, entra = Math.min(1, b.t / 0.14), sale = Math.min(1, (b.life - b.t) / 0.25), al = Math.min(entra, sale);
       const y0 = HUD_ALTO + 8, h = 38, x0 = (1 - entra) * -ANCHO, col = hexTipo(b.tipo);
-      g.globalAlpha = Math.max(0, Math.min(1, al)) * 0.35; rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#000'); g.globalAlpha = Math.max(0, al);
+      // a tela escurece enquanto a ultimate é anunciada e clareia devagar
+      rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#02050f', Math.max(0, Math.min(1, Math.min(b.t / 0.1, (b.life - b.t) / 0.5))) * 0.55); g.globalAlpha = Math.max(0, al);
       g.save(); g.translate(x0, 0);
       g.fillStyle = oscuro(col, 0.5); g.beginPath(); g.moveTo(0, y0 + 3); g.lineTo(ANCHO, y0 - 1); g.lineTo(ANCHO, y0 + h + 3); g.lineTo(0, y0 + h + 7); g.closePath(); g.fill();
       g.fillStyle = col; g.beginPath(); g.moveTo(0, y0); g.lineTo(ANCHO, y0 - 4); g.lineTo(ANCHO, y0 + h - 3); g.lineTo(0, y0 + h + 1); g.closePath(); g.fill();
-      texto(g, b.txt, ANCHO / 2, y0 + h / 2 - 1, { tam: 17, color: '#ffffff', borde: 5, colorBorde: oscuro(col, 0.6), align: 'center', base: 'middle', peso: 700 });
+      texto(g, b.txt, ANCHO / 2, y0 + h / 2 - 1, { tam: 17, color: '#ffffff', borde: 3, colorBorde: oscuro(col, 0.6), align: 'center', base: 'middle', peso: 700 });
       g.restore();
       g.globalAlpha = 1;
     }
@@ -455,6 +491,13 @@ export class Combate {
           g.fillRect(cx + sx * a, cy + sy * a - (sy > 0 ? 3 : 0), 1, 4);
         }
         g.globalAlpha = 1;
+      }
+      const ap = c?.esquema === 'tactil' ? this.app.tactil.estado.apunta : null;
+      if (ap) {
+        // linha pontilhada e seta na direção em que o dedo está mirando
+        for (let k = 1; k <= 6; k++) { g.fillStyle = k % 2 ? '#ffffff' : COLOR_EQUIPO[i]; g.fillRect(Math.round(yo.x + ap.x * (14 + k * 9)), Math.round(yo.y - yo.alto * 0.4 + ap.y * (14 + k * 9) * 0.8), 2, 2); }
+        const px_ = yo.x + ap.x * 78, py_ = yo.y - yo.alto * 0.4 + ap.y * 78 * 0.8;
+        g.fillStyle = '#04102c'; g.fillRect(Math.round(px_) - 2, Math.round(py_) - 2, 5, 5); g.fillStyle = '#ffffff'; g.fillRect(Math.round(px_) - 1, Math.round(py_) - 1, 3, 3);
       }
       if (c?.esquema && c.esquema !== 'kbm' && c.esquema !== 'tactil') {
         const ang = Math.atan2(yo.ay - yo.y, yo.ax - yo.x), fx = Math.round(yo.x + Math.cos(ang) * 16), fy = Math.round(yo.y + Math.sin(ang) * 9);

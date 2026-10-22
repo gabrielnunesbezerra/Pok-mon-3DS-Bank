@@ -149,6 +149,7 @@ export class Hud {
     // etiquetas de estado
     const est = [];
     if (l.mega) est.push('MEGA');
+    else if (l.forma.mega && l.ultiLista && l.megaEn > 0 && l.etapa >= l.etapasTotales - 1) est.push(`MEGA ${Math.ceil(l.megaEn)}s`);
     else if (l.puedeEvolucionar && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'EVO!' : `${this.teclaDe(l, 'mega')}:EVO`);
     else if (l.puedeMega && l.humano && parpadeo) est.push(this.teclaDe(l, 'mega') === 'EVO' ? 'MEGA!' : `${this.teclaDe(l, 'mega')}:MEGA`);
     if (lista && !l.puedeMega) est.push('ULT!');

@@ -20,16 +20,20 @@ export const REGLAS = {
  "pocoEficaz": 0.8,
  "marcaMult": 1.15,
  "ultiMax": 100,
- "ultiPorDanoHecho": 1.1,
- "ultiPorDanoRecibido": 0.75,
- "ultiPasiva": 0.9,
+ // Ajustes do PK confront: evoluir e Mega ficaram mais difíceis que no site
+ "dificultadEvo": 1.9,
+ "evoTras": 10,
+ "megaTras": 35,
+ "ultiPorDanoHecho": 0.9,
+ "ultiPorDanoRecibido": 0.55,
+ "ultiPasiva": 0.45,
  "expEvolucion": [
   55,
   100
  ],
  "expPorDanoHecho": 1,
  "expPorDanoRecibido": 0.5,
- "expPasiva": 1,
+ "expPasiva": 0.6,
  "curaEvolucion": 0.3,
  "expPorLinea": {
   "L3": [

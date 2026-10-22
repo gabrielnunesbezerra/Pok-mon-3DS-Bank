@@ -23,7 +23,7 @@ export function resumen(luta) {
 export class Sesion {
   constructor(tr, lado, n = 2) {
     this.tr = tr; this.lado = lado; this.n = n; this.nj = n; this.alOtro = null; this.alCerrar = null; this.cerrada = false;
-    this.rtt = null; this.D = D0;
+    this.rtt = null; this.pico = 0; this.D = D0; this.perdida = false;
     this.listos = new Map();
     this.reiniciar(0);
     tr.alMensaje = m => this.recibir(m);
@@ -53,7 +53,7 @@ export class Sesion {
     else if (m.t === 'i') this.ent[m.s]?.set(m.k, m.v);
     else if (m.t === 'h') { const mapa = this.hRemoto.get(m.k) ?? new Map(); mapa.set(m.s, m.v); this.hRemoto.set(m.k, mapa); this.comparar(m.k); }
     else if (m.t === 'ping') this.tr.enviar({ t: 'pong', s: m.s, a: m.de });
-    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; this.rtt = this.rtt == null ? r : this.rtt * 0.7 + r * 0.3; }
+    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; this.rtt = this.rtt == null ? r : this.rtt * 0.7 + r * 0.3; this.pico = Math.max(r, this.pico * 0.96); }
     else this.alOtro?.(m);
   }
   comparar(k) {
@@ -66,7 +66,10 @@ export class Sesion {
   // chamada uma vez por passo de 1/60 s. `amostra()` devolve o comando local. Devolve [cmd0, cmd1] ou null se faltar o do outro.
   paso(luta, amostra) {
     if (!this.lista) { this.esperando++; return null; }
-    this.D = Math.max(D0, Math.min(14, Math.ceil(((this.rtt ?? 0) / 2) / 16.7) + 3));
+    // atraso de entrada: metade do ping médio, com folga para o pico recente (jitter)
+    const base = (this.rtt ?? 0) * 0.65 + this.pico * 0.35;
+    this.D = Math.max(D0, Math.min(15, Math.ceil((base / 2) / 16.7) + 3));
+    if (!this.perdida && performance.now() - this.sinSenal > 7000) { this.perdida = true; this.alCerrar?.(); }
     while (this.prod < this.paso_ + this.D) {
       const v = cuantizar(amostra());
       this.ent[this.lado].set(this.prod, v);

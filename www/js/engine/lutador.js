@@ -11,7 +11,7 @@ export const tipoLinea = def => {
   if (evs.every(e => e.dex === def.dex)) return 'LEG';
   return evs.length === 2 ? 'L3' : 'L2';
 };
-export const umbralesExp = def => def.expEvolucion ?? REGLAS.expPorLinea?.[tipoLinea(def)] ?? REGLAS.expEvolucion;
+export const umbralesExp = def => (def.expEvolucion ?? REGLAS.expPorLinea?.[tipoLinea(def)] ?? REGLAS.expEvolucion).map(v => Math.round(v * (REGLAS.dificultadEvo ?? 1)));
 export const etapaDe = (def, i) => {
   if (!i) return def;
   const e = def.evoluciones[i - 1];
@@ -46,8 +46,11 @@ export class Lutador {
   get escala() { return (this.forma.escala ?? 1 + REGLAS.escalaPorEtapa * this.etapa) + (this.mega ? REGLAS.escalaMega : 0); }
   get etapasTotales() { return 1 + (this.def.evoluciones?.length ?? 0); }
   get expNecesaria() { return umbralesExp(this.def)[this.etapa] ?? Infinity; }
-  get puedeEvolucionar() { return this.etapa < this.etapasTotales - 1 && this.exp >= this.expNecesaria && !this.ko; }
-  get puedeMega() { return !!this.forma.mega && !this.mega && !this.ko && this.ulti >= REGLAS.ultiMax; }
+  // segundos de rodada ainda faltando para liberar a evolução / a Mega (no treino não há espera)
+  get evoEn() { return this.luta.entreno ? 0 : Math.max(0, (REGLAS.evoTras ?? 0) - (this.luta.t - this.luta.inicioRonda)); }
+  get megaEn() { return this.luta.entreno ? 0 : Math.max(0, (REGLAS.megaTras ?? 0) - (this.luta.t - this.luta.inicioRonda)); }
+  get puedeEvolucionar() { return this.etapa < this.etapasTotales - 1 && this.exp >= this.expNecesaria && !this.ko && this.evoEn <= 0; }
+  get puedeMega() { return !!this.forma.mega && !this.mega && !this.ko && this.ulti >= REGLAS.ultiMax && this.megaEn <= 0; }
   get ultiLista() { return this.ulti >= REGLAS.ultiMax; }
   // alvo principal: o inimigo vivo mais perto (numa luta de 2 é sempre o outro lutador)
   get rival() {

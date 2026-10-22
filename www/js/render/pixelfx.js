@@ -297,6 +297,72 @@ export function mordida(k, r) {
   });
 }
 
+// crista de onda (Hydro Pump / Hydro Cannon): corpo azul em degradê e espuma branca no topo; aponta para a direita
+export function ola(tam, fase = 0) {
+  return guardado(`ola${tam}-${fase % 3}`, tam * 2 + 6, Math.round(tam * 1.5) + 6, (g, W, H) => {
+    const base = H - 3, ancho = tam * 2;
+    const alto = x => { const u = x / ancho; return Math.max(0, tam * 1.15 * Math.pow(Math.sin(Math.min(1, u * 1.05) * Math.PI), 0.75) * (u > 0.7 ? 1 + (u - 0.7) * 0.9 : 1)); };
+    for (let x = 0; x < ancho; x++) {
+      const a = Math.round(alto(x) + Math.sin((x + fase * 5) * 0.8) * 0.8);
+      for (let y = 0; y <= a; y++) {
+        const prof = y / Math.max(1, a);
+        g.fillStyle = prof < 0.18 ? '#ffffff' : prof < 0.4 ? '#bfe9ff' : prof < 0.75 ? '#4aa3f0' : '#1f5ec4';
+        g.fillRect(3 + x, base - y, 1, 1);
+      }
+      g.fillStyle = CONTORNO; g.fillRect(3 + x, base - a - 1, 1, 1);
+    }
+    for (let i = 0; i < 4; i++) { g.fillStyle = '#ffffff'; g.fillRect(3 + Math.round(ancho * (0.25 + i * 0.2)) + (fase % 2), base - Math.round(alto(ancho * (0.25 + i * 0.2))) - 2 - (i % 2), 2, 1); }
+    g.fillStyle = CONTORNO; g.fillRect(2, base, ancho + 2, 1);
+  });
+}
+
+// espinho de raiz (Frenzy Plant): triângulo marrom com luz
+export function espina(alto) {
+  return guardado(`espina${alto}`, Math.round(alto * 0.55) + 6, alto + 4, (g, W, H) => {
+    const c = Math.floor(W / 2), base = H - 2;
+    for (const [grow, color] of [[1.5, '#2a1406'], [0, '#7a4a1e']]) {
+      g.fillStyle = color;
+      for (let y = 0; y < alto; y++) { const w = Math.round((alto * 0.27) * (y / alto) + grow); g.fillRect(c - w, base - alto + y - (grow ? 1 : 0), w * 2 + 1, 1); }
+    }
+    for (let y = 2; y < alto; y++) { const w = Math.round((alto * 0.27) * (y / alto)); g.fillStyle = '#b8742f'; g.fillRect(c - w + 1, base - alto + y, Math.max(1, Math.round(w * 0.9)), 1); g.fillStyle = '#e0a055'; g.fillRect(c - w + 1, base - alto + y, Math.max(1, Math.round(w * 0.35)), 1); }
+    g.fillStyle = '#3f8a2a'; g.fillRect(c - 3, base - 1, 7, 1);
+  });
+}
+
+// vinha/raiz retorcida e nodosa (Frenzy Plant): tronco marrom que afina e balança
+export function vid(alto, semilla = 0) {
+  return guardado(`vid${alto}-${semilla % 4}`, 22, alto + 6, (g, W, H) => {
+    const c = W / 2, base = H - 2;
+    for (const [grow, color] of [[1.4, '#2a1406'], [0, '#7a4a1e']]) {
+      g.fillStyle = color;
+      for (let y = 0; y < alto; y++) {
+        const u = y / alto, w = Math.round(4.2 * (1 - u * 0.8) + 0.8 + grow), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
+        g.fillRect(x - w, base - y - 1, w * 2 + 1, 1);
+        if (y % 11 === 6 && !grow) { g.fillRect(x + w, base - y - 2, 3, 2); g.fillRect(x - w - 2, base - y - 4, 3, 2); }
+      }
+    }
+    for (let y = 1; y < alto - 1; y++) {
+      const u = y / alto, w = Math.round(4.2 * (1 - u * 0.8) + 0.8), x = Math.round(c + Math.sin(u * 7 + semilla * 1.7) * 2.6 * (0.4 + u) + (u > 0.8 ? (u - 0.8) * 14 : 0));
+      g.fillStyle = '#b8742f'; g.fillRect(x - w + 1, base - y - 1, Math.max(1, Math.round(w * 0.8)), 1);
+      if (y % 3 === 0) { g.fillStyle = '#e0a055'; g.fillRect(x - w + 1, base - y - 1, 1, 1); }
+    }
+    g.fillStyle = '#3f8a2a'; g.fillRect(c - 4, base, 9, 1);
+  });
+}
+
+// pedacinhos de raiz marrom (Ingrain): pequeno e curto
+export function raizPie(semilla) {
+  return guardado(`raizpie${semilla % 6}`, 16, 10, (g) => {
+    const pts = [[1, 6], [3, 5], [5, 6], [7, 4], [9, 5], [11, 3], [13, 4]];
+    for (const [dx, color, off] of [[0, '#2a1406', 1], [0, '#8a5a2b', 0]]) {
+      g.fillStyle = color;
+      pts.forEach(([x, y], i) => { const yy = y + ((i + semilla) % 3 === 0 ? 1 : 0); g.fillRect(x - off, yy - off, 2 + off * 2, 2 + off * 2); });
+      void dx;
+    }
+    g.fillStyle = '#d6a05a'; g.fillRect(3, 5, 1, 1); g.fillRect(9, 5, 1, 1);
+  });
+}
+
 // carimba um sprite centrado (com giro opcional em passos de 22,5 graus para manter a cara de pixel)
 export function carimbar(g, img, x, y, ang = 0, escala = 1, alfa = 1) {
   g.save();
