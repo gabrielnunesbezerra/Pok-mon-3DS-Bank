@@ -7,6 +7,7 @@ import { fondoMenu, texto, marco, rect } from '../render/pixel.js';
 import { formasDe } from '../render/sprites.js';
 import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
+import { desbloqueado, shinyLiberado, circuitoDe, nivelProximo, NOMBRE_DIFICULTAD, vitorias } from '../liga/liga.js';
 
 const NIVELES = ['facil', 'normal', 'dificil'];
 const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
@@ -20,6 +21,8 @@ export class Seleccion {
     this.app = app;
     this.modo = datos.modo ?? 'cpu';
     this.t = 0;
+    // Liga Pokémon: o rival e a arena vêm do circuito, a dificuldade depende de quantas vezes você já o venceu
+    this.liga = this.modo === 'liga' ? datos.liga : null;
     const ant = app.ultimaSeleccion;
     const azar = () => Math.floor(Math.random() * ROSTER.length);
     this.online = this.modo === 'online' ? app.online : null;
@@ -33,13 +36,26 @@ export class Seleccion {
     this.arena = Math.max(0, ARENAS.findIndex(a => a.id === app.ajustes.arena));
     this.foco = 'grade'; // 'grade' | 'arena' | 'nivel' | 'luchar' | 'volver'
     this.aleatorio = [false, this.modo !== 'versus' && !this.online, this.n === 3 && !this.online];
+    if (this.liga) {
+      const ri = ROSTER.findIndex(p => p.id === this.liga), c = circuitoDe(this.liga);
+      this.elegido[1] = ri; this.aleatorio = [false, false, false];
+      this.nivel = nivelProximo(this.liga);
+      this.arena = Math.max(0, ARENAS.findIndex(a => a.id === c?.arena));
+    }
+    // o seu Pokémon tem que estar desbloqueado na Liga
+    if (!desbloqueado(ROSTER[this.elegido[this.mi]]?.id)) this.elegido[this.mi] = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
+    if (this.modo === 'versus' && !desbloqueado(ROSTER[this.elegido[1]]?.id)) this.elegido[1] = this.elegido[0];
+    this.cursor = this.elegido[this.mi];
     if (this.online) this.preparar();
   }
+  // lados controlados por gente só podem usar Pokémon desbloqueados
+  ladoHumano(lado) { return this.online ? lado === this.mi : lado === 0 || (this.modo === 'versus' && lado === 1); }
 
   entrar() { for (const p of ROSTER) { const f = [p, ...(p.evoluciones ?? [])]; for (const x of f) { this.app.bank.hoja(x.dex, 'Idle'); this.app.bank.retrato(x.dex); } } }
 
   atras() {
     sfx('atras');
+    if (this.liga) return this.app.ir('liga');
     if (this.online) { this.online.cerrar(); this.app.online = null; return this.app.ir('titulo'); }
     this.app.ir('titulo', { menu: 'jugar' });
   }
@@ -75,6 +91,11 @@ export class Seleccion {
       this.online.enviar({ t: 'pick', lado: this.mi, i: this.elegido[this.mi], arena: ARENAS[this.arena].id });
       return this.revisar();
     }
+    if (this.liga) {
+      sfx('confirmar');
+      this.app.ultimaSeleccion = [this.elegido[0], this.elegido[1]];
+      return this.app.ir('combate', { modo: 'cpu', liga: this.liga, p1: ROSTER[this.elegido[0]].id, p2: this.liga, shiny: [!!this.shiny?.[0], false], arena: ARENAS[this.arena].id, nivel: this.nivel });
+    }
     this.app.ultimaSeleccion = [...this.elegido];
     this.app.ajustes.nivel = this.nivel; this.app.ajustes.arena = ARENAS[this.arena].id; this.app.guardarAjustes();
     sfx('confirmar');
@@ -87,6 +108,7 @@ export class Seleccion {
     // segredo: tocar 20 vezes seguidas no mesmo Pokémon troca o seu para a versão shiny
     this.toquesShiny = this.ultimaCarta === i ? (this.toquesShiny ?? 0) + 1 : 1;
     this.ultimaCarta = i;
+    if (this.toquesShiny >= SHINY_TOQUES && !shinyLiberado(ROSTER[i].id)) { this.toquesShiny = 0; this.avisoShiny = { t0: this.t, on: false, txt: 'WIN 3 TIMES IN THE LEAGUE TO UNLOCK' }; }
     if (this.toquesShiny >= SHINY_TOQUES) {
       const yo = this.online ? this.mi : 0;
       this.toquesShiny = 0;
@@ -98,10 +120,12 @@ export class Seleccion {
       if (this.online) this.online.enviar({ t: 'shiny', lado: yo, on: this.shiny[yo] });
       return;
     }
+    if (this.ladoHumano(this.lado) && !desbloqueado(ROSTER[i].id)) { sfx('atras'); this.avisoShiny = { t0: this.t, on: false, txt: 'LOCKED: BEAT IT IN THE POKÉMON LEAGUE' }; return; }
+    if (this.shiny?.[this.lado] && this.elegido[this.lado] !== i && !shinyLiberado(ROSTER[i].id)) this.shiny[this.lado] = false;
     this.elegido[this.lado] = i;
     this.aleatorio[this.lado] = false;
     sfx('confirmar');
-    if (!this.online && this.lado < this.n - 1 && this.modo !== 'entreno') { this.lado++; this.cursor = this.elegido[this.lado]; }
+    if (!this.online && !this.liga && this.lado < this.n - 1 && this.modo !== 'entreno') { this.lado++; this.cursor = this.elegido[this.lado]; }
     else this.foco = 'luchar';
   }
 
@@ -109,7 +133,7 @@ export class Seleccion {
     if (!nueva) return;
     const n = ROSTER.length;
     if (c === 'Escape' || c === 'Backspace') return this.atras();
-    if (c === 'Tab') { if (this.modo !== 'entreno' && !this.online) { this.lado = (this.lado + 1) % this.n; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
+    if (c === 'Tab') { if (this.modo !== 'entreno' && !this.online && !this.liga) { this.lado = (this.lado + 1) % this.n; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
     if (c === 'KeyR' && this.foco === 'grade' && this.lado >= 1 && (this.modo === 'cpu' || this.modo === 'arena')) { this.aleatorio[this.lado] = true; this.elegido[this.lado] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
     const dx = ['ArrowRight', 'KeyD'].includes(c) ? 1 : ['ArrowLeft', 'KeyA'].includes(c) ? -1 : 0;
     const dy = ['ArrowDown', 'KeyS'].includes(c) ? 1 : ['ArrowUp', 'KeyW'].includes(c) ? -1 : 0;
@@ -119,7 +143,7 @@ export class Seleccion {
       if (dy) { const f = Math.floor(this.cursor / COLS) + dy, filas = Math.ceil(n / COLS); if (f > filas - 1) this.foco = 'arena'; else if (f >= 0) this.cursor = Math.min(n - 1, f * COLS + (this.cursor % COLS)); sfx('seleccion'); }
       if (accion) this.elegirCarta(this.cursor);
     } else {
-      const orden = this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
+      const orden = this.liga ? ['luchar'] : this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
       const i = orden.indexOf(this.foco);
       if (dy) { const j = i + dy; if (j < 0) this.foco = 'grade'; else if (j < orden.length) this.foco = orden[j]; sfx('seleccion'); }
       if (this.foco === 'arena' && dx) { this.arena = (this.arena + dx + ARENAS.length) % ARENAS.length; sfx('seleccion'); }
@@ -136,6 +160,7 @@ export class Seleccion {
     if (tipo !== 'down') return;
     if (dentro(this.cajaVolver())) return this.atras();
     if (dentro(this.cajaLuchar())) return this.luchar();
+    if (this.liga) return;
     if (dentro(this.cajaArena(-1))) { this.arena = (this.arena - 1 + ARENAS.length) % ARENAS.length; sfx('seleccion'); return; }
     if (dentro(this.cajaArena(1))) { this.arena = (this.arena + 1) % ARENAS.length; sfx('seleccion'); return; }
     if (this.modo === 'cpu' || this.modo === 'arena') { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
@@ -153,7 +178,7 @@ export class Seleccion {
     fondoMenu(g, ANCHO, ALTO);
     marco(g, 0, 0, ANCHO, 26, 'panel');
     const v = this.cajaVolver(); marco(g, v.x, v.y, v.w, v.h); texto(g, '< MENU', v.x + v.w / 2, v.y + v.h / 2, { tam: 7, align: 'center', base: 'middle' });
-    texto(g, this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : this.modo === 'arena' ? 'ARENA · 3 FIGHTERS' : this.online ? `ONLINE · ${this.n} PLAYERS` : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
+    texto(g, this.liga ? 'POKÉMON LEAGUE' : this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : this.modo === 'arena' ? 'ARENA · 3 FIGHTERS' : this.online ? `ONLINE · ${this.n} PLAYERS` : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
     // painéis laterais
     // painel esquerdo: o meu (ou o jogador 1). Direito: o oponente em edição (arena: 1 ou 2) ou o primeiro oponente online
     const izq = this.online ? this.mi : 0;
@@ -164,11 +189,13 @@ export class Seleccion {
     ROSTER.forEach((p, i) => {
       const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno', sel2 = this.n >= 3 && this.elegido[2] === i, sel3 = this.n === 4 && this.elegido[3] === i;
       const foco = this.cursor === i && this.foco === 'grade';
-      marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
+      const trancado = !desbloqueado(p.id);
+      marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : trancado ? 'apagado' : 'azul');
       const img = bank.retrato(p.dex);
       if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 2, c.y + 3, 24, 24);
       texto(g, p.nombre, c.x + 28, c.y + 6, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 30 });
       p.tipos.forEach((tp, k) => { rect(g, c.x + 28 + k * 14, c.y + 18, 12, 7, '#04102c'); rect(g, c.x + 29 + k * 14, c.y + 19, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
+      if (trancado) { rect(g, c.x + 1, c.y + 1, c.w - 2, c.h - 2, '#060a18', 0.6); rect(g, c.x + 9, c.y + 15, 10, 8, '#ffd23c'); rect(g, c.x + 11, c.y + 10, 6, 6, '#ffd23c'); rect(g, c.x + 12, c.y + 11, 4, 4, '#060a18'); }
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel3) { rect(g, c.x + c.w - 14, c.y + c.h - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y + c.h - 4, 14, 8, '#fbbf24'); texto(g, 'P4', c.x + c.w - 6, c.y + c.h, { tam: 5, align: 'center', base: 'middle', color: '#04102c' }); }
@@ -182,12 +209,18 @@ export class Seleccion {
       texto(g, '<', cajaIzq.x + 10, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
       texto(g, '>', cajaDer.x + 10, y + 9, { tam: 8, align: 'center', base: 'middle', color: enfocado ? UI.textoOscuro : '#fff' });
     };
-    fila(232, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
-    if (this.modo === 'cpu' || this.modo === 'arena') fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
+    if (this.liga) {
+      const ci = circuitoDe(this.liga), v = vitorias(this.liga);
+      marco(g, 218, 232, 192, 44, 'azul');
+      texto(g, ci?.nombre ?? 'LEAGUE', 314, 241, { tam: 7, align: 'center', base: 'middle', color: '#7dd3fc' });
+      texto(g, `${ARENAS[this.arena].nombre} · ${NOMBRE_DIFICULTAD[this.nivel]}`, 314, 254, { tam: 8, align: 'center', base: 'middle', color: this.nivel === 'dificil' ? '#ff7a7a' : this.nivel === 'normal' ? '#ffd166' : '#86efac' });
+      texto(g, v >= 3 ? 'REMATCH · ALL REWARDS EARNED' : ['WIN TO UNLOCK IT', 'WIN AGAIN: PROFILE ICON', 'WIN AGAIN: SHINY'][v], 314, 267, { tam: 6, align: 'center', base: 'middle', color: UI.suave });
+    } else fila(232, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
+    if (!this.liga && (this.modo === 'cpu' || this.modo === 'arena')) fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
     const l = this.cajaLuchar();
     marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
     texto(g, this.online ? (this.listo ? 'WAITING...' : 'READY!') : 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
-    if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.4) texto(g, this.avisoShiny.on ? 'SHINY UNLOCKED!' : 'SHINY OFF', ANCHO / 2, 222, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
+    if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.6) texto(g, this.avisoShiny.txt ?? (this.avisoShiny.on ? 'SHINY ON!' : 'SHINY OFF'), ANCHO / 2, 222, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
     texto(g, this.esperaTxt || (this.modo === 'cpu' || this.modo === 'arena' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
   }
 
@@ -198,7 +231,7 @@ export class Seleccion {
     const activo = this.lado === lado && this.modo !== 'entreno' && !this.online;
     marco(g, x0, 30, 178, 270, 'panel');
     const color = ['#1f4f9a', '#9a2a2a', '#2f7d46', '#9a7a1a'][lado] ?? '#9a2a2a';
-    const nombre = this.online ? (lado === this.mi ? 'YOU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2';
+    const nombre = this.liga ? (lado === 0 ? 'YOU' : 'LEAGUE RIVAL') : this.online ? (lado === this.mi ? 'YOU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2';
     rect(g, x0 + 2, 31, 174, 14, color);
     texto(g, nombre, x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });
     if (activo) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(x0 + 1, 31, 176, 268); }

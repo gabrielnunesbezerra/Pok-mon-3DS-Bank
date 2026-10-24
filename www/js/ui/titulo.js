@@ -17,6 +17,7 @@ const MENUS = {
     { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas' },
   ],
   jugar: [
+    { id: 'liga', txt: 'POKÉMON LEAGUE', escena: 'liga', ico: 'pokeball' },
     { id: 'cpu', txt: 'VS CPU', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot' },
     { id: 'arena', txt: 'ARENA (3 FIGHTERS)', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas' },
     { id: 'versus', txt: '2 PLAYERS', escena: 'seleccion', datos: { modo: 'versus' }, ico: 'dos' },
