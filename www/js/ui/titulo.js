@@ -12,6 +12,7 @@ const MENUS = {
     { id: 'jugar', txt: 'PLAY', menu: 'jugar', ico: 'pokeball' },
     { id: 'pokedex', txt: 'POKÉDEX', escena: 'pokedex', ico: 'libro' },
     { id: 'online', txt: 'ONLINE', escena: 'online', ico: 'dos' },
+    { id: 'perfil', txt: 'PROFILE', escena: 'perfil', ico: 'personas' },
     { id: 'tutorial', txt: 'TUTORIAL', escena: 'combate', datos: { modo: 'tutorial' }, ico: 'ayuda' },
     { id: 'ajustes', txt: 'SETTINGS', menu: 'ajustes', ico: 'engranaje' },
     { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas' },

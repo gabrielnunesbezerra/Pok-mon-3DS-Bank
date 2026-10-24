@@ -68,7 +68,7 @@ export class Sesion {
     if (!this.lista) { this.esperando++; return null; }
     // atraso de entrada: metade do ping médio, com folga para o pico recente (jitter)
     const base = (this.rtt ?? 0) * 0.65 + this.pico * 0.35;
-    this.D = Math.max(D0, Math.min(15, Math.ceil((base / 2) / 16.7) + 3));
+    this.D = Math.max(D0, Math.min(this.tr.lento ? 30 : 15, Math.ceil((base / 2) / 16.7) + 3));
     if (!this.perdida && performance.now() - this.sinSenal > 7000) { this.perdida = true; this.alCerrar?.(); }
     while (this.prod < this.paso_ + this.D) {
       const v = cuantizar(amostra());

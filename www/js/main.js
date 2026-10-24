@@ -11,6 +11,10 @@ import { Seleccion } from './ui/seleccion.js';
 import { Online } from './ui/online.js';
 import { LayoutTactil } from './ui/layout.js';
 import { Liga } from './ui/liga.js';
+import { Perfil } from './ui/perfil.js';
+import { social } from './nube/social.js';
+import { formularioAberto } from './ui/formulario.js';
+import { texto as textoPx, rect as rectPx } from './render/pixel.js';
 import { FxLab } from './ui/fxlab.js';
 import { Combate } from './ui/combate.js';
 import { PanelTactil } from './controles.js';
@@ -29,7 +33,7 @@ const app = {
     this.musica();
   },
 };
-const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, fxlab: FxLab, combate: Combate };
+const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }
@@ -67,7 +71,30 @@ app.aCoord = aCoord;
 app.tactil = new PanelTactil(app);
 app.entrada = new Entrada(canvas, aCoord);
 app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.musica(); app.escena?.tecla?.(c, nueva, e); };
-app.entrada.alPuntero = (tipo, p, e) => { if (tipo === 'down') { audio.iniciar(); app.musica(); } app.escena?.puntero?.(tipo, p, e); };
+// aviso de convite de amigo, por cima de qualquer tela (menos durante a luta)
+const conviteVisivel = () => social.convites.length && app.nombre !== 'combate' && app.nombre !== 'online' && !formularioAberto();
+const caixaConvite = () => ({ x: app.W / 2 - 170, y: 30, w: 340, h: 24 });
+function dibujarConvite(g) {
+  if (!conviteVisivel()) return;
+  const c = social.convites[0], b = caixaConvite(), pul = 0.5 + 0.5 * Math.sin(app.tiempo * 6);
+  rectPx(g, b.x - 2, b.y - 2, b.w + 4, b.h + 4, '#04102c');
+  rectPx(g, b.x, b.y, b.w, b.h, pul > 0.5 ? '#ffd23c' : '#f2c230');
+  textoPx(g, `${c.nombre.toUpperCase()} INVITED YOU · TAP TO JOIN`, b.x + 10, b.y + b.h / 2, { tam: 8, base: 'middle', color: '#1a1406', max: b.w - 40 });
+  rectPx(g, b.x + b.w - 24, b.y + 3, 20, 18, '#04102c'); textoPx(g, 'X', b.x + b.w - 14, b.y + b.h / 2, { tam: 9, align: 'center', base: 'middle', color: '#fff' });
+}
+app.entrada.alPuntero = (tipo, p, e) => {
+  if (tipo === 'down') { audio.iniciar(); app.musica(); }
+  if (tipo === 'down' && conviteVisivel()) {
+    const b = caixaConvite();
+    if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) {
+      const c = social.convites[0];
+      social.descartarConvite(c);
+      if (p.x < b.x + b.w - 26) app.ir('online', { unir: c.sala });
+      return;
+    }
+  }
+  app.escena?.puntero?.(tipo, p, e);
+};
 audio.silenciar(!app.ajustes.sonido);
 
 let ultimo = performance.now();
@@ -87,6 +114,7 @@ function bucle(ahora) {
   g.fillStyle = '#07060c';
   g.fillRect(0, 0, app.W, ALTO);
   app.escena?.dibujar(g);
+  dibujarConvite(g);
   requestAnimationFrame(bucle);
 }
 
@@ -98,6 +126,7 @@ async function arrancar() {
   await app.bank.cargar();
   const params = new URLSearchParams(location.search);
   window.pkc = app;
+  social.iniciar();
   app.ir(ESCENAS[params.get('pantalla')] ? params.get('pantalla') : 'titulo');
   requestAnimationFrame(bucle);
 }
