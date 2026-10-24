@@ -11,10 +11,11 @@ const FORMA = {
   proyectil: 'Projectile', chorro: 'Beam', helice: 'Spiral beam', cono: 'Cone', pulso: 'Pulse', tajo: 'Melee combo', golpe: 'Melee strike',
   rafaga: 'Flurry', patada: 'Leap kick', meteoro: 'Sky slam', vuelo: 'Vanish', erupcion: 'Eruptions', lluvia: 'Falling rocks',
   burbujas: 'Bubble stream', caparazon: 'Shell spin', viento: 'Sound wave', dash: 'Dash', embestidas: 'Cross dashes', bombaLodo: 'Lobbed bomb',
-  plantaFeroz: 'Root waves', chapoteo: 'Nothing?', laco: 'Grab & throw', geiser: 'Geyser pull', torreta: 'Turret', lanzaTorretas: 'Turret volley', potenciar: 'Stack buff', escudo: 'Shield', explosion: 'Blast', trampa: 'Trap', torbellino: 'Tornado', arraigo: 'Root', crecimiento: 'Power up', descanso: 'Rest', clones: 'Decoys', humo: 'Smoke',
+  plantaFeroz: 'Root waves', chapoteo: 'Nothing?', laco: 'Grab & throw', geiser: 'Geyser pull', torreta: 'Turret', espejo: 'Reflect hits', curaAnillo: 'Heal ring', recuperar: 'Heal', estallido: 'Radial burst', lanzaTorretas: 'Turret volley', potenciar: 'Stack buff', escudo: 'Shield', explosion: 'Blast', trampa: 'Trap', torbellino: 'Tornado', arraigo: 'Root', crecimiento: 'Power up', descanso: 'Rest', clones: 'Decoys', humo: 'Smoke',
 };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
-const CARD = { w: 50, h: 50, gap: 4, x0: 10, y0: 34 };
+const COLS = 4;
+const CARD = { w: 40, h: 40, gap: 3, x0: 8, y0: 34 };
 
 export class Pokedex {
   constructor(app) { this.app = app; this.t = 0; this.cursor = 0; this.etapa = 0; }
@@ -30,11 +31,11 @@ export class Pokedex {
   tecla(c, nueva) {
     if (!nueva) return;
     if (c === 'Escape' || c === 'Backspace') return this.atras();
-    const n = ROSTER.length, dx = c === 'ArrowRight' || c === 'KeyD' ? 1 : c === 'ArrowLeft' || c === 'KeyA' ? -1 : 0, dy = c === 'ArrowDown' || c === 'KeyS' ? 3 : c === 'ArrowUp' || c === 'KeyW' ? -3 : 0;
+    const n = ROSTER.length, dx = c === 'ArrowRight' || c === 'KeyD' ? 1 : c === 'ArrowLeft' || c === 'KeyA' ? -1 : 0, dy = c === 'ArrowDown' || c === 'KeyS' ? COLS : c === 'ArrowUp' || c === 'KeyW' ? -COLS : 0;
     if (dx || dy) { this.cursor = (this.cursor + dx + dy + n) % n; this.etapa = 0; sfx('seleccion'); }
     if (c === 'Tab' || c === 'Enter' || c === 'Space') { this.etapa = (this.etapa + 1) % this.formas().length; sfx('seleccion'); }
   }
-  caja(i) { return { x: CARD.x0 + (i % 3) * (CARD.w + CARD.gap), y: CARD.y0 + Math.floor(i / 3) * (CARD.h + CARD.gap), w: CARD.w, h: CARD.h }; }
+  caja(i) { return { x: CARD.x0 + (i % COLS) * (CARD.w + CARD.gap), y: CARD.y0 + Math.floor(i / COLS) * (CARD.h + CARD.gap), w: CARD.w, h: CARD.h }; }
   puntero(tipo, p) {
     if (tipo !== 'down') return;
     const dentro = (c) => p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h;
@@ -54,7 +55,7 @@ export class Pokedex {
       const c = this.caja(i), foco = i === this.cursor;
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 4, c.y + 3, 44, 44);
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 4, c.y + 2, 32, 32);
       texto(g, p.nombre, c.x + c.w / 2, c.y + c.h - 4, { tam: 5, align: 'center', base: 'bottom', borde: 2, max: c.w - 4 });
     });
     const p = ROSTER[this.cursor], fs = this.formas();

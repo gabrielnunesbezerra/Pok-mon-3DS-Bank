@@ -94,6 +94,24 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'endurecer':
+          if (e.estilo === 'barrera') { for (let i = 0; i < 3; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 4 + i * 6, e.l.alto * 0.8 + i * 4, i % 2 ? '#ffffff' : '#c084fc', 0.3 + i * 0.06, 2); }
+          else if (e.estilo === 'algodon') this.humo(e.l.x, e.l.y - e.l.alto * 0.5, 9, 'rgba(240,244,255,0.85)', 9);
+          else if (e.estilo === 'acero') { this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, e.l.alto, e.l.alto * 0.5, '#d6e2ee', 0.3, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 8, 160); }
+          else { this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, e.l.alto * 0.9, e.l.alto * 0.55, '#d6dbe4', 0.3, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 5, 120); }
+          break;
+        case 'espejo': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 4, e.l.alto * 0.9, '#e9d5ff', 0.3, 2); this.flash = Math.max(this.flash, 0.15); this.flashColor = '#f5e8ff'; break;
+        case 'aquaRing': this.anillo(e.l.x, e.l.y, 4, 22, '#7dd3fc', 0.35, 2); for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 16, y: e.l.y + Math.sin(a) * 6, vx: Math.cos(a) * 20, vy: -50 - ale() * 30, g: 160, size: 2.2, life: 0.55, color: '#bfe9ff', forma: 'gota', rampa: AGUA }); } break;
+        case 'recuperar': for (let i = 0; i < 7; i++) this.add({ x: e.l.x + (ale() - 0.5) * 24, y: e.l.y - ale() * e.l.alto, vy: -40 - ale() * 30, size: 2 + Math.floor(ale() * 2), life: 0.7, forma: 'cruz' }); this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 4, 26, '#3ccf4e', 0.3, 2); break;
+        case 'estallido': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 70, '#c084fc', 0.35, 3); this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 2, 46, '#ffffff', 0.25, 1); this.flash = Math.max(this.flash, 0.25); this.flashColor = '#f0d6ff'; break;
+        case 'ondaSonora': {
+          // anel de notas musicais que sai em todas as direções, com ondas de som finas
+          const o = e.onda ?? 0, n = 8 + o * 3, cores = ['#ffffff', '#bfe9ff', '#ffd6f2', '#fff6a8'];
+          for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + o * 0.4; this.add({ x: e.x + Math.cos(a) * e.dist * 0.7, y: e.y - 8 + Math.sin(a) * e.dist * 0.42, vx: Math.cos(a) * 60, vy: Math.sin(a) * 36 - 20, drag: 2, size: 4 + (i % 2), life: 0.6, color: cores[i % cores.length], forma: 'nota' }); }
+          this.anillo(e.x, e.y - 4, e.dist * 0.6, e.dist, colorTipo(e.tipo), 0.35, 2); this.anillo(e.x, e.y - 4, e.dist * 0.5, e.dist * 0.9, '#ffffff', 0.3, 1);
+          this.temblor = Math.max(this.temblor, 2 + o);
+          break;
+        }
         case 'pulsoTorreta': this.anillo(e.x, e.y, 6, e.radio, '#e055b0', 0.35, 2); this.anillo(e.x, e.y, 4, e.radio * 0.8, '#9fdcff', 0.3, 1); break;
         case 'torretaNace': this.anillo(e.x, e.y, 2, 16, '#9fdcff', 0.25, 2); this.rafaga(e.x, e.y - 10, 'WATER', 8, 90); break;
         case 'geiserAviso': {
@@ -120,6 +138,11 @@ export class Efectos {
         case 'succion': this.anillo(e.x, e.y, e.radio, 8, '#ffffff', 0.35, 2); this.anillo(e.x, e.y, e.radio * 0.7, 6, '#cfd8e6', 0.3, 1); break;
         case 'reflejo': this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, e.l.alto * 0.8, '#bfdbfe', 0.25, 2); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#ffffff', 5, 160); break;
         case 'teleport': {
+          if (e.estilo === 'glitch') {
+            // Glitch Step: blocos ciano e magenta no lugar de onde saiu e para onde foi
+            for (const [x, y] of [[e.x0, e.y0], [e.x1, e.y1]]) for (let i = 0; i < 10; i++) this.add({ x: x + (ale() - 0.5) * 24, y: y - 12 + (ale() - 0.5) * 22, vx: (ale() - 0.5) * 60, size: 3 + ale() * 3, life: 0.3, color: ['#2ff3ff', '#ff3ad8', '#ffffff'][i % 3], forma: 'sq', vr: 0 });
+            break;
+          }
           // some num brilho e reaparece com anéis, como o Teleport do jogo
           for (const [x, y, k] of [[e.x0, e.y0, 0], [e.x1, e.y1, 1]]) {
             this.anillo(x, y - 12, k ? 18 : 2, k ? 2 : 20, '#ff9ad8', 0.3, 2);
@@ -344,6 +367,8 @@ export class Efectos {
         case 'salpicadura': PX.carimbar(g, PX.salpicadura(Math.floor((p.t / p.life) * 4), Math.max(7, Math.round(p.size))), p.x, p.y - 2, 0, 1, 1); break;
         case 'estouro': PX.carimbar(g, PX.estouro(Math.floor((p.t / p.life) * 4), Math.max(6, Math.round(p.size)), p.color, p.brillo ?? '#ffd23c'), p.x, p.y, 0, 1, 1); break;
         case 'humo': PX.carimbar(g, PX.humo(Math.max(3, Math.round(s * 0.9)), p.tono), p.x, p.y, 0, 1, p.alfa ?? 0.8); break;
+        case 'nota': PX.carimbar(g, PX.nota(Math.max(3, Math.round(s)), /^#/.test(p.color) ? p.color : '#ffffff'), p.x, p.y + Math.sin(p.t * 12) * 1.5, 0, 1, al); break;
+        case 'cruz': PX.carimbar(g, PX.cruzCura(Math.max(2, Math.round(s))), p.x, p.y, 0, 1, al); break;
         case 'bola': { const r = Math.max(2, s); PX.esfera(g, p.x, p.y, r, p.rampa ?? PX.RAMPA_FOGO); break; }
         case 'circulo': {
           if (/^#/.test(p.color)) { PX.disco(g, p.x, p.y, Math.max(1, s * 0.8), p.color); break; }
@@ -453,6 +478,29 @@ const ESTILOS_PROJ = {
   cuchilla(g, p, t) { PX.carimbar(g, PX.anilloAire(7), p.x, p.y - p.alt, p.ang); for (let i = 1; i <= 3; i++) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.7 - i * 0.18; g.fillRect(px(p.x - Math.cos(p.ang) * i * 6 + Math.sin(p.ang) * Math.sin(t * 30 + i) * 3), px(p.y - p.alt - Math.sin(p.ang) * i * 5), 2, 2); } g.globalAlpha = 1; },
   roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
   vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  // Dragon Pulse: esfera de energia dracônica com uma chama roxa atrás
+  dragonPulse(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt), r = 3.2 * p.escala, RAMPA = ['#1a0f5a', '#5a3fd8', '#9f8aff', '#ece6ff'];
+    PX.carimbar(g, PX.llama(Math.floor(t * 16), tamSprite(r * 0.9), RAMPA), x - Math.cos(p.ang) * r, y - Math.sin(p.ang) * r, p.ang - Math.PI / 2);
+    g.globalAlpha = 0.35; PX.disco(g, x, y, r + 3, '#8f7aff'); g.globalAlpha = 1;
+    PX.esfera(g, x, y, r, RAMPA);
+  },
+  // Fairy Wind: redemoinho rosa com três brilhos girando
+  brisaHada(g, p, t) {
+    const x = px(p.x), y = px(p.y - p.alt);
+    g.globalAlpha = 0.4; PX.disco(g, x, y, 5, '#ffc2e8'); g.globalAlpha = 1;
+    PX.arcoPix(g, x, y, 5, t * 14, t * 14 + 3.5, '#ff8ad0', 2, 4);
+    for (let i = 0; i < 3; i++) { const a = t * 16 + i * 2.1; PX.carimbar(g, PX.chispa(2, i ? '#ffd6f2' : '#ffffff'), x + Math.cos(a) * 6, y + Math.sin(a) * 4, 0, 1, 1); }
+  },
+  // Dragon Breath: bafo de chama verde-azulada
+  aliento(g, p, t) { PX.carimbar(g, PX.llama(Math.floor(t * 18), tamSprite(2.4 * p.escala), ['#0f3a3a', '#2aa89a', '#7ae8d0', '#e8fff8']), p.x, p.y - p.alt, p.ang - Math.PI / 2); },
+  // Tri Attack: triângulo da cor do tipo do tiro (fogo, gelo ou elétrico)
+  tri(g, p, t) {
+    const R3 = { FIRE: ['#c8320f', '#ff8a2a', '#ffe0a0'], ICE: ['#2a7ac8', '#8fd8ff', '#ffffff'], ELECTRIC: ['#c89a00', '#ffe066', '#ffffff'] }[p.tipoAtq] ?? ['#888', '#ccc', '#fff'];
+    PX.carimbar(g, PX.triangulo(Math.round(3.6 * p.escala), R3), p.x, p.y - p.alt, t * 10, 1, 1);
+  },
+  // Lock-On: mira vermelha que voa girando
+  lockon(g, p, t) { PX.carimbar(g, PX.mira(Math.round(4 * p.escala), '#ff4a4a'), p.x, p.y - p.alt, t * 6, 1, 1); },
   // torreta arremessada pela ultimate
   torretaProj(g, p, t) { dibujarTorretaPix(g, p.x, p.y - p.alt, t, 1.1, true); },
   // Aqua Cutter: lâmina de água fina
@@ -542,6 +590,15 @@ export function dibujarLaco(g, e, t) {
 // Leaf Tornado: um funil de vento verde com folhas girando em volta
 export function dibujarTorbellino(g, e, t, fx) {
   const k = Math.min(1, e.t / 0.2, (e.vida - e.t) / 0.25), alto = 56, base = e.radio;
+  if (e.estilo === 'agua') {
+    // Whirlpool Waltz: redemoinho de água azul que gira, com espuma e gotas subindo
+    g.globalAlpha = 0.4 * k; PX.elipsePix(g, px(e.x), px(e.y), base, base * 0.5, '#123f9c'); g.globalAlpha = k;
+    for (let i = 0; i < 4; i++) { const r = base * (1 - i * 0.22), gira = -t * (8 + i * 3) + i; PX.arcoPix(g, e.x, e.y - i * 3, r, gira, gira + 2.8, '#04102c', 5, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 0.05, gira + 2.75, i % 2 ? '#8fd0ff' : '#2f7fe0', 3, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 3.1, gira + 4.4, '#ffffff', 1, r * 0.5); }
+    for (let i = 0; i < 6; i++) { const a = -t * 9 + i * 1.05, r = base * 0.8; PX.carimbar(g, PX.humo(3, ['#4aa3f0', '#bfe4ff', '#ffffff']), e.x + Math.cos(a) * r, e.y + Math.sin(a) * r * 0.5 - 2, 0, 1, k); }
+    g.globalAlpha = 1;
+    if (ale() < 0.5) fx.add({ x: e.x + entre(-base, base) * 0.6, y: e.y, vy: -90 - ale() * 60, g: 260, size: 2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
+    return;
+  }
   g.globalAlpha = 0.35 * k; PX.elipsePix(g, px(e.x), px(e.y), base * 0.8, base * 0.35, '#2f5a1e'); g.globalAlpha = k;
   for (let i = 0; i < 5; i++) {
     const f = i / 4, y = e.y - f * alto, r = base * (0.35 + f * 0.75), gira = t * 14 + i;
@@ -763,13 +820,41 @@ function dibujarChorro(g, e, t, fx) {
   // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
   const nTr = Math.max(2, Math.ceil(largoTotal / 9));
   const solar = paletaH === 'solar';
+  if (paletaH === 'psiquico') {
+    // Psybeam: raio roxo com anéis psíquicos que correm por ele
+    for (const [cor, k] of [['rgba(192,132,252,0.35)', 1.25], ['#5a1f8a', 0.75], ['#b05ae8', 0.55], ['#f0d0ff', 0.28], ['#ffffff', 0.1]]) PX.lineaPix(g, ox, oy, px(x2), px(y2), cor, Math.max(1, Math.round(w * k)));
+    const N = Math.max(4, Math.floor(largoTotal / 26));
+    for (let i = 0; i < N; i++) { const f = ((i / N) + t * 2.2) % 1, cx = ox + ux * largoTotal * f, cy = oy + uy * largoTotal * f, r = w * (0.45 + 0.2 * Math.sin(t * 20 + i)); g.globalAlpha = Math.min(1, (1 - f) * 3); PX.anilloPix(g, cx, cy, r * 0.35, r, '#04102c', 3, 0); PX.anilloPix(g, cx, cy, r * 0.35, r, i % 2 ? '#ff9ad8' : '#e0b0ff', 2, 0); }
+    g.globalAlpha = 1;
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.38), ['#5a1f8a', '#b05ae8', '#f0d0ff', '#ffffff']);
+    if (ale() < 0.6) fx.add({ x: px(x2), y: px(y2), vx: entre(-80, 80), vy: entre(-80, 60), size: 2.4, life: 0.35, color: '#f0d0ff', forma: 'chispa' });
+    return;
+  }
+  if (paletaH === 'acero') {
+    // Flash Cannon: raio prateado com brilho que corre e faíscas
+    for (const [cor, k] of [['rgba(214,226,238,0.35)', 1.2], ['#4a5a6a', 0.7], ['#a8b8c8', 0.52], ['#e6eef6', 0.3], ['#ffffff', 0.12]]) PX.lineaPix(g, ox, oy, px(x2), px(y2), cor, Math.max(1, Math.round(w * k)));
+    for (let i = 0; i < 6; i++) { const f = ((i / 6) + t * 3) % 1; PX.carimbar(g, PX.chispa(3, '#ffffff'), ox + ux * largoTotal * f + nxp * Math.sin(i * 3 + t * 30) * w * 0.25, oy + uy * largoTotal * f + nyp * Math.sin(i * 3 + t * 30) * w * 0.25, 0, 1, 1); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.36), ['#4a5a6a', '#a8b8c8', '#e6eef6', '#ffffff']);
+    if (ale() < 0.6) fx.chispas(px(x2), px(y2), '#e6eef6', 1, 200);
+    return;
+  }
+  if (paletaH === 'glitch') {
+    // Glitch Beam: camadas vermelha e ciano deslocadas, núcleo branco e blocos de pixel que piscam
+    const tremor = (Math.floor(t * 30) % 3) - 1;
+    PX.lineaPix(g, ox - 2, oy + tremor, px(x2) - 2, px(y2) + tremor, 'rgba(255,40,120,0.7)', Math.max(2, Math.round(w * 0.6)));
+    PX.lineaPix(g, ox + 2, oy - tremor, px(x2) + 2, px(y2) - tremor, 'rgba(40,240,255,0.7)', Math.max(2, Math.round(w * 0.6)));
+    PX.lineaPix(g, ox, oy, px(x2), px(y2), '#ffffff', Math.max(1, Math.round(w * 0.3)));
+    for (let i = 0; i < 14; i++) { const f = ale(), lado = (ale() - 0.5) * w * 1.2, bx = ox + ux * largoTotal * f + nxp * lado, by = oy + uy * largoTotal * f + nyp * lado; g.fillStyle = ['#2ff3ff', '#ff3ad8', '#ffffff', '#fff04a'][i % 4]; g.fillRect(Math.round(bx), Math.round(by), 2 + Math.floor(ale() * 5), 2 + Math.floor(ale() * 3)); }
+    PX.esfera(g, ox, oy, Math.max(3, w * 0.34), ['#2a2a6a', '#ff3ad8', '#2ff3ff', '#ffffff']);
+    return;
+  }
   if (paletaH === 'electrico') {
     // Thunderous Lash / Plasma Lash: relâmpago que treme, com brilho amarelo e núcleo branco
     const N = Math.max(6, Math.floor(largoTotal / 14));
-    for (const [cor, lw, amp] of [['rgba(255,214,60,0.35)', w + 4, 1], ['#04102c', Math.max(4, w * 0.45), 1], ['#ffd23c', Math.max(3, w * 0.32), 1], ['#fff6c8', Math.max(1, w * 0.12), 0.6]]) {
+    for (const [cor, lw, amp] of [['rgba(255,214,60,0.25)', Math.min(26, w * 0.8), 1], ['#04102c', Math.min(14, Math.max(4, w * 0.4)), 1], ['#ffd23c', Math.min(10, Math.max(3, w * 0.28)), 1], ['#fff6c8', Math.min(4, Math.max(1, w * 0.1)), 0.6]]) {
       let x0 = ox, y0 = oy, sd = Math.floor(t * 24);
       const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
-      for (let i = 1; i <= N; i++) { const f = i / N, o = i === N ? 0 : (rnd() - 0.5) * w * 0.9 * amp, x1 = ox + ux * largoTotal * f + nxp * o, y1 = oy + uy * largoTotal * f + nyp * o; PX.lineaPix(g, x0, y0, x1, y1, cor, Math.round(lw)); x0 = x1; y0 = y1; }
+      for (let i = 1; i <= N; i++) { const f = i / N, o = i === N ? 0 : (rnd() - 0.5) * Math.min(w, 34) * 0.9 * amp, x1 = ox + ux * largoTotal * f + nxp * o, y1 = oy + uy * largoTotal * f + nyp * o; PX.lineaPix(g, x0, y0, x1, y1, cor, Math.round(lw)); x0 = x1; y0 = y1; }
     }
     for (let i = 0; i < 3; i++) { const f = ale(), x = ox + ux * largoTotal * f, y = oy + uy * largoTotal * f; fx.add({ x, y, vx: entre(-90, 90), vy: entre(-90, 60), size: 2.4, life: 0.25, color: '#fff6a8', forma: 'chispa' }); }
     PX.esfera(g, ox, oy, Math.max(3, w * 0.35), ['#8a5a00', '#ffc21a', '#fff29a', '#ffffff']);

@@ -346,7 +346,25 @@ export class Combate {
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
     if (l.dash) this.dibujarDash(g, l);
     // estados visíveis
-    if (l.est.escudo || l.escudo > 0) { g.strokeStyle = 'rgba(125,211,252,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.45 + 4, l.alto * 0.55 + 3, 0, 0, 7); g.stroke(); }
+    const esE = l.est.escudo?.estilo;
+    if (esE === 'barrera' && (l.est.escudo || l.escudo > 0)) {
+      // Barrier: bolha psíquica com arcos que giram
+      const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, rx = l.alto * 0.5 + 6, ry = l.alto * 0.6 + 4;
+      g.globalAlpha = 0.18; PX.elipsePix(g, cx, cy, rx, ry, '#c084fc'); g.globalAlpha = 0.9;
+      PX.anilloPix(g, cx, cy, rx, ry, '#e0b0ff', 1, 0); PX.arcoPix(g, cx, cy, rx - 1, t * 4, t * 4 + 1.2, '#ffffff', 2, ry - 1); PX.arcoPix(g, cx, cy, rx - 1, t * 4 + 3.1, t * 4 + 3.9, '#ffffff', 1, ry - 1); g.globalAlpha = 1;
+    } else if (esE === 'algodon' && (l.est.escudo || l.escudo > 0)) {
+      for (let i = 0; i < 6; i++) { const a = t * 2 + i * 1.05; PX.carimbar(g, PX.humo(4, ['#c8d0e8', '#eef2ff', '#ffffff']), l.x + Math.cos(a) * (l.alto * 0.45 + 4), l.y - l.alto * 0.45 - l.salto + Math.sin(a) * (l.alto * 0.3), 0, 1, 0.85); }
+    } else if (esE === 'acero' && (l.est.escudo || l.escudo > 0)) {
+      const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, rx = l.alto * 0.45 + 5, ry = l.alto * 0.55 + 3;
+      PX.anilloPix(g, cx, cy, rx, ry, '#04102c', 3, 0); PX.anilloPix(g, cx, cy, rx, ry, '#c8d4e0', 1, 8, Math.floor(t * 10));
+      if (Math.floor(t * 6) % 3 === 0) PX.carimbar(g, PX.chispa(3, '#ffffff'), cx + Math.cos(t * 3) * rx, cy + Math.sin(t * 3) * ry, 0, 1, 1);
+    } else if (l.est.escudo || l.escudo > 0) { g.strokeStyle = 'rgba(125,211,252,0.8)'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.45 + 4, l.alto * 0.55 + 3, 0, 0, 7); g.stroke(); }
+    // Mirror Coat: reflexo colorido girando em volta
+    if (l.est.espejo) { const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, rx = l.alto * 0.5 + 5, ry = l.alto * 0.6 + 3; const cs = ['#ff9ad8', '#ffd23c', '#7ad8ff', '#b6f07a']; for (let i = 0; i < 4; i++) PX.arcoPix(g, cx, cy, rx, t * 6 + i * 1.57, t * 6 + i * 1.57 + 0.9, cs[i], 2, ry); }
+    // Aqua Ring: gotas girando no chão em volta dos pés
+    if (l.est.aquaRing) { for (let i = 0; i < 8; i++) { const a = t * 3 + i * 0.785; PX.carimbar(g, PX.gota(5, PX.RAMPA_AGUA), l.x + Math.cos(a) * 16, l.y + Math.sin(a) * 6 - 3, a + Math.PI / 2, 1, 0.9); } if (Math.random() < 0.15) this.fx.add({ x: l.x + (Math.random() - 0.5) * 20, y: l.y - 2, vy: -30, size: 2, life: 0.6, color: '#bfe9ff', forma: 'burbuja' }); }
+    // Lock-On: mira vermelha em cima de quem está marcado
+    if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }
     if (l.est.dormido && Math.floor(t * 2) % 2) texto(g, 'z', l.x + 12, l.y - l.alto - 6 - (t * 10) % 8, { tam: 8, color: '#fff', borde: 2 });
     if (l.est.confuso) for (let i = 0; i < 3; i++) { g.fillStyle = '#ffe14a'; g.fillRect(l.x + Math.cos(t * 5 + i * 2.1) * 14 - 2, l.y - l.alto - 8 + Math.sin(t * 5 + i * 2.1) * 3, 4, 4); }
@@ -419,6 +437,7 @@ export class Combate {
     const girar = (r, cols, grosor, n) => { for (let k = 0; k < n; k++) { const a0 = t * 24 + (k / n) * Math.PI * 2; PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, '#04102c', grosor + 2, r * 0.8); PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, cols[0], grosor, r * 0.8); PX.arcoPix(g, cx, cy, r, a0 + 0.2, a0 + 1.1, cols[1], Math.max(1, grosor - 2), r * 0.8); } };
     if (e === 'agua') { girar(l.alto * 0.62, ['#4aa3f0', '#ffffff'], 4, 3); if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 16, y: cy + (Math.random() - 0.5) * 16, vx: -Math.cos(a) * 50 + (Math.random() - 0.5) * 80, vy: -Math.sin(a) * 30 - 40, g: 260, size: 1.8, life: 0.45, color: '#cfeeff', forma: 'gota', rampa: PX.RAMPA_AGUA }); }
     else if (e === 'veneno') { for (let k = 0; k < 5; k++) { const off = (k - 2) * 4, ln = 16 + (k % 3) * 8; PX.lineaPix(g, cx - Math.sin(a) * off, cy + Math.cos(a) * off, cx - Math.cos(a) * ln - Math.sin(a) * off, cy - Math.sin(a) * ln + Math.cos(a) * off, k % 2 ? '#e070ff' : '#8a2bb8', 2); } if (Math.random() < 0.7) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 10, vx: -Math.cos(a) * 60, vy: -Math.sin(a) * 60, size: 2.4, life: 0.35, color: '#d68cf0', forma: 'burbuja' }); }
+    else if (e === 'nube') { if (Math.random() < 0.9) fx.add({ x: l.x - Math.cos(a) * 10 + (Math.random() - 0.5) * 10, y: l.y - 4 + (Math.random() - 0.5) * 6, vx: -Math.cos(a) * 30, vy: -10, size: 5, life: 0.5, color: 'rgba(240,244,255,0.8)', forma: 'circulo' }); }
     else if (e === 'matcha') { g.globalAlpha = 0.85; PX.elipsePix(g, l.x, l.y + 1, 18, 7, '#3f6b1e'); PX.elipsePix(g, l.x, l.y, 15, 5, '#8bc34a'); PX.anilloPix(g, l.x, l.y, 16, 6, '#eef8d0', 1, 5, Math.floor(t * 20)); g.globalAlpha = 1; for (let k = 0; k < 2; k++) fx.add({ x: l.x - Math.cos(a) * 12 + (Math.random() - 0.5) * 14, y: l.y + (Math.random() - 0.5) * 6, vx: -Math.cos(a) * 40 + (Math.random() - 0.5) * 60, vy: -40 - Math.random() * 50, g: 260, size: 2.4, life: 0.5, color: '#a8d060', forma: 'gota', rampa: ['#2a4a12', '#5f8f2a', '#a8d060', '#eef8d0'] }); fx.add({ x: l.x - Math.cos(a) * 16, y: l.y + 1, size: 6, life: 0.7, color: 'rgba(139,195,74,0.55)', forma: 'circulo' }); }
     else if (e === 'electrico') { for (let k = 0; k < 3; k++) { const off = (k - 1) * 6, ln = 14 + k * 6; PX.lineaPix(g, cx - Math.sin(a) * off, cy + Math.cos(a) * off, cx - Math.cos(a) * ln - Math.sin(a) * (off + (k % 2 ? 3 : -3)), cy - Math.sin(a) * ln + Math.cos(a) * off, k === 1 ? '#ffffff' : '#ffd23c', 2); } if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 12, vx: (Math.random() - 0.5) * 120, vy: (Math.random() - 0.5) * 120, size: 2.4, life: 0.2, color: '#fff6a8', forma: 'chispa' }); }
     else if (e === 'rodar') { girar(l.alto * 0.5, ['#a0783c', '#e8c890'], 3, 2); if (Math.random() < 0.6) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 5); }

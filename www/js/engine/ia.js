@@ -103,6 +103,10 @@ export class IA {
       case 'laco': return d < h.alcance;
       case 'geiser': return d < h.alcance + 30;
       case 'torreta': return d < h.alcance + 80;
+      case 'espejo': return d < 170;
+      case 'curaAnillo': return l.hp < l.hpMax * 0.75;
+      case 'recuperar': return l.hp < l.hpMax * 0.6;
+      case 'estallido': return d < (h.alcance ?? 170);
       case 'lanzaTorretas': return d < h.alcance;
       case 'explosion': return d < h.radio;
       case 'trampa': return d < h.alcance + 20;

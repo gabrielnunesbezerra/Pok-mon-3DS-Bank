@@ -861,5 +861,255 @@
   "retrato": [
    "G〜"
   ]
+ },
+ {
+  "dex": "0137",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Mojo",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0137s",
+  "sprite": [
+   "Tacocoa"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0150",
+  "sprite": [
+   "CHUNSOFT",
+   "JFain"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0150-0002",
+  "sprite": [
+   "JFain"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0150-0002s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0150s",
+  "sprite": [
+   "El_Pangoro_Parse",
+   "JFain"
+  ],
+  "retrato": [
+   "Anonymous",
+   "Noo",
+   "Cloudy"
+  ]
+ },
+ {
+  "dex": "0233",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Blanca",
+   "bwappi"
+  ]
+ },
+ {
+  "dex": "0233s",
+  "sprite": [
+   "bwappi"
+  ],
+  "retrato": [
+   "Moo",
+   "Blanca",
+   "bwappi"
+  ]
+ },
+ {
+  "dex": "0333",
+  "sprite": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0333s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0334",
+  "sprite": [
+   "CHUNSOFT",
+   "TawnySoup"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "gromchurch",
+   "TawnySoup"
+  ]
+ },
+ {
+  "dex": "0334-0001",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Ichor",
+   "Emmuffin",
+   "◥θ┴θ◤"
+  ]
+ },
+ {
+  "dex": "0334-0001s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0334s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "Prismatic",
+   "gromchurch"
+  ]
+ },
+ {
+  "dex": "0349",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "<@!828520880299966525>"
+  ]
+ },
+ {
+  "dex": "0349s",
+  "sprite": [
+   "Chi"
+  ],
+  "retrato": [
+   "Chi",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0350",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0350s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Chi",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0474",
+  "sprite": [
+   "CHUNSOFT",
+   "Caitemis"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Fable",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0474s",
+  "sprite": [
+   "Prismatic",
+   "Caitemis"
+  ],
+  "retrato": [
+   "Prismatic",
+   "Fable",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0884",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "EzerArt",
+   "Emboarger",
+   "Soulja"
+  ]
+ },
+ {
+  "dex": "0884s",
+  "sprite": [
+   "G〜"
+  ],
+  "retrato": [
+   "Caitemis",
+   "Soulja"
+  ]
+ },
+ {
+  "dex": "1018",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "1018s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
  }
 ]

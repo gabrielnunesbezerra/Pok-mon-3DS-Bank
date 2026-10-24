@@ -12,7 +12,7 @@ export function pacote(h, extra, ang, mas = {}) {
   return {
     dano: h.dano, tipo: h.tipo, slot: extra?.slot, surge: extra?.surge, dirX: Math.cos(ang), dirY: Math.sin(ang),
     empuje: h.empuje, aturde: h.aturde, confunde: h.confunde || undefined, debilita: h.debilita, drenaje: h.drenaje, quema: h.quema,
-    veneno: h.veneno, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
+    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
   };
 }
 
@@ -191,6 +191,8 @@ export class Chorro {
     this.vivo = true;
     dueno.accion = { hasta: luta.t + this.carga + this.dur + 0.05, bloquea: false, lento: 0.35, angulo: this.ang, update: () => { dueno.accion && (dueno.accion.angulo = this.ang); }, fin: () => { this.vivo = false; if (h.recarga && !dueno.ko) luta.programar(0, () => { dueno.accion = { hasta: luta.t + h.recarga, bloquea: true, lento: 0.7 }; dueno.texto('RECHARGE', '#ffd166'); }); } };
     dueno.animar(h.anim ?? 'Charge', this.carga + this.dur);
+    // Electro Shot (Archaludon): carrega blindado
+    if (h.blindajeCarga) dueno.ponerEstado('blindaje', this.carga + 0.1, { reduce: h.blindajeCarga });
   }
   get activo() { return this.t >= this.carga; }
   // enquanto dispara, sai da boca; depois que para, fica onde estava e a cauda vai embora (como no site)

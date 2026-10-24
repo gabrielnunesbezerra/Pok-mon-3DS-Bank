@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido'];
 
-test('o roster tem os 15 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza']);
+test('o roster tem os 20 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -394,4 +394,33 @@ test('Veluza: torreta pulsa e dá dano; ultimate puxa as torretas e atira no ini
   correr(l, 2, [null, null]);
   assert.equal(l.entidades.filter(e => e.tipo === 'torreta' && e.vivo).length, 0, 'a torreta foi usada');
   assert.ok(b.hp < hp1, 'as torretas acertaram');
+});
+
+test('novos: Mirror Coat devolve, Aqua Ring cura, Lock-On marca, Tri Attack troca de tipo, Psystrike solta 14 esferas', () => {
+  const l = nuevaLuta('feebas', 'charmander');
+  const [a, b] = l.luchadores;
+  a.energia = 100;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  const hpB = b.hp, hpA = a.hp;
+  a.recibir(b, { dano: 10, tipo: 'FIRE', dirX: 1, dirY: 0 });
+  assert.ok(a.hp >= hpA && b.hp < hpB, 'Mirror Coat devolve o golpe');
+  correr(l, 1.5, [null, null]);
+  a.hp = a.hpMax * 0.5; a.cd.q = 0;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  const h0 = a.hp; correr(l, 3, [null, null]);
+  assert.ok(a.hp > h0, 'Aqua Ring cura');
+  const p = nuevaLuta('porygon', 'munchlax');
+  const [c, d] = p.luchadores;
+  c.energia = 100; d.x = c.x + 100; d.y = c.y; c.ax = d.x; c.ay = d.y;
+  p.habilidades.usar(c, 'rmb'); correr(p, 0.6, [null, null]);
+  assert.ok(d.est.marca, 'Lock-On marcou o alvo');
+  const tipos = new Set();
+  for (let i = 0; i < 3; i++) { c.cd.lmb = 0; c.calor = 0; c.accion = null; p.habilidades.usar(c, 'lmb'); correr(p, 0.3, [null, null]); for (const e of p.entidades) if (e.tipo === 'proj') tipos.add(e.tipoAtq); }
+  assert.ok(tipos.size >= 2, `Tri Attack troca de tipo (${[...tipos]})`);
+  const m = nuevaLuta('mewtwo', 'munchlax', { etapas: [2, 0] });
+  const [e] = m.luchadores;
+  e.mega = true; e.kit = e.kitActual(); e.energia = 100;
+  assert.equal(m.habilidades.usar(e, 'rmb'), true);
+  correr(m, 0.25, [null, null]);
+  assert.equal(m.entidades.filter(x => x.tipo === 'proj').length, 14);
 });

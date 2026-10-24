@@ -217,8 +217,10 @@ export class Lutador {
     if (this.ko) return 'nada';
     const luta = this.luta, t = luta.t;
     // Rest do Snorlax: dormindo, os golpes ricocheteiam em quem atacou
-    if (this.est.dormido?.refleja && fuente && fuente !== this && !fuente.ko && !g.reflejado && g.dano > 0) {
-      fuente.recibir(this, { ...g, dano: g.dano * this.est.dormido.refleja, reflejado: true, dirX: -(g.dirX ?? 0), dirY: -(g.dirY ?? 0), aturde: undefined });
+    const refleja = this.est.dormido?.refleja || this.est.espejo?.f;
+    // Rest (Snorlax) e Mirror Coat (Milotic): o golpe volta para quem atacou
+    if (refleja && fuente && fuente !== this && !fuente.ko && !g.reflejado && g.dano > 0) {
+      fuente.recibir(this, { ...g, dano: g.dano * refleja, reflejado: true, dirX: -(g.dirX ?? 0), dirY: -(g.dirY ?? 0), aturde: undefined });
       this.avisar('reflejo', () => { this.texto('REFLECT!', '#bfdbfe'); luta.emit({ t: 'reflejo', l: this }); }, 0.3);
       return 'miss';
     }
@@ -239,7 +241,7 @@ export class Lutador {
     if (!g.puro) {
       d *= (fuente?.atk ?? 1) / this.defensa;
       if (g.surge) d *= REGLAS.surgeMult;
-      if (this.est.marca) d *= REGLAS.marcaMult;
+      if (this.est.marca) d *= this.est.marca.f ?? REGLAS.marcaMult;
       if (fuente?.est.furia) d *= fuente.est.furia.mult;
       if (fuente?.est.potencia?.mult) d *= 1 + fuente.est.potencia.mult;
       if (fuente?.est.quemado) d *= ESTADOS_TIPO.FIRE.dano;
@@ -299,6 +301,8 @@ export class Lutador {
       this.ponerEstado('quema', g.quema.dur, { dps: g.quema.dps, pilas, fuente });
     }
     if (g.sinDash) this.ponerEstado('sinDash', g.sinDash);
+    // Lock-On (Porygon): o alvo marcado leva mais dano por alguns segundos
+    if (g.marca) { if (!this.est.marca) this.texto('LOCKED ON', '#7df9ff'); this.ponerEstado('marca', g.marca, { f: g.marcaF ?? REGLAS.marcaMult }); }
   }
 
   // dano que este lutador causou: carrega ultimate e experiência, ganha energia, combo e roubo de vida
@@ -397,7 +401,7 @@ export class Lutador {
     }
     // regeneração fora de combate
     if (t - this.ultimoDano >= REGLAS.curaTras && this.hp < this.hpMax) this.hp = Math.min(this.hpMax, this.hp + REGLAS.curaFuera * REGLAS.vidaGlobal * dt);
-    for (const nombre of ['dormido', 'arraigo']) {
+    for (const nombre of ['dormido', 'arraigo', 'aquaRing']) {
       const e = this.est[nombre];
       if (!e) continue;
       e.acum = (e.acum ?? 0) + dt;

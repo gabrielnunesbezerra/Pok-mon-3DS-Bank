@@ -188,6 +188,47 @@ export function burbujaLlena(r) {
   });
 }
 
+// nota musical (Sing, Cloud Concert): cabeça oval, haste e bandeirinha, com contorno escuro
+export function nota(tam = 6, color = '#ffffff') {
+  return guardado(`nota${tam}-${color}`, tam * 2 + 6, tam * 3 + 6, (g, W, H) => {
+    const cx = Math.floor(W / 2) - 1, base = H - 4;
+    for (const [c, k] of [[CONTORNO, 1], [color, 0]]) {
+      g.fillStyle = c;
+      g.beginPath(); g.ellipse(cx - 1, base - 1, tam * 0.55 + k, tam * 0.4 + k, -0.4, 0, Math.PI * 2); g.fill();
+      g.fillRect(cx + Math.round(tam * 0.35) - k, base - tam * 2.4 - k, 2 + k * 2, tam * 2.3 + k);
+      g.fillRect(cx + Math.round(tam * 0.35) - k, base - tam * 2.4 - k, Math.round(tam * 0.9) + k * 2, 2 + k * 2);
+    }
+    g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(cx - 2, base - 2, 1, 1);
+  });
+}
+// triângulo de energia (Tri Attack): uma ponta para cada tipo
+export function triangulo(tam, rampa) {
+  return guardado(`tri${tam}-${rampa.join()}`, tam * 2 + 6, tam * 2 + 6, (g, W) => {
+    const c = W / 2, tri = (k, color) => { g.fillStyle = color; g.beginPath(); for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + (i * Math.PI * 2) / 3; (i ? g.lineTo : g.moveTo).call(g, c + Math.cos(a) * tam * k, c + Math.sin(a) * tam * k); } g.closePath(); g.fill(); };
+    tri(1.25, CONTORNO); tri(1, rampa[0]); tri(0.75, rampa[1]); tri(0.4, rampa[2]);
+  });
+}
+// mira (Lock-On): quatro cantos e um ponto no meio
+export function mira(tam, color = '#ff3a3a') {
+  return guardado(`mira${tam}-${color}`, tam * 2 + 6, tam * 2 + 6, (g, W) => {
+    const c = Math.floor(W / 2), r = tam, L = Math.max(2, Math.round(tam * 0.5));
+    for (const [cor, w] of [[CONTORNO, 3], [color, 1]]) {
+      g.fillStyle = cor;
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const x = c + sx * r, y = c + sy * r; g.fillRect(Math.min(x, x - sx * L) - (w - 1) / 2, y - (w - 1) / 2, L + w - 1, w); g.fillRect(x - (w - 1) / 2, Math.min(y, y - sy * L) - (w - 1) / 2, w, L + w - 1); }
+      g.fillRect(c - (w - 1) / 2, c - (w - 1) / 2, w, w);
+    }
+  });
+}
+// cruz verde de cura (Recover)
+export function cruzCura(tam = 3) {
+  return guardado(`cruz${tam}`, tam * 3 + 4, tam * 3 + 4, (g) => {
+    const c = 2;
+    g.fillStyle = CONTORNO; g.fillRect(c + tam - 1, c - 1, tam + 2, tam * 3 + 2); g.fillRect(c - 1, c + tam - 1, tam * 3 + 2, tam + 2);
+    g.fillStyle = '#3ccf4e'; g.fillRect(c + tam, c, tam, tam * 3); g.fillRect(c, c + tam, tam * 3, tam);
+    g.fillStyle = '#b6f5be'; g.fillRect(c + tam, c, 1, tam * 3);
+  });
+}
+
 // rocha irregular com faces
 export function roca(tam, tono = ['#6b5a1e', '#a68c3a', '#c9b469', '#efe3a8']) {
   return guardado(`roca${tam}-${tono.join()}`, tam * 2 + 4, tam * 2 + 4, (g, W) => {

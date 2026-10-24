@@ -11,7 +11,8 @@ import { centrada } from './centrar.js';
 const NIVELES = ['facil', 'normal', 'dificil'];
 const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
-const CARD = { w: 80, h: 30, gap: 3, x0: 190, y0: 56 };
+const COLS = 4;
+const CARD = { w: 64, h: 30, gap: 4, x0: 186, y0: 56 };
 const SHINY_TOQUES = 20;
 
 export class Seleccion {
@@ -115,7 +116,7 @@ export class Seleccion {
     const accion = ['Enter', 'Space', 'NumpadEnter'].includes(c);
     if (this.foco === 'grade') {
       if (dx) { this.cursor = (this.cursor + dx + n) % n; sfx('seleccion'); }
-      if (dy) { const f = Math.floor(this.cursor / 3) + dy, filas = Math.ceil(n / 3); if (f > filas - 1) this.foco = 'arena'; else if (f >= 0) this.cursor = Math.min(n - 1, f * 3 + (this.cursor % 3)); sfx('seleccion'); }
+      if (dy) { const f = Math.floor(this.cursor / COLS) + dy, filas = Math.ceil(n / COLS); if (f > filas - 1) this.foco = 'arena'; else if (f >= 0) this.cursor = Math.min(n - 1, f * COLS + (this.cursor % COLS)); sfx('seleccion'); }
       if (accion) this.elegirCarta(this.cursor);
     } else {
       const orden = this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
@@ -127,7 +128,7 @@ export class Seleccion {
     }
   }
 
-  cajaCarta(i) { return { x: CARD.x0 + (i % 3) * (CARD.w + CARD.gap), y: CARD.y0 + Math.floor(i / 3) * (CARD.h + CARD.gap), w: CARD.w, h: CARD.h }; }
+  cajaCarta(i) { return { x: CARD.x0 + (i % COLS) * (CARD.w + CARD.gap), y: CARD.y0 + Math.floor(i / COLS) * (CARD.h + CARD.gap), w: CARD.w, h: CARD.h }; }
   puntero(tipo, p) {
     if (tipo !== 'down' && tipo !== 'move') return;
     const dentro = (c, m = 0) => p.x >= c.x - m && p.x <= c.x + c.w + m && p.y >= c.y - m && p.y <= c.y + c.h + m;
@@ -165,9 +166,9 @@ export class Seleccion {
       const foco = this.cursor === i && this.foco === 'grade';
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 3, 24, 24);
-      texto(g, p.nombre, c.x + 31, c.y + 6, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 34 });
-      p.tipos.forEach((tp, k) => { rect(g, c.x + 31 + k * 14, c.y + 18, 12, 7, '#04102c'); rect(g, c.x + 32 + k * 14, c.y + 19, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 2, c.y + 3, 24, 24);
+      texto(g, p.nombre, c.x + 28, c.y + 6, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 30 });
+      p.tipos.forEach((tp, k) => { rect(g, c.x + 28 + k * 14, c.y + 18, 12, 7, '#04102c'); rect(g, c.x + 29 + k * 14, c.y + 19, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel3) { rect(g, c.x + c.w - 14, c.y + c.h - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y + c.h - 4, 14, 8, '#fbbf24'); texto(g, 'P4', c.x + c.w - 6, c.y + c.h, { tam: 5, align: 'center', base: 'middle', color: '#04102c' }); }

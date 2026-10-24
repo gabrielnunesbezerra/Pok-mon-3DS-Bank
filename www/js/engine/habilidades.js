@@ -11,6 +11,12 @@ const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
 
 // ajuda a mirar: se o alvo está perto da direção apontada, corrige para ele
+function triAtaque(l, h) {
+  l.ciclo = ((l.ciclo ?? -1) + 1) % h.ciclo.length;
+  const tipo = h.ciclo[l.ciclo];
+  return { ...h, tipo, quema: tipo === 'FIRE' ? { dps: 1, dur: 2, max: 2 } : undefined, ralentiza: tipo === 'ICE' ? 0.35 : undefined, ralentizaDur: 1.5, aturde: tipo === 'ELECTRIC' ? 0.15 : h.aturde };
+}
+
 function asistir(l, ang, alcance, cono = 0.9) {
   const r = l.rival;
   if (!r || r.ko || r.oculto) return ang;
@@ -23,7 +29,7 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
@@ -127,7 +133,7 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- proyétil
   proyectil(l, h, extra) {
-    const luta = this.luta;
+    const luta = this.luta, hBase = h;
     let ang = asistir(l, angApunte(l), h.alcance + 40, 0.7);
     const lanzar = h.lanzar ?? 0.15;
     l.animar(h.anim ?? 'Shoot', lanzar + 0.22);
@@ -140,6 +146,8 @@ export class Habilidades {
     for (let i = 0; i < n; i++) {
       luta.programar(lanzar + i * (h.cadaRafaga ?? 0.06), () => {
         if (l.ko || l.est.aturdido) return;
+        // Tri Attack (Porygon): cada tiro troca de tipo — fogo queima, gelo deixa lento, elétrico atordoa um instante
+        if (hBase.ciclo) h = triAtaque(l, hBase);
         // leque fixo: o primeiro vai reto, os outros alternam para os lados
         const abre = i ? (i % 2 ? 1 : -1) * (h.abanico ?? 0.06) * Math.ceil(i / 2) : 0;
         const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + abre;
@@ -213,6 +221,53 @@ export class Habilidades {
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
     luta.emit({ t: 'sonido', n: 'dash' });
+  }
+
+  // ---------------------------------------------------------------- Mirror Coat (Milotic): por um instante, devolve o golpe recebido
+  espejo(l, h) {
+    const luta = this.luta;
+    l.ponerEstado('espejo', h.dur ?? 1, { f: h.f ?? 1.2 });
+    l.animar(h.anim ?? 'Charge', h.dur ?? 1);
+    l.accion = { hasta: luta.t + 0.25, lento: 0.6 };
+    luta.emit({ t: 'espejo', l, dur: h.dur ?? 1 });
+  }
+
+  // ---------------------------------------------------------------- Aqua Ring: anel de água que cura aos poucos
+  curaAnillo(l, h) {
+    const luta = this.luta;
+    l.ponerEstado('aquaRing', h.dur, { cura: (h.cura * l.hpMax) / h.dur, acum: 0 });
+    l.animar(h.anim ?? 'Charge', 0.5);
+    l.accion = { hasta: luta.t + 0.25, lento: 0.3 };
+    luta.emit({ t: 'aquaRing', l });
+  }
+
+  // ---------------------------------------------------------------- Recover: cura na hora
+  recuperar(l, h) {
+    const luta = this.luta, antes = l.hp;
+    l.cura(h.cura * l.hpMax);
+    l.animar(h.anim ?? 'Charge', 0.5);
+    l.accion = { hasta: luta.t + 0.35, bloquea: true, lento: 0 };
+    l.texto(`+${Math.round(((l.hp - antes) / l.hpMax) * 100)}% HP`, '#3ccf4e');
+    luta.emit({ t: 'recuperar', l });
+  }
+
+  // ---------------------------------------------------------------- Psystrike (Mega Mewtwo Y): rajada de esferas em todas as direções
+  estallido(l, h, extra) {
+    const luta = this.luta, lanzar = h.lanzar ?? 0.18;
+    l.animar(h.anim ?? 'Charge', lanzar + 0.3);
+    l.accion = { hasta: luta.t + lanzar + 0.1, bloquea: true, lento: 0 };
+    luta.programar(lanzar, () => {
+      if (l.ko) return;
+      // apaga projéteis inimigos por perto
+      if (h.anula) for (const e of luta.entidades) if (e.tipo === 'proj' && e.dueno !== l && e.vivo !== false && Math.hypot(e.x - l.x, e.y - l.y) < h.anula + 30) { e.vivo = false; luta.emit({ t: 'finProyectil', x: e.x, y: e.y, tipo: h.tipo }); }
+      const n = h.n ?? 12;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2;
+        luta.add(new Proyectil(luta, l, { ...h, forma: 'proyectil' }, a, { ...extra, desde: { x: l.x + Math.cos(a) * 8, y: l.y + Math.sin(a) * 5, alt: l.alto * 0.5 }, mult: 1 }));
+      }
+      luta.emit({ t: 'estallido', l, n });
+      luta.emit({ t: 'temblor', f: 0.008 });
+    });
   }
 
   // ---------------------------------------------------------------- Pulse Turret (Veluza): torreta no chão que solta pulsos em volta
@@ -297,7 +352,7 @@ export class Habilidades {
     l.angulo = ang;
     l.ponerEstado('invul', 0.25);
     l.accion = { hasta: luta.t + (h.dur ?? 0.12), bloquea: true, lento: 0 };
-    luta.emit({ t: 'teleport', l, x0, y0, x1: p.x, y1: p.y });
+    luta.emit({ t: 'teleport', l, x0, y0, x1: p.x, y1: p.y, estilo: h.estilo });
     luta.emit({ t: 'sonido', n: 'dash' });
     // a Mega solta uma onda psíquica onde reaparece
     if (h.dano) areaCirculo(luta, l, p.x, p.y, h.radio ?? 36, pacote(h, extra, ang, { dirX: undefined, dirY: undefined, empuje: 60 }));
@@ -608,11 +663,11 @@ export class Habilidades {
     // como no site: a área é uma elipse (perspectiva do chão); a 1ª onda pega tudo que está dentro e as
     // outras pegam quem estiver na faixa da onda. Cada alvo leva o golpe inteiro (dano e atordoamento) uma vez só.
     const x0 = l.x, y0 = l.y, atingidos = new Set();
-    luta.emit({ t: 'zonaRaiz', x: x0, y: y0, radio: h.ondas.at(-1) + h.banda / 2, dur: (h.carga ?? 0.3) + h.ondas.length * h.cada });
+    if (h.estilo !== 'sonido') luta.emit({ t: 'zonaRaiz', x: x0, y: y0, radio: h.ondas.at(-1) + h.banda / 2, dur: (h.carga ?? 0.3) + h.ondas.length * h.cada });
     h.ondas.forEach((dd, i) => {
       luta.programar((h.carga ?? 0.3) + i * h.cada, () => {
         if (l.ko) return;
-        luta.emit({ t: 'raices', x: x0, y: y0, ang, dist: dd, banda: h.banda, onda: i });
+        luta.emit({ t: h.estilo === 'sonido' ? 'ondaSonora' : 'raices', x: x0, y: y0, ang, dist: dd, banda: h.banda, onda: i, tipo: h.tipo });
         for (const b of luta.blancos(l)) {
           if (atingidos.has(b) || b.est?.vuelo) continue;
           const dx = b.x - x0, dy = b.y - y0, d = Math.hypot(dx, dy / 0.62);
@@ -661,11 +716,13 @@ export class Habilidades {
   escudo(l, h) {
     const luta = this.luta;
     l.escudo = Math.max(l.escudo ?? 0, (h.absorbe ?? 10) * (REGLAS.vidaGlobal ?? 1));
-    l.ponerEstado('escudo', h.dur ?? 2.5);
+    l.ponerEstado('escudo', h.dur ?? 2.5, { estilo: h.estilo });
     l.animar(h.anim ?? 'Withdraw', 0.5);
     l.accion = { hasta: luta.t + 0.3, lento: h.lento ?? 0.5 };
-    l.texto('HARDEN', '#d6dbe4');
-    luta.emit({ t: 'endurecer', l });
+    if (h.texto) l.texto(h.texto, '#d6dbe4');
+    // Barrier (Mewtwo): além do escudo, fica mais rápido
+    if (h.acelera) l.ponerEstado('rapido', h.acelera.dur, { vel: h.acelera.vel });
+    luta.emit({ t: 'endurecer', l, estilo: h.estilo });
   }
 
   // ---------------------------------------------------------------- Explosion: carrega, explode em volta e tira um pouco da própria vida
@@ -717,10 +774,11 @@ export class Habilidades {
     const luta = this.luta;
     let ang = angApunte(l);
     const vida = h.alcance / h.vel, cada = h.tick ?? 0.2, porTick = h.dano / Math.max(1, Math.round(vida / cada));
+    if (h.curaPropia) { l.cura(h.curaPropia * l.hpMax); luta.emit({ t: 'aquaRing', l }); }
     l.animar(h.anim ?? 'Charge', 0.5);
     l.accion = { hasta: luta.t + 0.3, lento: 0.3, angulo: ang };
     const tb = {
-      tipo: 'torbellino', dueno: l, vivo: true, x: l.x + Math.cos(ang) * 20, y: l.y + Math.sin(ang) * 20, radio: h.radio, t: 0, acum: 0, tipoAtq: h.tipo, vida,
+      tipo: 'torbellino', estilo: h.estilo, dueno: l, vivo: true, x: l.x + Math.cos(ang) * 20, y: l.y + Math.sin(ang) * 20, radio: h.radio, t: 0, acum: 0, tipoAtq: h.tipo, vida,
       update: dt => {
         tb.t += dt;
         if (l.ko || tb.t >= vida) {
