@@ -102,6 +102,8 @@ export class IA {
       case 'chapoteo': return true;
       case 'laco': return d < h.alcance;
       case 'geiser': return d < h.alcance + 30;
+      case 'torreta': return d < h.alcance + 80;
+      case 'lanzaTorretas': return d < h.alcance;
       case 'explosion': return d < h.radio;
       case 'trampa': return d < h.alcance + 20;
       case 'torbellino': return d < h.alcance;

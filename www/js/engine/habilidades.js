@@ -23,7 +23,7 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
@@ -213,6 +213,59 @@ export class Habilidades {
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
     luta.emit({ t: 'sonido', n: 'dash' });
+  }
+
+  // ---------------------------------------------------------------- Pulse Turret (Veluza): torreta no chão que solta pulsos em volta
+  torreta(l, h, extra) {
+    const luta = this.luta, a = angApunte(l), d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const p = fijarCampo(l.x + Math.cos(a) * d, l.y + Math.sin(a) * d);
+    const mias = luta.entidades.filter(e => e.tipo === 'torreta' && e.dueno === l && e.vivo);
+    if (mias.length >= (h.max ?? 3)) mias[0].vivo = false;
+    l.animar(h.anim ?? 'Charge', 0.3);
+    l.accion = { hasta: luta.t + 0.2, lento: 0.3 };
+    const tr = {
+      tipo: 'torreta', dueno: l, vivo: true, x: p.x, y: p.y, t: 0, acum: 0, radio: h.radio, dur: h.dur, cada: h.cada, tipoAtq: h.tipo,
+      update: dt => {
+        tr.t += dt; tr.acum += dt;
+        if (!tr.vivo || l.ko || tr.t >= tr.dur) return false;
+        if (tr.acum >= tr.cada) {
+          tr.acum -= tr.cada;
+          luta.emit({ t: 'pulsoTorreta', x: tr.x, y: tr.y, radio: tr.radio });
+          for (const b of luta.blancos(l)) {
+            if (b.oculto || b.est?.vuelo || Math.hypot(b.x - tr.x, b.y - tr.y) >= tr.radio + RADIO) continue;
+            atingir(l, b, pacote(h, extra, Math.atan2(b.y - tr.y, b.x - tr.x), { empuje: 20 }));
+          }
+        }
+        return true;
+      },
+    };
+    luta.add(tr);
+    luta.emit({ t: 'torretaNace', x: p.x, y: p.y });
+  }
+
+  // ---------------------------------------------------------------- Turret Barrage: puxa as torretas e atira todas no inimigo
+  lanzaTorretas(l, h, extra) {
+    const luta = this.luta;
+    let mias = luta.entidades.filter(e => e.tipo === 'torreta' && e.dueno === l && e.vivo);
+    // sem torreta no campo: cria três em volta para a ultimate nunca sair vazia
+    if (!mias.length) mias = [0, 1, 2].map(i => ({ x: l.x + Math.cos(i * 2.1) * 30, y: l.y + Math.sin(i * 2.1) * 18 }));
+    l.animar(h.anim ?? 'Charge', (h.tira ?? 0.35) + 0.3);
+    l.accion = { hasta: luta.t + (h.tira ?? 0.35) + 0.1, bloquea: true, lento: 0 };
+    mias.forEach((m, i) => {
+      if (m.tipo) m.vivo = false;
+      const v = { tipo: 'torretaVuela', dueno: l, vivo: true, x: m.x, y: m.y, x0: m.x, y0: m.y, t: 0, tipoAtq: h.tipo,
+        update: dt => {
+          v.t += dt;
+          const k = Math.min(1, v.t / (h.tira ?? 0.35)), ox = l.x + Math.cos(i * 2.1 + 1) * 22, oy = l.y - 6 + Math.sin(i * 2.1 + 1) * 12;
+          v.x = v.x0 + (ox - v.x0) * k * k; v.y = v.y0 + (oy - v.y0) * k * k;
+          if (k < 1) return true;
+          const r = l.rival, ang = r && !r.ko ? Math.atan2(r.y - v.y, r.x - v.x) : angApunte(l);
+          luta.add(new Proyectil(luta, l, { ...h, forma: 'proyectil', estilo: 'torretaProj', teledirigido: 2 }, ang + (i - (mias.length - 1) / 2) * 0.08, { ...extra, desde: { x: v.x, y: v.y, alt: 14 }, mult: 1 }));
+          return false;
+        } };
+      luta.add(v);
+    });
+    luta.emit({ t: 'succion', x: l.x, y: l.y, radio: 60 });
   }
 
   // ---------------------------------------------------------------- Matcha Geyser: água verde sobe debaixo do alvo e o joga para perto de quem lançou

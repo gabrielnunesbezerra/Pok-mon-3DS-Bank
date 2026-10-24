@@ -94,6 +94,8 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'pulsoTorreta': this.anillo(e.x, e.y, 6, e.radio, '#e055b0', 0.35, 2); this.anillo(e.x, e.y, 4, e.radio * 0.8, '#9fdcff', 0.3, 1); break;
+        case 'torretaNace': this.anillo(e.x, e.y, 2, 16, '#9fdcff', 0.25, 2); this.rafaga(e.x, e.y - 10, 'WATER', 8, 90); break;
         case 'geiserAviso': {
           this.zonas.push({ x: e.x, y: e.y, radio: e.radio + 4, t: 0, life: e.dur + 0.15 });
           // água verde girando em volta da Sinistcha quando ela chama o gêiser
@@ -451,6 +453,10 @@ const ESTILOS_PROJ = {
   cuchilla(g, p, t) { PX.carimbar(g, PX.anilloAire(7), p.x, p.y - p.alt, p.ang); for (let i = 1; i <= 3; i++) { g.fillStyle = '#ffffff'; g.globalAlpha = 0.7 - i * 0.18; g.fillRect(px(p.x - Math.cos(p.ang) * i * 6 + Math.sin(p.ang) * Math.sin(t * 30 + i) * 3), px(p.y - p.alt - Math.sin(p.ang) * i * 5), 2, 2); } g.globalAlpha = 1; },
   roca(g, p, t) { PX.carimbar(g, PX.roca(Math.max(3, Math.round(3.6 * p.escala))), p.x, p.y - p.alt, t * 9); },
   vacio(g, p) { PX.carimbar(g, PX.mediaLuna(8, ['#6a1f10', '#e0623a', '#ffb08a', '#ffffff']), p.x, p.y - p.alt, p.ang); },
+  // torreta arremessada pela ultimate
+  torretaProj(g, p, t) { dibujarTorretaPix(g, p.x, p.y - p.alt, t, 1.1, true); },
+  // Aqua Cutter: lâmina de água fina
+  cuchillaAgua(g, p) { PX.carimbar(g, PX.mediaLuna(Math.round(6 * p.escala), ['#123f9c', '#2f7fe0', '#9fdcff', '#ffffff']), p.x, p.y - p.alt, p.ang); },
   // Thunder Shock: faísca em zigue-zague amarela com núcleo branco
   rayito(g, p, t) {
     const ca = Math.cos(p.ang), sa = Math.sin(p.ang), x = p.x, y = p.y - p.alt;
@@ -501,6 +507,17 @@ function llamaProj(g, p, t, tam) {
   const q = tamSprite(tam / 2.6);
   PX.carimbar(g, PX.llama(Math.floor(t * 14 + p.x * 0.1), q, rampa), x - Math.cos(p.ang) * q * 0.45, y - Math.sin(p.ang) * q * 0.45, p.ang - Math.PI / 2);
   PX.disco(g, px(x), px(y), Math.max(1, q * 0.18), rampa[3]);
+}
+
+// torreta da Veluza: cristal rosa e azul flutuando, com anel de água girando
+function dibujarTorretaPix(g, x, y, t, esc = 1, voando = false) {
+  const flut = voando ? 0 : Math.sin(t * 4) * 1.5, cy = y - 10 * esc + flut;
+  if (!voando) { g.globalAlpha = 0.35; PX.elipsePix(g, x, y, 7, 3, '#0a2a4a'); g.globalAlpha = 1; }
+  g.fillStyle = '#04102c'; g.beginPath(); g.moveTo(x, cy - 9 * esc); g.lineTo(x + 6 * esc, cy); g.lineTo(x, cy + 8 * esc); g.lineTo(x - 6 * esc, cy); g.closePath(); g.fill();
+  g.fillStyle = '#e055b0'; g.beginPath(); g.moveTo(x, cy - 7 * esc); g.lineTo(x + 4.5 * esc, cy); g.lineTo(x, cy + 6 * esc); g.lineTo(x - 4.5 * esc, cy); g.closePath(); g.fill();
+  g.fillStyle = '#9fdcff'; g.beginPath(); g.moveTo(x, cy - 7 * esc); g.lineTo(x + 4.5 * esc, cy); g.lineTo(x, cy); g.closePath(); g.fill();
+  PX.disco(g, x - 1, cy - 2, 1, '#ffffff');
+  PX.anilloPix(g, x, cy, 9 * esc, 4 * esc, '#4aa3f0', 1, 4, Math.floor(t * 16));
 }
 
 // Psychic Lasso: corda de energia rosa que ondula da mão até o laço; quando prende, o laço aperta em volta do alvo
@@ -555,6 +572,15 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
         if (ale() < 0.12) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -22, g: 0, size: 2, life: 0.7, color: '#d68cf0', forma: 'burbuja' });
         break;
       }
+      case 'torreta': {
+        const k = Math.min(1, e.t / 0.2, (e.dur - e.t) / 0.4), carga = (e.acum / e.cada);
+        g.globalAlpha = k;
+        if (carga > 0.7) { g.globalAlpha = k * (carga - 0.7) * 2; PX.anilloPix(g, e.x, e.y, e.radio * (1.2 - carga * 0.3), e.radio * 0.6 * (1.2 - carga * 0.3), '#ff9ad8', 1, 6, Math.floor(t * 20)); g.globalAlpha = k; }
+        dibujarTorretaPix(g, e.x, e.y, t + e.x * 0.01);
+        g.globalAlpha = 1;
+        break;
+      }
+      case 'torretaVuela': dibujarTorretaPix(g, e.x, e.y, t, 1.1, true); break;
       case 'trampa': {
         // Grass Knot: um nó de capim no chão; pisca quando fica armado
         const armada = e.t >= e.arma, k = Math.min(1, e.t / 0.2), fim = Math.min(1, (e.dur - e.t) / 0.5);

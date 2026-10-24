@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas'];
 
-test('o roster tem os 14 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo']);
+test('o roster tem os 15 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -377,4 +377,21 @@ test('Snorlax dormindo devolve os golpes; Matcha Geyser puxa o alvo; jato do Bla
   let atordoou = false;
   for (let i = 0; i < 90; i++) { w.paso(1 / 60, [null, null]); w.tomarEventos(); if (f.est.aturdido) atordoou = true; }
   assert.ok(atordoou, 'jato do Hydro Typhoon atordoa');
+});
+
+test('Veluza: torreta pulsa e dá dano; ultimate puxa as torretas e atira no inimigo', () => {
+  const l = nuevaLuta('veluza', 'munchlax');
+  const [a, b] = l.luchadores;
+  a.energia = 100; b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  const hp0 = b.hp;
+  correr(l, 2.5, [null, null]);
+  assert.ok(b.hp < hp0, 'a torreta pulsou no inimigo');
+  assert.equal(l.entidades.filter(e => e.tipo === 'torreta').length, 1);
+  const hp1 = b.hp;
+  a.ulti = 100;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 2, [null, null]);
+  assert.equal(l.entidades.filter(e => e.tipo === 'torreta' && e.vivo).length, 0, 'a torreta foi usada');
+  assert.ok(b.hp < hp1, 'as torretas acertaram');
 });

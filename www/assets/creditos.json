@@ -843,5 +843,23 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0976",
+  "sprite": [
+   "FlowerSnek"
+  ],
+  "retrato": [
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0976s",
+  "sprite": [
+   "FlowerSnek"
+  ],
+  "retrato": [
+   "G〜"
+  ]
  }
 ]
