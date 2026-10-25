@@ -182,15 +182,16 @@ export class Efectos {
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
         case 'desaparece': this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
         case 'evolucion':
-          for (let i = 0; i < 5; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 30, 4, ['#ff6fd8', '#ffd23c', '#8be09a', '#6fd0ff', '#b07aff'][i], 0.4 + i * 0.05, 2);
-          this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, 'FAIRY', 30, 220, { life: 0.8 });
+          for (let i = 0; i < 5; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 30, 4, (e.mega ? ['#2f7fe0', '#5fd08a', '#8fd8f0', '#a8e070', '#e6f8ff'] : ['#ff6fd8', '#ffd23c', '#8be09a', '#6fd0ff', '#b07aff'])[i], 0.4 + i * 0.05, 2);
+          this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, e.mega ? 'WATER' : 'FAIRY', 30, 220, { life: 0.8 });
+          if (e.mega) this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, 'GRASS', 20, 200, { life: 0.8 });
           this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#ffffff'; this.temblor = Math.max(this.temblor, 6);
           break;
         case 'evoInicio': sfx('evoCarga'); this.temblor = Math.max(this.temblor, 2); break;
         case 'megaInicio': {
           // símbolo da Mega Evolução subindo e partículas nas cores dele
-          const cy = e.l.y - e.l.alto * 0.5, cores = ['#f4a3a8', '#f2e870', '#a8e070', '#8fd8f0', '#a8b8f0', '#d8a0e8'];
-          this.anillo(e.l.x, cy, 4, 44, '#f2e870', 0.9, 3);
+          const cy = e.l.y - e.l.alto * 0.5, cores = ['#4aa3f0', '#8fd8f0', '#e6f8ff', '#5fd08a', '#a8e070', '#2f7fe0'];
+          this.anillo(e.l.x, cy, 4, 44, '#8fd8f0', 0.9, 3); this.anillo(e.l.x, cy, 4, 30, '#a8e070', 0.7, 2);
           for (let i = 0; i < 36; i++) { const a = (i / 36) * Math.PI * 2, s = entre(60, 170); this.add({ x: e.l.x, y: cy, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 2, size: entre(2, 3.4), life: entre(0.6, 1), color: cores[i % 6], forma: 'chispa' }); }
           this.simbolos.push({ x: e.l.x, y: e.l.y - e.l.alto - 20, t: 0, life: 1.4 });
           break;
@@ -200,6 +201,8 @@ export class Efectos {
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad': if (e.slot === 'e') this.banner(`${e.h.nombre}!`, e.h.tipo); else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
+        case 'rastroLlama': for (let i = 0; i < 2; i++) this.add({ x: e.x + entre(-5, 5), y: e.y + entre(-4, 4), vx: entre(-30, 30), vy: entre(10, 40), size: entre(2.4, 3.6), grow: 2, life: 0.4, forma: 'llama', rampa: rampaFuego(e.tipo) }); break;
+        case 'corazones': for (let i = 0; i < 10; i++) { const a = ale() * Math.PI * 2, s = entre(60, 140); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 50, g: 120, size: entre(2.4, 3.4), life: entre(0.5, 0.8), color: ['#ff6fa8', '#ffc2d8', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.x, e.y + 10, 6, 40, '#ff9ac8', 0.35, 2); break;
         case 'colaGigante': this.colas.push({ l: e.l, ang: e.ang, r: e.r, t: 0, life: 0.45 }); break;
         case 'trazo': this.trazo(e.x0, e.y0, e.x1, e.y1, e.tipo, e.estilo); break;
         case 'temblor': this.temblor = Math.max(this.temblor, e.f * 900); break;
@@ -675,6 +678,36 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
         PX.anilloPix(g, px(e.x), px(e.y), e.radio * 0.9, e.radio * 0.55, '#c27ae0', 1, 4, Math.floor(e.t * 8));
         g.globalAlpha = 1;
         if (ale() < 0.12) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -22, g: 0, size: 2, life: 0.7, color: '#d68cf0', forma: 'burbuja' });
+        break;
+      }
+      case 'hueso': {
+        // osso de aura girando, com brilho azul e rastro
+        const a = e.t * 22, ca = Math.cos(a), sa = Math.sin(a), x = e.x, y = e.y - 14;
+        g.globalAlpha = 0.3; PX.disco(g, x, y, 13, '#6fd0ff'); g.globalAlpha = 1;
+        for (const [cor, w] of [['#0b2a6a', 6], ['#bfe9ff', 4], ['#ffffff', 2]]) {
+          PX.lineaPix(g, x - ca * 12, y - sa * 7, x + ca * 12, y + sa * 7, cor, w);
+          for (const s2 of [-1, 1]) { const ex = x + ca * 12 * s2, ey = y + sa * 7 * s2; PX.disco(g, ex - sa * 3, ey + ca * 2, w * 0.7, cor); PX.disco(g, ex + sa * 3, ey - ca * 2, w * 0.7, cor); }
+        }
+        if (Math.random() < 0.6) fx.add({ x, y, vx: -e.vx * 0.2 + entre(-20, 20), vy: -e.vy * 0.2 + entre(-20, 20), size: 2, life: 0.3, color: '#8fd8ff', forma: 'chispa' });
+        break;
+      }
+      case 'sismo': {
+        // área do terremoto: chão rachado que pulsa e anéis puxando para o centro
+        const k = Math.min(1, e.t / 0.2, (e.dur - e.t) / 0.4), pul = (e.acum / 0.5) % 1;
+        g.globalAlpha = 0.25 * k; PX.elipsePix(g, e.x, e.y, e.radio, e.radio * 0.62, '#5a3a1a'); g.globalAlpha = 0.8 * k;
+        PX.anilloPix(g, e.x, e.y, e.radio, e.radio * 0.62, '#c8a060', 2, 10, Math.floor(e.t * 10));
+        PX.anilloPix(g, e.x, e.y, e.radio * (1 - pul), e.radio * 0.62 * (1 - pul), '#e8d0a0', 1, 0);
+        for (let i = 0; i < 8; i++) { const a2 = i * 0.785 + 0.3, r1 = e.radio * 0.2, r2 = e.radio * (0.6 + 0.3 * Math.sin(i * 7)); PX.lineaPix(g, e.x + Math.cos(a2) * r1, e.y + Math.sin(a2) * r1 * 0.62, e.x + Math.cos(a2) * r2, e.y + Math.sin(a2) * r2 * 0.62, '#2a1a08', 2); }
+        g.globalAlpha = 1;
+        if (Math.random() < 0.3) fx.polvo(e.x + entre(-e.radio, e.radio) * 0.8, e.y + entre(-e.radio, e.radio) * 0.5, 1, 5);
+        break;
+      }
+      case 'levita': {
+        // telecinese: anéis roxos girando em volta do rival erguido
+        const r = e.preso, cy = r.y - r.alto * 0.5 - r.salto;
+        for (let i = 0; i < 3; i++) { const a2 = e.t * 7 + i * 2.1; PX.arcoPix(g, r.x, cy, r.alto * 0.6 + i * 4, a2, a2 + 1.6, i % 2 ? '#ff9ad8' : '#c084fc', 2, r.alto * 0.3 + i * 2); }
+        g.globalAlpha = 0.25; PX.elipsePix(g, r.x, r.y, 16, 6, '#c084fc'); g.globalAlpha = 1;
+        if (Math.random() < 0.5) fx.add({ x: r.x + entre(-12, 12), y: cy + entre(-10, 10), vy: -30, size: 2, life: 0.4, color: '#f0d0ff', forma: 'chispa' });
         break;
       }
       case 'flecha': {

@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -294,7 +294,9 @@ export class Habilidades {
             if (o === tr || o.tipo !== 'torreta' || o.dueno !== l || !o.vivo || o.x < tr.x || Math.hypot(o.x - tr.x, o.y - tr.y) > tr.enlace) continue;
             for (const b of luta.blancos(l)) {
               if (b.oculto || b.est?.vuelo || distSegmento(b.x, b.y, tr.x, tr.y, o.x, o.y) > RADIO + 4) continue;
-              atingir(l, b, pacote(h, extra, 0, { dano: h.danoLaser ?? 1.2, tick: true, empuje: 0, ralentiza: undefined }));
+              const aturde = h.aturdeLaser && luta.t - (b.ultimoLaser ?? -9) > 1.6 ? h.aturdeLaser : undefined;
+              if (aturde) b.ultimoLaser = luta.t;
+              atingir(l, b, pacote(h, extra, 0, { dano: h.danoLaser ?? 1.2, tick: !aturde, empuje: 0, ralentiza: undefined, aturde }));
             }
           }
         }
@@ -339,6 +341,175 @@ export class Habilidades {
       luta.emit({ t: 'endurecer', l, estilo: 'acero' });
     };
     l.cd[extra.slot] = 0.4;
+  }
+
+
+  // ================================================================ ultimates das Megas
+  // segura o rival no lugar (sem agir) até `hasta`
+  prender(r, dur) {
+    if (r.dash) r.dash = null;
+    r.accion = { hasta: this.luta.t + dur, bloquea: true, lento: 0 };
+    r.vx = r.vy = 0; r.empX = r.empY = 0;
+  }
+
+  // Mega Charizard X: investe, agarra, sobe voando com o rival e o crava no chão
+  agarre(l, h, extra) {
+    const luta = this.luta, ang = asistir(l, angApunte(l), (h.dist ?? 180) + 30, 0.8);
+    l.empezarDash({ dist: h.dist ?? 180, dur: 0.28, dano: 0, invul: true, estilo: 'dragon' }, ang);
+    l.dash.slot = extra.slot;
+    l.animar('Walk', 0.3);
+    let pegou = false;
+    const sonda = { tipo: 'sonda', dueno: l, vivo: true, t: 0, update: dt => {
+      sonda.t += dt;
+      const r = l.rival;
+      if (pegou || l.ko || sonda.t > 0.32 || !r || r.ko) return false;
+      if (Math.hypot(r.x - l.x, r.y - l.y) > RADIO * 2 + 10 || r.est.vuelo || r.invulnerable) return true;
+      pegou = true; l.dash = null;
+      const sube = 0.55, baja = 0.16, total = sube + 0.15 + baja, x0 = r.x, y0 = r.y;
+      this.prender(r, total + 0.1);
+      l.ponerEstado('invul', total + 0.1);
+      r.texto('GRABBED!', '#ffb347', { dy: 12 });
+      let t = 0;
+      l.animar('Hop', total);
+      l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, update: d2 => {
+        t += d2;
+        const alto = t < sube ? 90 * Math.sin((t / sube) * Math.PI / 2) : t < sube + 0.15 ? 90 : 90 * (1 - (t - sube - 0.15) / baja);
+        l.salto = Math.max(0, Math.round(alto)); r.salto = Math.max(0, Math.round(alto - 6));
+        l.x = x0 - Math.cos(ang) * 8; l.y = y0; r.x = x0; r.y = y0;
+        if (Math.floor(t * 30) % 2) luta.emit({ t: 'rastroLlama', x: x0, y: y0 - alto, tipo: 'DRAGON' });
+      }, fin: () => {
+        l.salto = 0; r.salto = 0;
+        if (l.ko) return;
+        luta.emit({ t: 'pulso', x: x0, y: y0, radio: h.radio, tipo: 'DRAGON', estilo: 'fuego' });
+        luta.emit({ t: 'pulso', x: x0, y: y0, radio: h.radio * 0.8, tipo: 'GROUND', estilo: 'tierra' });
+        luta.emit({ t: 'explosion', x: x0, y: y0 - 6, radio: h.radio, tipo: 'DRAGON' });
+        luta.emit({ t: 'temblor', f: 0.025 });
+        areaCirculo(luta, l, x0, y0, h.radio, pacote(h, extra, ang, { pesado: true, empuje: 120, aturde: h.aturde, dirX: undefined, dirY: undefined }));
+      } };
+      return false;
+    } };
+    luta.add(sonda);
+  }
+
+  // Mega Steelix: se arremessa e cai, deixando um terremoto que pulsa e puxa
+  sismo(l, h, extra) {
+    const luta = this.luta, ang = angApunte(l), d = Math.min(h.alcance ?? 200, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d), vuelo = 0.55;
+    l.ponerEstado('invul', vuelo); l.animar('Hop', vuelo);
+    let t = 0;
+    l.accion = { hasta: luta.t + vuelo, bloquea: true, lento: 0, angulo: ang,
+      update: dt => { t += dt; const k = Math.min(1, t / vuelo); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 80); },
+      fin: () => {
+        l.salto = 0;
+        if (l.ko) return;
+        const z = { tipo: 'sismo', dueno: l, vivo: true, x: l.x, y: l.y, radio: h.radio, t: 0, acum: 1, dur: h.dur ?? 3.5, tipoAtq: h.tipo, update: dt => {
+          z.t += dt; z.acum += dt;
+          if (l.ko || z.t >= z.dur) return false;
+          for (const b of luta.blancos(l)) { if (b.esClon || b.est?.vuelo) continue; const dx = z.x - b.x, dy = z.y - b.y, dd = Math.hypot(dx, dy) || 1; if (dd < z.radio * 1.6 && dd > 10) { b.empX += (dx / dd) * (h.tiron ?? 90) * dt * 9; b.empY += (dy / dd) * (h.tiron ?? 90) * dt * 9; } }
+          if (z.acum >= (h.cada ?? 0.5)) {
+            z.acum = 0;
+            luta.emit({ t: 'pulso', x: z.x, y: z.y, radio: z.radio, tipo: 'GROUND', estilo: 'tierra' });
+            luta.emit({ t: 'temblor', f: 0.01 });
+            areaCirculo(luta, l, z.x, z.y, z.radio, pacote(h, extra, 0, { dano: h.dano / Math.ceil(z.dur / (h.cada ?? 0.5)), empuje: 0, tick: true, dirX: undefined, dirY: undefined }));
+          }
+          return true;
+        } };
+        luta.add(z);
+        luta.emit({ t: 'explosion', x: l.x, y: l.y - 6, radio: h.radio, tipo: 'STEEL' });
+        luta.emit({ t: 'temblor', f: 0.03 });
+        areaCirculo(luta, l, l.x, l.y, h.radio * 0.7, pacote(h, extra, 0, { dano: h.danoQueda ?? 10, aturde: 0.5, empuje: 60, dirX: undefined, dirY: undefined }));
+      } };
+  }
+
+  // Mega Lucario: osso de aura que gira e quica; se acerta, Lucario aparece no alvo e dá um golpe forte
+  hueso(l, h, extra) {
+    const luta = this.luta, ang = angApunte(l);
+    l.animar('Shoot', 0.4);
+    l.accion = { hasta: luta.t + 0.2, lento: 0.3, angulo: ang };
+    const o = { tipo: 'hueso', dueno: l, vivo: true, x: l.x + Math.cos(ang) * 14, y: l.y + Math.sin(ang) * 9, vx: Math.cos(ang) * (h.vel ?? 340), vy: Math.sin(ang) * (h.vel ?? 340), t: 0, rebotes: 0, tipoAtq: h.tipo, update: dt => {
+      o.t += dt;
+      if (l.ko || o.t >= (h.dur ?? 3) || o.rebotes > (h.rebotes ?? 4)) return false;
+      o.x += o.vx * dt; o.y += o.vy * dt;
+      if (fueraCampo(o.x, o.y, -8)) {
+        const nx = (o.x - 480) / (455 * 455), ny = (o.y - 222) / (168 * 168), nm = Math.hypot(nx, ny) || 1, ux = nx / nm, uy = ny / nm, dot = o.vx * ux + o.vy * uy;
+        o.vx -= 2 * dot * ux; o.vy -= 2 * dot * uy; const p = limitarCampo(o.x, o.y, 10); o.x = p.x; o.y = p.y; o.rebotes++;
+        luta.emit({ t: 'impacto', x: o.x, y: o.y - 10, tipo: 'FIGHTING', estilo: 'aura' });
+      }
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo || Math.hypot(b.x - o.x, b.y - o.y) > RADIO + 10) continue;
+        if (b.esClon) { atingir(l, b, pacote(h, extra, 0, {})); continue; }
+        // teleporta até o alvo e bate
+        const a = Math.atan2(o.vy, o.vx);
+        luta.emit({ t: 'teleport', l, x: l.x, y: l.y, estilo: 'aura' });
+        const p = fijarCampo(b.x - Math.cos(a) * 22, b.y - Math.sin(a) * 14); l.x = p.x; l.y = p.y; l.angulo = Math.atan2(b.y - l.y, b.x - l.x);
+        this.prender(b, 0.35);
+        l.animar('Attack', 0.4); l.accion = { hasta: luta.t + 0.35, bloquea: true, lento: 0, angulo: l.angulo };
+        luta.programar(0.18, () => {
+          if (l.ko) return;
+          b.accion = null;
+          atingir(l, b, pacote(h, extra, l.angulo, { empuje: 220, aturde: h.aturde, pesado: true }));
+          luta.emit({ t: 'explosion', x: b.x, y: b.y - b.alto * 0.5, radio: 46, tipo: 'FIGHTING' });
+          luta.emit({ t: 'temblor', f: 0.02 });
+        });
+        return false;
+      }
+      return true;
+    } };
+    luta.add(o);
+  }
+
+  // Mega Alakazam: ergue o rival com telecinese e o bate no chão três vezes
+  levitar(l, h, extra) {
+    const luta = this.luta, r = l.rival;
+    if (!r || r.ko || Math.hypot(r.x - l.x, r.y - l.y) > (h.alcance ?? 260) || r.est.vuelo) { if (l.humano) l.texto('OUT OF RANGE', '#9aa0b4'); return false; }
+    const golpes = h.golpes ?? 3, ciclo = 0.42, total = golpes * ciclo;
+    this.prender(r, total + 0.1);
+    l.animar('Charge', total); l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: Math.atan2(r.y - l.y, r.x - l.x) };
+    r.texto('LIFTED!', '#e0b0ff', { dy: 12 });
+    let t = 0;
+    const ent = { tipo: 'levita', dueno: l, preso: r, vivo: true, t: 0, update: dt => {
+      t += dt; ent.t = t;
+      if (l.ko || r.ko || t >= total) { r.salto = 0; return false; }
+      const k = (t % ciclo) / ciclo;
+      r.salto = Math.round(k < 0.75 ? 60 * Math.sin((k / 0.75) * Math.PI / 2) : 60 * (1 - (k - 0.75) / 0.25));
+      const i = Math.floor(t / ciclo);
+      if (i !== ent.ultimo && k >= 0.97) {
+        ent.ultimo = i; const ultimo = i === golpes - 1;
+        r.salto = 0;
+        atingir(l, r, pacote(h, extra, 0, { dano: h.dano / golpes * (ultimo ? 1.4 : 1), empuje: 0, tick: !ultimo && i > 0, pesado: ultimo, aturde: ultimo ? h.aturde : undefined }));
+        luta.emit({ t: 'pulso', x: r.x, y: r.y, radio: 40, tipo: 'PSYCHIC', estilo: 'psico' });
+        luta.emit({ t: 'temblor', f: ultimo ? 0.02 : 0.008 });
+      }
+      return true;
+    } };
+    luta.add(ent);
+  }
+
+  // Mega Eelektross: se enrola no rival e descarrega vários raios antes de explodir
+  enrollar(l, h, extra) {
+    const luta = this.luta, ang = asistir(l, angApunte(l), 200, 0.8);
+    l.empezarDash({ dist: h.dist ?? 170, dur: 0.25, dano: 0, invul: true, estilo: 'rayo' }, ang);
+    l.dash.slot = extra.slot;
+    const sonda = { tipo: 'sonda', dueno: l, vivo: true, t: 0, update: dt => {
+      sonda.t += dt;
+      const r = l.rival;
+      if (l.ko || sonda.t > 0.3 || !r || r.ko) return false;
+      if (Math.hypot(r.x - l.x, r.y - l.y) > RADIO * 2 + 10 || r.est.vuelo || r.invulnerable) return true;
+      l.dash = null;
+      const n = h.golpes ?? 6, cada = 0.2, total = n * cada + 0.1;
+      this.prender(r, total + 0.1); l.ponerEstado('invul', total);
+      l.animar('Attack', total); l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, update: () => { l.x = r.x - Math.cos(ang) * 10; l.y = r.y; } };
+      r.texto('COILED!', '#fde047', { dy: 12 });
+      for (let i = 0; i < n; i++) luta.programar(i * cada, () => {
+        if (l.ko || r.ko) return;
+        const ultimo = i === n - 1;
+        atingir(l, r, pacote(h, extra, 0, { dano: h.dano / n * (ultimo ? 2 : 0.8), tick: i > 0 && !ultimo, empuje: ultimo ? 160 : 0, aturde: ultimo ? h.aturde : undefined, pesado: ultimo }));
+        luta.emit({ t: 'tormentaImpacto', x: r.x, y: r.y, radio: ultimo ? 70 : 30 });
+        if (ultimo) { luta.emit({ t: 'explosion', x: r.x, y: r.y - 8, radio: 60, tipo: 'ELECTRIC' }); luta.emit({ t: 'temblor', f: 0.02 }); }
+      });
+      return false;
+    } };
+    luta.add(sonda);
   }
 
   // ---------------------------------------------------------------- Cyber Arrow (Porygon-Z): flecha grande que quica nas bordas;
@@ -848,7 +1019,7 @@ export class Habilidades {
   escudo(l, h) {
     const luta = this.luta;
     l.escudo = Math.max(l.escudo ?? 0, (h.absorbe ?? 10) * (REGLAS.vidaGlobal ?? 1));
-    l.ponerEstado('escudo', h.dur ?? 2.5, { estilo: h.estilo });
+    l.ponerEstado('escudo', h.dur ?? 2.5, { estilo: h.estilo, stamina: h.stamina });
     l.animar(h.anim ?? 'Withdraw', 0.5);
     l.accion = { hasta: luta.t + 0.3, lento: h.lento ?? 0.5 };
     if (h.texto) l.texto(h.texto, '#d6dbe4');
@@ -1145,7 +1316,10 @@ export class Habilidades {
           // Ice Jump (Milotic): quem estava na área fica congelado um instante
           if (h.congela && res === 'golpe') { r.ponerEstado('aturdido', h.congela); r.ponerEstado('congelado', h.congela); r.texto('FROZEN!', '#bfe9ff'); }
           luta.emit({ t: 'temblor', f: 0.008 });
-        } else if (h.choque) {
+        }
+        // Mega Lopunny: pula de novo em cima do rival até acabar a cadeia
+        if (h.cadena > 1 && !l.ko) { l.accion = null; luta.programar(0.05, () => { if (!l.ko) { const r2 = l.rival; if (r2) { l.ax = r2.x; l.ay = r2.y; } this.patada(l, { ...h, cadena: h.cadena - 1, dano: h.cadena === 2 ? h.dano * 1.6 : h.dano, radio: h.cadena === 2 ? h.radio * 1.4 : h.radio }, extra); } }); luta.emit({ t: 'corazones', x: l.x, y: l.y - 10 }); }
+        else if (h.choque) {
           l.texto('CRASH!', '#fca5a5');
           l.recibir(l, { dano: h.choque, tipo: 'NORMAL', puro: true });
           l.ponerEstado('aturdido', 0.35);

@@ -257,6 +257,13 @@ export class Lutador {
       if (g.castiga && (this.accion || t - this.ultimoAtaque < 0.3)) { d *= g.castiga; this.texto('PUNISHED!', '#c084fc'); }
     }
     if (this.est.congelado && fuente !== this) d *= 1 - REGLAS.congelaReduce;
+    // Stamina (Archaludon): cada golpe na defesa aumenta força e velocidade de ataque enquanto ela durar
+    const st = this.est.escudo?.stamina;
+    if (st && fuente && fuente !== this && !g.tick) {
+      const n = Math.min(st.max ?? 5, (this.est.potencia?.n ?? 0) + 1);
+      this.ponerEstado('potencia', Math.max(0.1, this.est.escudo.hasta - t), { n, mult: n * (st.mult ?? 0.06), cadencia: 1 + n * (st.cadencia ?? 0.1), vel: 0, reduce: 0, color: '#fde047' });
+      this.texto(`STAMINA x${n}`, '#fde047', { dy: 10 });
+    }
     if (this.escudo > 0 && !g.puro && !g.atraviesa) {
       const abs = Math.min(this.escudo, d);
       this.escudo -= abs; d -= abs;

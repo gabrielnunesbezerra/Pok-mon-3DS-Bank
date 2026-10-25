@@ -436,7 +436,7 @@ export class Combate {
     const dy = antes ? -Math.sin(u * Math.PI * 0.5) * 6 : -Math.sin((1 - v) * Math.PI * 0.5) * 6;
     if (!bank.dibujar(g, dex, 'Idle', t, l.x, l.y + dy, esc, { fila, bucle, flash })) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y, l.escala, { fila, flash });
     // faíscas voltando para o centro durante a carga, e jorrando depois
-    const cores = ev.mega ? ['#ffe27a', '#fff6c8', '#ffb347', '#ffffff'] : ['#bfe9ff', '#ffffff', '#8fd3ff', '#d6c4ff'];
+    const cores = ev.mega ? ['#4aa3f0', '#8fd8f0', '#5fd08a', '#e6f8ff'] : ['#bfe9ff', '#ffffff', '#8fd3ff', '#d6c4ff'];
     const n = antes ? 1 + Math.floor(u * 3) : 2;
     for (let i = 0; i < n; i++) {
       const a = Math.random() * 6.283, d = antes ? 40 + Math.random() * 40 : 4;
