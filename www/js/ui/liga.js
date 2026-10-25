@@ -23,8 +23,10 @@ function silueta(img) {
 export class Liga {
   constructor(app) { this.app = app; this.t = 0; this.foco = { c: Math.min(circuitoAbierto(), LIGA.circuitos.length - 1), r: 0 }; this.aviso = null; }
   entrar() { for (const id of LIGA.circuitos.flatMap(c => c.rivales)) { const p = ROSTER.find(x => x.id === id); if (p) this.app.bank.retrato(p.dex); } }
-  colX(c) { return COL.gap + c * (COL.w + COL.gap); }
-  caja(c, r) { return { x: this.colX(c) + 4, y: COL.y0 + 34 + r * (COL.card + COL.cardGap), w: COL.w - 8, h: COL.card }; }
+  // largura das colunas se ajusta ao número de circuitos
+  get cw() { const n = LIGA.circuitos.length; return Math.min(150, Math.floor((ANCHO - COL.gap * (n + 1)) / n)); }
+  colX(c) { const n = LIGA.circuitos.length; return Math.round((ANCHO - (n * this.cw + (n - 1) * COL.gap)) / 2) + c * (this.cw + COL.gap); }
+  caja(c, r) { return { x: this.colX(c) + 4, y: COL.y0 + 34 + r * (COL.card + COL.cardGap), w: this.cw - 8, h: COL.card }; }
   volver() { sfx('atras'); this.app.ir('titulo', { menu: 'jugar' }); }
 
   elegir(c, r) {
@@ -65,10 +67,10 @@ export class Liga {
     texto(g, `UNLOCKED ${desbloqueados().length}/${ROSTER.length}`, ANCHO - 8, 13, { tam: 7, align: 'right', base: 'middle', color: '#7dd3fc' });
     LIGA.circuitos.forEach((ci, c) => {
       const x = this.colX(c), feito = completo(ci), trancado = c > aberto;
-      marco(g, x, 30, COL.w, ALTO - 62, trancado ? 'apagado' : 'panel');
-      rect(g, x + 2, 31, COL.w - 4, 16, trancado ? '#2a3040' : ci.cor, trancado ? 1 : 0.85);
-      texto(g, ci.nombre, x + COL.w / 2, 39, { tam: 7, align: 'center', base: 'middle', color: trancado ? '#7a8498' : '#0a1428', max: COL.w - 10 });
-      texto(g, feito ? 'CLEARED' : trancado ? 'LOCKED' : 'OPEN', x + COL.w / 2, 54, { tam: 6, align: 'center', base: 'middle', color: feito ? '#ffd23c' : trancado ? '#7a8498' : '#86efac' });
+      marco(g, x, 30, this.cw, ALTO - 62, trancado ? 'apagado' : 'panel');
+      rect(g, x + 2, 31, this.cw - 4, 16, trancado ? '#2a3040' : ci.cor, trancado ? 1 : 0.85);
+      texto(g, ci.nombre, x + this.cw / 2, 39, { tam: 7, align: 'center', base: 'middle', color: trancado ? '#7a8498' : '#0a1428', max: this.cw - 10 });
+      texto(g, feito ? 'CLEARED' : trancado ? 'LOCKED' : 'OPEN', x + this.cw / 2, 54, { tam: 6, align: 'center', base: 'middle', color: feito ? '#ffd23c' : trancado ? '#7a8498' : '#86efac' });
       ci.rivales.forEach((id, r) => {
         const p = ROSTER.find(q => q.id === id), b = this.caja(c, r), est = estadoRival(id), v = vitorias(id), foco = this.foco.c === c && this.foco.r === r;
         marco(g, b.x, b.y, b.w, b.h, foco ? 'oro' : est === 'cerrado' ? 'apagado' : 'azul');

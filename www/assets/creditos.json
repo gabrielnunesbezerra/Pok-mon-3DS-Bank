@@ -1174,5 +1174,100 @@
    "Tacocoa",
    "baronessfaron"
   ]
+ },
+ {
+  "dex": "0215-0001",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "TawnySoup"
+  ]
+ },
+ {
+  "dex": "0215-0001s",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0550-0002",
+  "sprite": [
+   "Pink_no_tori",
+   "Soulja"
+  ],
+  "retrato": [
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0550-0002s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0902",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0902-f",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "Soulja"
+  ]
+ },
+ {
+  "dex": "0902-fs",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0902s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emboarger",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0903",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0903s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "ShyStarryRain"
+  ]
  }
 ]

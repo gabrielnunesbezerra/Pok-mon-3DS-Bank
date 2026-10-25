@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, almas: this.almas, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -437,11 +437,26 @@ export class Habilidades {
       luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 26, tipo: 'ROCK', estilo: 'tierra' });
       return;
     }
-    l.ponerEstado('rodando', h.dur ?? 4, { vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, golpes: new Map() });
+    l.ponerEstado('rodando', h.dur ?? 4, { vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, cd: h.cd, golpes: new Map() });
     if (h.reduce) l.ponerEstado('blindaje', h.dur ?? 4, { reduce: h.reduce });
     l.cd[extra.slot] = 0.35;
     l.texto('ROLLOUT!', '#e8d8b0');
     luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 30, tipo: 'ROCK', estilo: 'tierra' });
+  }
+
+  // Soul Swarm / Spirit School (Basculegion): solta as almas como peixes fantasmas que perseguem o alvo
+  almas(l, h, extra) {
+    const luta = this.luta, tem = l.almas ?? 0, n = (h.base ?? 0) + Math.max(h.base ? 0 : 1, tem), bonus = (h.porAlma ?? 0) * tem;
+    l.almas = 0;
+    const ang = angApunte(l), lanzar = h.lanzar ?? 0.2, volea = { golpe: false };
+    l.animar(h.anim ?? 'Shoot', lanzar + 0.3);
+    l.accion = { hasta: luta.t + lanzar + n * 0.06 + 0.05, lento: 0.4, angulo: ang };
+    for (let i = 0; i < n; i++) luta.programar(lanzar + i * 0.06, () => {
+      if (l.ko) return;
+      const a = ang + (i - (n - 1) / 2) * (h.abre ?? 0.28);
+      luta.add(new Proyectil(luta, l, { forma: 'proyectil', estilo: 'almaPez', tipo: h.tipo, dano: h.dano + bonus, vel: h.vel ?? 260, alcance: h.alcance ?? 300, radio: h.radio ?? 6, escala: h.escala ?? 1.4, teledirigido: h.teledirigido ?? 2.5, noChoca: true, aturde: h.aturde }, a, { ...extra, desde: { x: l.x - Math.cos(a) * 6, y: l.y - Math.sin(a) * 4, alt: l.alto * 0.6 }, volea }));
+    });
+    luta.emit({ t: 'almasSueltas', l, n });
   }
 
   // Stone Spire (Golem): um espinho de pedra brota do chão na mira e lança para o alto quem estiver em cima.
@@ -899,6 +914,13 @@ export class Habilidades {
             const rem = final ? remate : null;
             const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano + (final ? 2 : 0) + (rem?.dano ?? 0), empuje: rem?.empuje ?? (final ? 70 : 22), aturde: rem?.aturde, dirX: dx / d, dirY: dy / d, pesado: final }));
             if (res === 'golpe' && i === 0 && !cierra) l.aciertosCombo++;
+            // Dire Claw (Sneasler): o golpe que fecha a combinação deixa veneno, paralisia ou sono
+            if (res === 'golpe' && final && h.estadoAleatorio && !b.esClon) {
+              const sorte = aleatorio();
+              if (sorte < 0.4) { b.ponerEstado('veneno', 3, { dps: 3, fuente: l }); b.texto('POISONED!', '#e879f9'); }
+              else if (sorte < 0.7) { b.ponerEstado('paralizado', 2, {}); b.texto('PARALYZED!', '#fde047'); }
+              else { b.ponerEstado('dormido', 0.9, { cura: 0, acum: 0 }); b.cortarAccion(); b.texto('ASLEEP!', '#bfdbfe'); }
+            }
             if (rem && res === 'golpe') { l.texto('CRUSHED!', '#e5e7eb'); luta.emit({ t: 'temblor', f: 0.006 }); }
           }
         }
@@ -932,6 +954,9 @@ export class Habilidades {
       return;
     }
     const lanzar = h.lanzar ?? 0.14, emb = h.embestida ?? 30, r0 = l.rival;
+    // Last Respects (Basculegion): cada alma juntada soma dano; as almas são gastas no golpe
+    const almas = h.porAlma ? l.almas ?? 0 : 0;
+    if (h.porAlma) { l.almas = 0; if (almas) luta.emit({ t: 'almasSueltas', l, n: almas }); }
     const ang = asistir(l, angApunte(l), h.alcance + emb + 20, 1.2);
     // como no site: desliza até o alvo durante o lançamento (sem passar dele) e só então bate
     const d0 = r0 && !r0.ko ? Math.hypot(r0.x - l.x, r0.y - l.y) : 999;
@@ -958,7 +983,7 @@ export class Habilidades {
         const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
         const enOnda = h.onda && Math.hypot(b.x - ox, (b.y - oy) / 0.65) < h.onda + RADIO;
         if (enOnda || (d < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo ?? 120) / 2)) {
-          const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k, empuje: h.empuje ?? 50, castiga: h.castiga, disipa: h.disipa, dirX: dx / d, dirY: dy / d, pesado: true }));
+          const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k + almas * (h.porAlma ?? 0), empuje: h.empuje ?? 50, castiga: h.castiga, disipa: h.disipa, dirX: dx / d, dirY: dy / d, pesado: true }));
           // Whirlpool Tail (Milotic): quem leva a rabada fica preso num redemoinho
           if (h.remolino && res === 'golpe' && !b.esClon) luta.programar(0.4, () => { if (l.ko || b.ko) return; this.torbellino(l, { ...h.remolino, curaPropia: 0 }, extra); const tb = luta.entidades.at(-1); tb.x = b.x; tb.y = b.y; l.accion = null; });
         }
@@ -1176,7 +1201,9 @@ export class Habilidades {
   // ---------------------------------------------------------------- Harden: escudo que absorve dano
   escudo(l, h) {
     const luta = this.luta;
-    l.escudo = Math.max(l.escudo ?? 0, (h.absorbe ?? 10) * (REGLAS.vidaGlobal ?? 1));
+    const almas = h.porAlma ? l.almas ?? 0 : 0;
+    if (h.porAlma) l.almas = 0;
+    l.escudo = Math.max(l.escudo ?? 0, ((h.absorbe ?? 10) + almas * (h.porAlma ?? 0)) * (REGLAS.vidaGlobal ?? 1));
     l.ponerEstado('escudo', h.dur ?? 2.5, { estilo: h.estilo, stamina: h.stamina });
     l.animar(h.anim ?? 'Withdraw', 0.5);
     l.accion = { hasta: luta.t + 0.3, lento: h.lento ?? 0.5 };
@@ -1415,9 +1442,9 @@ export class Habilidades {
   // ---------------------------------------------------------------- Dig / Fly: some e reaparece
   vuelo(l, h, extra) {
     const luta = this.luta;
-    const tierra = h.modo === 'tierra';
+    const tierra = h.modo === 'tierra' || h.modo === 'fantasma';
     l.animar(h.anim ?? 'Hop', 0.3);
-    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5, modo: tierra ? 'tierra' : 'aire' });
+    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5, modo: h.modo === 'fantasma' ? 'fantasma' : tierra ? 'tierra' : 'aire' });
     l.accion = null;
     luta.emit({ t: 'desaparece', l, modo: tierra ? 'tierra' : 'aire' });
     let t = 0;

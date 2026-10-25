@@ -116,6 +116,7 @@ function perfil(h, slot, d) {
     case 'bolaGigante': P.alcance = (h.alcance ?? 320) * 0.9; P.ancho = h.radio ?? 26; P.retardo = (h.carga ?? 1) + d / (h.vel ?? 230); P.sigue = 0.5; break;
     case 'hueso': P.alcance = 320; P.ancho = 14; P.retardo = d / (h.vel ?? 340); break;
     case 'rodar': P.tipo = 'movil'; break;
+    case 'almas': P.retardo += d / (h.vel ?? 260); P.sigue = 0.8; P.alcance = (h.alcance ?? 300) * 0.9; P.golpes = (h.base ?? 0) + 2; break;
     case 'espinho': P.tipo = 'area'; P.alcance = (h.alcance ?? 180) + 10; P.ancho = h.radio ?? 30; P.retardo = h.aviso ?? 0.35; break;
     case 'arenaRoca': P.alcance = (h.alcance ?? 210) + h.radio * 0.5; P.ancho = h.radio; P.retardo = 0.55; P.sigue = 0.3; break;
     case 'flecha': P.alcance = 300; P.ancho = 14; P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 300); break;

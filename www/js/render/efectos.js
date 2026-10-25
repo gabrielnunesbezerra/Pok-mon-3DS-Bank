@@ -213,6 +213,8 @@ export class Efectos {
           break;
         case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.12); this.flashColor = '#f5d0fe'; break;
         case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
+        case 'alma': this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vy: -30, size: 2.5, life: 0.5, color: '#cfefff', forma: 'chispa' }); break;
+        case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: ['#cfefff', '#a78bfa', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -630,7 +632,18 @@ function cola(g, p, n, color, r0) {
   }
 }
 const AGUA = PX.RAMPA_AGUA;
+// peixe fantasma (alma de Basculin): corpo translúcido azul-claro, cauda e olho, virado para onde vai
+export function pezAlma(g, x, y, ang, esc = 1, alfa = 0.85) {
+  g.save(); g.translate(px(x), px(y)); g.rotate(ang); g.globalAlpha *= alfa;
+  g.fillStyle = 'rgba(80,60,140,0.6)'; g.beginPath(); g.ellipse(0, 0, 6 * esc, 3.2 * esc, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#cfefff'; g.beginPath(); g.ellipse(0, 0, 5 * esc, 2.4 * esc, 0, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.moveTo(-4 * esc, 0); g.lineTo(-9 * esc, -3.5 * esc); g.lineTo(-8 * esc, 0); g.lineTo(-9 * esc, 3.5 * esc); g.closePath(); g.fill();
+  g.fillStyle = '#ffffff'; g.fillRect(Math.round(1 * esc), Math.round(-1.4 * esc), 2, 1);
+  g.fillStyle = '#3a2a6a'; g.fillRect(Math.round(2.5 * esc), Math.round(-1.2 * esc), 1, 1);
+  g.restore();
+}
 const ESTILOS_PROJ = {
+  almaPez(g, p, t) { for (let i = 1; i <= 3; i++) { g.globalAlpha = 0.25 - i * 0.06; PX.disco(g, px(p.x - Math.cos(p.ang) * i * 6), px(p.y - p.alt - Math.sin(p.ang) * i * 4 + Math.sin(t * 20 + i) * 1.5), 2.5 - i * 0.5, '#bfe9ff'); } g.globalAlpha = 1; pezAlma(g, p.x, p.y - p.alt + Math.sin(t * 18) * 1.2, p.ang, p.escala * 0.9, 0.9); },
   algodonProj(g, p, t) { PX.carimbar(g, PX.humo(9, ['#c8d0e8', '#eef2ff', '#ffffff']), p.x, p.y - p.alt, t * 4, 1, 1); PX.carimbar(g, PX.humo(5, ['#dfe6f8', '#ffffff', '#ffffff']), p.x - Math.cos(p.ang) * 7, p.y - p.alt - Math.sin(p.ang) * 5, 0, 1, 0.8); },
   hoja(g, p, t) { PX.carimbar(g, PX.hoja(Math.round(9 * p.escala)), p.x, p.y - p.alt, t * 14 + p.x * 0.05); },
   semilla(g, p) { PX.esfera(g, px(p.x), px(p.y - p.alt), 3, ['#5a3a12', '#9a6a22', '#d6a64a', '#fff0b0']); PX.disco(g, px(p.x + 1), px(p.y - p.alt + 1), 1, '#3f8a2a'); },

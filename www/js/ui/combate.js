@@ -7,7 +7,7 @@ import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
 import { IA, Muneco, ventajaDe } from '../engine/ia.js';
-import { hueShiny, conHue, componer } from '../render/efectos.js';
+import { hueShiny, conHue, componer, pezAlma } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
 import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
@@ -335,6 +335,13 @@ export class Combate {
       g.globalAlpha = 0.25; PX.elipsePix(g, x, y, 14, 6, '#0a1830'); g.globalAlpha = 1;
       return;
     }
+    // Phantom Dive: debaixo d'água como fantasma; só ondas roxas e bolhas marcando onde está
+    if (l.oculto && l.est.vuelo?.modo === 'fantasma') {
+      const x = Math.round(l.x), y = Math.round(l.y), pul = (this.t * 2) % 1;
+      g.globalAlpha = 0.8; PX.anilloPix(g, x, y, 10 + pul * 18, 5 + pul * 9, '#a78bfa', 1, 0); PX.anilloPix(g, x, y, 22, 11, '#cfefff', 1, 6, Math.floor(this.t * 20)); g.globalAlpha = 0.3; PX.elipsePix(g, x, y, 14, 6, '#3a2a6a'); g.globalAlpha = 1;
+      if (Math.random() < 0.4) this.fx.add({ x: l.x + (Math.random() - 0.5) * 16, y: l.y - 2, vy: -25, size: 2, life: 0.5, color: '#cfefff', forma: 'burbuja' });
+      return;
+    }
     // Heavy Slam e afins: some no alto enquanto a mira anda
     if (l.oculto && l.est.vuelo?.modo === 'meteoro') return;
     // Rollout: no lugar do sprite, uma pedra redonda girando conforme anda
@@ -415,6 +422,8 @@ export class Combate {
     if (l.est.congelado) { const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, w = l.alto * 0.5 + 4, hh = l.alto * 0.6 + 3; g.globalAlpha = 0.35; rect(g, Math.round(cx - w), Math.round(cy - hh), Math.round(w * 2), Math.round(hh * 2), '#bfe9ff'); g.globalAlpha = 0.9; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.strokeRect(Math.round(cx - w) + 0.5, Math.round(cy - hh) + 0.5, Math.round(w * 2), Math.round(hh * 2)); PX.lineaPix(g, cx - w + 3, cy - hh + 3, cx - w + 8, cy - hh + 8, '#ffffff', 1); g.globalAlpha = 1; }
     // Stellar Bridge: arco dourado de ponte sobre o Archaludon
     if (l.est.puente) { const cx = l.x, cy = l.y - l.alto * 0.4; PX.arcoPix(g, cx, cy, l.alto * 0.7, Math.PI, Math.PI * 2, '#fde68a', 2, l.alto * 0.5); if (Math.floor(t * 8) % 2) PX.carimbar(g, PX.chispa(3, '#fff6a8'), cx + Math.cos(t * 5) * l.alto * 0.6, cy - Math.abs(Math.sin(t * 5)) * l.alto * 0.4, 0, 1, 1); }
+    // Basculegion: almas de Basculin girando em volta
+    if (l.almas) for (let i = 0; i < l.almas; i++) { const a = this.t * 2.2 + (i / l.almas) * Math.PI * 2, x = l.x + Math.cos(a) * (l.alto * 0.55 + 8), y = l.y - l.alto * 0.5 + Math.sin(a) * 9; pezAlma(g, x, y, a + Math.PI / 2, 0.8, 0.75); }
     // Lock-On: mira vermelha em cima de quem está marcado
     if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }

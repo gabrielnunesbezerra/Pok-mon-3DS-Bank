@@ -107,6 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
+    this.almas = 0;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -197,6 +198,8 @@ export class Lutador {
       d.golpeado = true;
       const h = d.def;
       if (h.dano) {
+        // Wave Crash (Basculegion): a investida machuca quem bate também
+        if (h.recoil) this.luta.programar(0, () => { if (!this.ko) this.recibir(this, { dano: h.dano * h.recoil, tipo: 'NORMAL', puro: true, tick: true }); });
         r.recibir(this, {
           dano: h.dano, tipo: h.tipo, empuje: h.empuje ?? 60, aturde: h.aturde, velocista: h.velocista,
           dirX: c, dirY: s, slot: d.slot ?? 'esp', pesado: !!h.aturde || (h.empuje ?? 0) > 150,
@@ -249,6 +252,8 @@ export class Lutador {
       if (fuente?.est.quemado) d *= ESTADOS_TIPO.FIRE.dano;
       if (fuente?.est.emboscada && g.slot) { d *= fuente.est.emboscada.f; delete fuente.est.emboscada; }
       if (this.est.defBaja) d *= 1.2;
+      // Venoshock (Sneasler): bem mais forte em quem está envenenado
+      if (g.contraVeneno && this.est.veneno) { d *= g.contraVeneno; this.avisar('vshock', () => this.texto('VENOSHOCK!', '#e879f9', { dy: 10 }), 0.5); }
       if (this.est.arraigo) d *= 1 - this.est.arraigo.reduce;
       if (this.est.potencia?.reduce) d *= 1 - this.est.potencia.reduce;
       if (this.est.blindaje) d *= 1 - this.est.blindaje.reduce;
@@ -340,6 +345,8 @@ export class Lutador {
     this.ganarExp(d * REGLAS.expPorDanoHecho);
     this.stats.dano += d;
     if (!g.tick) this.stats.golpes++;
+    // Basculegion: cada golpe acertado junta uma alma de Basculin (até 5)
+    if (this.def.almas && !g.tick && !g.puro && g.slot && g.slot !== 'e' && (this.almas ?? 0) < 5) { this.almas = (this.almas ?? 0) + 1; this.luta.emit({ t: 'alma', l: this }); }
     const roba = !g.puro && this.kit?.[g.slot]?.roba;
     if (roba && d > 0 && !this.ko) this.cura(d * roba);
     if (g.tick) return;
@@ -483,6 +490,9 @@ export class Lutador {
     if (this.accion?.angulo != null) this.angulo = this.accion.angulo;
     else if (apuntando) this.angulo = Math.atan2(this.ay - this.y, this.ax - this.x);
     else if (this.moviendo) this.angulo = Math.atan2(my, mx);
+    // Rollout: quando para de rolar (de qualquer jeito), a skill entra em recarga
+    if (this._rodando && !this.est.rodando) this.cd[this._rodando.slot ?? 'esp'] = Math.max(this.cd[this._rodando.slot ?? 'esp'], this._rodando.cd ?? 8);
+    this._rodando = this.est.rodando ?? null;
     // Rollout: atropela quem encosta (cada alvo no máximo uma vez a cada 0,6 s)
     const rod = this.est.rodando;
     if (rod && !this.dash && Math.hypot(this.vx, this.vy) > 20) {

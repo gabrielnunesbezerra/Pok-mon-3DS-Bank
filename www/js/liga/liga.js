@@ -11,6 +11,7 @@ export const LIGA = {
     { id: 'c2', nombre: 'EARTH CIRCUIT', arena: 'ruinas', cor: '#86efac', rivales: ['abra', 'riolu', 'geodude', 'froakie', 'feebas'] },
     { id: 'c3', nombre: 'VOLCANO CIRCUIT', arena: 'crater', cor: '#fb923c', rivales: ['magikarp', 'onix', 'munchlax', 'poltchageist', 'swablu'] },
     { id: 'c4', nombre: 'LEGEND CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['duraludon', 'porygon', 'veluza', 'mewtwo'] },
+    { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler'] },
   ],
 };
 export const NIVEL_POR_VITORIA = ['facil', 'normal', 'dificil'];
