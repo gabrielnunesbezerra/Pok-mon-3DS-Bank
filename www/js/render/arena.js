@@ -14,7 +14,8 @@ function aro(g, rx, ry, color, w = 2) { g.strokeStyle = color; g.lineWidth = w; 
 // ---------------------------------------------------------------- peças comuns do estádio em perspectiva
 // A câmera olha o campo de cima e um pouco inclinada: as faixas do gramado abrem em leque para baixo
 // (ponto de fuga bem acima da tela), a mureta e a torcida seguem elipses maiores que o campo.
-const FUGA = { x: OVALO.cx, y: -1500 };
+// ponto de fuga mais perto = campo mais inclinado (como no jogo original)
+const FUGA = { x: OVALO.cx, y: -600 };
 const CAMPO_R = { rx: OVALO.rx + 14, ry: OVALO.ry + 9 };
 const MURETA = { rin: { rx: OVALO.rx + 16, ry: OVALO.ry + 10 }, rout: { rx: OVALO.rx + 50, ry: OVALO.ry + 36 } };
 const ptE = (rx, ry, a) => [OVALO.cx + Math.cos(a) * rx, OVALO.cy + Math.sin(a) * ry];
@@ -300,6 +301,12 @@ export function crearArena(id) {
   g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
+  // profundidade: o fundo da arena fica mais escuro e enevoado, a frente mais clara
+  const prof = g.createLinearGradient(0, -MARGEM.y, 0, MUNDO.h + MARGEM.y);
+  const yc = v => (v + MARGEM.y) / (MUNDO.h + MARGEM.y * 2);
+  prof.addColorStop(0, 'rgba(8,12,34,0.42)'); prof.addColorStop(yc(OVALO.cy - OVALO.ry), 'rgba(14,20,48,0.22)');
+  prof.addColorStop(yc(OVALO.cy + 20), 'rgba(0,0,0,0)'); prof.addColorStop(yc(OVALO.cy + OVALO.ry), 'rgba(255,248,220,0.05)'); prof.addColorStop(1, 'rgba(255,248,220,0.08)');
+  g.fillStyle = prof; g.fillRect(...TODO);
   cache.set(id, c);
   return c;
 }

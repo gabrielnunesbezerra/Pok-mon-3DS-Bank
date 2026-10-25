@@ -13,7 +13,7 @@ import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
-import { hex } from '../config.js';
+import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
 import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
@@ -322,7 +322,9 @@ export class Combate {
   // sombra, aro da equipe e sprite
   dibujarLutador(g, l) {
     const luta = this.luta, bank = this.app.bank, t = luta.t;
-    const sc = l.escala, m = bank.medidas(l.dex);
+    // campo inclinado: no fundo o Pokémon fica menor, na frente maior
+    const prof = 0.86 + 0.28 * Math.min(1, Math.max(0, (l.y - (OVALO.cy - OVALO.ry)) / (OVALO.ry * 2)));
+    const sc = l.escala * prof, m = bank.medidas(l.dex);
     const rx = Math.max(7, Math.round((m.width ?? 18) * 0.5 * sc)), ry = Math.max(3, Math.round(rx * 0.45));
     if (!l.oculto) {
       g.fillStyle = 'rgba(0,0,0,0.42)'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx, ry, 0, 0, 7); g.fill();
