@@ -268,7 +268,7 @@ export class Combate {
     g.beginPath(); g.rect(0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO); g.clip();
     this.camara.aplicar(g, sx, sy);
     if (this.fondoGen !== this.app.geracaoGrafica) { this.fondo = crearArena(this.datos.arena); this.fondoGen = this.app.geracaoGrafica; }
-    g.drawImage(this.fondo, -MARGEM.x, -MARGEM.y);
+    g.drawImage(this.fondo.bm ?? this.fondo, -MARGEM.x, -MARGEM.y);
     ambienteArena(g, this.datos.arena, this.t);
     // chão: avisos, poças, fumaça
     dibujarEntidades(g, luta, fx, this.t, null);

@@ -54,6 +54,7 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 1
     g.fillStyle = fundo[f % 2]; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.05)'; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.ellipse(OVALO.cx, OVALO.cy, rx + 11, ry + 8, 0, 0, Math.PI * 2); g.fill('evenodd');
   }
+  if (graficosBajos) return; // gráficos baixos: só as fileiras, sem as pessoinhas (milhares de desenhos a menos)
   for (let f = 0; f < filas; f++) {
     const rx = MURETA.rout.rx + 12 + f * 13, ry = MURETA.rout.ry + 9 + f * 9.5, n = Math.round((Math.PI * (rx + ry)) / 7.2);
     for (let i = 0; i < n; i++) {
@@ -295,12 +296,16 @@ function moita(g, x, y, r, R) {
 
 const cache = new Map();
 export const limparArenas = () => cache.clear();
+let graficosBajos = false;
+export function setGraficosBajos(v) { if (graficosBajos !== !!v) { graficosBajos = !!v; cache.clear(); } }
 export function crearArena(id) {
   if (cache.has(id)) return cache.get(id);
   cache.clear(); // só a arena atual fica na memória
   const c = document.createElement('canvas');
   c.width = MUNDO.w + MARGEM.x * 2; c.height = MUNDO.h + MARGEM.y * 2;
-  const g = c.getContext('2d');
+  // desenhada pelo processador (willReadFrequently): são milhares de retângulos, e mandar tudo de uma vez para a
+  // placa de vídeo travava a tela em alguns celulares; pronta, vira uma imagem só (ImageBitmap) para a luta copiar
+  const g = c.getContext('2d', { willReadFrequently: true });
   g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
@@ -311,6 +316,7 @@ export function crearArena(id) {
   prof.addColorStop(yc(OVALO.cy + 20), 'rgba(0,0,0,0)'); prof.addColorStop(yc(OVALO.cy + OVALO.ry), 'rgba(255,248,220,0.05)'); prof.addColorStop(1, 'rgba(255,248,220,0.08)');
   g.fillStyle = prof; g.fillRect(...TODO);
   cache.set(id, c);
+  if (typeof createImageBitmap === 'function') createImageBitmap(c).then(bm => { c.bm = bm; }).catch(() => {});
   return c;
 }
 

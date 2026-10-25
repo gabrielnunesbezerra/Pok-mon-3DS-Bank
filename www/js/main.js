@@ -18,7 +18,7 @@ import { texto as textoPx, rect as rectPx } from './render/pixel.js';
 import { FxLab } from './ui/fxlab.js';
 import { Combate } from './ui/combate.js';
 import { PanelTactil } from './controles.js';
-import { limparArenas } from './render/arena.js';
+import { limparArenas, setGraficosBajos } from './render/arena.js';
 import { limparMemo } from './render/pixelfx.js';
 import { limparCapas } from './render/efectos.js';
 
@@ -74,8 +74,8 @@ app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JS
 
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
 function medir() {
-  // celular com pouca memória desenha com menos pixels (menos memória de vídeo)
-  const dpr = Math.min((navigator.deviceMemory ?? 8) <= 4 ? 1.5 : 2, devicePixelRatio || 1);
+  // celular com pouca memória desenha com menos pixels (menos memória de vídeo); gráficos baixos: resolução do jogo
+  const dpr = app.ajustes.graficosBajos ? 1 : Math.min((navigator.deviceMemory ?? 8) <= 4 ? 1.5 : 2, devicePixelRatio || 1);
   // a altura lógica é sempre 360; a largura acompanha a proporção da tela (640 a 1100)
   const W = Math.max(640, Math.min(1100, Math.round((ALTO * innerWidth) / innerHeight)));
   setAncho(W);
@@ -94,6 +94,8 @@ function medir() {
 let timerMedir = 0;
 addEventListener('resize', () => { clearTimeout(timerMedir); timerMedir = setTimeout(medir, 150); });
 medir();
+app.aplicarGraficos = () => { setGraficosBajos(app.ajustes.graficosBajos); medir(); };
+setGraficosBajos(app.ajustes.graficosBajos);
 
 const aCoord = (cx, cy) => {
   const r = canvas.getBoundingClientRect();
