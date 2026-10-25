@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca'];
 
-test('o roster tem os 20 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo']);
+test('o roster tem os 21 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -157,6 +157,8 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
       for (const slot of ['lmb', 'rmb', 'esp', 'q', 'e']) {
         a.energia = 100; a.ulti = 100; a.accion = null; a.dash = null; a.est = {}; a.calor = 0; for (const k in a.cd) a.cd[k] = 0;
         a.x = 380; a.y = 222; b.x = 520; b.y = 222; a.ax = b.x; a.ay = b.y;
+        // a ult do Golem só sai rolando
+        if (a.kit[slot].requiereRodar) a.ponerEstado('rodando', 3, { vel: 1.7, dano: 5, empuje: 100, golpes: new Map() });
         const ok = l.habilidades.usar(a, slot);
         // formas bebê não têm ultimate: o botão existe mas não faz nada
         if (a.kit[slot].sinUlti) { assert.equal(ok, false, `${p.id} etapa ${etapa} sem ultimate`); continue; }
@@ -228,6 +230,26 @@ test('treino: sem relógio e o boneco não morre', () => {
   const r0 = l.reloj;
   correr(l, 5, [null, null]);
   assert.equal(l.reloj, r0);
+});
+
+test('Golem: Rollout atropela, a ult só sai rolando e prende os dois na arena de pedra', () => {
+  const l = nuevaLuta('geodude', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 470; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; a.ulti = 100;
+  assert.equal(l.habilidades.usar(a, 'e'), false, 'sem rolar a ult não sai');
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(a.est.rodando);
+  assert.equal(l.habilidades.usar(a, 'lmb'), false, 'rolando não ataca');
+  const hp0 = b.hp;
+  correr(l, 0.8, [{ mx: 1, my: 0, ax: b.x, ay: b.y }, null]);
+  assert.ok(b.hp < hp0, 'atropelou');
+  b.x = a.x + 90; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 0.8, [null, null]);
+  const arena = l.entidades.find(e => e.tipo === 'arenaRoca');
+  assert.ok(arena, 'a arena subiu');
+  b.x = arena.x + 400; correr(l, 0.1, [null, null]);
+  assert.ok(Math.abs(b.x - arena.x) <= arena.radio, 'o rival não sai da arena');
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {

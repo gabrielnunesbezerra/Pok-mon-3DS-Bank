@@ -16,7 +16,7 @@ const ref = JSON.parse(readFileSync(join(root, 'docs/referencia/ref9.json'), 'ut
 const dexs = new Set();
 for (const p of ref.roster) for (const f of [p, ...(p.evoluciones ?? [])]) { dexs.add(f.dex); if (f.mega) dexs.add(f.mega.dex); }
 // linhas novas (Magikarp e Seedot)
-for (const d of ['0129', '0130', '0273', '0274', '0275', '0063', '0064', '0065', '0065-0001', '1012', '1013', '0602', '0603', '0604', '0604-0001', '0976', '0884', '1018', '0349', '0350', '0333', '0334', '0334-0001', '0137', '0233', '0474', '0150', '0150-0002']) dexs.add(d);
+for (const d of ['0129', '0130', '0273', '0274', '0275', '0063', '0064', '0065', '0065-0001', '1012', '1013', '0602', '0603', '0604', '0604-0001', '0976', '0884', '1018', '0349', '0350', '0333', '0334', '0334-0001', '0137', '0233', '0474', '0150', '0150-0002', '0074', '0075', '0076']) dexs.add(d);
 // versão shiny de cada forma: mesma pasta com "s" no fim (0006-0001s)
 for (const d of [...dexs]) dexs.add(d + 's');
 const pathOf = d => (d.endsWith('s') ? (d.includes('-') ? d.slice(0, -1).replace('-', '/') + '/0001' : d.slice(0, -1) + '/0000/0001') : d.replace('-', '/'));

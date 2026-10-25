@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -49,6 +49,9 @@ export class Habilidades {
     if (slot === 'esp' && l.est.sinDash) { if (l.humano) l.avisar('sinDash', () => l.texto('NO DASH', '#fde68a')); return false; }
     // enquanto faz outra ação longa (raio, cone...), não começa outra
     if (l.accion && !h.interrompe && slot !== 'esp') return false;
+    // rolando (Rollout): só dá para parar de rolar ou soltar a ult
+    if (l.est.rodando && slot !== 'esp' && slot !== 'e') return false;
+    if (h.requiereRodar && !l.est.rodando) { if (l.humano) l.avisar('rodar', () => l.texto('ROLL FIRST!', '#e8d8b0')); return false; }
     if (slot === 'e' && !l.ultiLista) {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
       return false;
@@ -66,7 +69,9 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
-    if (h.forma !== 'puente') l.cd[slot] = h.cd;
+    if (h.forma !== 'puente' && h.forma !== 'rodar') l.cd[slot] = h.cd;
+    // skills que giram o Pokémon no lugar
+    if (h.gira) l.ponerEstado('girando', h.gira);
     l.ultimoAtaque = t;
     l.stats.usos++;
     if (slot !== 'lmb') l.tejido = t;
@@ -419,6 +424,62 @@ export class Habilidades {
         luta.emit({ t: 'explosion', x: l.x, y: l.y - 6, radio: h.radio, tipo: 'STEEL' });
         luta.emit({ t: 'temblor', f: 0.03 });
         areaCirculo(luta, l, l.x, l.y, h.radio * 0.7, pacote(h, extra, 0, { dano: h.danoQueda ?? 10, aturde: 0.5, empuje: 60, dirX: undefined, dirY: undefined }));
+      } };
+  }
+
+  // Rollout (Graveler e Golem): vira uma pedra e sai rolando rápido; quem ele atropela leva dano e é jogado longe.
+  // Apertar de novo para de rolar.
+  rodar(l, h, extra) {
+    const luta = this.luta;
+    if (l.est.rodando) {
+      delete l.est.rodando; delete l.est.blindaje;
+      l.cd[extra.slot] = h.cd;
+      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 26, tipo: 'ROCK', estilo: 'tierra' });
+      return;
+    }
+    l.ponerEstado('rodando', h.dur ?? 4, { vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, golpes: new Map() });
+    if (h.reduce) l.ponerEstado('blindaje', h.dur ?? 4, { reduce: h.reduce });
+    l.cd[extra.slot] = 0.35;
+    l.texto('ROLLOUT!', '#e8d8b0');
+    luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 30, tipo: 'ROCK', estilo: 'tierra' });
+  }
+
+  // Tectonic Arena (Golem): só rolando. Se arremessa, cai e, se acertar o rival, levanta uma arena de pedra
+  // que prende os dois lá dentro por alguns segundos
+  arenaRoca(l, h, extra) {
+    const luta = this.luta;
+    delete l.est.rodando; delete l.est.blindaje;
+    const ang = angApunte(l), d = Math.min(h.alcance ?? 210, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d), vuelo = 0.55;
+    l.ponerEstado('invul', vuelo); l.animar(h.anim ?? 'Hop', vuelo);
+    let t = 0;
+    l.accion = { hasta: luta.t + vuelo, bloquea: true, lento: 0, angulo: ang,
+      update: dt => { t += dt; const k = Math.min(1, t / vuelo); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 90); },
+      fin: () => {
+        l.salto = 0;
+        if (l.ko) return;
+        const x = l.x, y = l.y, r = l.rival;
+        luta.emit({ t: 'pulso', x, y, radio: h.radio, tipo: 'ROCK', estilo: 'aterrizaje' });
+        luta.emit({ t: 'explosion', x, y: y - 6, radio: h.radio, tipo: 'ROCK' });
+        luta.emit({ t: 'temblor', f: 0.03 });
+        const acerto = r && !r.ko && !r.est.vuelo && Math.hypot(r.x - x, (r.y - y) / 0.7) < h.radio + RADIO;
+        areaCirculo(luta, l, x, y, h.radio, pacote(h, extra, 0, { empuje: 40, aturde: h.aturde, pesado: true, dirX: undefined, dirY: undefined }));
+        if (!acerto) return;
+        const A = h.arena ?? 120;
+        const ar = { tipo: 'arenaRoca', dueno: l, vivo: true, x, y, radio: A, t: 0, dur: h.dur ?? 5, presos: [l, r], tipoAtq: h.tipo, update: dt => {
+          ar.t += dt;
+          if (ar.t >= ar.dur) { luta.emit({ t: 'pulso', x: ar.x, y: ar.y, radio: A, tipo: 'ROCK', estilo: 'tierra' }); return false; }
+          // ninguém sai: quem encosta na parede volta para dentro
+          for (const b of ar.presos) {
+            if (!b || b.ko) continue;
+            const dx = (b.x - ar.x) / A, dy = (b.y - ar.y) / (A * 0.62), e2 = Math.hypot(dx, dy), lim = 1 - RADIO / A;
+            if (e2 > lim) { b.x = ar.x + (dx / e2) * lim * A; b.y = ar.y + (dy / e2) * lim * A * 0.62; b.empX *= -0.3; b.empY *= -0.3; }
+          }
+          return true;
+        } };
+        luta.add(ar);
+        r.texto('TRAPPED!', '#e8d8b0', { dy: 12 });
+        luta.emit({ t: 'arenaSobe', x, y, radio: A });
       } };
   }
 
@@ -985,7 +1046,7 @@ export class Habilidades {
       const p = fijarCampo(x, y);
       puntos.push({ x: p.x, y: p.y, dano: h.dano });
     }
-    luta.add(new Marcas(luta, l, h, extra, puntos, { aviso: 0.3, cada: h.cada, radio: h.radio, estilo: 'erupcion' }));
+    luta.add(new Marcas(luta, l, h, extra, puntos, { aviso: 0.3, cada: h.cada, radio: h.radio, estilo: h.estilo ?? 'erupcion' }));
     luta.emit({ t: 'avisos', puntos, aviso: 0.3, radio: h.radio, tipo: h.tipo });
   }
 

@@ -1111,5 +1111,68 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0074",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0074s",
+  "sprite": [
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "Moo",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0075",
+  "sprite": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Tainted#3886"
+  ]
+ },
+ {
+  "dex": "0075s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Moo",
+   "Tainted#3886"
+  ]
+ },
+ {
+  "dex": "0076",
+  "sprite": [
+   "CHUNSOFT",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0076s",
+  "sprite": [
+   "Emmuffin",
+   "El_Pangoro_Parse"
+  ],
+  "retrato": [
+   "Tacocoa",
+   "baronessfaron"
+  ]
  }
 ]

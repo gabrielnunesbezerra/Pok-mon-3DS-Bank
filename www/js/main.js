@@ -48,8 +48,8 @@ app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JS
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
 function medir() {
   const dpr = Math.min(3, devicePixelRatio || 1);
-  // a altura lógica é sempre 360; a largura acompanha a proporção da tela (640 a 900)
-  const W = Math.max(640, Math.min(900, Math.round((ALTO * innerWidth) / innerHeight)));
+  // a altura lógica é sempre 360; a largura acompanha a proporção da tela (640 a 1100)
+  const W = Math.max(640, Math.min(1100, Math.round((ALTO * innerWidth) / innerHeight)));
   setAncho(W);
   app.W = W;
   const z = Math.min(innerWidth / W, innerHeight / ALTO);

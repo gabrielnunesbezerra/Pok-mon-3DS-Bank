@@ -465,6 +465,7 @@ export class Lutador {
       if (this.accion?.lento != null) vel *= this.accion.lento;
       if (t < this.sobrecargaHasta) vel *= 0.75;
       if (this.est.rapido) vel *= this.est.rapido.vel;
+      if (this.est.rodando) vel *= this.est.rodando.vel;
       if (this.est.potencia?.vel) vel *= 1 + this.est.potencia.vel;
       if (this.est.vuelo) vel *= this.est.vuelo.rapidez ?? 1;
       if (this.est.caparazon) vel *= this.est.caparazon.rapidez ?? 1;
@@ -482,6 +483,19 @@ export class Lutador {
     if (this.accion?.angulo != null) this.angulo = this.accion.angulo;
     else if (apuntando) this.angulo = Math.atan2(this.ay - this.y, this.ax - this.x);
     else if (this.moviendo) this.angulo = Math.atan2(my, mx);
+    // Rollout: atropela quem encosta (cada alvo no máximo uma vez a cada 0,6 s)
+    const rod = this.est.rodando;
+    if (rod && !this.dash && Math.hypot(this.vx, this.vy) > 20) {
+      const v = Math.hypot(this.vx, this.vy);
+      for (const b of luta.blancos(this)) {
+        if (b.oculto || b.est?.vuelo || Math.hypot(b.x - this.x, b.y - this.y) > RADIO * 2 + 6 || t - (rod.golpes.get(b) ?? -9) < 0.6) continue;
+        rod.golpes.set(b, t);
+        if (b.esClon) { b.romper(); continue; }
+        b.recibir(this, { dano: rod.dano, tipo: rod.tipo ?? 'ROCK', slot: rod.slot ?? 'esp', empuje: rod.empuje, dirX: this.vx / v, dirY: this.vy / v, aturde: 0.2, pesado: true });
+        luta.emit({ t: 'impacto', x: (b.x + this.x) / 2, y: b.y - b.alto * 0.5, tipo: 'ROCK', fuerte: true });
+        luta.emit({ t: 'temblor', f: 0.008 });
+      }
+    }
     // nada deixa o lutador preso no ar (ex.: pulo cortado no meio)
     if (!this.accion && !this.dash && !this.est.vuelo && this.salto > 0) this.salto = 0;
     if (this.accion) {

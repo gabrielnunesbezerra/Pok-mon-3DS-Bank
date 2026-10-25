@@ -82,8 +82,8 @@ export class SpriteBank {
     const fila = filas === 8 ? (opts.fila ?? 0) : 0;
     const q = this.quadro(dex, nombre, t, opts.bucle ?? (nombre === 'Idle' || nombre === 'Walk'));
     const m = this.medidas(dex);
-    const dw = a.fw * escala, dh = a.fh * escala;
-    const dx = Math.round(x - dw / 2), dy = Math.round(y - (m.feet ?? 5) * escala - dh / 2);
+    const sx = opts.sx ?? 1, sy = opts.sy ?? 1, dw = a.fw * escala * sx, dh = a.fh * escala * sy;
+    const dx = Math.round(x - dw / 2), dy = Math.round(y - ((m.feet ?? 5) * escala + (a.fh * escala) / 2) * sy);
     g.save();
     if (opts.alpha !== undefined) g.globalAlpha *= opts.alpha;
     g.drawImage(img, q * a.fw, fila * a.fh, a.fw, a.fh, dx, dy, dw, dh);

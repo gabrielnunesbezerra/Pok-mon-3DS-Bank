@@ -9,8 +9,8 @@ import { Luta } from '../engine/luta.js';
 import { IA, Muneco, ventajaDe } from '../engine/ia.js';
 import { hueShiny, conHue, componer } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
-import { crearArena } from '../render/arena.js';
-import { Efectos, dibujarEntidades, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
+import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
+import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
@@ -267,7 +267,8 @@ export class Combate {
     g.save();
     g.beginPath(); g.rect(0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO); g.clip();
     this.camara.aplicar(g, sx, sy);
-    g.drawImage(this.fondo, 0, 0);
+    g.drawImage(this.fondo, -MARGEM.x, -MARGEM.y);
+    ambienteArena(g, this.datos.arena, this.t);
     // chão: avisos, poças, fumaça
     dibujarEntidades(g, luta, fx, this.t, null);
     fx.dibujarSuelo(g);
@@ -280,6 +281,7 @@ export class Combate {
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBomba(c, e)) });
       else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
+      else if (e.tipo === 'arenaRoca') cosas.push({ y: e.y + e.radio * 0.62, f: () => dibujarArenaRoca(g, e, this.t, true) });
       else if (e.tipo === 'bolaGigante') cosas.push({ y: e.y + 80, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBolaGigante(c, e, this.t, fx)) });
       else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), c => dibujarTorbellino(c, e, this.t, fx)) });
     }
@@ -334,6 +336,15 @@ export class Combate {
     }
     // Heavy Slam e afins: some no alto enquanto a mira anda
     if (l.oculto && l.est.vuelo?.modo === 'meteoro') return;
+    // Rollout: no lugar do sprite, uma pedra redonda girando conforme anda
+    if (l.est.rodando) {
+      const R = Math.max(10, Math.round(l.alto * 0.42)), cx = Math.round(l.x), cy = Math.round(l.y - R - l.salto), giro = (l.x + l.y * 0.6) * 0.09;
+      PX.esfera(g, cx, cy, R, ['#3a3226', '#6e6252', '#a39581', '#d8ccb6']);
+      for (let i = 0; i < 4; i++) { const a = giro + i * 1.5708, c = Math.cos(a), s2 = Math.sin(a); PX.lineaPix(g, cx + c * R * 0.15, cy + s2 * R * 0.15, cx + c * R * 0.85, cy + s2 * R * 0.85, '#2a2218', 1); PX.disco(g, cx + Math.cos(a + 0.8) * R * 0.55, cy + Math.sin(a + 0.8) * R * 0.55, 1.5, '#c8bba4'); }
+      PX.anilloPix(g, cx, cy, R, R, '#1a140c', 1, 0);
+      if (l.moviendo && Math.random() < 0.6) this.fx.polvo(l.x - (l.vx > 0 ? 8 : -8), l.y, 1, 5);
+      return;
+    }
     if (l.oculto) {
       // Dig: um monte de terra que anda e um anel azul marcando onde ele vai sair, como no site
       const pul = 0.5 + 0.5 * Math.sin(this.t * 10), x = Math.round(l.x), y = Math.round(l.y);
@@ -360,7 +371,15 @@ export class Combate {
     // imagens que ficam para trás: em todo dash (mais fortes no Shadow Sneak) e quando está acelerado andando
     if (l.dash && !l.dash.def.teleport) { const sombra = l.dash.def.estilo === 'sombra', paso = Math.min(14, l.dash.vel * 0.016); for (let k = 4; k >= 1; k--) bank.dibujar(g, l.dex, l.dash.def.anim ?? 'Walk', t, l.x - Math.cos(l.dash.ang) * k * paso, l.y - Math.sin(l.dash.ang) * k * paso * 0.7 - l.salto, sc, { fila, bucle: true, alpha: (sombra ? 0.32 : 0.24) - k * 0.05 }); }
     else if (l.est.rapido && l.moviendo) { const v = Math.hypot(l.vx, l.vy) || 1; for (let k = 2; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - (l.vx / v) * k * 8, l.y - (l.vy / v) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.2 - k * 0.06 }); if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * 14, y: l.y - l.alto * Math.random(), vx: -l.vx * 0.8, vy: -l.vy * 0.8, size: 1, life: 0.15, color: '#bfe9ff', forma: 'raya' }); }
-    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo });
+    // vida no sprite: achata e estica ao começar uma ação, estica no ar, achata ao cair e treme ao apanhar
+    let sx = 1, sy = 1, tremor = 0;
+    if (l.anim && t - l.animInicio < 0.16) { const k = Math.sin(((t - l.animInicio) / 0.16) * Math.PI); sx = 1 + 0.09 * k; sy = 1 - 0.1 * k; }
+    if (l.salto > 2) { sx = 0.93; sy = 1.08; }
+    if (l._saltoAnt > 2 && l.salto <= 0) l._cae = t;
+    l._saltoAnt = l.salto;
+    if (l._cae && t - l._cae < 0.14) { const k = 1 - (t - l._cae) / 0.14; sx = 1 + 0.14 * k; sy = 1 - 0.14 * k; }
+    if (t < l.dolorHasta) tremor = (Math.floor(t * 60) % 2 ? 1 : -1);
+    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - l.salto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
     if (l.dash) this.dibujarDash(g, l);

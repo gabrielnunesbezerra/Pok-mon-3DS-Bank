@@ -1,6 +1,10 @@
 // As 4 arenas ovais desenhadas por código em pixel art (960 x 441): estádio, neon, cratera e ruínas.
 import { MUNDO, OVALO } from '../config.js';
 
+// a arena é desenhada com uma margem grande em volta, para a câmera nunca mostrar o fim (borda preta)
+export const MARGEM = { x: 480, y: 320 };
+const TODO = [-MARGEM.x, -MARGEM.y, MUNDO.w + MARGEM.x * 2, MUNDO.h + MARGEM.y * 2];
+const foraDaArte = (x, y, m = 6) => x < -MARGEM.x - m || x > MUNDO.w + MARGEM.x + m || y < -MARGEM.y - m || y > MUNDO.h + MARGEM.y + m;
 function rng(seed) { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
 const dentro = (x, y, k = 1) => { const dx = (x - OVALO.cx) / (OVALO.rx * k), dy = (y - OVALO.cy) / (OVALO.ry * k); return dx * dx + dy * dy <= 1; };
 
@@ -40,7 +44,7 @@ function texturaGrama(g, R, escuro, claro, tufo) {
 }
 
 // torcida: fileiras de pessoinhas seguindo elipses em volta da mureta, com corredores de escada
-function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 15, escadas = 10, roupas = ['#a8424a', '#3a5fa8', '#b89a4a', '#b8b8b8', '#3f8a54', '#7a4a9a', '#a8643a', '#2a2f3e', '#3a3f4e', '#4a3a3a'] } = {}) {
+function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 10, roupas = ['#a8424a', '#3a5fa8', '#b89a4a', '#b8b8b8', '#3f8a54', '#7a4a9a', '#a8643a', '#2a2f3e', '#3a3f4e', '#4a3a3a'] } = {}) {
   const pele = ['#f2c9a0', '#d9a273', '#a86c45', '#7a4a2e'], cabelo = ['#2a1a10', '#5a3a1a', '#d8b050', '#1a1a1a', '#8a2a1a'];
   const angEscada = Array.from({ length: escadas }, (_, i) => (i / escadas) * Math.PI * 2 + 0.31);
   for (let f = filas - 1; f >= 0; f--) {
@@ -54,7 +58,7 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 15, escadas = 1
       const a = (i / n) * Math.PI * 2 + f * 0.11;
       if (angEscada.some(e => Math.abs(((a - e + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.035 + 6 / rx)) continue;
       const [x, y] = ptE(rx, ry, a);
-      if (x < -6 || x > MUNDO.w + 6 || y < -6 || y > MUNDO.h + 6) continue;
+      if (foraDaArte(x, y)) continue;
       if (R() < 0.08) continue;
       const X = Math.round(x), Y = Math.round(y);
       g.fillStyle = roupas[Math.floor(R() * roupas.length)]; g.fillRect(X - 2, Y - 1, 5, 4);
@@ -65,13 +69,13 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 15, escadas = 1
     }
   }
   // sombra geral: a torcida fica mais escura longe do campo
-  const somb = g.createRadialGradient(OVALO.cx, OVALO.cy, OVALO.rx * 0.9, OVALO.cx, OVALO.cy, OVALO.rx * 1.45);
+  const somb = g.createRadialGradient(OVALO.cx, OVALO.cy, OVALO.rx * 0.9, OVALO.cx, OVALO.cy, OVALO.rx * 2.6);
   somb.addColorStop(0, 'rgba(8,10,18,0.15)'); somb.addColorStop(1, 'rgba(8,10,18,0.55)');
-  g.fillStyle = somb; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+  g.fillStyle = somb; g.fillRect(...TODO);
   // escadas: degraus cinza do muro até a borda
   for (const e of angEscada) for (let f = 0; f < filas; f++) {
     const rx = MURETA.rout.rx + 10 + f * 13, ry = MURETA.rout.ry + 7 + f * 9.5, [x, y] = ptE(rx, ry, e);
-    if (x < -10 || x > MUNDO.w + 10 || y < -10 || y > MUNDO.h + 10) continue;
+    if (foraDaArte(x, y, 10)) continue;
     g.fillStyle = '#4a5160'; g.fillRect(Math.round(x) - 6, Math.round(y) - 2, 12, 5);
     g.fillStyle = '#6d7586'; g.fillRect(Math.round(x) - 6, Math.round(y) - 2, 12, 1);
     g.fillStyle = '#2b303c'; g.fillRect(Math.round(x) - 6, Math.round(y) + 3, 12, 1);
@@ -142,18 +146,24 @@ function campo(g, R, { faixas, largura = 46, textura, sombraBorda = 'rgba(20,40,
 
 const ESTILOS = {
   estadio(g, R) {
-    g.fillStyle = '#161a26'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+    g.fillStyle = '#161a26'; g.fillRect(...TODO);
     torcida(g, R);
     mureta(g, [['#c8323a', '#e8606a', '#8a1f28'], ['#2f5ec8', '#5a8ae8', '#1f3a8a']], undefined, 44);
     campo(g, R, { faixas: ['#5fae38', '#6dbf42'], largura: 62, textura: ['rgba(40,90,20,0.22)', 'rgba(170,230,120,0.16)', '#4a9a2c'] });
     linhaElipse(g, OVALO.rx, OVALO.ry);
     g.fillStyle = 'rgba(242,245,234,0.25)'; g.fillRect(OVALO.cx - 3, OVALO.cy - OVALO.ry, 6, OVALO.ry * 2);
     g.fillStyle = '#f2f5ea'; g.fillRect(OVALO.cx - 1, OVALO.cy - OVALO.ry, 3, OVALO.ry * 2);
-    pokebolaChao(g, OVALO.cx, OVALO.cy, 52, 32);
-    refletor(g, 34, 12); refletor(g, MUNDO.w - 34, 12);
+    // mais folhas de grama, curtas, claras e escuras
+    g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
+    for (let n = 0; n < 3200; n++) { const x = Math.floor(R() * MUNDO.w), y = Math.floor(R() * MUNDO.h); g.fillStyle = R() < 0.5 ? 'rgba(200,240,150,0.28)' : 'rgba(40,90,20,0.3)'; g.fillRect(x, y, 1, 2); }
+    g.restore();
+    g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.ellipse(OVALO.cx + 3, OVALO.cy + 4, 66, 41, 0, 0, Math.PI * 2); g.fill();
+    pokebolaChao(g, OVALO.cx, OVALO.cy, 62, 38);
+    g.fillStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.ellipse(OVALO.cx - 18, OVALO.cy - 18, 20, 6, -0.2, 0, Math.PI * 2); g.fill();
+    for (const x of [34, MUNDO.w - 34, -220, MUNDO.w + 220]) refletor(g, x, 12);
   },
   neon(g, R) {
-    g.fillStyle = '#0c0d18'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+    g.fillStyle = '#0c0d18'; g.fillRect(...TODO);
     torcida(g, R, { fundo: ['#181a2c', '#141626'], roupas: ['#6a3fa8', '#2f8ad8', '#c8c8d8', '#2a2f4e', '#a83f8a', '#3f4a6a'] });
     mureta(g, [['#232842', '#3a4266', '#14182a']], ['#3a4266', '#6a74a0', '#1a1e30'], 36);
     luzMureta(g, ['#2ff3ff', '#b06aff']);
@@ -171,13 +181,13 @@ const ESTILOS = {
     g.fillStyle = 'rgba(47,243,255,0.1)'; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, 54, 33, 0, 0, Math.PI * 2); g.fill();
     el(54, 33, '#2ff3ff', 3); el(46, 28, 'rgba(47,243,255,0.4)', 1); el(14, 9, '#2ff3ff', 3);
     g.fillStyle = '#2ff3ff'; g.fillRect(OVALO.cx - 46, OVALO.cy - 1, 32, 2); g.fillRect(OVALO.cx + 14, OVALO.cy - 1, 32, 2);
-    refletor(g, 34, 12); refletor(g, MUNDO.w - 34, 12);
+    for (const x of [34, MUNDO.w - 34, -220, MUNDO.w + 220]) refletor(g, x, 12);
   },
   crater(g, R) {
-    g.fillStyle = '#140b08'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+    g.fillStyle = '#140b08'; g.fillRect(...TODO);
     torcida(g, R, { fundo: ['#2a1a14', '#22140f'], roupas: ['#8a3a2a', '#c86a2a', '#3a2a2a', '#6a4a3a', '#b89a6a', '#4a2a1a'], escadas: 8 });
     // poças de lava fora do campo
-    for (const [x, y, r] of [[30, 300, 70], [930, 290, 70], [60, 40, 50], [900, 40, 50], [480, 436, 60]]) lava(g, x, y, r);
+    for (const [x, y, r] of [[30, 300, 70], [930, 290, 70], [60, 40, 50], [900, 40, 50], [480, 436, 60], [-260, 120, 90], [1220, 140, 90], [-180, 460, 80], [1150, 470, 80], [480, -150, 80], [200, 560, 70], [760, 580, 70]]) lava(g, x, y, r);
     mureta(g, [['#2a2224', '#463a3a', '#140e0e'], ['#322828', '#4e4040', '#180f0f']], ['#3a2a28', '#5a443e', '#1a0f0c'], 40);
     luzMureta(g, ['#ff7a1f', '#ffb347']);
     g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
@@ -192,13 +202,13 @@ const ESTILOS = {
     sombraCampo(g, 'rgba(255,90,20,0.18)');
     g.restore();
     g.strokeStyle = 'rgba(255,140,40,0.35)'; g.lineWidth = 5; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx - 2, CAMPO_R.ry - 2, 0, 0, Math.PI * 2); g.stroke();
-    tocha(g, 26, 60); tocha(g, MUNDO.w - 26, 60);
+    for (const x of [26, MUNDO.w - 26, -160, MUNDO.w + 160]) tocha(g, x, 60);
   },
   ruinas(g, R) {
-    g.fillStyle = '#1a2418'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+    g.fillStyle = '#1a2418'; g.fillRect(...TODO);
     torcida(g, R, { fundo: ['#5a5a4a', '#4e4e40'], roupas: ['#8a6a4a', '#6a7a4a', '#b8a888', '#4a5a6a', '#7a4a3a'], escadas: 8 });
     // mato crescendo nas arquibancadas
-    for (let n = 0; n < 160; n++) { const a = R() * Math.PI * 2, k = 1.08 + R() * 0.35, [x, y] = ptE(OVALO.rx * k + 40, OVALO.ry * k + 30, a); moita(g, x, y, 4 + R() * 6, R); }
+    for (let n = 0; n < 520; n++) { const a = R() * Math.PI * 2, k = 1.08 + R() * 1.3, [x, y] = ptE(OVALO.rx * k + 40, OVALO.ry * k + 30, a); moita(g, x, y, 4 + R() * 6, R); }
     mureta(g, [['#9a9480', '#b8b29a', '#6a6656'], ['#8e8874', '#aca690', '#625e50']], ['#a8a28c', '#cfc9b0', '#5e5a4c'], 30);
     g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
     g.fillStyle = '#c4bc9c'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
@@ -212,7 +222,7 @@ const ESTILOS = {
     // colunas na borda
     for (let i = 0; i < 14; i++) {
       const a = (i / 14) * Math.PI * 2 + 0.2, [x, y] = ptE(MURETA.rout.rx + 8, MURETA.rout.ry + 6, a);
-      if (y < 30 || y > MUNDO.h - 4) continue;
+      if (foraDaArte(x, y, 40)) continue;
       const X = Math.round(x), Y = Math.round(y);
       g.fillStyle = '#3a382e'; g.fillRect(X - 9, Y - 34, 18, 38);
       g.fillStyle = '#a8a28c'; g.fillRect(X - 7, Y - 32, 14, 34);
@@ -285,10 +295,46 @@ const cache = new Map();
 export function crearArena(id) {
   if (cache.has(id)) return cache.get(id);
   const c = document.createElement('canvas');
-  c.width = MUNDO.w; c.height = MUNDO.h;
+  c.width = MUNDO.w + MARGEM.x * 2; c.height = MUNDO.h + MARGEM.y * 2;
   const g = c.getContext('2d');
+  g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
   cache.set(id, c);
   return c;
+}
+
+// ---------------------------------------------------------------- vida na arena (barato, sem estado)
+const frac = v => v - Math.floor(v);
+const hash = i => frac(Math.sin(i * 127.1 + 311.7) * 43758.5453);
+export function ambienteArena(g, id, t) {
+  if (id === 'estadio' || !ESTILOS[id]) {
+    // flashes de câmera piscando na torcida
+    for (let i = 0; i < 46; i++) {
+      if (frac(t * 0.55 + hash(i) * 7) > 0.05) continue;
+      const a = hash(i + 50) * Math.PI * 2, k = 1.15 + hash(i + 90) * 0.9, x = OVALO.cx + Math.cos(a) * (MURETA.rout.rx + 30) * k, y = OVALO.cy + Math.sin(a) * (MURETA.rout.ry + 20) * k;
+      g.globalAlpha = 0.35; g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(x, y, 6, 4, 0, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3);
+    }
+  } else if (id === 'neon') {
+    // faixa de luz que varre o chão e a borda pulsando
+    g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
+    const x = -200 + frac(t * 0.18) * (MUNDO.w + 400);
+    g.globalAlpha = 0.09; g.fillStyle = '#7ef6ff'; g.beginPath(); g.moveTo(x - 60, 0); g.lineTo(x + 20, 0); g.lineTo(x + 120, MUNDO.h); g.lineTo(x + 40, MUNDO.h); g.closePath(); g.fill();
+    g.restore();
+    g.globalAlpha = 0.25 + 0.2 * Math.sin(t * 3); g.strokeStyle = '#2ff3ff'; g.lineWidth = 3; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, OVALO.rx, OVALO.ry, 0, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+  } else if (id === 'crater') {
+    // brasas subindo das fendas e da lava
+    for (let i = 0; i < 44; i++) {
+      const x = -200 + hash(i) * (MUNDO.w + 400), base = 40 + hash(i + 20) * (MUNDO.h + 40), sobe = frac(t * (0.25 + hash(i + 40) * 0.3) + hash(i + 60)) * 140, y = base - sobe;
+      g.globalAlpha = 1 - sobe / 140; g.fillStyle = hash(i + 80) < 0.5 ? '#ffb347' : '#ff7a1f'; g.fillRect(Math.round(x + Math.sin(t * 2 + i) * 4), Math.round(y), 2, 2);
+    }
+    g.globalAlpha = 1;
+  } else if (id === 'ruinas') {
+    // folhas caindo devagar, balançando
+    for (let i = 0; i < 26; i++) {
+      const vx = 18 + hash(i) * 16, x = frac((t * vx + hash(i + 10) * 1600) / 1600) * 1600 - 320, y = frac(t * (0.05 + hash(i + 30) * 0.05) + hash(i + 50)) * (MUNDO.h + 200) - 100;
+      const gira = Math.sin(t * 3 + i) * 1.5;
+      g.fillStyle = hash(i + 70) < 0.5 ? '#6a9a3a' : '#b8a040'; g.fillRect(Math.round(x + gira * 3), Math.round(y), 3, 2); g.fillStyle = 'rgba(0,0,0,0.15)'; g.fillRect(Math.round(x + gira * 3), Math.round(y) + 2, 3, 1);
+    }
+  }
 }

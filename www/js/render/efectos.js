@@ -213,6 +213,7 @@ export class Efectos {
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);
           break;
         case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.45); this.flashColor = '#f5d0fe'; break;
+        case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -806,6 +807,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         if (ale() < 0.12) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y, vy: -22, g: 0, size: 2, life: 0.7, color: '#d68cf0', forma: 'burbuja' });
         break;
       }
+      case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
       case 'hueso': {
         // osso de aura girando, com brilho azul e rastro
         const a = e.t * 22, ca = Math.cos(a), sa = Math.sin(a), x = e.x, y = e.y - 14;
@@ -1224,6 +1226,21 @@ function dibujarCono(g, e, t, fx) {
     else if (tipo === 'GRASS' || tipo === 'BUG') fx.add({ ...base, size: entre(1.8, 2.8), forma: 'hoja', vr: 8 });
     else if (tipo === 'POISON') fx.add({ ...base, size: entre(2, 3.2), forma: 'burbuja', color: '#d68cf0' });
     else fx.add({ ...base, size: entre(1.6, 3), grow: 3, forma: 'circulo', color: mezcla(colorTipo(tipo), 0.2) });
+  }
+}
+
+// Tectonic Arena: anel de pilares de pedra; a metade de trás vai no chão e a da frente por cima dos lutadores
+export function dibujarArenaRoca(g, e, t, frente) {
+  const N = 18, sobe = Math.min(1, e.t / 0.3), cai = Math.min(1, (e.dur - e.t) / 0.4), alto = 26 * sobe * cai;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2, s2 = Math.sin(a);
+    if ((s2 >= 0) !== frente) continue;
+    const x = e.x + Math.cos(a) * e.radio, y = e.y + s2 * e.radio * 0.62, h = alto * (0.8 + 0.4 * ((i * 7) % 5) / 5);
+    g.globalAlpha = 0.35; PX.elipsePix(g, px(x), px(y + 1), 10, 4, '#000000'); g.globalAlpha = 1;
+    g.fillStyle = '#3e3e46'; g.fillRect(px(x - 8), px(y - h), 16, Math.max(1, px(h)));
+    g.fillStyle = '#76767f'; g.fillRect(px(x - 6), px(y - h), 9, Math.max(1, px(h)));
+    g.fillStyle = '#a6a6b0'; g.fillRect(px(x - 6), px(y - h), 3, Math.max(1, px(h)));
+    PX.carimbar(g, PX.roca(6), x, y - h, i * 0.7, 1, 1);
   }
 }
 
