@@ -107,7 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.cargas = null;
+    this.almas = 0; this.xListo = false;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -253,7 +253,7 @@ export class Lutador {
       if (fuente?.est.emboscada && g.slot) { d *= fuente.est.emboscada.f; delete fuente.est.emboscada; }
       if (this.est.defBaja) d *= 1.2;
       // Venoshock (Sneasler): bem mais forte em quem está envenenado
-      if (g.contraVeneno && this.est.veneno) { d *= g.contraVeneno; this.avisar('vshock', () => this.texto('VENOSHOCK!', '#e879f9', { dy: 10 }), 0.5); }
+      if (g.contraVeneno && this.est.veneno) { d *= g.contraVeneno; this.avisar('vshock', () => this.texto('VENOM BONUS!', '#e879f9', { dy: 10 }), 0.5); }
       if (this.est.arraigo) d *= 1 - this.est.arraigo.reduce;
       if (this.est.potencia?.reduce) d *= 1 - this.est.potencia.reduce;
       if (this.est.blindaje) d *= 1 - this.est.blindaje.reduce;

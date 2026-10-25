@@ -217,7 +217,7 @@ export class Efectos {
         case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: ['#cfefff', '#a78bfa', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
         case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
         case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
-        case 'garras': this.garras.push({ lineas: e.lineas, tipo: e.tipo, t: 0, life: e.dur, semilla: Math.floor(ale() * 1000), hue: this.hue }); for (const s2 of e.lineas) this.chispas((s2.x0 + s2.x1) / 2, (s2.y0 + s2.y1) / 2 - 6, '#e9b8ff', 5, 160); break;
+        case 'garras': this.garras.push({ lineas: e.lineas, tipo: e.tipo, ancho: (e.ancho ?? 9) / 9, t: 0, life: e.dur, semilla: Math.floor(ale() * 1000), hue: this.hue }); for (const s2 of e.lineas) this.chispas((s2.x0 + s2.x1) / 2, (s2.y0 + s2.y1) / 2 - 6, '#e9b8ff', 5, 160); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -304,9 +304,10 @@ export class Efectos {
         for (let j = 0; j < N; j++) {
           const f0 = j / N, f1 = (j + 1) / N, w = Math.sin(((f0 + f1) / 2) * Math.PI);
           const xa = mx - hx + hx * 2 * f0, ya = my - hy + hy * 2 * f0, xb = mx - hx + hx * 2 * f1, yb = my - hy + hy * 2 * f1;
-          PX.lineaPix(g, xa, ya, xb, yb, '#12041c', Math.max(1, Math.round(11 * w)));
-          PX.lineaPix(g, xa, ya, xb, yb, d0, Math.max(1, Math.round(7 * w)));
-          PX.lineaPix(g, xa, ya - 1, xb, yb - 1, d1, Math.max(1, Math.round(3 * w)));
+          const wa = w * (c.ancho ?? 1);
+          PX.lineaPix(g, xa, ya, xb, yb, '#12041c', Math.max(1, Math.round(11 * wa)));
+          PX.lineaPix(g, xa, ya, xb, yb, d0, Math.max(1, Math.round(7 * wa)));
+          PX.lineaPix(g, xa, ya - 1, xb, yb - 1, d1, Math.max(1, Math.round(3 * wa)));
         }
         for (let j = 0; j < 3; j++) { const f = ((c.t * 0.6 + j * 0.33 + i * 0.17 + c.semilla * 0.001) % 1), x = s2.x0 + (s2.x1 - s2.x0) * f, y = s2.y0 + (s2.y1 - s2.y0) * f - ((c.t * 30 + j * 7) % 10); PX.disco(g, x, y, 1.5, j % 2 ? d2 : d3); }
       });
