@@ -383,6 +383,7 @@ export class Habilidades {
         luta.emit({ t: 'pulso', x: x0, y: y0, radio: h.radio, tipo: 'DRAGON', estilo: 'fuego' });
         luta.emit({ t: 'pulso', x: x0, y: y0, radio: h.radio * 0.8, tipo: 'GROUND', estilo: 'tierra' });
         luta.emit({ t: 'explosion', x: x0, y: y0 - 6, radio: h.radio, tipo: 'DRAGON' });
+        luta.emit({ t: 'pilarFuego', x: x0, y: y0, tipo: 'DRAGON' });
         luta.emit({ t: 'temblor', f: 0.025 });
         areaCirculo(luta, l, x0, y0, h.radio, pacote(h, extra, ang, { pesado: true, empuje: 120, aturde: h.aturde, dirX: undefined, dirY: undefined }));
       } };
@@ -1311,7 +1312,8 @@ export class Habilidades {
         luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: 'patada' });
         const r = l.rival;
         if (h.congela) luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: 'ICE', estilo: 'hielo' });
-        if (r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO) {
+        const acerto = r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO;
+        if (acerto) {
           const res = atingir(l, r, pacote(h, extra, ang, { empuje: h.congela ? 0 : 80, aturde: h.aturde, dirX: Math.cos(ang), dirY: Math.sin(ang), pesado: true }));
           // Ice Jump (Milotic): quem estava na área fica congelado um instante
           if (h.congela && res === 'golpe') { r.ponerEstado('aturdido', h.congela); r.ponerEstado('congelado', h.congela); r.texto('FROZEN!', '#bfe9ff'); }
@@ -1319,7 +1321,7 @@ export class Habilidades {
         }
         // Mega Lopunny: pula de novo em cima do rival até acabar a cadeia
         if (h.cadena > 1 && !l.ko) { l.accion = null; luta.programar(0.05, () => { if (!l.ko) { const r2 = l.rival; if (r2) { l.ax = r2.x; l.ay = r2.y; } this.patada(l, { ...h, cadena: h.cadena - 1, dano: h.cadena === 2 ? h.dano * 1.6 : h.dano, radio: h.cadena === 2 ? h.radio * 1.4 : h.radio }, extra); } }); luta.emit({ t: 'corazones', x: l.x, y: l.y - 10 }); }
-        else if (h.choque) {
+        else if (h.choque && !acerto) {
           l.texto('CRASH!', '#fca5a5');
           l.recibir(l, { dano: h.choque, tipo: 'NORMAL', puro: true });
           l.ponerEstado('aturdido', 0.35);
@@ -1443,7 +1445,7 @@ export class Habilidades {
           const ultimo = i === h.golpes - 1, dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 1;
           atingir(l, r, pacote(h, extra, Math.atan2(dy, dx), { dano: h.dano * (ultimo ? 1.5 : 1), aturde: ultimo ? h.aturdeFinal : undefined, empuje: ultimo ? 70 : 30, dirX: dx / d, dirY: dy / d, pesado: ultimo, tick: i > 0 && !ultimo }));
           luta.emit({ t: 'impacto', x: r.x, y: r.y - r.alto * 0.5, tipo: h.tipo, estilo: h.estilo });
-          if (ultimo) luta.emit({ t: 'temblor', f: 0.01 });
+          if (ultimo) { luta.emit({ t: 'temblor', f: 0.01 }); if (extra.slot === 'e') luta.emit({ t: 'xGigante', x: r.x, y: r.y - r.alto * 0.5, tipo: h.tipo }); }
         }
       },
       fin: () => { delete l.est.invul; },
