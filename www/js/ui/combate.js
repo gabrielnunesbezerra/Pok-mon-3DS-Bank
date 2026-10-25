@@ -10,7 +10,7 @@ import { IA, Muneco, ventajaDe } from '../engine/ia.js';
 import { hueShiny, conHue, componer } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
 import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
-import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
+import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
@@ -281,6 +281,7 @@ export class Combate {
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBomba(c, e)) });
       else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
+      else if (e.tipo === 'espinho' && e.t >= e.aviso) cosas.push({ y: e.y, f: () => dibujarEspinho(g, e, this.t) });
       else if (e.tipo === 'arenaRoca') cosas.push({ y: e.y + e.radio * 0.62, f: () => dibujarArenaRoca(g, e, this.t, true) });
       else if (e.tipo === 'bolaGigante') cosas.push({ y: e.y + 80, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBolaGigante(c, e, this.t, fx)) });
       else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), c => dibujarTorbellino(c, e, this.t, fx)) });
@@ -525,7 +526,7 @@ export class Combate {
   // faixa da ultimate: desliza da esquerda, escurece a cena e some
   // a tela (só a arena) escurece enquanto a ultimate é anunciada e clareia devagar
   dibujarOscuro(g) {
-    for (const b of this.fx.banners) rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#02050f', Math.max(0, Math.min(1, Math.min(b.t / 0.1, (b.life - b.t) / 0.5))) * 0.55);
+    for (const b of this.fx.banners) rect(g, 0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO, '#02050f', Math.max(0, Math.min(1, Math.min(b.t / 0.1, (b.life - b.t) / 0.5))) * 0.2);
     g.globalAlpha = 1;
   }
   // faixa da ultimate como no site: entra pela esquerda, borda direita inclinada, nome grande alinhado à esquerda

@@ -100,7 +100,7 @@ export class Efectos {
           // Fire Spin como no site: um anel de chamas em volta, que sobe e gira devagar
           if (e.estilo === 'fuego') for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 + ale() * 0.1, r = e.radio * 0.85; this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 40, vy: Math.cos(a) * 24 - 20, g: -30, size: 3.2 + ale() * 1.2, grow: 0.8, life: 0.36 + ale() * 0.12, forma: 'llama', rampa: ['#e0400a', '#ff9a1a', '#ffe066', '#ffffff'] }); }
           if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
-          if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.25); this.flashColor = '#fff6e0'; }
+          if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.08); this.flashColor = '#fff6e0'; }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
@@ -208,11 +208,10 @@ export class Efectos {
         case 'habilidad':
           if (e.slot === 'e') {
             this.banner(`${e.h.nombre}!`, e.h.tipo);
-            this.heroes.push({ k: 'aura', l: e.l, tipo: e.h.tipo, t: 0, life: 0.6, hue: this.hue });
             if (e.h.forma === 'plantaFeroz') this.heroes.push({ k: e.h.estilo === 'sonido' ? 'pauta' : 'vinas', l: e.l, x: e.l.x, y: e.l.y, radio: e.h.ondas.at(-1) + 12, tipo: e.h.tipo, t: 0, life: (e.h.carga ?? 0.3) + e.h.ondas.length * e.h.cada + 0.45, hue: this.hue });
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);
           break;
-        case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.45); this.flashColor = '#f5d0fe'; break;
+        case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.12); this.flashColor = '#f5d0fe'; break;
         case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
@@ -808,6 +807,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         break;
       }
       case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
+      case 'espinho': if (e.t < e.aviso) dibujarEspinho(g, e, t); break;
       case 'hueso': {
         // osso de aura girando, com brilho azul e rastro
         const a = e.t * 22, ca = Math.cos(a), sa = Math.sin(a), x = e.x, y = e.y - 14;
@@ -1227,6 +1227,27 @@ function dibujarCono(g, e, t, fx) {
     else if (tipo === 'POISON') fx.add({ ...base, size: entre(2, 3.2), forma: 'burbuja', color: '#d68cf0' });
     else fx.add({ ...base, size: entre(1.6, 3), grow: 3, forma: 'circulo', color: mezcla(colorTipo(tipo), 0.2) });
   }
+}
+
+// Stone Spire: rachaduras no chão durante o aviso; depois uma lança de pedra sobe rápido, fica e afunda
+export function dibujarEspinho(g, e, t) {
+  if (e.t < e.aviso) {
+    const k = e.t / e.aviso;
+    g.globalAlpha = 0.6; PX.elipsePix(g, px(e.x), px(e.y), e.radio * (0.5 + 0.5 * k), e.radio * 0.6 * (0.5 + 0.5 * k), '#3a2a18'); g.globalAlpha = 1;
+    for (let i = 0; i < 6; i++) { const a = i * 1.047 + 0.4, r = e.radio * k; PX.lineaPix(g, e.x, e.y, e.x + Math.cos(a) * r, e.y + Math.sin(a) * r * 0.6, '#1a1008', 1); }
+    return;
+  }
+  const u = e.t - e.aviso, sube = Math.min(1, u / 0.08), baja = Math.min(1, (e.dur - e.t) / 0.25), H = 58 * sube * baja, W = 13;
+  if (H < 1) return;
+  g.globalAlpha = 0.35; PX.elipsePix(g, px(e.x), px(e.y + 1), 16, 6, '#000000'); g.globalAlpha = 1;
+  const lanca = (dx, alto, larg, cores) => {
+    const [cEsc, cMed, cClaro] = cores, bx = e.x + dx, by = e.y;
+    for (const [cor, k] of [[cEsc, 1], [cMed, 0.78], [cClaro, 0.32]]) { g.fillStyle = cor; g.beginPath(); g.moveTo(px(bx - larg * k), px(by)); g.lineTo(px(bx - larg * k * 0.15), px(by - alto * (k === 1 ? 1 : 0.95))); g.lineTo(px(bx + larg * (k === 0.32 ? -0.5 : k)), px(by)); g.closePath(); g.fill(); }
+  };
+  lanca(-11, H * 0.55, 7, ['#2e2a24', '#6e6252', '#b8aa90']);
+  lanca(10, H * 0.65, 8, ['#2e2a24', '#6e6252', '#b8aa90']);
+  lanca(0, H, W, ['#2a2620', '#7a6c58', '#cfc2a6']);
+  PX.carimbar(g, PX.roca(4), e.x - 14, e.y - 2, 0.4, 1, 1); PX.carimbar(g, PX.roca(3), e.x + 15, e.y, 1.2, 1, 1);
 }
 
 // Tectonic Arena: anel de pilares de pedra; a metade de trás vai no chão e a da frente por cima dos lutadores

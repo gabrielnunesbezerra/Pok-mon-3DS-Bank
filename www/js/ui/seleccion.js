@@ -13,7 +13,7 @@ const NIVELES = ['facil', 'normal', 'dificil'];
 const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
 const COLS = 4;
-const CARD = { w: 64, h: 30, gap: 4, x0: 186, y0: 56 };
+const CARD = { w: 64, h: 28, gap: 3, x0: 186, y0: 54 };
 const SHINY_TOQUES = 20;
 
 export class Seleccion {
@@ -170,8 +170,8 @@ export class Seleccion {
   }
   cajaVolver() { return { x: 4, y: 4, w: 70, h: 18 }; }
   cajaLuchar() { return { x: ANCHO / 2 - 64, y: 308, w: 128, h: 28 }; }
-  cajaArena(d) { return { x: d < 0 ? 196 : 410, y: 232, w: 20, h: 18 }; }
-  cajaNivel(d) { return { x: d < 0 ? 196 : 410, y: 258, w: 20, h: 18 }; }
+  cajaArena(d) { return { x: d < 0 ? 196 : 410, y: 244, w: 20, h: 18 }; }
+  cajaNivel(d) { return { x: d < 0 ? 196 : 410, y: 266, w: 20, h: 18 }; }
 
   actualizar(dt) { this.t += dt; }
 
@@ -213,16 +213,16 @@ export class Seleccion {
     };
     if (this.liga) {
       const ci = circuitoDe(this.liga), v = vitorias(this.liga);
-      marco(g, 218, 232, 192, 44, 'azul');
-      texto(g, ci?.nombre ?? 'LEAGUE', 314, 241, { tam: 7, align: 'center', base: 'middle', color: '#7dd3fc' });
-      texto(g, `${ARENAS[this.arena].nombre} · ${NOMBRE_DIFICULTAD[this.nivel]}`, 314, 254, { tam: 8, align: 'center', base: 'middle', color: this.nivel === 'dificil' ? '#ff7a7a' : this.nivel === 'normal' ? '#ffd166' : '#86efac' });
-      texto(g, v >= 3 ? 'REMATCH · ALL REWARDS EARNED' : ['WIN TO UNLOCK IT', 'WIN AGAIN: PROFILE ICON', 'WIN AGAIN: SHINY'][v], 314, 267, { tam: 6, align: 'center', base: 'middle', color: UI.suave });
-    } else fila(232, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
-    if (!this.liga && (this.modo === 'cpu' || this.modo === 'arena')) fila(258, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
+      marco(g, 218, 244, 192, 44, 'azul');
+      texto(g, ci?.nombre ?? 'LEAGUE', 314, 253, { tam: 7, align: 'center', base: 'middle', color: '#7dd3fc' });
+      texto(g, `${ARENAS[this.arena].nombre} · ${NOMBRE_DIFICULTAD[this.nivel]}`, 314, 266, { tam: 8, align: 'center', base: 'middle', color: this.nivel === 'dificil' ? '#ff7a7a' : this.nivel === 'normal' ? '#ffd166' : '#86efac' });
+      texto(g, v >= 3 ? 'REMATCH · ALL REWARDS EARNED' : ['WIN TO UNLOCK IT', 'WIN AGAIN: PROFILE ICON', 'WIN AGAIN: SHINY'][v], 314, 279, { tam: 6, align: 'center', base: 'middle', color: UI.suave });
+    } else fila(244, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
+    if (!this.liga && (this.modo === 'cpu' || this.modo === 'arena')) fila(266, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
     const l = this.cajaLuchar();
     marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
     texto(g, this.online ? (this.listo ? 'WAITING...' : 'READY!') : 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
-    if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.6) texto(g, this.avisoShiny.txt ?? (this.avisoShiny.on ? 'SHINY ON!' : 'SHINY OFF'), ANCHO / 2, 222, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
+    if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.6) texto(g, this.avisoShiny.txt ?? (this.avisoShiny.on ? 'SHINY ON!' : 'SHINY OFF'), ANCHO / 2, 298, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
     texto(g, this.esperaTxt || (this.modo === 'cpu' || this.modo === 'arena' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
   }
 

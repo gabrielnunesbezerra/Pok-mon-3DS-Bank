@@ -41,6 +41,8 @@ export class SpriteBank {
     if (!img) {
       img = new Image();
       img.src = `assets/pmd/${a.file}`;
+      // decodifica já, fora do quadro, para a primeira vez que a animação aparece não engasgar
+      img.decode?.().catch(() => {});
       this.hojas.set(k, img);
     }
     return img.complete && img.naturalWidth ? img : null;

@@ -362,7 +362,7 @@ export class Lutador {
     else if (mult < 1) this.avisar('nve', () => this.texto('Not very effective', '#9aa0b4'), 1);
     this.flash = luta.t;
     if (d >= 3) this.dolorHasta = luta.t + 0.18;
-    luta.hitstop(g.ligero ? 12 : Math.min(130, 35 + d * 5));
+    luta.hitstop(g.ligero ? 8 : Math.min(70, 18 + d * 2.5));
     luta.emit({ t: 'impacto', x: this.x, y: this.y - this.alto * 0.5, tipo: g.tipo, fuerte: d >= 12, fuente, slot: g.slot });
     if (d >= 12 || g.pesado) luta.emit({ t: 'temblor', f: 0.006 });
   }

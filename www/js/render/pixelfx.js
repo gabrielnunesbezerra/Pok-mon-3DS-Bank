@@ -30,7 +30,13 @@ export function elipsePix(g, cx, cy, rx, ry, c) {
   for (let y = -yi; y <= yi; y++) { const k = 1 - (y * y) / ((ry + 0.5) * (ry + 0.5)); if (k < 0) continue; const w = Math.floor((rx + 0.5) * Math.sqrt(k)); g.fillRect(cx - w, cy + y, w * 2 + 1, 1); }
 }
 export function lineaPix(g, x0, y0, x1, y1, c, w = 1) {
-  g.fillStyle = c; x0 = R(x0); y0 = R(y0); x1 = R(x1); y1 = R(y1);
+  x0 = R(x0); y0 = R(y0); x1 = R(x1); y1 = R(y1);
+  // grossa: um traço só (bem mais leve que carimbar um quadrado w x w em cada pixel)
+  if (w >= 3) {
+    g.strokeStyle = c; g.lineWidth = w; g.lineCap = 'square'; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    return;
+  }
+  g.fillStyle = c;
   const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
   let err = dx + dy, h = Math.floor(w / 2);
   for (let i = 0; i < 600; i++) {

@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -50,7 +50,7 @@ export class Habilidades {
     // enquanto faz outra ação longa (raio, cone...), não começa outra
     if (l.accion && !h.interrompe && slot !== 'esp') return false;
     // rolando (Rollout): só dá para parar de rolar ou soltar a ult
-    if (l.est.rodando && slot !== 'esp' && slot !== 'e') return false;
+    if (l.est.rodando && slot !== 'esp' && slot !== 'e' && !h.usaRodando) return false;
     if (h.requiereRodar && !l.est.rodando) { if (l.humano) l.avisar('rodar', () => l.texto('ROLL FIRST!', '#e8d8b0')); return false; }
     if (slot === 'e' && !l.ultiLista) {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
@@ -442,6 +442,62 @@ export class Habilidades {
     l.cd[extra.slot] = 0.35;
     l.texto('ROLLOUT!', '#e8d8b0');
     luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 30, tipo: 'ROCK', estilo: 'tierra' });
+  }
+
+  // Stone Spire (Golem): um espinho de pedra brota do chão na mira e lança para o alto quem estiver em cima.
+  // Rolando, o espinho nasce embaixo do próprio Golem, que é arremessado até a mira e cai causando dano.
+  espinho(l, h, extra) {
+    const luta = this.luta, ang = angApunte(l), d = Math.min(h.alcance ?? 180, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const rolando = !!l.est.rodando, alvo = fijarCampo(l.x + Math.cos(ang) * d, l.y + Math.sin(ang) * d);
+    const p = rolando ? { x: l.x, y: l.y } : alvo, aviso = rolando ? 0.1 : h.aviso ?? 0.35;
+    if (!rolando) { l.animar(h.anim ?? 'Swing', 0.4); l.accion = { hasta: luta.t + 0.25, lento: 0.3, angulo: ang }; }
+    let saiu = false;
+    const e = { tipo: 'espinho', dueno: l, vivo: true, x: p.x, y: p.y, radio: h.radio ?? 30, t: 0, aviso, dur: aviso + 0.75, tipoAtq: h.tipo, update: dt => {
+      e.t += dt;
+      if (!saiu && e.t >= aviso) {
+        saiu = true;
+        luta.emit({ t: 'pulso', x: e.x, y: e.y, radio: e.radio, tipo: 'ROCK', estilo: 'tierra' });
+        luta.emit({ t: 'temblor', f: 0.01 });
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || b.est?.vuelo || Math.hypot(b.x - e.x, (b.y - e.y) / 0.7) > e.radio + RADIO) continue;
+          if (b.esClon) { b.romper(); continue; }
+          atingir(l, b, pacote(h, extra, 0, { empuje: 0, pesado: true, dirX: undefined, dirY: undefined }));
+          this.lanzarAlto(b, 0.6, h.alto ?? 60);
+        }
+        if (rolando && !l.ko) this.lanzarGolem(l, h, extra, alvo);
+      }
+      return e.t < e.dur;
+    } };
+    luta.add(e);
+  }
+  // joga um lutador para o alto (sem agir) e o deixa cair com um tranco
+  lanzarAlto(b, dur, alto) {
+    const luta = this.luta;
+    this.prender(b, dur);
+    let t = 0;
+    luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt => {
+      t += dt;
+      if (b.ko) { b.salto = 0; return false; }
+      if (t >= dur) { b.salto = 0; b.ponerEstado('aturdido', 0.25); luta.emit({ t: 'pulso', x: b.x, y: b.y, radio: 22, tipo: 'GROUND', estilo: 'tierra' }); return false; }
+      b.salto = Math.round(Math.sin((t / dur) * Math.PI) * alto);
+      return true;
+    } });
+  }
+  // rolando, o espinho arremessa o próprio Golem até a mira; ele cai com impacto em área e continua rolando
+  lanzarGolem(l, h, extra, alvo) {
+    const luta = this.luta, x0 = l.x, y0 = l.y, vuelo = 0.5;
+    l.ponerEstado('invul', vuelo);
+    let t = 0;
+    l.accion = { hasta: luta.t + vuelo, bloquea: true, lento: 0,
+      update: dt => { t += dt; const k = Math.min(1, t / vuelo); l.x = x0 + (alvo.x - x0) * k; l.y = y0 + (alvo.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 80); },
+      fin: () => {
+        l.salto = 0;
+        if (l.ko) return;
+        const R2 = h.radioCaida ?? 56;
+        luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: R2, tipo: 'ROCK', estilo: 'aterrizaje' });
+        luta.emit({ t: 'temblor', f: 0.02 });
+        areaCirculo(luta, l, l.x, l.y, R2, pacote(h, extra, 0, { dano: h.danoCaida ?? h.dano, empuje: 120, aturde: 0.4, pesado: true, dirX: undefined, dirY: undefined }));
+      } };
   }
 
   // Tectonic Arena (Golem): só rolando. Se arremessa, cai e, se acertar o rival, levanta uma arena de pedra
@@ -1183,7 +1239,7 @@ export class Habilidades {
       areaCirculo(luta, l, l.x, l.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, empuje: 150 }));
       luta.emit({ t: 'autoExplosion', x: l.x, y: l.y, radio: h.radio });
       luta.emit({ t: 'temblor', f: 0.02 });
-      luta.hitstop(120);
+      luta.hitstop(60);
       if (h.autodano) l.hp = Math.max(1, l.hp - l.hpMax * h.autodano);
     });
   }

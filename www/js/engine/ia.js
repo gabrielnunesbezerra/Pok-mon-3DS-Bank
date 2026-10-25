@@ -116,6 +116,7 @@ function perfil(h, slot, d) {
     case 'bolaGigante': P.alcance = (h.alcance ?? 320) * 0.9; P.ancho = h.radio ?? 26; P.retardo = (h.carga ?? 1) + d / (h.vel ?? 230); P.sigue = 0.5; break;
     case 'hueso': P.alcance = 320; P.ancho = 14; P.retardo = d / (h.vel ?? 340); break;
     case 'rodar': P.tipo = 'movil'; break;
+    case 'espinho': P.tipo = 'area'; P.alcance = (h.alcance ?? 180) + 10; P.ancho = h.radio ?? 30; P.retardo = h.aviso ?? 0.35; break;
     case 'arenaRoca': P.alcance = (h.alcance ?? 210) + h.radio * 0.5; P.ancho = h.radio; P.retardo = 0.55; P.sigue = 0.3; break;
     case 'flecha': P.alcance = 300; P.ancho = 14; P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 300); break;
     case 'embestidas': P.alcance = 170; P.ancho = 30; P.retardo = 0.1; P.sigue = 0.6; P.invul = true; P.golpes = Math.max(1, (h.golpes ?? 1) * 0.7); break;
@@ -364,7 +365,7 @@ export class IA {
     if (yo.puedeMega && (d < c.megaDist || s.vendido)) { it.mega = true; this.apuntar(s.lmb, s); return; }
     const listo = sl => {
       const h = kit[sl];
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.requiereRodar && !yo.est.rodando) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e') && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.requiereRodar && !yo.est.rodando) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);
