@@ -1,6 +1,6 @@
 // Escolha de Pokémon: grade 3x3 no centro, quadro de cada lado com sprite, tipos, atributos e as 5 skills.
-import { ANCHO, ALTO, UI, hex } from '../config.js';
-import { ROSTER, ROLES } from '../data/pokemon.js';
+import { ANCHO, ALTO, UI, hex, VERSION } from '../config.js';
+import { ROSTER, ROLES, HUELLA } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { TIPOS } from '../data/regras.js';
 import { fondoMenu, texto, marco, rect } from '../render/pixel.js';
@@ -66,12 +66,25 @@ export class Seleccion {
   preparar() {
     const o = this.online;
     this.listo = false; this.esperaTxt = '';
+    // cada um manda a sua versão e responde uma vez a do outro (a primeira pode chegar antes de o outro estar aqui)
+    const ver = () => o.enviar({ t: 'ver', v: VERSION, h: HUELLA });
     o.alOtro = m => {
+      if (m.t === 'ver') { if (!this.verOk) { this.verOk = true; ver(); } if (m.h !== HUELLA) this.versionDistinta(m.v); return; }
+      if (this.malaVersion) return;
       if (m.t === 'shiny') { (this.shiny ??= [])[m.lado] = m.on; return; }
-      if (m.t === 'pick') { this.elegido[m.lado] = m.i; if (m.lado === 0 && m.arena != null) this.arenaPronta = m.arena; this.revisar(); }
-      else if (m.t === 'start') this.empezarOnline(m);
+      if (m.t === 'pick') {
+        // versões antigas mandavam a posição na lista, que muda quando entra Pokémon novo
+        const i = ROSTER.findIndex(p => p.id === m.id);
+        if (i < 0) return this.versionDistinta(null);
+        this.elegido[m.lado] = i; if (m.lado === 0 && m.arena != null) this.arenaPronta = m.arena; this.revisar();
+      } else if (m.t === 'start') { if (m.picks.some(id => id && !ROSTER.some(p => p.id === id))) return this.versionDistinta(null); this.empezarOnline(m); }
     };
+    ver();
     o.alCerrar = () => { this.esperaTxt = 'OPPONENT LEFT'; this.cerrado = true; setTimeout(() => this.atras(), 1600); };
+  }
+  versionDistinta(v) {
+    this.malaVersion = true; this.listo = false;
+    this.esperaTxt = `DIFFERENT GAME VERSIONS (YOU ${VERSION} ${HUELLA}${v ? ` · FRIEND ${v}` : ''}): BOTH NEED THE LATEST APK`;
   }
   revisar() {
     const o = this.online;
@@ -86,11 +99,11 @@ export class Seleccion {
   luchar() {
     const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
     if (this.online) {
-      if (this.listo || this.cerrado) return;
+      if (this.listo || this.cerrado || this.malaVersion) return;
       sfx('confirmar');
       this.listo = true; this.esperaTxt = 'WAITING FOR THE OTHERS...';
       this.app.ultimaSeleccion = [this.elegido[this.mi]];
-      this.online.enviar({ t: 'pick', lado: this.mi, i: this.elegido[this.mi], arena: ARENAS[this.arena].id });
+      this.online.enviar({ t: 'pick', lado: this.mi, id: ROSTER[this.elegido[this.mi]].id, arena: ARENAS[this.arena].id });
       return this.revisar();
     }
     if (this.liga) {

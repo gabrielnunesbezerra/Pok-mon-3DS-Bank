@@ -429,7 +429,7 @@ export class Combate {
       for (let i = -3; i <= 3; i++) { g.fillStyle = '#1a0624'; g.fillRect(cx + i - 1, cy + i - 1, 3, 3); g.fillRect(cx - i - 1, cy + i - 1, 3, 3); }
       for (let i = -3; i <= 3; i++) { g.fillStyle = pul ? '#f0c8ff' : '#c27ae0'; g.fillRect(cx + i, cy + i, 1, 1); g.fillRect(cx - i, cy + i, 1, 1); }
     }
-    if (l.almas) for (let i = 0; i < l.almas; i++) { const a = this.t * 2.2 + (i / l.almas) * Math.PI * 2, x = l.x + Math.cos(a) * (l.alto * 0.55 + 8), y = l.y - l.alto * 0.5 + Math.sin(a) * 9; pezAlma(g, x, y, a + Math.PI / 2, 0.8, 0.75); }
+    if (l.almas) for (let i = 0; i < l.almas; i++) { const a = this.t * 2.2 + (i / l.almas) * Math.PI * 2, x = l.x + Math.cos(a) * (l.alto * 0.55 + 8), y = l.y - l.alto * 0.5 + Math.sin(a) * 9; pezAlma(g, x, y, a + Math.PI / 2, 0.8, 0.75, !!l.def.almaRosa); }
     // Lock-On: mira vermelha em cima de quem está marcado
     if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }

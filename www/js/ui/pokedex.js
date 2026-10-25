@@ -10,7 +10,7 @@ import { centrada } from './centrar.js';
 const FORMA = {
   proyectil: 'Projectile', chorro: 'Beam', helice: 'Spiral beam', cono: 'Cone', pulso: 'Pulse', tajo: 'Melee combo', golpe: 'Melee strike',
   rafaga: 'Flurry', patada: 'Leap kick', meteoro: 'Sky slam', vuelo: 'Vanish', erupcion: 'Eruptions', lluvia: 'Falling rocks',
-  burbujas: 'Bubble stream', caparazon: 'Shell spin', viento: 'Sound wave', dash: 'Dash', embestidas: 'Cross dashes', bombaLodo: 'Lobbed bomb', acrobacia: 'Hit and flip back',
+  burbujas: 'Bubble stream', caparazon: 'Shell spin', viento: 'Sound wave', dash: 'Dash', embestidas: 'Cross dashes', bombaLodo: 'Lobbed bomb', lunas: 'Crescent slashes',
   plantaFeroz: 'Root waves', chapoteo: 'Nothing?', laco: 'Grab & throw', geiser: 'Geyser pull', torreta: 'Turret', espejo: 'Reflect hits', curaAnillo: 'Heal ring', recuperar: 'Heal', estallido: 'Radial burst', lanzaTorretas: 'Turret volley', potenciar: 'Stack buff', escudo: 'Shield', explosion: 'Blast', trampa: 'Trap', torbellino: 'Tornado', arraigo: 'Root', crecimiento: 'Power up', descanso: 'Rest', clones: 'Decoys', humo: 'Smoke',
 };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];

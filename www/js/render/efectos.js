@@ -34,7 +34,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = []; this.heroes = []; this.garras = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = []; this.heroes = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, hue: this.hue || 0, ...p }); }
@@ -213,11 +213,11 @@ export class Efectos {
           break;
         case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.12); this.flashColor = '#f5d0fe'; break;
         case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
-        case 'alma': this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vy: -30, size: 2.5, life: 0.5, color: '#cfefff', forma: 'chispa' }); break;
-        case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: ['#cfefff', '#a78bfa', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
+        case 'alma': this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vy: -30, size: 2.5, life: 0.5, color: e.l.def?.almaRosa ? '#ffbfdc' : '#cfefff', forma: 'chispa' }); break;
+        case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: (e.l.def?.almaRosa ? ['#ffbfdc', '#f472b6', '#ffffff'] : ['#cfefff', '#a78bfa', '#ffffff'])[i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
         case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
         case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
-        case 'garras': this.garras.push({ lineas: e.lineas, tipo: e.tipo, ancho: (e.ancho ?? 9) / 9, t: 0, life: e.dur, semilla: Math.floor(ale() * 1000), hue: this.hue }); for (const s2 of e.lineas) this.chispas((s2.x0 + s2.x1) / 2, (s2.y0 + s2.y1) / 2 - 6, '#e9b8ff', 5, 160); break;
+        case 'luna': this.heroes.push({ k: 'luna', x: e.x, y: e.y, ang: e.ang, r: e.r, lado: e.lado, final: e.final, tipo: e.tipo, t: 0, life: e.final ? 0.55 : 0.42, hue: this.hue }); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -233,7 +233,7 @@ export class Efectos {
         default: break;
       }
       // tudo o que esse evento criou leva a cor do dono (shiny)
-      for (const lista of [this.grietas, this.garras, this.zonas, this.relampagos, this.rayos, this.ondas, this.colas, this.trazos, this.cruces, this.anillos, this.espinas]) for (let i = lista.length - 1; i >= 0 && lista[i].hue === undefined; i--) lista[i].hue = this.hue || 0;
+      for (const lista of [this.grietas, this.zonas, this.relampagos, this.rayos, this.ondas, this.colas, this.trazos, this.cruces, this.anillos, this.espinas]) for (let i = lista.length - 1; i >= 0 && lista[i].hue === undefined; i--) lista[i].hue = this.hue || 0;
     }
     this.hue = 0;
   }
@@ -286,7 +286,6 @@ export class Efectos {
     for (const c of this.relampagos) c.t += dt; this.relampagos = this.relampagos.filter(c => c.t < c.life);
     for (const c of this.rayos) c.t += dt; this.rayos = this.rayos.filter(c => c.t < c.life);
     for (const c of this.grietas) c.t += dt; this.grietas = this.grietas.filter(c => c.t < c.life);
-    for (const c of this.garras) c.t += dt; this.garras = this.garras.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
   }
@@ -294,25 +293,6 @@ export class Efectos {
   // marcas no chão (área da Frenzy Plant): aparecem antes das raízes, para dar para fugir
   dibujarSuelo(g) {
     const gB = g;
-    // Gunk Shot: rasgos de garra gigantes no chão, escuros por dentro e com lodo brilhando na borda
-    for (const c of this.garras) {
-      const g = c.hue ? capa(gB, c.hue) : gB, [d0, d1, d2, d3] = rampaTipo(c.tipo);
-      const al = Math.min(1, (c.life - c.t) / 0.5), cresce = Math.min(1, c.t / 0.12), N = 12;
-      g.globalAlpha = al;
-      c.lineas.forEach((s2, i) => {
-        const mx = (s2.x0 + s2.x1) / 2, my = (s2.y0 + s2.y1) / 2, hx = (s2.x1 - s2.x0) / 2 * cresce, hy = (s2.y1 - s2.y0) / 2 * cresce;
-        for (let j = 0; j < N; j++) {
-          const f0 = j / N, f1 = (j + 1) / N, w = Math.sin(((f0 + f1) / 2) * Math.PI);
-          const xa = mx - hx + hx * 2 * f0, ya = my - hy + hy * 2 * f0, xb = mx - hx + hx * 2 * f1, yb = my - hy + hy * 2 * f1;
-          const wa = w * (c.ancho ?? 1);
-          PX.lineaPix(g, xa, ya, xb, yb, '#12041c', Math.max(1, Math.round(11 * wa)));
-          PX.lineaPix(g, xa, ya, xb, yb, d0, Math.max(1, Math.round(7 * wa)));
-          PX.lineaPix(g, xa, ya - 1, xb, yb - 1, d1, Math.max(1, Math.round(3 * wa)));
-        }
-        for (let j = 0; j < 3; j++) { const f = ((c.t * 0.6 + j * 0.33 + i * 0.17 + c.semilla * 0.001) % 1), x = s2.x0 + (s2.x1 - s2.x0) * f, y = s2.y0 + (s2.y1 - s2.y0) * f - ((c.t * 30 + j * 7) % 10); PX.disco(g, x, y, 1.5, j % 2 ? d2 : d3); }
-      });
-      g.globalAlpha = 1;
-    }
     // rachaduras do Earthquake: linhas quebradas que saem do centro e somem
     for (const c of this.grietas) {
       const g = c.hue ? capa(gB, c.hue) : gB;
@@ -579,6 +559,27 @@ export class Efectos {
       for (let i = 0; i < 3; i++) { const r = h.radio * (0.45 + i * 0.27); PX.anilloPix(g, cx, cy, r, r * 0.62, i % 2 ? '#f0f4ff' : '#bfe4ff', 1, 10, Math.floor(t * 20) * (i % 2 ? 1 : -1)); for (let j = 0; j < 5; j++) { const a = t * (2 + i) * (i % 2 ? -1 : 1) + j * 1.2566; PX.carimbar(g, PX.nota(6, j % 2 ? '#ffffff' : '#ff9ad8'), cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62 - 6, 0, 1, 1); } }
       g.globalAlpha = 1; return;
     }
+    if (h.k === 'luna') {
+      // Midnight Claws: meia-lua gigante (grossa no meio, fina nas pontas) que avança e some, com estrelas azuis nas pontas
+      const A = 1.25, abre = Math.min(1, t / 0.1), R = h.r * (0.45 + 0.55 * Math.min(1, t / 0.16)), al = Math.min(1, (1 - k) * 2.2), W = h.final ? 22 : 16;
+      const giro = h.lado * (1 - abre) * 0.9, N = 18, sube = h.final ? 26 : 18;
+      const ponto = (a, r) => [h.x + Math.cos(h.ang + a + giro) * r, h.y + Math.sin(h.ang + a + giro) * r * 0.62 - Math.cos(a / A * 1.5708) * sube * abre];
+      const banda = (fator, cor, alfa) => {
+        g.globalAlpha = al * alfa; g.fillStyle = cor; g.beginPath();
+        for (let i = 0; i <= N; i++) { const a = -A + (2 * A * i) / N, w = Math.cos((a / A) * 1.5708) * W * fator; const [x, y] = ponto(a, R + w * 0.5); i ? g.lineTo(x, y) : g.moveTo(x, y); }
+        for (let i = N; i >= 0; i--) { const a = -A + (2 * A * i) / N, w = Math.cos((a / A) * 1.5708) * W * fator; const [x, y] = ponto(a, R - w * 0.5); g.lineTo(x, y); }
+        g.closePath(); g.fill();
+      };
+      banda(1.5, '#1e1052', 0.35); banda(1, '#3b1d9a', 0.9); banda(0.55, '#6d4cf0', 0.95); banda(0.18, '#d6ccff', 1);
+      for (const s2 of [-1, 1]) {
+        const [x, y] = ponto(s2 * A, R), tam = (h.final ? 9 : 6) * (0.8 + 0.2 * Math.sin(t * 40));
+        g.globalAlpha = al * 0.5; PX.disco(g, x, y, tam * 0.7, '#2563eb'); g.globalAlpha = al;
+        PX.lineaPix(g, x - tam, y, x + tam, y, '#93c5fd', 2); PX.lineaPix(g, x, y - tam, x, y + tam, '#93c5fd', 2);
+        PX.lineaPix(g, x - tam * 0.5, y - tam * 0.5, x + tam * 0.5, y + tam * 0.5, '#ffffff', 1); PX.lineaPix(g, x - tam * 0.5, y + tam * 0.5, x + tam * 0.5, y - tam * 0.5, '#ffffff', 1);
+        PX.disco(g, x, y, 2, '#ffffff');
+      }
+      g.globalAlpha = 1; return;
+    }
     if (h.k === 'garraX') {
       // Dire Claw: dois golpes de garra (três riscos cada) cruzando em X
       const al = Math.min(1, (1 - k) * 2.5), L = h.r * Math.min(1, t / 0.07);
@@ -686,17 +687,18 @@ function cola(g, p, n, color, r0) {
 }
 const AGUA = PX.RAMPA_AGUA;
 // peixe fantasma (alma de Basculin): corpo translúcido azul-claro, cauda e olho, virado para onde vai
-export function pezAlma(g, x, y, ang, esc = 1, alfa = 0.85) {
+// alma de Basculin; rosa no Basculegion macho (como a cauda dele), azul clara na fêmea
+export function pezAlma(g, x, y, ang, esc = 1, alfa = 0.85, rosa = false) {
   g.save(); g.translate(px(x), px(y)); g.rotate(ang); g.globalAlpha *= alfa;
-  g.fillStyle = 'rgba(80,60,140,0.6)'; g.beginPath(); g.ellipse(0, 0, 6 * esc, 3.2 * esc, 0, 0, Math.PI * 2); g.fill();
-  g.fillStyle = '#cfefff'; g.beginPath(); g.ellipse(0, 0, 5 * esc, 2.4 * esc, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = rosa ? 'rgba(140,40,90,0.6)' : 'rgba(80,60,140,0.6)'; g.beginPath(); g.ellipse(0, 0, 6 * esc, 3.2 * esc, 0, 0, Math.PI * 2); g.fill();
+  g.fillStyle = rosa ? '#ffbfdc' : '#cfefff'; g.beginPath(); g.ellipse(0, 0, 5 * esc, 2.4 * esc, 0, 0, Math.PI * 2); g.fill();
   g.beginPath(); g.moveTo(-4 * esc, 0); g.lineTo(-9 * esc, -3.5 * esc); g.lineTo(-8 * esc, 0); g.lineTo(-9 * esc, 3.5 * esc); g.closePath(); g.fill();
   g.fillStyle = '#ffffff'; g.fillRect(Math.round(1 * esc), Math.round(-1.4 * esc), 2, 1);
-  g.fillStyle = '#3a2a6a'; g.fillRect(Math.round(2.5 * esc), Math.round(-1.2 * esc), 1, 1);
+  g.fillStyle = rosa ? '#6a1a40' : '#3a2a6a'; g.fillRect(Math.round(2.5 * esc), Math.round(-1.2 * esc), 1, 1);
   g.restore();
 }
 const ESTILOS_PROJ = {
-  almaPez(g, p, t) { for (let i = 1; i <= 3; i++) { g.globalAlpha = 0.25 - i * 0.06; PX.disco(g, px(p.x - Math.cos(p.ang) * i * 6), px(p.y - p.alt - Math.sin(p.ang) * i * 4 + Math.sin(t * 20 + i) * 1.5), 2.5 - i * 0.5, '#bfe9ff'); } g.globalAlpha = 1; pezAlma(g, p.x, p.y - p.alt + Math.sin(t * 18) * 1.2, p.ang, p.escala * 0.9, 0.9); },
+  almaPez(g, p, t) { const rosa = !!p.dueno?.def?.almaRosa; for (let i = 1; i <= 3; i++) { g.globalAlpha = 0.25 - i * 0.06; PX.disco(g, px(p.x - Math.cos(p.ang) * i * 6), px(p.y - p.alt - Math.sin(p.ang) * i * 4 + Math.sin(t * 20 + i) * 1.5), 2.5 - i * 0.5, rosa ? '#ffb3d6' : '#bfe9ff'); } g.globalAlpha = 1; pezAlma(g, p.x, p.y - p.alt + Math.sin(t * 18) * 1.2, p.ang, p.escala * 0.9, 0.9, rosa); },
   algodonProj(g, p, t) { PX.carimbar(g, PX.humo(9, ['#c8d0e8', '#eef2ff', '#ffffff']), p.x, p.y - p.alt, t * 4, 1, 1); PX.carimbar(g, PX.humo(5, ['#dfe6f8', '#ffffff', '#ffffff']), p.x - Math.cos(p.ang) * 7, p.y - p.alt - Math.sin(p.ang) * 5, 0, 1, 0.8); },
   hoja(g, p, t) { PX.carimbar(g, PX.hoja(Math.round(9 * p.escala)), p.x, p.y - p.alt, t * 14 + p.x * 0.05); },
   semilla(g, p) { PX.esfera(g, px(p.x), px(p.y - p.alt), 3, ['#5a3a12', '#9a6a22', '#d6a64a', '#fff0b0']); PX.disco(g, px(p.x + 1), px(p.y - p.alt + 1), 1, '#3f8a2a'); },

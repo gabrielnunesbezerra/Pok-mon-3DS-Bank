@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'acrobacia'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'lunas'];
 
 test('o roster tem os 24 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler']);
@@ -267,26 +267,26 @@ test('Last Respects bate mais forte quanto menos almas o Basculegion tem e enche
   assert.ok(sem > cheio * 2, `sem almas ${sem} contra cheio ${cheio}`);
 });
 
-test('Sneasler: skill deixa o próximo básico em X, Acrobatics volta num mortal e Cross Poison crava garras no chão', () => {
+test('Sneasler: skill deixa o próximo básico em X e Midnight Claws solta três meias-luas que envenenam', () => {
   const l = nuevaLuta('sneasler', 'munchlax', { etapas: [1, 0] });
   const [a, b] = l.luchadores;
-  a.x = 380; a.y = 222; b.x = 470; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  a.x = 380; a.y = 222; b.x = 430; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
   assert.equal(l.habilidades.usar(a, 'rmb'), true);
   assert.ok(a.xListo, 'a skill guarda o corte em X');
-  const hp0 = b.hp;
-  correr(l, 0.6, [null, null]);
-  assert.ok(b.hp < hp0, 'Acrobatics acertou');
-  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) > 50, 'voltou num mortal para trás');
-  a.x = b.x - 40; a.ax = b.x; a.ay = b.y; a.accion = null;
+  correr(l, 0.8, [null, null]);
+  assert.ok(b.est.veneno, 'o Poison Jab envenena');
+  b.est = {}; b.x = a.x + 40; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null;
   assert.equal(l.habilidades.usar(a, 'lmb'), true);
   const eventos = [];
   for (let i = 0; i < 20; i++) { l.paso(1 / 60, [null, null]); eventos.push(...l.tomarEventos()); }
   assert.ok(eventos.some(e => e.t === 'corteX'), 'o básico seguinte saiu em X');
   assert.equal(a.xListo, false);
-  a.accion = null; a.ulti = 100; b.est = {};
+  a.accion = null; a.ulti = 100; b.est = {}; b.x = a.x + 70; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  const hp0 = b.hp, lunas = [];
   assert.equal(l.habilidades.usar(a, 'e'), true);
-  correr(l, 0.4, [null, null]);
-  assert.ok(l.entidades.some(e => e.tipo === 'garras'), 'as garras cruzadas ficaram no chão');
+  for (let i = 0; i < 50; i++) { l.paso(1 / 60, [null, null]); lunas.push(...l.tomarEventos().filter(e => e.t === 'luna')); }
+  assert.equal(lunas.length, 3, 'três meias-luas');
+  assert.ok(b.hp < hp0 && b.est.veneno, 'acertou e envenenou');
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {
