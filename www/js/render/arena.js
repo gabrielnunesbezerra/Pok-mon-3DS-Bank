@@ -1,8 +1,9 @@
 // As 4 arenas ovais desenhadas por código em pixel art (960 x 441): estádio, neon, cratera e ruínas.
 import { MUNDO, OVALO } from '../config.js';
 
-// a arena é desenhada com uma margem grande em volta, para a câmera nunca mostrar o fim (borda preta)
-export const MARGEM = { x: 480, y: 320 };
+// a arena é desenhada com uma margem em volta, para a câmera nunca mostrar o fim (borda preta);
+// só o necessário para o zoom mínimo da câmera: imagem grande demais estoura a memória de vídeo de celular fraco
+export const MARGEM = { x: 340, y: 170 };
 const TODO = [-MARGEM.x, -MARGEM.y, MUNDO.w + MARGEM.x * 2, MUNDO.h + MARGEM.y * 2];
 const foraDaArte = (x, y, m = 6) => x < -MARGEM.x - m || x > MUNDO.w + MARGEM.x + m || y < -MARGEM.y - m || y > MUNDO.h + MARGEM.y + m;
 function rng(seed) { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -293,8 +294,10 @@ function moita(g, x, y, r, R) {
 }
 
 const cache = new Map();
+export const limparArenas = () => cache.clear();
 export function crearArena(id) {
   if (cache.has(id)) return cache.get(id);
+  cache.clear(); // só a arena atual fica na memória
   const c = document.createElement('canvas');
   c.width = MUNDO.w + MARGEM.x * 2; c.height = MUNDO.h + MARGEM.y * 2;
   const g = c.getContext('2d');

@@ -70,9 +70,65 @@ const TEMAS = {
   menu: { bpm: 104, melodia: [72, 0, 76, 79, 76, 0, 74, 0, 72, 0, 69, 72, 71, 0, 67, 0, 69, 0, 72, 76, 74, 0, 71, 0, 72, 74, 76, 0, 79, 0, 76, 0], bajo: [48, 55, 52, 55, 45, 52, 48, 52, 41, 48, 45, 48, 43, 50, 47, 50], tipo: 'triangle' },
   combate: { bpm: 148, melodia: [76, 76, 0, 79, 76, 0, 74, 76, 72, 72, 0, 76, 72, 0, 71, 72, 69, 69, 0, 72, 69, 0, 67, 69, 71, 74, 71, 67, 71, 74, 76, 0], bajo: [40, 40, 47, 40, 36, 36, 43, 36, 33, 33, 40, 33, 35, 35, 42, 35], tipo: 'square' },
 };
+// ---------------------------------------------------------------- phonk das lutas (composição própria):
+// cowbell com melodia, 808 grave distorcido deslizando, bumbo, palma e chimbal com rufadas. 16 passos por compasso.
+const PHONK = {
+  bpm: 138,
+  // cowbell (0 = pausa), 32 passos = 2 compassos; tom de fá# menor
+  cowbell: [78, 0, 0, 78, 0, 0, 81, 0, 78, 0, 76, 0, 73, 0, 0, 0, 78, 0, 0, 78, 0, 0, 81, 0, 83, 0, 81, 0, 78, 0, 76, 0,
+            78, 0, 0, 78, 0, 0, 81, 0, 78, 0, 76, 0, 73, 0, 71, 0, 73, 0, 0, 73, 0, 0, 76, 0, 78, 0, 0, 0, 0, 0, 0, 0],
+  // 808: nota em cada passo marcado (0 = segura)
+  bajo: [42, 0, 0, 0, 0, 0, 42, 0, 0, 0, 45, 0, 0, 0, 0, 0, 38, 0, 0, 0, 0, 0, 38, 0, 0, 0, 40, 0, 0, 0, 0, 0],
+  bombo: [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+  palma: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+  chimbal: [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 2, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 2, 1, 2, 2, 2],
+};
+let ruidoPhonk = null, distorcao = null;
+function prepararPhonk() {
+  if (!ruidoPhonk) { ruidoPhonk = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate); const d = ruidoPhonk.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  if (!distorcao) { distorcao = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = (i / 1023) * 2 - 1; distorcao[i] = Math.tanh(x * 3.5); } }
+}
+function tocarPhonk() {
+  prepararPhonk();
+  const paso = 60 / PHONK.bpm / 4, saida = ctx.createGain();
+  saida.gain.value = 0.9; saida.connect(ctx.destination);
+  const env = (g, t, pico, dur) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pico * volumen, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); };
+  const cowbell = (n, t) => {
+    const f = NOTA(n), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+    bp.type = 'bandpass'; bp.frequency.value = f * 1.6; bp.Q.value = 2.5;
+    for (const k of [1, 1.48]) { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f * k; o.connect(bp); o.start(t); o.stop(t + 0.3); }
+    env(g, t, 0.16, 0.26); bp.connect(g).connect(saida);
+  };
+  const ochocientos = (n, t, dur) => {
+    const o = ctx.createOscillator(), ws = ctx.createWaveShaper(), g = ctx.createGain(), f = NOTA(n);
+    o.type = 'sine'; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
+    ws.curve = distorcao; env(g, t, 0.32, dur);
+    o.connect(ws).connect(g).connect(saida); o.start(t); o.stop(t + dur + 0.05);
+  };
+  const bombo = t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); env(g, t, 0.5, 0.22); o.connect(g).connect(saida); o.start(t); o.stop(t + 0.25); };
+  const barulho = (t, dur, tipo, freq, pico) => { const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = ruidoPhonk; f.type = tipo; f.frequency.value = freq; env(g, t, pico, dur); s.connect(f).connect(g).connect(saida); s.start(t); s.stop(t + dur + 0.02); };
+  let i = 0, proximo = ctx.currentTime + 0.1;
+  const timer = setInterval(() => {
+    if (!ctx || mudo) { proximo = ctx ? ctx.currentTime + 0.1 : 0; return; }
+    while (proximo < ctx.currentTime + 0.4) {
+      const c = PHONK.cowbell[i % 64], b = PHONK.bajo[i % 32], h = PHONK.chimbal[i % 32];
+      if (c) cowbell(c, proximo);
+      if (b) { let n = 1; while (n < 8 && !PHONK.bajo[(i + n) % 32]) n++; ochocientos(b, proximo, paso * n * 0.95); }
+      if (PHONK.bombo[i % 32]) bombo(proximo);
+      if (PHONK.palma[i % 16]) { barulho(proximo, 0.16, 'bandpass', 1500, 0.32); barulho(proximo + 0.012, 0.12, 'bandpass', 1800, 0.22); }
+      if (h === 1) barulho(proximo, 0.04, 'highpass', 8000, 0.08);
+      if (h === 2) { barulho(proximo, 0.03, 'highpass', 8000, 0.07); barulho(proximo + paso / 2, 0.03, 'highpass', 8000, 0.06); }
+      proximo += paso; i++;
+    }
+  }, 100);
+  return timer;
+}
+
 export function tocarMusica(nombre) {
   pararMusica();
-  if (!musicaOn || !ctx || !TEMAS[nombre]) return;
+  if (!musicaOn || !ctx) return;
+  if (nombre === 'phonk') { musica = { nombre, timer: tocarPhonk() }; return; }
+  if (!TEMAS[nombre]) return;
   const tema = TEMAS[nombre];
   const paso = 60 / tema.bpm / 2;
   let i = 0, proximo = ctx.currentTime + 0.1;

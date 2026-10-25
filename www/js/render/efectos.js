@@ -217,7 +217,7 @@ export class Efectos {
         case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: (e.l.def?.almaRosa ? ['#ffbfdc', '#f472b6', '#ffffff'] : ['#cfefff', '#a78bfa', '#ffffff'])[i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
         case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
         case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
-        case 'cortesSuelo': this.heroes.push({ k: 'cortesSuelo', lineas: e.lineas, viaja: e.viaja, tipo: e.tipo, t: 0, life: e.viaja + 0.55, hue: this.hue }); break;
+        case 'cortesSuelo': this.heroes.push({ k: 'cortesSuelo', lineas: e.lineas, viaja: e.viaja, tipo: e.tipo, t: 0, life: e.viaja + 0.55, hue: this.hue }); this.chispas(e.lineas[0].x0, e.lineas[0].y0 - 8, '#e9b8ff', 12, 220); this.anillo(e.lineas[0].x0, e.lineas[0].y0, 8, 40, '#a855f7', 0.35, 2); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -560,24 +560,35 @@ export class Efectos {
       g.globalAlpha = 1; return;
     }
     if (h.k === 'cortesSuelo') {
-      // garras roxas brotando do chão em fila, do pé até a ponta de cada linha, com o rasgo no chão por baixo
-      const N = 9, H = 26;
+      // Rending Claws: em cada linha o chão racha brilhando e garras roxas enormes brotam em fila, do pé até a ponta,
+      // curvadas como unhas, soltando gotas de veneno; na ponta, um estouro em estrela
+      const N = 8, H = 42, fim = Math.min(1, t / h.viaja), al = Math.min(1, (h.life - t) / 0.3);
       for (const s2 of h.lineas) {
-        const fim = Math.min(1, t / h.viaja), al = Math.min(1, (h.life - t) / 0.3);
-        g.globalAlpha = al * 0.8;
-        PX.lineaPix(g, s2.x0, s2.y0, s2.x0 + (s2.x1 - s2.x0) * fim, s2.y0 + (s2.y1 - s2.y0) * fim, '#12041c', 6);
-        PX.lineaPix(g, s2.x0, s2.y0, s2.x0 + (s2.x1 - s2.x0) * fim, s2.y0 + (s2.y1 - s2.y0) * fim, '#9b3fbf', 2);
+        const dx = s2.x1 - s2.x0, dy = s2.y1 - s2.y0, ang = Math.atan2(dy, dx), inc = Math.cos(ang) * 10, xe = s2.x0 + dx * fim, ye = s2.y0 + dy * fim;
+        g.globalAlpha = al * 0.35; PX.lineaPix(g, s2.x0, s2.y0, xe, ye, '#7c3aed', 14);
+        g.globalAlpha = al; PX.lineaPix(g, s2.x0, s2.y0, xe, ye, '#12041c', 6); PX.lineaPix(g, s2.x0, s2.y0 - 1, xe, ye - 1, '#c084fc', 2);
         for (let j = 1; j <= N; j++) {
-          const f = j / N, nasce = f * h.viaja, vida = t - nasce;
+          const f = j / N, vida = t - f * h.viaja;
           if (vida < 0) continue;
-          const sube = Math.min(1, vida / 0.06) * Math.max(0, Math.min(1, (0.42 - vida) / 0.2)), alto = H * (0.7 + 0.5 * f) * sube;
-          if (alto < 1) continue;
-          const x = s2.x0 + (s2.x1 - s2.x0) * f, y = s2.y0 + (s2.y1 - s2.y0) * f, inc = Math.cos(Math.atan2(s2.y1 - s2.y0, s2.x1 - s2.x0)) * 6;
+          const sube = Math.min(1, vida / 0.05) * Math.max(0, Math.min(1, (0.45 - vida) / 0.2)), alto = H * (0.65 + 0.55 * f) * sube;
+          const x = s2.x0 + dx * f, y = s2.y0 + dy * f;
+          if (vida < 0.1) { g.globalAlpha = al * (1 - vida / 0.1); PX.disco(g, x, y, 6 + vida * 60, '#e9b8ff'); }
+          if (alto < 2) continue;
+          const w = 5 + f * 3, tx = x + inc, ty = y - alto;
           g.globalAlpha = al;
-          g.fillStyle = '#2a0f3a'; g.beginPath(); g.moveTo(x - 5, y); g.lineTo(x + inc, y - alto - 2); g.lineTo(x + 5, y); g.closePath(); g.fill();
-          g.fillStyle = '#9b3fbf'; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x + inc, y - alto); g.lineTo(x + 3, y); g.closePath(); g.fill();
-          PX.lineaPix(g, x - 1, y - 1, x + inc, y - alto, '#f0c8ff', 1);
-          if (vida < 0.08) PX.disco(g, x, y, 3, '#e9b8ff');
+          for (const [cor, k] of [['#12041c', 1.5], ['#5b21b6', 1], ['#a855f7', 0.55]]) {
+            g.fillStyle = cor; g.beginPath(); g.moveTo(x - w * k, y);
+            g.quadraticCurveTo(x - w * k * 0.4, y - alto * 0.6, tx, ty - (k > 1 ? 2 : 0));
+            g.quadraticCurveTo(x + w * k * 0.9, y - alto * 0.45, x + w * k, y); g.closePath(); g.fill();
+          }
+          PX.lineaPix(g, x - w * 0.3, y - 2, tx, ty, '#f5d0fe', 1);
+          for (let q = 0; q < 2; q++) { const gy = y - ((vida * 70 + q * 13 + j * 5) % 30), gx = x + (q ? 6 : -6) + Math.sin(vida * 20 + q) * 2; PX.disco(g, gx, gy, 1.5, q ? '#d8b4fe' : '#a3e635'); }
+        }
+        if (fim >= 1 && t - h.viaja < 0.3) {
+          const k2 = (t - h.viaja) / 0.3, r = 6 + k2 * 16;
+          g.globalAlpha = al * (1 - k2);
+          PX.lineaPix(g, s2.x1 - r, s2.y1, s2.x1 + r, s2.y1, '#e9b8ff', 2); PX.lineaPix(g, s2.x1, s2.y1 - r, s2.x1, s2.y1 + r * 0.6, '#e9b8ff', 2);
+          PX.disco(g, s2.x1, s2.y1, 3, '#ffffff');
         }
       }
       g.globalAlpha = 1; return;
@@ -1048,6 +1059,7 @@ export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[String(l.dex).re
 // O filtro de cor é caro se aplicado em cada partícula. Então tudo de um shiny é desenhado numa camada
 // só dele e a camada inteira entra na tela uma vez por quadro, já com a cor girada.
 const capas = new Map();
+export const limparCapas = () => capas.clear();
 export function capa(g, hu) {
   // a camada fica na resolução interna do jogo (640 de largura): bem menos pixels para o filtro
   const f = Math.max(1, g.canvas.width / 640), W = Math.ceil(g.canvas.width / f), H = Math.ceil(g.canvas.height / f);

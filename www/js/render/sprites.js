@@ -98,6 +98,9 @@ export class SpriteBank {
     return true;
   }
 
+  // depois de o Android devolver o canvas, as cópias desenhadas à mão podem ter voltado em branco
+  limparCopias() { for (const k of [...this.hojas.keys()]) if (k.startsWith('b:')) this.hojas.delete(k); }
+
   // silhueta branca da folha (para o piscar de dano)
   blanco(dex, nombre, img) {
     const k = `b:${dex}/${nombre}`;

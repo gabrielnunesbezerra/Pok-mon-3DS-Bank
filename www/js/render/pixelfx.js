@@ -4,6 +4,7 @@
 const R = Math.round;
 const CONTORNO = '#04102c';
 const memo = new Map();
+export const limparMemo = () => memo.clear();
 
 function lienzo(w, h) {
   const c = document.createElement('canvas');

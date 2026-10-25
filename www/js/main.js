@@ -18,6 +18,9 @@ import { texto as textoPx, rect as rectPx } from './render/pixel.js';
 import { FxLab } from './ui/fxlab.js';
 import { Combate } from './ui/combate.js';
 import { PanelTactil } from './controles.js';
+import { limparArenas } from './render/arena.js';
+import { limparMemo } from './render/pixelfx.js';
+import { limparCapas } from './render/efectos.js';
 
 const canvas = document.getElementById('game');
 const g = canvas.getContext('2d');
@@ -39,17 +42,31 @@ const app = {
     this.musica();
   },
 };
-// erro numa tela não para o jogo: fica registrado e aparece no canto por alguns segundos
-let falha = null;
-function avisarFalha(e) { console.error(e); falha = { msg: String(e?.message ?? e).slice(0, 80), t: app.tiempo }; }
+// erro numa tela não para o jogo: fica registrado e aparece no canto por alguns segundos.
+// O aviso também vai num texto da página, por cima do canvas: se o canvas travar, o aviso ainda aparece.
+let falha = null, sujo = false, timerAviso = 0;
+const aviso = Object.assign(document.createElement('div'), { id: 'aviso' });
+Object.assign(aviso.style, { position: 'fixed', left: '4px', bottom: '4px', right: '4px', font: '11px monospace', color: '#ff8a8a', background: 'rgba(4,8,20,0.8)', padding: '2px 6px', pointerEvents: 'none', zIndex: 50, display: 'none' });
+document.body.appendChild(aviso);
+function mostrarAviso(txt, seg = 8) { aviso.textContent = txt; aviso.style.display = 'block'; clearTimeout(timerAviso); if (seg) timerAviso = setTimeout(() => { aviso.style.display = 'none'; }, seg * 1000); }
+function avisarFalha(e) { console.error(e); falha = { msg: String(e?.message ?? e).slice(0, 80), t: app.tiempo }; sujo = true; mostrarAviso(`ERROR: ${falha.msg}`); }
 function seguro(f) { try { f(); } catch (e) { avisarFalha(e); } }
+// o Android pode tirar o canvas do jogo quando falta memória de vídeo (a tela congela na última imagem);
+// quando ele devolve, tudo que foi desenhado em canvas guardados é refeito
+app.geracaoGrafica = 0;
+canvas.addEventListener('contextlost', () => mostrarAviso('GRAPHICS RESET BY THE PHONE · RESTORING...', 0));
+canvas.addEventListener('contextrestored', () => {
+  limparArenas(); limparMemo(); limparCapas(); app.bank.limparCopias?.();
+  app.geracaoGrafica++;
+  aviso.style.display = 'none';
+});
 const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }
 }
 app.musica = () => {
-  const que = app.nombre === 'combate' ? 'combate' : 'menu';
+  const que = app.nombre === 'combate' ? 'phonk' : 'menu';
   audio.activarMusica(app.ajustes.musica);
   if (app.ajustes.musica && audio.musicaActual() !== que) audio.tocarMusica(que);
 };
@@ -57,7 +74,8 @@ app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JS
 
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
 function medir() {
-  const dpr = Math.min(2, devicePixelRatio || 1);
+  // celular com pouca memória desenha com menos pixels (menos memória de vídeo)
+  const dpr = Math.min((navigator.deviceMemory ?? 8) <= 4 ? 1.5 : 2, devicePixelRatio || 1);
   // a altura lógica é sempre 360; a largura acompanha a proporção da tela (640 a 1100)
   const W = Math.max(640, Math.min(1100, Math.round((ALTO * innerWidth) / innerHeight)));
   setAncho(W);
@@ -123,6 +141,8 @@ function bucle(ahora) {
   seguro(() => { while (acum >= TICK && pasos < 6) { app.escena?.paso?.(TICK); acum -= TICK; pasos++; } });
   if (pasos === 6) acum = 0;
   seguro(() => app.escena?.actualizar?.(dt));
+  // um erro no meio do desenho pode deixar um recorte (clip) ativo, e aí nada mais aparece: desfaz tudo
+  if (sujo) { for (let i = 0; i < 64; i++) g.restore(); g.filter = 'none'; g.globalCompositeOperation = 'source-over'; sujo = false; }
   g.setTransform(app.k, 0, 0, app.k, 0, 0);
   g.globalAlpha = 1;
   g.imageSmoothingEnabled = false;

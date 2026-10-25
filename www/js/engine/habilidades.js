@@ -1529,7 +1529,8 @@ export class Habilidades {
         luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: 'patada' });
         const r = l.rival;
         if (h.congela) luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: 'ICE', estilo: 'hielo' });
-        const acerto = r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO;
+        // pulo sem dano (Wall Climb): só movimento
+        const acerto = h.dano > 0 && r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO;
         if (acerto) {
           const res = atingir(l, r, pacote(h, extra, ang, { empuje: h.congela ? 0 : 80, aturde: h.aturde, dirX: Math.cos(ang), dirY: Math.sin(ang), pesado: true }));
           // Ice Jump (Milotic): quem estava na área fica congelado um instante
