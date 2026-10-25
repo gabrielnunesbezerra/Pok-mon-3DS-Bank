@@ -33,8 +33,9 @@ export class Luta {
     this.empezarRonda();
   }
 
-  emit(ev) { this.eventos.push(ev); }
-  programar(seg, fn) { this.tareas.push({ t: this.t + seg, fn }); }
+  // cada evento sabe de quem é (para o desenho pintar o shiny com a cor dele)
+  emit(ev) { if (this.ctx && ev.l === undefined && ev.dueno === undefined) ev.quien = this.ctx; this.eventos.push(ev); }
+  programar(seg, fn) { this.tareas.push({ t: this.t + seg, fn, ctx: this.ctx }); }
   hitstop(ms) { if (!this.rapido) this.pausaGolpe = Math.max(this.pausaGolpe, ms); }
   add(e) { this.entidades.push(e); return e; }
 
@@ -114,12 +115,15 @@ export class Luta {
     for (let i = 0; i < this.luchadores.length; i++) {
       const l = this.luchadores[i];
       if (this.fase === 'intro') continue;
+      this.ctx = l;
       l.update(dt, this.fase === 'lucha' ? intentos?.[i] ?? null : null);
     }
+    this.ctx = null;
     if (activos) this.separar();
     if (this.entreno && this.fase === 'lucha') this.actualizarEntreno(dt);
     if (activos) {
-      for (const e of this.entidades) if (e.vivo !== false && e.update(dt) === false) e.vivo = false;
+      for (const e of this.entidades) { this.ctx = e.dueno ?? null; if (e.vivo !== false && e.update(dt) === false) e.vivo = false; }
+      this.ctx = null;
       this.entidades = this.entidades.filter(e => e.vivo !== false);
       for (const l of this.luchadores) if (l.clones) { l.clones = l.clones.filter(c => !c.ko); if (!l.clones.length) l.clones = null; }
     }
@@ -127,7 +131,8 @@ export class Luta {
     if (vencidas.length) {
       this.tareas = this.tareas.filter(x => x.t > this.t);
       const ronda = this.numRonda;
-      for (const x of vencidas) { if (ronda !== this.numRonda) break; x.fn(); }
+      for (const x of vencidas) { if (ronda !== this.numRonda) break; this.ctx = x.ctx ?? null; x.fn(); }
+      this.ctx = null;
     }
     if (this.fase === 'lucha' && !this.entreno) {
       this.reloj -= dt;

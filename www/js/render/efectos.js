@@ -57,7 +57,7 @@ export class Efectos {
     for (let i = 0; i < n; i++) this.add({ x: x + (ale() - 0.5) * size, y: y + (ale() - 0.5) * size * 0.4, vx: (ale() - 0.5) * 30, vy: -14 - ale() * 22, drag: 1.4, size: size * (0.6 + ale() * 0.5), grow: size * 1.2, life: 0.7 + ale() * 0.5, color, forma: 'circulo' });
   }
   polvo(x, y, n = 3, size = 4) { this.humo(x, y, n, 'rgba(214,200,160,0.5)', size); }
-  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w }); }
+  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 }); }
   texto(x, y, txt, color = '#ffffff', op = {}) { this.textos.push({ x, y, txt, color, t: 0, life: op.dur ?? 0.9, vy: -(op.sube ?? 22), tam: op.tam ?? 8 }); }
   numero(x, y, dano, mult) { this.nums.push({ x: x + (ale() - 0.5) * 10, y, dano, mult, t: 0, life: 0.8 }); }
   globo(l, txt, tipo = 'NORMAL') { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, tipo, t: 0, life: 1.1 }); }
@@ -72,7 +72,7 @@ export class Efectos {
   // ---------------------------------------------------------------- eventos do motor
   consumir(luta, evs, camara) {
     for (const e of evs) {
-      this.hue = hueShiny(e.l ?? e.dueno);
+      this.hue = hueShiny(e.l ?? e.dueno ?? e.quien);
       switch (e.t) {
         case 'texto': this.texto(e.x, e.y, e.txt, e.color, { dur: 0.95 }); break;
         case 'numero': this.numero(e.x, e.y, e.dano, e.mult); break;
@@ -213,7 +213,10 @@ export class Efectos {
         case 'sonido': sfx(e.n); break;
         default: break;
       }
+      // tudo o que esse evento criou leva a cor do dono (shiny)
+      for (const lista of [this.grietas, this.zonas, this.relampagos, this.rayos, this.ondas, this.colas, this.trazos, this.cruces, this.anillos, this.espinas]) for (let i = lista.length - 1; i >= 0 && lista[i].hue === undefined; i--) lista[i].hue = this.hue || 0;
     }
+    this.hue = 0;
   }
 
   impacto(e) {
@@ -268,8 +271,10 @@ export class Efectos {
 
   // marcas no chão (área da Frenzy Plant): aparecem antes das raízes, para dar para fugir
   dibujarSuelo(g) {
+    const gB = g;
     // rachaduras do Earthquake: linhas quebradas que saem do centro e somem
     for (const c of this.grietas) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       const a = Math.min(1, (c.life - c.t) / 0.4), cresce = Math.min(1, c.t / 0.12);
       g.globalAlpha = a;
       let sd = c.semilla;
@@ -288,6 +293,7 @@ export class Efectos {
     }
     g.globalAlpha = 1;
     for (const z of this.zonas) {
+      const g = z.hue ? capa(gB, z.hue) : gB;
       const a = Math.min(1, z.t / 0.12) * Math.min(1, (z.life - z.t) / 0.3), pul = 0.5 + 0.5 * Math.sin(z.t * 18);
       g.globalAlpha = a * 0.22; g.fillStyle = '#3f8f2a';
       g.beginPath(); g.ellipse(R(z.x), R(z.y), z.radio, z.radio * 0.62, 0, 0, 7); g.fill();
@@ -299,8 +305,10 @@ export class Efectos {
 
   // raios elétricos que saem do centro (Thunder Wave, Discharge)
   dibujarRayos(g) {
+    const gB = g;
     // raio que cai do céu (Thunder Storm): zigue-zague grosso amarelo com núcleo branco e clarão no chão
     for (const c of this.relampagos) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       if (c.t < 0) continue;
       const a = Math.min(1, (c.life - c.t) / 0.12);
       let sd = c.semilla + Math.floor(c.t * 40);
@@ -315,6 +323,7 @@ export class Efectos {
     }
     g.globalAlpha = 1;
     for (const c of this.rayos) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       let sd = c.semilla + Math.floor(c.t * 30);
       const rnd = () => ((sd = (sd * 9301 + 49297) % 233280) / 233280);
       g.globalAlpha = Math.min(1, (c.life - c.t) / 0.15);
@@ -327,9 +336,11 @@ export class Efectos {
   }
 
   dibujar(g) {
+    const gB = g;
     this.dibujarRayos(g);
     // ondas de sopro e arcos de corte
     for (const o of this.ondas) {
+      const g = o.hue ? capa(gB, o.hue) : gB;
       const k = o.t / o.life, c = colorTipo(o.tipo);
       g.globalAlpha = Math.min(1, (1 - k) * 1.6);
       if (o.estilo === 'sonido') {
@@ -351,10 +362,11 @@ export class Efectos {
         PX.arcoPix(g, o.x, o.y, r, o.ang - a2 * 0.96, o.ang + a2 * 0.96, i === 1 ? '#ffffff' : c, 2);
       }
     }
-    for (const a of this.tajos) conHue(g, a.hue, () => this.dibujarTajo(g, a));
+    for (const a of this.tajos) conHue(g, a.hue, c => this.dibujarTajo(c, a));
     g.globalAlpha = 1;
     // cauda gigante da Milotic: faixa azul curva com listras brancas e barbatana, dando uma volta
     for (const c of this.colas) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       const k = c.t / c.life, a0 = c.ang + k * Math.PI * 2, cx = c.l.x, cy = c.l.y - c.l.alto * 0.4, N = 14, al = Math.min(1, (1 - k) * 4);
       const pt = i => { const f = i / N, a = a0 - (1 - f) * 2.2, r = 8 + c.r * f; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62, a, f]; };
       g.globalAlpha = al;
@@ -370,12 +382,14 @@ export class Efectos {
       g.globalAlpha = al; g.drawImage(IMG_MEGA, Math.round(c.x - IMG_MEGA.naturalWidth * esc / 2), Math.round(c.y - k * 16 - IMG_MEGA.naturalHeight * esc), Math.round(IMG_MEGA.naturalWidth * esc), Math.round(IMG_MEGA.naturalHeight * esc)); g.globalAlpha = 1;
     }
     for (const c of this.trazos) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       const al = 1 - c.t / c.life, [, c2, c1] = rampaTipo(c.tipo), w = Math.max(1, Math.round(4 * al));
       g.globalAlpha = al * 0.9;
       PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, '#04102c', w + 3); PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, c2, w + 1); PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, c1, Math.max(1, w - 2));
       g.globalAlpha = 1;
     }
     for (const c of this.cruces) {
+      const g = c.hue ? capa(gB, c.hue) : gB;
       const k = c.t / c.life, alfa = Math.min(1, (1 - k) * 1.8), cx = c.x, cy = c.y, L = c.largo * (0.55 + 0.45 * Math.min(1, k * 4));
       const ca = Math.cos(c.ang), sa = Math.sin(c.ang), [, c2, c1] = rampaTipo(c.tipo);
       g.globalAlpha = alfa;
@@ -389,6 +403,7 @@ export class Efectos {
       g.globalAlpha = 1;
     }
     for (const a of this.anillos) {
+      const g = a.hue ? capa(gB, a.hue) : gB;
       const k = a.t / a.dur, r = a.r0 + (a.r1 - a.r0) * Math.sqrt(k);
       g.globalAlpha = Math.min(1, (1 - k) * 1.4);
       PX.anilloPix(g, a.x, a.y, r, r * 0.8, '#04102c', a.w + 1, 0);
@@ -401,9 +416,9 @@ export class Efectos {
       PX.carimbar(g, sp.vid ? PX.vid(h, sp.semilla) : PX.espina(h), sp.x, sp.y - h / 2 + 2, 0, 1, 1);
       void k;
     }
-    const matices = [0, ...new Set(this.parts.map(p => p.hue).filter(Boolean))];
+    const matices = [0, ...new Set(this.parts.map(p => p.hue).filter(Boolean))], gBase = g;
     for (const hu of matices) {
-    if (hu) { g.save(); g.filter = `hue-rotate(${hu}deg)`; }
+    const g = hu ? capa(gBase, hu) : gBase;
     for (const p of this.parts) {
       if ((p.hue || 0) !== hu) continue;
       const a = 1 - p.t / p.life;
@@ -436,7 +451,7 @@ export class Efectos {
         default: g.save(); g.translate(R(p.x), R(p.y)); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4)); g.fillRect(-Math.round(s / 2), -Math.round(s / 2), Math.max(1, Math.round(s)), Math.max(1, Math.round(s))); g.restore();
       }
     }
-    if (hu) g.restore();
+    g.globalAlpha = 1;
     }
     g.globalAlpha = 1;
   }
@@ -677,7 +692,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
   // primeiro o que é normal, depois cada matiz de shiny com o filtro de cor ligado
   if (hue === null) {
     dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, 0);
-    for (const hu of new Set(luta.entidades.map(e => hueShiny(e.dueno)).filter(Boolean))) { fx.hue = hu; conHue(g, hu, () => dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hu)); }
+    for (const hu of new Set(luta.entidades.map(e => hueShiny(e.dueno)).filter(Boolean))) { fx.hue = hu; dibujarEntidades(capa(g, hu), luta, fx, t, dibujarLutadorClon, hu); }
     fx.hue = 0;
     return;
   }
@@ -859,10 +874,31 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
 }
 
 const clampK = k => Math.max(0, Math.min(1, k));
+import { SHINY_HUE } from '../data/shiny.js';
 // shiny: os ataques giram de matiz para a cor do shiny de cada linha (graus de hue-rotate)
-const SHINY_HUE = { bulbasaur: -50, charmander: 200, squirtle: 70, zubat: 110, abra: -40, onix: 45, magikarp: 170, munchlax: 30, seedot: 50, buneary: -45, riolu: 180, froakie: 110, poltchageist: 100, tynamo: -70, veluza: 70, duraludon: 130, feebas: 150, swablu: 140, porygon: 90, mewtwo: 200 };
-export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[l.def?.id] ?? 120 : 0);
-export function conHue(g, hu, f) { if (!hu) return f(); g.save(); g.filter = `hue-rotate(${hu}deg)`; f(); g.restore(); }
+export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[String(l.dex).replace(/s$/, '')] ?? 0 : 0);
+// O filtro de cor é caro se aplicado em cada partícula. Então tudo de um shiny é desenhado numa camada
+// só dele e a camada inteira entra na tela uma vez por quadro, já com a cor girada.
+const capas = new Map();
+export function capa(g, hu) {
+  // a camada fica na resolução interna do jogo (640 de largura): bem menos pixels para o filtro
+  const f = Math.max(1, g.canvas.width / 640), W = Math.ceil(g.canvas.width / f), H = Math.ceil(g.canvas.height / f);
+  let c = capas.get(hu);
+  if (!c) { const cv = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(W, H) : Object.assign(document.createElement('canvas'), { width: W, height: H }); c = { cv, g: cv.getContext('2d'), sucia: false }; capas.set(hu, c); }
+  if (c.cv.width !== W || c.cv.height !== H) { c.cv.width = W; c.cv.height = H; c.sucia = false; }
+  if (!c.sucia) { c.g.setTransform(1, 0, 0, 1, 0, 0); c.g.clearRect(0, 0, W, H); c.g.imageSmoothingEnabled = false; c.sucia = true; }
+  const m = g.getTransform();
+  c.g.setTransform(m.a / f, m.b / f, m.c / f, m.d / f, m.e / f, m.f / f); c.g.globalAlpha = 1;
+  return c.g;
+}
+export function componer(g) {
+  for (const [hu, c] of capas) {
+    if (!c.sucia) continue;
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.filter = `hue-rotate(${hu}deg)`; g.imageSmoothingEnabled = false; g.drawImage(c.cv, 0, 0, g.canvas.width, g.canvas.height); g.restore();
+    c.sucia = false;
+  }
+}
+export function conHue(g, hu, f) { return f(hu ? capa(g, hu) : g); }
 // símbolo da Mega Evolução (só no navegador)
 const IMG_MEGA = typeof Image !== 'undefined' ? Object.assign(new Image(), { src: 'img/mega.png' }) : null;
 
@@ -1038,15 +1074,33 @@ function dibujarCono(g, e, t, fx) {
   }
   const fuego = tipo === 'FIRE' || tipo === 'DRAGON';
   if (fuego) {
-    // como no site: chamas pequenas que voam em linha (abertura de 30% do leque) até o fim do alcance, com miolo claro
-    const vida = h.alcance / 190;
-    for (let i = 0; i < 3; i++) {
-      const a = e.ang + (ale() - 0.5) * 2 * semi * 0.6, s = entre(150, 220), r0 = entre(2, 8);
-      fx.add({ x: ox + Math.cos(a) * r0, y: oy + Math.sin(a) * r0, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: vida * entre(0.85, 1.05), size: entre(1.8, 2.6), grow: 1, forma: 'llamaDir', rampa: rampaFuego(tipo) });
+    // Flamethrower: jato de fogo em camadas (vermelho por fora, laranja, miolo amarelo e branco) que tremula,
+    // com a frente arredondada, chamas soltas nas bordas, brasas e fumaça saindo da ponta
+    const L = Math.min(h.alcance, e.t * 650), abre = semi * 0.5, ca = Math.cos(e.ang), sa = Math.sin(e.ang), nx = -sa, ny = ca;
+    const fr = Math.floor(t * 24), ruido = (i2, s2) => { const v = Math.sin(i2 * 12.9898 + s2 * 78.233) * 43758.5453; return v - Math.floor(v); };
+    const r = rampaFuego(tipo), aIn = Math.min(1, k * 4, e.t * 10);
+    if (L > 4) for (const [cor, kw, al] of [[r[0], 1, 0.8], [r[1], 0.76, 0.95], [r[2], 0.48, 1], ['#fffbe6', 0.2, 1]]) {
+      const N = 12, cima = [], baixo = [];
+      for (let i2 = 0; i2 <= N; i2++) {
+        const f = i2 / N, d = L * f, ponta = f > 0.8 ? 0.45 + 0.55 * Math.sqrt(Math.max(0, (1 - f) / 0.2)) : 1;
+        const w = (2.5 + d * Math.tan(abre) * 1.6) * kw * ponta;
+        cima.push([ox + ca * d + nx * w * (0.8 + 0.4 * ruido(i2, fr + kw * 7)), oy + sa * d + ny * w * (0.8 + 0.4 * ruido(i2, fr + kw * 7)) * 0.8]);
+        baixo.push([ox + ca * d - nx * w * (0.8 + 0.4 * ruido(i2 + 40, fr + kw * 7)), oy + sa * d - ny * w * (0.8 + 0.4 * ruido(i2 + 40, fr + kw * 7)) * 0.8]);
+      }
+      g.globalAlpha = al * aIn; g.fillStyle = cor; g.beginPath();
+      g.moveTo(px(cima[0][0]), px(cima[0][1]));
+      for (const [x, y] of cima) g.lineTo(px(x), px(y));
+      g.lineTo(px(ox + ca * L * (1 + 0.06 * kw)), px(oy + sa * L * (1 + 0.06 * kw)));
+      for (let i2 = baixo.length - 1; i2 >= 0; i2--) g.lineTo(px(baixo[i2][0]), px(baixo[i2][1]));
+      g.closePath(); g.fill();
     }
-    const a = e.ang + (ale() - 0.5) * semi * 0.4, s = entre(170, 230);
-    fx.add({ x: ox, y: oy, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: vida * 0.7, size: 1.5, grow: 0.6, forma: 'llamaDir', rampa: ['#ffb52e', '#fff3b0', '#ffffff', '#ffffff'] });
-    if (ale() < 0.3) fx.add({ x: ox + Math.cos(e.ang) * h.alcance * 0.5, y: oy + Math.sin(e.ang) * h.alcance * 0.5, vx: Math.cos(e.ang) * 90, vy: Math.sin(e.ang) * 60 - 20, life: vida * 1.1, size: 5, grow: 6, forma: 'circulo', color: 'rgba(80,72,70,0.25)' });
+    g.globalAlpha = 1;
+    for (let i2 = 0; i2 < 2; i2++) {
+      const f = ale(), d = L * f, lado = (ale() - 0.5) * 2 * (3 + d * Math.tan(abre) * 1.6), sp = entre(140, 200);
+      fx.add({ x: ox + ca * d + nx * lado, y: oy + sa * d + ny * lado * 0.8, vx: ca * sp, vy: sa * sp - 20, life: 0.22, size: entre(1.6, 2.6), grow: 1.5, forma: 'llamaDir', rampa: r });
+    }
+    if (ale() < 0.5) fx.add({ x: ox + ca * L, y: oy + sa * L, vx: ca * 60 + entre(-50, 50), vy: sa * 60 - entre(20, 80), g: 120, size: 1.4, life: 0.5, color: ale() < 0.5 ? '#ffd23c' : '#fff3b0', forma: 'chispa' });
+    if (ale() < 0.25) fx.add({ x: ox + ca * L, y: oy + sa * L - 4, vx: ca * 40, vy: -30, size: 4, grow: 6, life: 0.6, forma: 'circulo', color: 'rgba(70,62,60,0.3)' });
     return;
   }
   for (let i = 0; i < 4; i++) {

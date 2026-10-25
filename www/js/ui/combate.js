@@ -7,7 +7,7 @@ import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
 import { IA, Muneco, ventajaDe } from '../engine/ia.js';
-import { hueShiny, conHue } from '../render/efectos.js';
+import { hueShiny, conHue, componer } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
@@ -271,18 +271,20 @@ export class Combate {
     // chão: avisos, poças, fumaça
     dibujarEntidades(g, luta, fx, this.t, null);
     fx.dibujarSuelo(g);
+    componer(g);
     // lutadores, clones e projéteis ordenados pela profundidade
     const cosas = [];
     for (const l of luta.luchadores) cosas.push({ y: l.y, f: () => this.dibujarLutador(g, l) });
     for (const e of luta.entidades) {
       if (e.tipo === 'clon') cosas.push({ y: e.y, f: () => this.dibujarClon(g, e) });
-      else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), () => dibujarProyectil(g, e, this.t)) });
-      else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), () => dibujarBomba(g, e)) });
+      else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });
+      else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBomba(c, e)) });
       else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
-      else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), () => dibujarTorbellino(g, e, this.t, fx)) });
+      else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), c => dibujarTorbellino(c, e, this.t, fx)) });
     }
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());
     fx.dibujar(g);
+    componer(g);
     // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
     if (this.app.ajustes.mira !== false) this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
