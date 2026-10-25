@@ -113,6 +113,7 @@ function perfil(h, slot, d) {
     case 'agarre': case 'enrollar': P.tipo = 'embestida'; P.alcance = (h.dist ?? 170) * 0.9; P.ancho = RADIO + 8; P.retardo = 0.28; break;
     case 'sismo': P.alcance = (h.alcance ?? 200) + h.radio * 0.6; P.ancho = h.radio; P.retardo = 0.55; P.sigue = 0.3; break;
     case 'levitar': P.alcance = (h.alcance ?? 260) * 0.95; P.ancho = 40; P.retardo = 0; P.sigue = 1; break;
+    case 'bolaGigante': P.alcance = (h.alcance ?? 320) * 0.9; P.ancho = h.radio ?? 26; P.retardo = (h.carga ?? 1) + d / (h.vel ?? 230); P.sigue = 0.5; break;
     case 'hueso': P.alcance = 320; P.ancho = 14; P.retardo = d / (h.vel ?? 340); break;
     case 'flecha': P.alcance = 300; P.ancho = 14; P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 300); break;
     case 'embestidas': P.alcance = 170; P.ancho = 30; P.retardo = 0.1; P.sigue = 0.6; P.invul = true; P.golpes = Math.max(1, (h.golpes ?? 1) * 0.7); break;

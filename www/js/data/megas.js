@@ -48,7 +48,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Psystrike', forma: 'estallido', tipo: 'PSYCHIC', estilo: 'psico', n: 14, dano: 4.8, vel: 400, alcance: 170, radio: 5, escala: 1.4, empuje: 90, aturde: 0.15, anula: 40, bloqueo: 0.35, coste: 30, cd: 7, anim: 'Charge', lanzar: 0.18 },
     esp: { nombre: 'Mega Barrier', dur: 2.2, radio: 26, acelera: { vel: 1.6, dur: 3 } },
     q: { nombre: 'Psywave Storm', rafaga: 7, abanicos: [0, 0.3, -0.26, 0.5, -0.46, 0.7, -0.66], anilla: { dur: 3.5, frena: [0.3, 0.6], aturde: 1.1 } },
-    e: { nombre: 'Psystrike Nova', forma: 'proyectil', estilo: 'psico', tipo: 'PSYCHIC', dano: 28.8, vel: 210, alcance: 300, radio: 14, escala: 4.5, teledirigido: 1.2, explosion: { radio: 72 }, lanzar: 0.4 },
+    e: { nombre: 'Psystrike Nova', forma: 'bolaGigante', tipo: 'PSYCHIC', dano: 30, vel: 240, alcance: 340, radio: 26, carga: 1, teledirigido: 1.4, aturde: 0.5, explosion: { radio: 84 } },
   },
   buneary: {
     lmb: { nombre: 'Power-Up Punch', dano: 5.1, alcance: 62, combo: 4, remate: { dano: 4.0, empuje: 130, aturde: 0.2 } },

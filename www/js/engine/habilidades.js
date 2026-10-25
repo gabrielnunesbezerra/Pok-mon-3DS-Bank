@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -420,6 +420,46 @@ export class Habilidades {
         luta.emit({ t: 'temblor', f: 0.03 });
         areaCirculo(luta, l, l.x, l.y, h.radio * 0.7, pacote(h, extra, 0, { dano: h.danoQueda ?? 10, aturde: 0.5, empuje: 60, dirX: undefined, dirY: undefined }));
       } };
+  }
+
+  // Mega Mewtwo Y: concentra uma esfera psíquica gigante em cima da cabeça e depois a arremessa
+  bolaGigante(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 1, R = h.radio ?? 26;
+    l.animar('Charge', carga + 0.3);
+    l.ponerEstado('blindaje', carga + 0.2, { reduce: 0.4 });
+    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0, angulo: angApunte(l) };
+    const b = {
+      tipo: 'bolaGigante', dueno: l, h, vivo: true, t: 0, fase: 'carga', x: l.x, y: l.y, alt: l.alto + R + 10, radio: R, k: 0, vx: 0, vy: 0, rec: 0, tipoAtq: h.tipo,
+      update: dt => {
+        b.t += dt;
+        if (l.ko) return false;
+        if (b.fase === 'carga') {
+          b.k = Math.min(1, b.t / carga); b.x = l.x; b.y = l.y; b.alt = l.alto + 10 + R * b.k + Math.sin(b.t * 6) * 2;
+          if (l.accion) l.accion.angulo = angApunte(l);
+          if (b.t >= carga) {
+            const a = asistir(l, angApunte(l), (h.alcance ?? 320) + 40, 0.7);
+            b.fase = 'vuela'; b.vx = Math.cos(a) * (h.vel ?? 230); b.vy = Math.sin(a) * (h.vel ?? 230);
+            l.animar('Shoot', 0.3); luta.emit({ t: 'temblor', f: 0.012 }); luta.emit({ t: 'anillo', x: l.x, y: l.y - l.alto, color: '#f0abfc', r: 30 });
+          }
+          return true;
+        }
+        // voando: desce até a altura do peito e segue um pouco o rival
+        const r = l.rival;
+        if (r && !r.ko && h.teledirigido) { const a = Math.atan2(r.y - b.y, r.x - b.x), v = Math.hypot(b.vx, b.vy), at = Math.atan2(b.vy, b.vx), giro = clamp(difAng(a, at), -h.teledirigido * dt, h.teledirigido * dt); b.vx = Math.cos(at + giro) * v; b.vy = Math.sin(at + giro) * v; }
+        b.x += b.vx * dt; b.y += b.vy * dt; b.rec += Math.hypot(b.vx, b.vy) * dt; b.alt += (16 - b.alt) * Math.min(1, dt * 5);
+        const toca = luta.blancos(l).some(o => !o.oculto && !o.est?.vuelo && Math.hypot(o.x - b.x, o.y - b.y) < R + RADIO);
+        if (toca || b.rec >= (h.alcance ?? 320) || fueraCampo(b.x, b.y, 10)) {
+          const E = h.explosion?.radio ?? 80;
+          areaCirculo(luta, l, b.x, b.y, E, pacote(h, extra, 0, { empuje: 140, aturde: h.aturde, pesado: true, dirX: undefined, dirY: undefined }));
+          luta.emit({ t: 'explosion', x: b.x, y: b.y - 10, radio: E, tipo: 'PSYCHIC' });
+          luta.emit({ t: 'novaPsi', x: b.x, y: b.y - 10, radio: E });
+          luta.emit({ t: 'temblor', f: 0.03 });
+          return false;
+        }
+        return true;
+      },
+    };
+    luta.add(b);
   }
 
   // Mega Lucario: osso de aura que gira e quica; se acerta, Lucario aparece no alvo e dá um golpe forte

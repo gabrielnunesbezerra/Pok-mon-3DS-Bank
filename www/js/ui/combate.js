@@ -10,7 +10,7 @@ import { IA, Muneco, ventajaDe } from '../engine/ia.js';
 import { hueShiny, conHue, componer } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
-import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
+import { Efectos, dibujarEntidades, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex } from '../config.js';
@@ -280,6 +280,7 @@ export class Combate {
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBomba(c, e)) });
       else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
+      else if (e.tipo === 'bolaGigante') cosas.push({ y: e.y + 80, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBolaGigante(c, e, this.t, fx)) });
       else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), c => dibujarTorbellino(c, e, this.t, fx)) });
     }
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());
@@ -356,7 +357,9 @@ export class Combate {
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
     const fila = filaDesdeAngulo(l.est.girando ? t * 22 : l.angulo);
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
-    if (l.dash?.def.estilo === 'sombra') for (let k = 3; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - Math.cos(l.dash.ang) * k * 9, l.y - Math.sin(l.dash.ang) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.28 - k * 0.05 });
+    // imagens que ficam para trás: em todo dash (mais fortes no Shadow Sneak) e quando está acelerado andando
+    if (l.dash && !l.dash.def.teleport) { const sombra = l.dash.def.estilo === 'sombra', paso = Math.min(14, l.dash.vel * 0.016); for (let k = 4; k >= 1; k--) bank.dibujar(g, l.dex, l.dash.def.anim ?? 'Walk', t, l.x - Math.cos(l.dash.ang) * k * paso, l.y - Math.sin(l.dash.ang) * k * paso * 0.7 - l.salto, sc, { fila, bucle: true, alpha: (sombra ? 0.32 : 0.24) - k * 0.05 }); }
+    else if (l.est.rapido && l.moviendo) { const v = Math.hypot(l.vx, l.vy) || 1; for (let k = 2; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - (l.vx / v) * k * 8, l.y - (l.vy / v) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.2 - k * 0.06 }); if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * 14, y: l.y - l.alto * Math.random(), vx: -l.vx * 0.8, vy: -l.vy * 0.8, size: 1, life: 0.15, color: '#bfe9ff', forma: 'raya' }); }
     const ok = bank.dibujar(g, l.dex, nombre, tt, l.x, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - l.salto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);

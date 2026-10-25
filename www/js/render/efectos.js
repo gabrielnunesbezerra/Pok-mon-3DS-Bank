@@ -65,7 +65,11 @@ export class Efectos {
   // rastro de uma passada (Cross Poison): faixa que some, escura por fora e clara no miolo
   trazo(x0, y0, x1, y1, tipo, estilo) { this.trazos.push({ x0, y0, x1, y1, tipo, estilo, t: 0, life: 0.5 }); }
   cruz(x, y, ang, tipo, largo) { this.cruces.push({ x, y, ang, tipo, largo, t: 0, life: 0.45 }); }
-  tajo(x, y, ang, r, color, final, estilo, tipo) { this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, hue: this.hue || 0, t: 0, life: final ? 0.24 : 0.17 }); }
+  tajo(x, y, ang, r, color, final, estilo, tipo) {
+    this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, hue: this.hue || 0, t: 0, life: final ? 0.3 : 0.22 });
+    // brilho na ponta do arco
+    for (let i = 0; i < (final ? 5 : 3); i++) { const a = ang + (ale() - 0.3) * 1.4, d = r * entre(0.6, 0.95); this.add({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.8, vx: Math.cos(a) * 60, vy: Math.sin(a) * 50 - 20, size: entre(2, 3), life: 0.25, color: i % 2 ? '#ffffff' : mezcla(color, 0.5), forma: 'chispa' }); }
+  }
   onda(x, y, ang, alcance, anguloDeg, tipo, estilo) { this.ondas.push({ x, y, ang, alcance, ang2: (anguloDeg * Math.PI) / 360, tipo, estilo, t: 0, life: 0.45 }); }
   anuncio(txt, op = {}) { this.anuncios = this.anuncios.filter(a => a.quien !== op.quien || op.quien === undefined); this.anuncios.push({ txt, color: op.color ?? '#ffffff', tam: op.tam ?? 16, dur: op.dur ?? 0.8, t: 0, quien: op.quien }); }
 
@@ -100,7 +104,7 @@ export class Efectos {
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
-        case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); if (e.estilo === 'sonido') for (let i = 0; i < 8; i++) { const a = e.ang + (ale() - 0.5) * (e.angulo * Math.PI / 180) * 0.8, s = entre(120, 220); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.8 - 20, drag: 1.5, size: entre(5, 7), life: e.alcance / 200, color: ['#ffffff', '#ff9ad8', '#bfe0ff'][i % 3], forma: 'nota' }); } break;
         case 'burbujaRompe': {
           // Barrier estourando: anel que abre e cacos de luz
           const cy = e.l.y - e.l.alto * 0.5;
@@ -129,7 +133,7 @@ export class Efectos {
         case 'pulsoTorreta': this.anillo(e.x, e.y, 6, e.radio, '#e055b0', 0.35, 2); this.anillo(e.x, e.y, 4, e.radio * 0.8, '#9fdcff', 0.3, 1); break;
         case 'torretaNace': this.anillo(e.x, e.y, 2, 16, '#9fdcff', 0.25, 2); this.rafaga(e.x, e.y - 10, 'WATER', 8, 90); break;
         case 'geiserAviso': {
-          this.zonas.push({ x: e.x, y: e.y, radio: e.radio + 4, t: 0, life: e.dur + 0.15 });
+          this.zonas.push({ x: e.x, y: e.y, radio: e.radio + 4, t: 0, life: e.dur + 0.15, estilo: 'matcha' });
           // água verde girando em volta da Sinistcha quando ela chama o gêiser
           for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 18, y: e.l.y - 4 + Math.sin(a) * 9, vx: -Math.sin(a) * 70, vy: Math.cos(a) * 35 - 30, drag: 2, size: 2.4, life: 0.5, color: '#a8d060', forma: 'gota', rampa: MATCHA }); }
           break;
@@ -208,6 +212,7 @@ export class Efectos {
             if (e.h.forma === 'plantaFeroz') this.heroes.push({ k: e.h.estilo === 'sonido' ? 'pauta' : 'vinas', l: e.l, x: e.l.x, y: e.l.y, radio: e.h.ondas.at(-1) + 12, tipo: e.h.tipo, t: 0, life: (e.h.carga ?? 0.3) + e.h.ondas.length * e.h.cada + 0.45, hue: this.hue });
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);
           break;
+        case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.45); this.flashColor = '#f5d0fe'; break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -306,6 +311,13 @@ export class Efectos {
     for (const z of this.zonas) {
       const g = z.hue ? capa(gB, z.hue) : gB;
       const a = Math.min(1, z.t / 0.12) * Math.min(1, (z.life - z.t) / 0.3), pul = 0.5 + 0.5 * Math.sin(z.t * 18);
+      if (z.estilo === 'matcha') {
+        // chão borbulhando de matcha antes do gêiser: poça verde, anel que pulsa e bolhas subindo
+        g.globalAlpha = a * 0.85; PX.elipsePix(g, z.x, z.y, z.radio, z.radio * 0.6, '#2f5a14'); g.globalAlpha = a; PX.elipsePix(g, z.x, z.y, z.radio * 0.78, z.radio * 0.44, '#7cbf3a'); PX.elipsePix(g, z.x - z.radio * 0.2, z.y - z.radio * 0.1, z.radio * 0.3, z.radio * 0.14, '#c8e890');
+        g.globalAlpha = a; PX.anilloPix(g, z.x, z.y, z.radio * (1 + 0.1 * pul), z.radio * 0.6 * (1 + 0.1 * pul), '#eef8d0', 2, 0);
+        for (let i = 0; i < 5; i++) { const ang = i * 1.2566 + z.t * 2, r = z.radio * 0.5, sub = (z.t * 40 + i * 9) % 18; PX.disco(g, z.x + Math.cos(ang) * r, z.y + Math.sin(ang) * r * 0.6 - sub, 1.5 + (i % 2), '#dff0b8'); }
+        continue;
+      }
       g.globalAlpha = a * 0.22; g.fillStyle = '#3f8f2a';
       g.beginPath(); g.ellipse(R(z.x), R(z.y), z.radio, z.radio * 0.62, 0, 0, 7); g.fill();
       g.globalAlpha = a * (0.25 + 0.15 * pul);
@@ -496,6 +508,8 @@ export class Efectos {
       PX.anilloPix(g, fx, fy, 6 + k * 14, 5 + k * 11, '#ffd0b0', 1, 3, Math.floor(a.t * 40));
     } else {
       const gro = a.final ? 7 : 5, a0 = a.ang - 0.95 + k * 0.55, a1 = a.ang + 0.95 - k * 0.2;
+      // rastro do golpe: arcos mais finos e transparentes por dentro, dando volume ao corte
+      const al0 = g.globalAlpha; g.globalAlpha = al0 * 0.35; PX.arcoPix(g, a.x, a.y, rr * 0.78, a0 - 0.15, a1 - 0.25, claro, gro + 3, rr * 0.64); PX.arcoPix(g, a.x, a.y, rr * 0.6, a0 - 0.3, a1 - 0.45, base, gro, rr * 0.5); g.globalAlpha = al0;
       PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
       PX.arcoPix(g, a.x, a.y, rr, a0, a1, base, gro, rr * 0.82);
       PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.1, claro, Math.max(2, gro - 2), rr * 0.82);
@@ -891,6 +905,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
           PX.anilloPix(g, px(p.x), px(p.y), rad, rad * 0.6, col, 1, 4, Math.floor(e.t * 12));
           if (e.t >= p.t0) { g.globalAlpha = 0.35; PX.elipsePix(g, px(p.x), px(p.y), rad * k, rad * 0.6 * k, 'rgba(255,150,40,0.7)'); }
           if (e.t >= p.t0 && e.estilo === 'rayo') { g.globalAlpha = 0.5 + 0.5 * k; PX.anilloPix(g, px(p.x), px(p.y), rad * (1.2 - 0.4 * k), rad * 0.6 * (1.2 - 0.4 * k), '#fff6a8', 1, 0); if (k > 0.6 && Math.floor(e.t * 30) % 2) PX.lineaPix(g, p.x + 3, p.y - 60, p.x, p.y - 30, '#ffe066', 1); }
+          if (e.estilo === 'psico') { const gira = e.t * 2.5, rr = rad * 0.7; g.globalAlpha = 0.85; for (const off of [0, Math.PI]) { const pts = [0, 1, 2].map(i => [p.x + Math.cos(gira + off + i * 2.094) * rr, p.y + Math.sin(gira + off + i * 2.094) * rr * 0.6]); for (let i = 0; i < 3; i++) PX.lineaPix(g, pts[i][0], pts[i][1], pts[(i + 1) % 3][0], pts[(i + 1) % 3][1], off ? '#ff9ad8' : '#e0b0ff', 1); } g.globalAlpha = 0.3; PX.elipsePix(g, px(p.x), px(p.y), rad * 0.9, rad * 0.54, '#c084fc'); g.globalAlpha = 1; }
           if (e.t >= p.t0 && e.estilo === 'psico') { const caida = (1 - k) * 110; g.globalAlpha = 0.5 + 0.5 * k; PX.esfera(g, px(p.x), px(p.y - caida - 8), 4 + k * 3, ['#7a1f6a', '#e055b0', '#ffc2ea', '#ffffff']); PX.lineaPix(g, p.x, p.y - caida - 14, p.x, p.y - caida - 34, '#ffc2ea', 1); }
           if (e.t >= p.t0 && e.estilo === 'roca') { const caida = (1 - k) * 90; g.globalAlpha = 1; PX.carimbar(g, PX.roca(6), p.x, p.y - caida - 6); }
           g.globalAlpha = 1;
@@ -1212,9 +1227,24 @@ function dibujarCono(g, e, t, fx) {
   }
 }
 
+// esfera gigante do Mega Mewtwo (desenhada por cima dos lutadores)
+export function dibujarBolaGigante(g, e, t, fx) {
+  // esfera psíquica gigante: brilho em volta, camadas de roxo a branco, anéis girando e faíscas sendo sugadas
+  const R = e.radio * (e.fase === 'carga' ? 0.25 + 0.75 * e.k : 1) * (1 + 0.04 * Math.sin(t * 30)), x = px(e.x), y = px(e.y - e.alt);
+  g.globalAlpha = 0.3; PX.elipsePix(g, px(e.x), px(e.y), R * 0.8, R * 0.3, '#000000'); g.globalAlpha = 1;
+  g.globalAlpha = 0.25; PX.disco(g, x, y, R * 1.6, '#e879f9'); g.globalAlpha = 0.45; PX.disco(g, x, y, R * 1.25, '#c084fc'); g.globalAlpha = 1;
+  PX.esfera(g, x, y, R, ['#3b0a5c', '#9b3fbf', '#f0abfc', '#ffffff']);
+  for (let i = 0; i < 3; i++) { const a = t * (3 + i) * (i % 2 ? -1 : 1); PX.arcoPix(g, x, y, R * (1.15 + i * 0.12), a, a + 2.2, i % 2 ? '#ffffff' : '#f5d0fe', 1, R * (0.45 + i * 0.1)); }
+  g.globalAlpha = 0.7; PX.disco(g, px(x - R * 0.35), px(y - R * 0.4), Math.max(2, R * 0.22), '#ffffff'); g.globalAlpha = 1;
+  if (e.fase === 'carga') for (let i = 0; i < 2; i++) { const a = Math.random() * 6.28, rr = R * 2.4; fx.add({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr, vx: -Math.cos(a) * rr * 3, vy: -Math.sin(a) * rr * 3, size: 2, life: 0.3, color: i ? '#f5d0fe' : '#ffffff', forma: 'chispa' }); }
+  else if (Math.random() < 0.8) fx.add({ x, y, vx: -e.vx * 0.3 + entre(-30, 30), vy: -e.vy * 0.3 + entre(-30, 30), size: entre(2, 3.5), life: 0.4, color: '#e9b6ff', forma: 'chispa' });
+}
+
 export function dibujarProyectil(g, p, t) {
   const f = ESTILOS_PROJ[p.estilo] ?? ESTILOS_PROJ.bola;
   sombra(g, p.x, p.y, 3 * p.escala);
+  if (p.escala >= 1.6) { g.globalAlpha = 0.22; PX.disco(g, px(p.x), px(p.y - p.alt), (p.radio ?? 4) * p.escala * 0.9 + 3, mezcla(colorTipo(p.tipoAtq), 0.55)); g.globalAlpha = 1; }
+  if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
   for (let i = 1; i <= 4; i++) { g.globalAlpha = 0.32 - i * 0.065; PX.disco(g, px(p.x - ux * i * 5), px(p.y - p.alt - uy * i * 4), Math.max(1, R0 * (1 - i * 0.18)), cor); }
