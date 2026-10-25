@@ -283,7 +283,7 @@ export class Habilidades {
     l.animar(h.anim ?? 'Charge', 0.3);
     l.accion = { hasta: luta.t + 0.2, lento: 0.3 };
     const tr = {
-      tipo: 'torreta', dueno: l, vivo: true, x: p.x, y: p.y, t: 0, acum: 0, aLaser: 0, radio: h.radio, dur: h.permanente ? Infinity : h.dur, cada: h.cada, tipoAtq: h.tipo, enlace: h.enlace ?? 170,
+      tipo: 'torreta', dueno: l, vivo: true, x: p.x, y: p.y, t: 0, acum: 0, aLaser: 0, radio: h.radio, dur: h.permanente ? Infinity : h.dur, cada: h.cada, tipoAtq: h.tipo, enlace: h.enlace ?? 260,
       update: dt => {
         tr.t += dt; tr.acum += dt; tr.aLaser += dt;
         if (!tr.vivo || l.ko || tr.t >= tr.dur) return false;
@@ -619,7 +619,7 @@ export class Habilidades {
       if (l.ko || l.est.aturdido) return;
       luta.emit({ t: 'tajo', l, ang, alcance: h.alcance, final: true, estilo: h.estilo ?? 'golpe', tipo: h.tipo, anguloArco: h.angulo ?? 120 });
       // cauda grande que dá uma volta inteira
-      if (h.giraCola) for (let k = 1; k <= 5; k++) luta.programar(k * 0.05, () => { if (!l.ko) luta.emit({ t: 'tajo', l, ang: ang + k * 1.25, alcance: h.alcance + 14, final: true, estilo: 'agua', tipo: h.tipo, anguloArco: 150 }); });
+      if (h.giraCola) { l.ponerEstado('girando', 0.4); luta.emit({ t: 'colaGigante', l, ang, r: h.alcance + 24 }); }
       this.cortarProyectiles(l, ang, h.alcance, rad(h.angulo ?? 120) / 2);
       const k = h.desesperado ? 1 + h.desesperado * (1 - l.hp / l.hpMax) : 1;
       const ox = l.x + Math.cos(ang) * 20, oy = l.y + Math.sin(ang) * 14;

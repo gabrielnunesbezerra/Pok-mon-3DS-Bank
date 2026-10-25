@@ -475,6 +475,8 @@ export class Lutador {
     if (this.accion?.angulo != null) this.angulo = this.accion.angulo;
     else if (apuntando) this.angulo = Math.atan2(this.ay - this.y, this.ax - this.x);
     else if (this.moviendo) this.angulo = Math.atan2(my, mx);
+    // nada deixa o lutador preso no ar (ex.: pulo cortado no meio)
+    if (!this.accion && !this.dash && !this.est.vuelo && this.salto > 0) this.salto = 0;
     if (this.accion) {
       this.accion.update?.(dt);
       if (this.accion && t >= this.accion.hasta) { const a = this.accion; this.accion = null; a.fin?.(); }

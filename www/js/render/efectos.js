@@ -34,7 +34,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -200,6 +200,7 @@ export class Efectos {
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad': if (e.slot === 'e') this.banner(`${e.h.nombre}!`, e.h.tipo); else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
+        case 'colaGigante': this.colas.push({ l: e.l, ang: e.ang, r: e.r, t: 0, life: 0.45 }); break;
         case 'trazo': this.trazo(e.x0, e.y0, e.x1, e.y1, e.tipo, e.estilo); break;
         case 'temblor': this.temblor = Math.max(this.temblor, e.f * 900); break;
         case 'sobrecarga': this.humo(e.l.x, e.l.y - e.l.alto, 6, 'rgba(120,110,110,0.6)', 8); break;
@@ -249,6 +250,7 @@ export class Efectos {
     for (const a of this.anuncios) a.t += dt; this.anuncios = this.anuncios.filter(a => a.t < a.dur);
     for (const b of this.banners) b.t += dt; this.banners = this.banners.filter(b => b.t < b.life);
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
+    for (const c of this.colas) c.t += dt; this.colas = this.colas.filter(c => c.t < c.life);
     for (const c of this.simbolos) c.t += dt; this.simbolos = this.simbolos.filter(c => c.t < c.life);
     for (const c of this.trazos) c.t += dt; this.trazos = this.trazos.filter(c => c.t < c.life);
     for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
@@ -347,6 +349,17 @@ export class Efectos {
     }
     for (const a of this.tajos) this.dibujarTajo(g, a);
     g.globalAlpha = 1;
+    // cauda gigante da Milotic: faixa azul curva com listras brancas e barbatana, dando uma volta
+    for (const c of this.colas) {
+      const k = c.t / c.life, a0 = c.ang + k * Math.PI * 2, cx = c.l.x, cy = c.l.y - c.l.alto * 0.4, N = 14, al = Math.min(1, (1 - k) * 4);
+      const pt = i => { const f = i / N, a = a0 - (1 - f) * 2.2, r = 8 + c.r * f; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62, a, f]; };
+      g.globalAlpha = al;
+      for (let i = 0; i < N; i++) { const [x1, y1, , f] = pt(i), [x2, y2] = pt(i + 1), w = Math.round(16 - f * 6); PX.lineaPix(g, x1, y1, x2, y2, '#0b2a6a', w + 3); PX.lineaPix(g, x1, y1, x2, y2, '#2f7fe0', w); PX.lineaPix(g, x1, y1 - w * 0.25, x2, y2 - w * 0.25, '#7ac8ff', Math.max(1, Math.round(w * 0.3))); }
+      for (let i = 2; i < N; i += 2) { const [x, y, a, f] = pt(i), w = 9 - f * 3, nx = Math.cos(a), ny = Math.sin(a) * 0.62; PX.lineaPix(g, x - nx * w, y - ny * w, x + nx * w, y + ny * w, '#e6f6ff', 1); }
+      const [fx2, fy2, fa] = pt(N);
+      for (let j = -2; j <= 2; j++) { const a = fa + Math.PI / 2 + j * 0.35; PX.lineaPix(g, fx2, fy2, fx2 + Math.cos(a) * 22, fy2 + Math.sin(a) * 14, j % 2 ? '#bfe4ff' : '#4aa3f0', 3); }
+      g.globalAlpha = 1;
+    }
     for (const c of this.simbolos) {
       if (!IMG_MEGA?.complete || !IMG_MEGA.naturalWidth) continue;
       const k = c.t / c.life, al = Math.min(1, k * 6, (1 - k) * 3), esc = 0.5 + 0.2 * Math.min(1, k * 5);

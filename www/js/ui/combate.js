@@ -351,7 +351,7 @@ export class Combate {
     else if (l.moviendo) nombre = 'Walk';
     const flash = l.flash && t - l.flash < 0.1 ? 1 - (t - l.flash) / 0.1 : 0;
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
-    const fila = filaDesdeAngulo(l.angulo);
+    const fila = filaDesdeAngulo(l.est.girando ? t * 22 : l.angulo);
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
     if (l.dash?.def.estilo === 'sombra') for (let k = 3; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - Math.cos(l.dash.ang) * k * 9, l.y - Math.sin(l.dash.ang) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.28 - k * 0.05 });
     const ok = bank.dibujar(g, l.dex, nombre, tt, l.x, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo });
