@@ -34,7 +34,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = []; this.heroes = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = []; this.heroes = []; this.garras = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, hue: this.hue || 0, ...p }); }
@@ -215,6 +215,9 @@ export class Efectos {
         case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
         case 'alma': this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vy: -30, size: 2.5, life: 0.5, color: '#cfefff', forma: 'chispa' }); break;
         case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: ['#cfefff', '#a78bfa', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
+        case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
+        case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
+        case 'garras': this.garras.push({ lineas: e.lineas, tipo: e.tipo, t: 0, life: e.dur, semilla: Math.floor(ale() * 1000), hue: this.hue }); for (const s2 of e.lineas) this.chispas((s2.x0 + s2.x1) / 2, (s2.y0 + s2.y1) / 2 - 6, '#e9b8ff', 5, 160); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -230,7 +233,7 @@ export class Efectos {
         default: break;
       }
       // tudo o que esse evento criou leva a cor do dono (shiny)
-      for (const lista of [this.grietas, this.zonas, this.relampagos, this.rayos, this.ondas, this.colas, this.trazos, this.cruces, this.anillos, this.espinas]) for (let i = lista.length - 1; i >= 0 && lista[i].hue === undefined; i--) lista[i].hue = this.hue || 0;
+      for (const lista of [this.grietas, this.garras, this.zonas, this.relampagos, this.rayos, this.ondas, this.colas, this.trazos, this.cruces, this.anillos, this.espinas]) for (let i = lista.length - 1; i >= 0 && lista[i].hue === undefined; i--) lista[i].hue = this.hue || 0;
     }
     this.hue = 0;
   }
@@ -283,6 +286,7 @@ export class Efectos {
     for (const c of this.relampagos) c.t += dt; this.relampagos = this.relampagos.filter(c => c.t < c.life);
     for (const c of this.rayos) c.t += dt; this.rayos = this.rayos.filter(c => c.t < c.life);
     for (const c of this.grietas) c.t += dt; this.grietas = this.grietas.filter(c => c.t < c.life);
+    for (const c of this.garras) c.t += dt; this.garras = this.garras.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.flash = Math.max(0, this.flash - dt * 3);
   }
@@ -290,6 +294,24 @@ export class Efectos {
   // marcas no chão (área da Frenzy Plant): aparecem antes das raízes, para dar para fugir
   dibujarSuelo(g) {
     const gB = g;
+    // Gunk Shot: rasgos de garra gigantes no chão, escuros por dentro e com lodo brilhando na borda
+    for (const c of this.garras) {
+      const g = c.hue ? capa(gB, c.hue) : gB, [d0, d1, d2, d3] = rampaTipo(c.tipo);
+      const al = Math.min(1, (c.life - c.t) / 0.5), cresce = Math.min(1, c.t / 0.12), N = 12;
+      g.globalAlpha = al;
+      c.lineas.forEach((s2, i) => {
+        const mx = (s2.x0 + s2.x1) / 2, my = (s2.y0 + s2.y1) / 2, hx = (s2.x1 - s2.x0) / 2 * cresce, hy = (s2.y1 - s2.y0) / 2 * cresce;
+        for (let j = 0; j < N; j++) {
+          const f0 = j / N, f1 = (j + 1) / N, w = Math.sin(((f0 + f1) / 2) * Math.PI);
+          const xa = mx - hx + hx * 2 * f0, ya = my - hy + hy * 2 * f0, xb = mx - hx + hx * 2 * f1, yb = my - hy + hy * 2 * f1;
+          PX.lineaPix(g, xa, ya, xb, yb, '#12041c', Math.max(1, Math.round(11 * w)));
+          PX.lineaPix(g, xa, ya, xb, yb, d0, Math.max(1, Math.round(7 * w)));
+          PX.lineaPix(g, xa, ya - 1, xb, yb - 1, d1, Math.max(1, Math.round(3 * w)));
+        }
+        for (let j = 0; j < 3; j++) { const f = ((c.t * 0.6 + j * 0.33 + i * 0.17 + c.semilla * 0.001) % 1), x = s2.x0 + (s2.x1 - s2.x0) * f, y = s2.y0 + (s2.y1 - s2.y0) * f - ((c.t * 30 + j * 7) % 10); PX.disco(g, x, y, 1.5, j % 2 ? d2 : d3); }
+      });
+      g.globalAlpha = 1;
+    }
     // rachaduras do Earthquake: linhas quebradas que saem do centro e somem
     for (const c of this.grietas) {
       const g = c.hue ? capa(gB, c.hue) : gB;
@@ -554,6 +576,36 @@ export class Efectos {
       const cx = h.x, cy = h.y, al = Math.min(1, t * 6, (h.life - t) / 0.3);
       g.globalAlpha = al;
       for (let i = 0; i < 3; i++) { const r = h.radio * (0.45 + i * 0.27); PX.anilloPix(g, cx, cy, r, r * 0.62, i % 2 ? '#f0f4ff' : '#bfe4ff', 1, 10, Math.floor(t * 20) * (i % 2 ? 1 : -1)); for (let j = 0; j < 5; j++) { const a = t * (2 + i) * (i % 2 ? -1 : 1) + j * 1.2566; PX.carimbar(g, PX.nota(6, j % 2 ? '#ffffff' : '#ff9ad8'), cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62 - 6, 0, 1, 1); } }
+      g.globalAlpha = 1; return;
+    }
+    if (h.k === 'garraX') {
+      // Dire Claw: dois golpes de garra (três riscos cada) cruzando em X
+      const al = Math.min(1, (1 - k) * 2.5), L = h.r * Math.min(1, t / 0.07);
+      for (const sgn of [1, -1]) {
+        const a = h.ang + sgn * 0.8, ca = Math.cos(a), sa = Math.sin(a) * 0.8;
+        for (let j = -1; j <= 1; j++) {
+          const ox = h.x - sa * j * 5, oy = h.y + ca * j * 4, x1 = ox - ca * L, y1 = oy - sa * L, x2 = ox + ca * L, y2 = oy + sa * L;
+          g.globalAlpha = al * 0.5; PX.lineaPix(g, x1, y1, x2, y2, d0, 5);
+          g.globalAlpha = al; PX.lineaPix(g, x1, y1, x2, y2, d2, 3); PX.lineaPix(g, x1, y1, x2, y2, '#ffffff', 1);
+        }
+      }
+      g.globalAlpha = 1; return;
+    }
+    if (h.k === 'fantasma') {
+      // Last Respects: aura roxa em chamas e um fantasma que acompanha o Basculegion
+      const l = h.l, cx = l.x, cy = l.y - l.alto * 0.5 - (l.salto ?? 0), al = Math.min(1, t * 8, (h.life - t) / 0.2);
+      g.globalAlpha = al * 0.3; PX.elipsePix(g, cx, cy, 24, 22, '#6d28d9');
+      g.globalAlpha = al;
+      for (let i = 0; i < 16; i++) {
+        const a = i * 0.3927 + t * 5, r = 20 + Math.sin(t * 22 + i * 1.7) * 3, x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.9, alt = 5 + ((i * 7 + Math.floor(t * 30)) % 4) * 2;
+        PX.lineaPix(g, x, y, x, y - alt, i % 2 ? '#a78bfa' : '#7c3aed', 2); if (i % 4 === 0) PX.disco(g, x, y - alt - 2, 1, '#ede9fe');
+      }
+      const ang = l.accion?.angulo ?? l.angulo ?? 0, gx = Math.round(cx - Math.cos(ang) * 20), gy = Math.round(cy - 18 + Math.sin(t * 9) * 2), R = 9;
+      g.globalAlpha = al * 0.85; g.fillStyle = '#c4b5fd';
+      g.beginPath(); g.arc(gx, gy, R, Math.PI, 0); g.lineTo(gx + R, gy + 10);
+      for (let i = 0; i < 3; i++) { const x = gx + R - (i + 0.5) * (2 * R / 3); g.lineTo(x, gy + 6 + Math.sin(t * 16 + i) * 2); g.lineTo(x - R / 3, gy + 10); }
+      g.closePath(); g.fill();
+      g.globalAlpha = al; g.fillStyle = '#2e1065'; g.fillRect(gx - 5, gy - 3, 3, 4); g.fillRect(gx + 2, gy - 3, 3, 4); g.fillRect(gx - 2, gy + 3, 4, 2);
       g.globalAlpha = 1; return;
     }
     if (h.k === 'equis') {

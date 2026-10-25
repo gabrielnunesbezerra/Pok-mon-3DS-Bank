@@ -107,7 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0;
+    this.almas = 0; this.cargas = null;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }

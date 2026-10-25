@@ -26,13 +26,23 @@ const app = {
   zoom: 1,
   ir(nombre, datos) {
     const E = ESCENAS[nombre];
-    this.escena?.salir?.();
-    this.escena = new E(this, datos);
-    this.escena.entrar?.();
-    this.nombre = nombre;
+    try { this.escena?.salir?.(); } catch (e) { avisarFalha(e); }
+    try {
+      this.escena = new E(this, datos);
+      this.escena.entrar?.();
+      this.nombre = nombre;
+    } catch (e) {
+      // uma tela que quebra ao abrir não trava o jogo: volta para o menu e mostra o erro
+      avisarFalha(e);
+      if (nombre !== 'titulo') return this.ir('titulo');
+    }
     this.musica();
   },
 };
+// erro numa tela não para o jogo: fica registrado e aparece no canto por alguns segundos
+let falha = null;
+function avisarFalha(e) { console.error(e); falha = { msg: String(e?.message ?? e).slice(0, 80), t: app.tiempo }; }
+function seguro(f) { try { f(); } catch (e) { avisarFalha(e); } }
 const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
@@ -70,7 +80,7 @@ const aCoord = (cx, cy) => {
 app.aCoord = aCoord;
 app.tactil = new PanelTactil(app);
 app.entrada = new Entrada(canvas, aCoord);
-app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.musica(); app.escena?.tecla?.(c, nueva, e); };
+app.entrada.alTecla = (c, nueva, e) => { audio.iniciar(); app.musica(); seguro(() => app.escena?.tecla?.(c, nueva, e)); };
 // aviso de convite de amigo, por cima de qualquer tela (menos durante a luta)
 const conviteVisivel = () => social.convites.length && app.nombre !== 'combate' && app.nombre !== 'online' && !formularioAberto();
 const caixaConvite = () => ({ x: app.W / 2 - 170, y: 30, w: 340, h: 24 });
@@ -93,7 +103,7 @@ app.entrada.alPuntero = (tipo, p, e) => {
       return;
     }
   }
-  app.escena?.puntero?.(tipo, p, e);
+  seguro(() => app.escena?.puntero?.(tipo, p, e));
 };
 audio.silenciar(!app.ajustes.sonido);
 
@@ -106,15 +116,18 @@ function bucle(ahora) {
   acum += dt;
   // passos fixos de 1/60 s para o motor; o resto (menus) usa o dt real
   let pasos = 0;
-  while (acum >= TICK && pasos < 6) { app.escena?.paso?.(TICK); acum -= TICK; pasos++; }
+  seguro(() => { while (acum >= TICK && pasos < 6) { app.escena?.paso?.(TICK); acum -= TICK; pasos++; } });
   if (pasos === 6) acum = 0;
-  app.escena?.actualizar?.(dt);
+  seguro(() => app.escena?.actualizar?.(dt));
   g.setTransform(app.k, 0, 0, app.k, 0, 0);
+  g.globalAlpha = 1;
   g.imageSmoothingEnabled = false;
   g.fillStyle = '#07060c';
   g.fillRect(0, 0, app.W, ALTO);
-  app.escena?.dibujar(g);
-  dibujarConvite(g);
+  seguro(() => app.escena?.dibujar(g));
+  g.setTransform(app.k, 0, 0, app.k, 0, 0); g.globalAlpha = 1;
+  seguro(() => dibujarConvite(g));
+  if (falha && app.tiempo - falha.t < 8) textoPx(g, `ERROR: ${falha.msg}`, 4, ALTO - 6, { tam: 6, base: 'middle', color: '#ff8a8a' });
   requestAnimationFrame(bucle);
 }
 

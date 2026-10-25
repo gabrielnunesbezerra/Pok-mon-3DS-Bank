@@ -26,7 +26,10 @@ export const alCambiar = fn => { oyentes.add(fn); return () => oyentes.delete(fn
 export function progreso() {
   if (cache) return cache;
   try { cache = JSON.parse(localStorage.getItem(CLAVE) || 'null'); } catch { cache = null; }
-  if (!cache || cache.v !== 1) cache = { v: 1, vencidos: {}, icono: null };
+  if (!cache || cache.v !== 1 || typeof cache.vencidos !== 'object' || !cache.vencidos || Array.isArray(cache.vencidos)) cache = { v: 1, vencidos: {}, icono: null };
+  // progresso salvo por versões antigas: só rivais que existem e de 0 a 3 vitórias
+  for (const [id, v] of Object.entries(cache.vencidos)) { const n = Math.min(3, Math.max(0, v | 0)); if (!EN_LIGA.has(id) || !n) delete cache.vencidos[id]; else cache.vencidos[id] = n; }
+  if (cache.icono && !ROSTER.some(p => p.id === cache.icono)) cache.icono = null;
   return cache;
 }
 function guardar(p) {
@@ -39,8 +42,8 @@ export const vitorias = id => progreso().vencidos[id] ?? 0;
 export const enLiga = id => EN_LIGA.has(id);
 export const desbloqueado = id => LIGA.iniciales.includes(id) || !EN_LIGA.has(id) || vitorias(id) >= 1;
 export const iconoLiberado = id => LIGA.iniciales.includes(id) || vitorias(id) >= 2;
-// os iniciais ganham o shiny quando a liga inteira é vencida
-export const shinyLiberado = id => (LIGA.iniciales.includes(id) ? ligaCompleta() : vitorias(id) >= 3);
+// os iniciais já começam com o shiny liberado
+export const shinyLiberado = id => LIGA.iniciales.includes(id) || vitorias(id) >= 3;
 export const desbloqueados = () => ROSTER.filter(p => desbloqueado(p.id)).map(p => p.id);
 export const completo = c => c.rivales.every(id => vitorias(id) >= 1);
 export const ligaCompleta = () => LIGA.circuitos.every(completo);

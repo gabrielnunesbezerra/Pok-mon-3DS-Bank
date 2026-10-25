@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'gunkShot'];
 
 test('o roster tem os 24 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler']);
@@ -250,6 +250,41 @@ test('Golem: Rollout atropela, a ult só sai rolando e prende os dois na arena d
   assert.ok(arena, 'a arena subiu');
   b.x = arena.x + 400; correr(l, 0.1, [null, null]);
   assert.ok(Math.abs(b.x - arena.x) <= arena.radio, 'o rival não sai da arena');
+});
+
+test('Last Respects bate mais forte quanto menos almas o Basculegion tem e enche todas', () => {
+  const dano = almas => {
+    const l = nuevaLuta('basculegion', 'munchlax', { etapas: [1, 0] });
+    const [a, b] = l.luchadores;
+    a.x = 380; a.y = 222; b.x = 440; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100; a.almas = almas; b.inmortal = true;
+    const hp0 = b.hp;
+    assert.equal(l.habilidades.usar(a, 'e'), true);
+    assert.equal(a.almas, 5, 'as almas enchem');
+    correr(l, 0.6, [null, null]);
+    return hp0 - b.hp;
+  };
+  const sem = dano(0), cheio = dano(5);
+  assert.ok(sem > cheio * 2, `sem almas ${sem} contra cheio ${cheio}`);
+});
+
+test('Sneasler: Wall Climb com duas cargas, corte em X depois da skill e Gunk Shot com garras no chão', () => {
+  const l = nuevaLuta('sneasler', 'munchlax', { etapas: [1, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 420; b.y = 222; a.ax = b.x; a.ay = b.y; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(a.cd.esp < 1, 'a primeira carga deixa usar de novo logo');
+  let eventos = [];
+  for (let i = 0; i < 60; i++) { l.paso(1 / 60, [null, null]); eventos.push(...l.tomarEventos()); }
+  assert.ok(eventos.some(e => e.t === 'corteX'), 'a skill termina com o corte em X');
+  a.cd.esp = 0; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(a.cd.esp > 5, 'a segunda carga entra na recarga longa');
+  correr(l, 1, [null, null]);
+  b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.ulti = 100; a.accion = null; b.est = {};
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 1, [null, null]);
+  assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 60, 'a Sneasler pula até onde o lodo caiu');
+  assert.ok(l.entidades.some(e => e.tipo === 'garras'), 'as garras ficam no chão');
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {

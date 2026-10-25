@@ -43,7 +43,7 @@ export const ventajaDe = nivel => NIVELES[nivel]?.ventaja ?? 1;
 
 export function rangoDe(h) {
   switch (h.forma) {
-    case 'proyectil': case 'cono': case 'viento': case 'bombaLodo': case 'burbujas': case 'lluvia': return h.alcance;
+    case 'proyectil': case 'cono': case 'viento': case 'bombaLodo': case 'gunkShot': case 'burbujas': case 'lluvia': return h.alcance;
     case 'chorro': case 'helice': return h.largo;
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
     case 'patada': case 'salto': return h.alcance;
@@ -95,7 +95,7 @@ function perfil(h, slot, d) {
     case 'lluvia': P.alcance = (h.alcance ?? 200) + 60; P.ancho = (h.area ?? 40) * 0.6 + h.radio; P.retardo = (h.aviso ?? 0.4) + 0.3; P.golpes = Math.max(1, (h.n ?? 1) * 0.35); break;
     case 'geiser': P.ancho = h.radio; P.retardo = h.aviso ?? 0.5; break;
     case 'torbellino': P.alcance = h.alcance * 0.8; P.ancho = h.radio; P.retardo = d / (h.vel ?? 120); P.sigue = h.persigue ? 0.7 : 0.3; break;
-    case 'bombaLodo': P.ancho = h.radio; P.retardo = (h.lanzar ?? 0.18) + (h.vuelo ?? 0.5); break;
+    case 'bombaLodo': case 'gunkShot': P.ancho = h.radio; P.retardo = (h.lanzar ?? 0.18) + (h.vuelo ?? 0.5); break;
     case 'trampa': P.ancho = h.radio; P.retardo = h.arma ?? 0.5; break;
     case 'meteoro':
       P.alcance = (h.sigue ?? 150) * (h.aviso ?? 0.6) + h.radio; P.ancho = h.radio; P.retardo = 0.3 + (h.aviso ?? 0.6) + 0.15; P.sigue = 0.9; P.invul = true;

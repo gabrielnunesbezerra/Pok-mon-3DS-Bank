@@ -83,7 +83,7 @@ export class Liga {
         texto(g, prox, b.x + 46, b.y + 36, { tam: 6, color: v >= 3 ? '#ffd23c' : nivelProximo(id) === 'dificil' ? '#ff7a7a' : nivelProximo(id) === 'normal' ? '#ffd166' : '#86efac' });
       });
     });
-    texto(g, ligaCompleta() ? 'LEAGUE CLEARED! The starters got their shiny.' : '1 win unlocks the Pokémon · 2 wins its profile icon · 3 wins its shiny', ANCHO / 2, ALTO - 20, { tam: 7, align: 'center', color: UI.suave });
+    texto(g, ligaCompleta() ? 'LEAGUE CLEARED! Every Pokémon is yours.' : '1 win unlocks the Pokémon · 2 wins its profile icon · 3 wins its shiny', ANCHO / 2, ALTO - 20, { tam: 7, align: 'center', color: UI.suave });
     if (this.aviso && t - this.aviso.t0 < 1.8) texto(g, this.aviso.txt, ANCHO / 2, ALTO - 8, { tam: 7, align: 'center', color: '#ff9a7a', borde: 2 });
   }
 }
