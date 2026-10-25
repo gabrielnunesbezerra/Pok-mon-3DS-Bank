@@ -182,7 +182,7 @@ export class Seleccion {
     if (this.modo !== 'entreno' && !this.online) { if (dentro({ x: 4, y: 38, w: 178, h: 24 })) { this.lado = 0; this.cursor = this.elegido[0]; sfx('seleccion'); } if (dentro({ x: 458, y: 38, w: 178, h: 24 })) { this.lado = this.lado === 1 && this.n === 3 ? 2 : 1; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } }
   }
   cajaVolver() { return { x: 4, y: 4, w: 70, h: 18 }; }
-  cajaLuchar() { return { x: ANCHO / 2 - 64, y: 308, w: 128, h: 28 }; }
+  cajaLuchar() { return { x: 320 - 64, y: 308, w: 128, h: 28 }; }
   cajaArena(d) { return { x: d < 0 ? 196 : 410, y: 244, w: 20, h: 18 }; }
   cajaNivel(d) { return { x: d < 0 ? 196 : 410, y: 266, w: 20, h: 18 }; }
 

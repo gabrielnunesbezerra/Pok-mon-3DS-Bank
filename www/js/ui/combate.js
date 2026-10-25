@@ -382,13 +382,15 @@ export class Combate {
     // vida no sprite: achata e estica ao começar uma ação, estica no ar, achata ao cair e treme ao apanhar
     let sx = 1, sy = 1, tremor = 0;
     if (l.anim && t - l.animInicio < 0.16) { const k = Math.sin(((t - l.animInicio) / 0.16) * Math.PI); sx = 1 + 0.09 * k; sy = 1 - 0.1 * k; }
-    if (l.salto > 2) { sx = 0.93; sy = 1.08; }
-    if (l._saltoAnt > 2 && l.salto <= 0) l._cae = t;
-    l._saltoAnt = l.salto;
+    // pulinho do Earthquake: sobe e cai no momento do tremor
+    const br = l.est.brinco, brinco = br ? Math.round(Math.sin(Math.min(1, (this.luta.t - br.t0) / br.dur) * Math.PI) * 18) : 0, alto = l.salto + brinco;
+    if (alto > 2) { sx = 0.93; sy = 1.08; }
+    if (l._saltoAnt > 2 && alto <= 0) l._cae = t;
+    l._saltoAnt = alto;
     if (l._cae && t - l._cae < 0.14) { const k = 1 - (t - l._cae) / 0.14; sx = 1 + 0.14 * k; sy = 1 - 0.14 * k; }
     if (t < l.dolorHasta) tremor = (Math.floor(t * 60) % 2 ? 1 : -1);
-    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor, l.y - l.salto, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy });
-    if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - l.salto, sc, { fila, flash });
+    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor, l.y - alto, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy });
+    if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - alto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
     if (l.dash) this.dibujarDash(g, l);
     // estados visíveis

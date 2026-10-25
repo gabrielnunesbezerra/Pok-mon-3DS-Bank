@@ -46,7 +46,7 @@ export function rangoDe(h) {
     case 'proyectil': case 'cono': case 'viento': case 'bombaLodo': case 'burbujas': case 'lluvia': return h.alcance;
     case 'chorro': case 'helice': return h.largo;
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
-    case 'patada': case 'salto': case 'lunas': return h.alcance;
+    case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': return h.alcance;
     case 'pulso': return h.radio;
     case 'caparazon': return h.alcance;
     case 'meteoro': return (h.sigue ?? 150) * (h.aviso ?? 0.6) + h.radio;
@@ -105,7 +105,8 @@ function perfil(h, slot, d) {
     case 'golpe': P.tipo = 'mele'; P.alcance = h.alcance + (h.embestida ?? 30) * 0.85 + (h.onda ?? 0) * 0.5; P.retardo = h.lanzar ?? 0.14; break;
     case 'patada': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.26 + d / 700; P.sigue = 0.8; break;
     case 'salto': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.32; P.sigue = 0.8; break;
-    case 'lunas': P.tipo = 'mele'; P.alcance = h.alcance + (h.avance ?? 40); P.retardo = 0.12; break;
+    case 'cortesSuelo': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.carga ?? 0.15) + (h.viaja ?? 0.25) * 0.5; break;
+    case 'jabLuna': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.dur ?? 0.3) * 0.5; break;
     case 'vuelo': P.tipo = 'vuelo'; P.alcance = h.radio; P.ancho = h.radio; P.invul = true; break;
     case 'dash':
       P.tipo = h.dano ? 'embestida' : 'movil'; P.alcance = h.dist * 0.9; P.invul = h.invul !== false;

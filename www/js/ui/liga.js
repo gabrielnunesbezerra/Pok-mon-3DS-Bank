@@ -23,9 +23,9 @@ function silueta(img) {
 export class Liga {
   constructor(app) { this.app = app; this.t = 0; this.foco = { c: Math.min(circuitoAbierto(), LIGA.circuitos.length - 1), r: 0 }; this.aviso = null; }
   entrar() { for (const id of LIGA.circuitos.flatMap(c => c.rivales)) { const p = ROSTER.find(x => x.id === id); if (p) this.app.bank.retrato(p.dex); } }
-  // largura das colunas se ajusta ao número de circuitos
-  get cw() { const n = LIGA.circuitos.length; return Math.min(150, Math.floor((ANCHO - COL.gap * (n + 1)) / n)); }
-  colX(c) { const n = LIGA.circuitos.length; return Math.round((ANCHO - (n * this.cw + (n - 1) * COL.gap)) / 2) + c * (this.cw + COL.gap); }
+  // largura das colunas se ajusta ao número de circuitos; sempre na tela de 640 (o toque chega já convertido para ela)
+  get cw() { const n = LIGA.circuitos.length; return Math.min(150, Math.floor((640 - COL.gap * (n + 1)) / n)); }
+  colX(c) { const n = LIGA.circuitos.length; return Math.round((640 - (n * this.cw + (n - 1) * COL.gap)) / 2) + c * (this.cw + COL.gap); }
   caja(c, r) { return { x: this.colX(c) + 4, y: COL.y0 + 34 + r * (COL.card + COL.cardGap), w: this.cw - 8, h: COL.card }; }
   volver() { sfx('atras'); this.app.ir('titulo', { menu: 'jugar' }); }
 

@@ -40,7 +40,7 @@ export class Habilidades {
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, almas: this.almas, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
-      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, lunas: this.lunas,
+      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna,
     };
   }
 
@@ -48,7 +48,9 @@ export class Habilidades {
   usar(l, slot) {
     const h = l.kit[slot];
     const luta = this.luta;
-    if (!h || h.sinUlti || l.cd[slot] > 0 || l.est.aturdido || l.est.dormido) return false;
+    // rolando, o botão do Rollout sempre deixa parar (a recarga já está correndo)
+    const pararRodar = h?.forma === 'rodar' && l.est.rodando;
+    if (!h || h.sinUlti || (l.cd[slot] > 0 && !pararRodar) || l.est.aturdido || l.est.dormido) return false;
     if (l.accion?.bloquea) return false;
     // voando (Fly) ou debaixo da terra (Dig) só dá para sair da esquiva: nenhuma skill sai
     if (l.est.vuelo) return false;
@@ -64,7 +66,7 @@ export class Habilidades {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
       return false;
     }
-    const coste = slot === 'e' ? 0 : h.coste ?? 0;
+    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) ? 0 : h.coste ?? 0;
     if (l.energia < coste) {
       if (l.humano) l.avisar('energia', () => { l.texto('NO ENERGY', '#9aa0b4'); luta.emit({ t: 'sonido', n: 'miss' }); }, 1);
       return false;
@@ -77,11 +79,13 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
-    if (h.forma !== 'puente' && h.forma !== 'rodar') l.cd[slot] = h.cd;
+    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna') l.cd[slot] = h.cd;
     // Sneasler: depois de qualquer skill o próximo básico sai como corte em X
     if (slot !== 'lmb' && l.kit.lmb?.trasSkill) l.xListo = true;
     // skills que giram o Pokémon no lugar
     if (h.gira) l.ponerEstado('girando', h.gira);
+    // skills de terremoto: pulinho que cai junto com o tremor (só no desenho)
+    if (h.salta) l.ponerEstado('brinco', h.salta, { dur: h.salta, t0: t });
     l.ultimoAtaque = t;
     l.stats.usos++;
     if (slot !== 'lmb') l.tejido = t;
@@ -339,16 +343,29 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- Stellar Bridge (Archaludon): investida que empurra e vira ponte,
   // presa no lugar e atirando laser no básico; apertar de novo sai com outra investida. Na ponte, a ult é uma descarga em volta
+  // Archaludon: recua de costas soltando uma rajada para a frente (quem leva vai para o ar) e trava como ponte;
+  // apertar de novo só desfaz a ponte, sem dash
   puente(l, h, extra) {
-    const luta = this.luta, saliendo = !!l.est.puente;
-    const ang = Math.atan2(l.ay - l.y, l.ax - l.x);
-    if (saliendo) { delete l.est.puente; l.kit = l.kitActual(); }
-    l.empezarDash({ dist: h.dist ?? 110, dur: 0.2, dano: h.dano, tipo: h.tipo, empuje: h.empuje ?? 150, estilo: 'acero', invul: true }, ang);
+    const luta = this.luta;
+    if (l.est.puente) { delete l.est.puente; delete l.est.blindaje; l.kit = l.kitActual(); l.cd[extra.slot] = h.cd; l.texto('UNBRIDGE', '#e5e7eb'); return; }
+    const ang = angApunte(l), R = h.rajada ?? {}, alcance = R.alcance ?? 120, abre = R.angulo ?? 60, mitad = rad(abre) / 2;
+    luta.emit({ t: 'viento', x: l.x, y: l.y - l.alto * 0.4, ang, alcance, angulo: abre, estilo: 'dragon', tipo: 'DRAGON' });
+    luta.emit({ t: 'temblor', f: 0.006 });
+    for (const b of luta.blancos(l)) {
+      if (b.oculto || b.est?.vuelo) continue;
+      const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+      if (d < alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < mitad + 0.15) {
+        const res = atingir(l, b, pacote(h, extra, ang, { empuje: 0, dirX: dx / d, dirY: dy / d, pesado: true }));
+        if (res === 'golpe' && !b.esClon && !b.ko) this.lanzarAlto(b, R.aire ?? 0.7, R.alto ?? 60);
+      }
+    }
+    l.empezarDash({ dist: h.dist ?? 90, dur: 0.22, dano: 0, tipo: h.tipo, estilo: 'acero', invul: true }, ang + Math.PI);
     l.dash.slot = extra.slot;
+    l.angulo = ang;
     l.animar('Walk', 0.3);
-    if (saliendo) { l.cd[extra.slot] = h.cd; return; }
     l.dash.fin = () => {
       if (l.ko) return;
+      l.angulo = ang;
       l.ponerEstado('puente', h.dur ?? 10, {});
       l.ponerEstado('blindaje', h.dur ?? 10, { reduce: h.reduce ?? 0.25 });
       l.kit = { ...l.kit, lmb: { ...h.laser, forma: 'proyectil' }, e: { ...l.kit.e, ...h.descarga, forma: 'pulso' } };
@@ -443,13 +460,13 @@ export class Habilidades {
     const luta = this.luta;
     if (l.est.rodando) {
       delete l.est.rodando; delete l.est.blindaje;
-      l.cd[extra.slot] = h.cd;
       luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 26, tipo: 'ROCK', estilo: 'tierra' });
       return;
     }
     l.ponerEstado('rodando', h.dur ?? 4, { vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, cd: h.cd, golpes: new Map() });
     if (h.reduce) l.ponerEstado('blindaje', h.dur ?? 4, { reduce: h.reduce });
-    l.cd[extra.slot] = 0.35;
+    // a recarga começa a contar assim que vira bola
+    l.cd[extra.slot] = h.cd;
     l.texto('ROLLOUT!', '#e8d8b0');
     luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 30, tipo: 'ROCK', estilo: 'tierra' });
   }
@@ -918,8 +935,8 @@ export class Habilidades {
         const alcance = h.alcance + (final ? 8 : 0);
         ang = asistir(l, ang, alcance + RADIO + 12, 1.6);
         l.angulo = ang;
-        // o terceiro golpe da Sneasler é o corte em X
-        if (final && h.cruzX) luta.emit({ t: 'corteX', x: l.x + Math.cos(ang) * alcance * 0.55, y: l.y - l.alto * 0.5 + Math.sin(ang) * alcance * 0.4, ang, r: alcance * 0.6, tipo: h.tipo });
+        // corte em X da Sneasler (guardado por uma skill)
+        if (final && forzaX) luta.emit({ t: 'corteX', x: l.x + Math.cos(ang) * alcance * 0.55, y: l.y - l.alto * 0.5 + Math.sin(ang) * alcance * 0.4, ang, r: alcance * 0.6, tipo: h.tipo });
         else luta.emit({ t: 'tajo', l, ang, alcance, final, estilo: h.estilo, tipo: h.tipo, anguloArco: h.angulo });
         this.cortarProyectiles(l, ang, alcance, rad(h.angulo) / 2);
         for (const b of luta.blancos(l)) {
@@ -930,7 +947,7 @@ export class Habilidades {
             const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano + (final ? 2 : 0) + (rem?.dano ?? 0), empuje: rem?.empuje ?? (final ? 70 : 22), aturde: rem?.aturde, dirX: dx / d, dirY: dy / d, pesado: final }));
             if (res === 'golpe' && i === 0 && !cierra) l.aciertosCombo++;
             // Dire Claw (Sneasler): o golpe que fecha a combinação deixa veneno, paralisia ou sono
-            if (res === 'golpe' && final && h.estadoAleatorio && !b.esClon) estadoAleatorio(b, l);
+            if (res === 'golpe' && final && h.estadoAleatorio && (forzaX || !h.cruzX) && !b.esClon) estadoAleatorio(b, l);
             if (rem && res === 'golpe') { l.texto('CRUSHED!', '#e5e7eb'); luta.emit({ t: 'temblor', f: 0.006 }); }
           }
         }
@@ -1214,10 +1231,13 @@ export class Habilidades {
   // ---------------------------------------------------------------- Harden: escudo que absorve dano
   escudo(l, h) {
     const luta = this.luta;
+    // Soul Shield: cada alma gasta soma escudo e duração
     const almas = h.porAlma ? l.almas ?? 0 : 0;
-    if (h.porAlma) l.almas = 0;
+    if (h.porAlma) { l.almas = 0; if (almas) { l.texto(`+${almas} SOULS`, '#c4b5fd', { dy: 10 }); this.luta.emit({ t: 'almasSueltas', l, n: almas }); } }
+    const dur = (h.dur ?? 2.5) + almas * (h.durPorAlma ?? 0);
     l.escudo = Math.max(l.escudo ?? 0, ((h.absorbe ?? 10) + almas * (h.porAlma ?? 0)) * (REGLAS.vidaGlobal ?? 1));
-    l.ponerEstado('escudo', h.dur ?? 2.5, { estilo: h.estilo, stamina: h.stamina });
+    l.ponerEstado('escudo', dur, { estilo: h.estilo, stamina: h.stamina, golpesMax: h.golpesMax, golpes: 0 });
+    const est = l.est.escudo;
     l.animar(h.anim ?? 'Withdraw', 0.5);
     l.accion = { hasta: luta.t + 0.3, lento: h.lento ?? 0.5 };
     if (h.texto) l.texto(h.texto, '#d6dbe4');
@@ -1225,9 +1245,9 @@ export class Habilidades {
     if (h.acelera) l.ponerEstado('rapido', h.acelera.dur, { vel: h.acelera.vel });
     luta.emit({ t: 'endurecer', l, estilo: h.estilo });
     // Cotton Guard (Altaria): quando acaba, o algodão é arremessado no rival e deixa lento
-    if (h.lanza) luta.programar(h.dur ?? 2.5, () => {
+    if (h.lanza) luta.programar(dur, () => {
       const r = l.rival;
-      if (l.ko || !r || r.ko) return;
+      if (l.ko || !r || r.ko || est?.roto) return;
       const a = Math.atan2(r.y - l.y, r.x - l.x);
       luta.add(new Proyectil(luta, l, { forma: 'proyectil', estilo: 'algodonProj', tipo: h.tipo, radio: 7, escala: 1.4, teledirigido: 1.5, ...h.lanza }, a, { slot: 'q', desde: { x: l.x, y: l.y, alt: l.alto * 0.5 } }));
     });
@@ -1600,31 +1620,72 @@ export class Habilidades {
   }
 
   // ---------------------------------------------------------------- investidas cruzadas (Cross Poison)
-  // ---------------------------------------------------------------- Midnight Claws (Sneasler): três cortes gigantes em meia-lua para a frente
-  lunas(l, h, extra) {
-    const luta = this.luta, ang = asistir(l, angApunte(l), h.alcance + 30, 1), n = h.golpes ?? 3, entre2 = h.entre ?? 0.17, avance = h.avance ?? 40;
-    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance), total = 0.12 + (n - 1) * entre2 + 0.2;
-    l.ponerEstado('blindaje', total, { reduce: 0.5 });
-    l.animar(h.anim ?? 'Attack', total);
-    l.angulo = ang;
-    let t = 0;
-    l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: ang, update: dt => { t += dt; const k = Math.min(1, t / 0.12); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; } };
-    for (let i = 0; i < n; i++) {
-      luta.programar(0.12 + i * entre2, () => {
-        if (l.ko) return;
-        const ultimo = i === n - 1, lado = ultimo ? 0 : i % 2 ? -1 : 1, R = h.alcance * (ultimo ? 1.15 : 1);
-        l.animar(ultimo ? 'Strike' : 'Attack', entre2 + 0.05);
-        luta.emit({ t: 'luna', x: l.x, y: l.y - l.alto * 0.4, ang, r: R, lado, final: ultimo, tipo: h.tipo });
-        if (ultimo) luta.emit({ t: 'temblor', f: 0.01 });
-        this.cortarProyectiles(l, ang, R, rad(h.angulo) / 2);
+  // ---------------------------------------------------------------- Poison Jab (Sneasler): avança em meia-lua; dentro da janela, apertar de novo dá um jab que empurra
+  jabLuna(l, h, extra) {
+    const luta = this.luta, slot = extra.slot;
+    if (l.jabHasta > luta.t) {
+      l.jabHasta = 0;
+      this.golpe(l, { ...h, ...h.jab, forma: 'golpe', veneno: undefined }, extra);
+      l.cd[slot] = h.cd;
+      return;
+    }
+    const r = l.rival, ang = asistir(l, angApunte(l), h.alcance + 40, 1);
+    const alvo = r && !r.ko && !r.oculto && Math.hypot(r.x - l.x, r.y - l.y) < h.alcance + 40;
+    const d = alvo ? Math.min(h.alcance, Math.hypot(r.x - l.x, r.y - l.y) + 24) : Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, x1 = x0 + Math.cos(ang) * d, y1 = y0 + Math.sin(ang) * d, curva = d * 0.45, px = -Math.sin(ang), py = Math.cos(ang), dur = h.dur ?? 0.3;
+    const pos = k => fijarCampo(x0 + (x1 - x0) * k + px * curva * Math.sin(k * Math.PI), y0 + (y1 - y0) * k + py * curva * Math.sin(k * Math.PI));
+    const golpeados = new Set();
+    let t = 0, ant = { x: x0, y: y0 };
+    l.animar(h.anim ?? 'Attack', dur + 0.1);
+    l.accion = {
+      hasta: luta.t + dur, bloquea: true, lento: 0, angulo: ang,
+      update: dt => {
+        t += dt;
+        const p = pos(Math.min(1, t / dur));
+        if (Math.hypot(p.x - ant.x, p.y - ant.y) > 6) { luta.emit({ t: 'trazo', x0: ant.x, y0: ant.y - l.alto * 0.5, x1: p.x, y1: p.y - l.alto * 0.5, tipo: h.tipo, estilo: 'veneno' }); }
+        l.accion.angulo = Math.atan2(p.y - ant.y, p.x - ant.x) || ang;
+        l.x = p.x; l.y = p.y; ant = p;
         for (const b of luta.blancos(l)) {
-          if (b.oculto || b.est?.vuelo) continue;
-          const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
-          if (d < R + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2)
-            atingir(l, b, pacote(h, extra, ang, { dano: h.dano * (ultimo ? 1.5 : 1), empuje: ultimo ? 120 : 25, aturde: ultimo ? h.aturde : undefined, dirX: dx / d, dirY: dy / d, pesado: ultimo, tick: !ultimo && i > 0 }));
+          if (golpeados.has(b) || b.oculto || b.est?.vuelo) continue;
+          const dx = b.x - l.x, dy = b.y - l.y, dd = Math.hypot(dx, dy) || 1;
+          if (dd < RADIO * 2 + 10) { golpeados.add(b); atingir(l, b, pacote(h, extra, ang, { empuje: 40, dirX: dx / dd, dirY: dy / dd })); luta.emit({ t: 'impacto', x: b.x, y: b.y - b.alto * 0.5, tipo: h.tipo, estilo: 'veneno' }); }
+        }
+      },
+    };
+    // janela para o segundo toque; se passar sem usar, entra na recarga
+    const hasta = luta.t + (h.ventana ?? 2.5);
+    l.jabHasta = hasta;
+    l.cd[slot] = 0.35;
+    luta.programar(h.ventana ?? 2.5, () => { if (l.jabHasta === hasta) { l.jabHasta = 0; l.cd[slot] = Math.max(l.cd[slot], h.cd - (h.ventana ?? 2.5)); } });
+  }
+
+  // ---------------------------------------------------------------- ult da Sneasler: três cortes retos saindo do chão (um no meio, dois nas diagonais)
+  cortesSuelo(l, h, extra) {
+    const luta = this.luta, ang = asistir(l, angApunte(l), h.alcance, 0.8), carga = h.carga ?? 0.15, viaja = h.viaja ?? 0.25, N = 6;
+    l.animar(h.anim ?? 'Strike', carga + 0.35);
+    l.accion = { hasta: luta.t + carga + 0.3, bloquea: true, lento: 0, angulo: ang };
+    luta.programar(carga, () => {
+      if (l.ko) return;
+      const abre = rad(h.abre ?? 28), lineas = [0, -abre, abre].map(a => { const p = fijarCampo(l.x + Math.cos(ang + a) * h.alcance, l.y + Math.sin(ang + a) * h.alcance); return { x0: l.x, y0: l.y, x1: p.x, y1: p.y }; });
+      luta.emit({ t: 'cortesSuelo', lineas, viaja, tipo: h.tipo });
+      luta.emit({ t: 'temblor', f: 0.01 });
+      // os cortes brotam do pé até a ponta: cada trecho machuca quem está em cima naquela hora (cada alvo uma vez)
+      const golpeados = new Set();
+      for (let k = 1; k <= N; k++) luta.programar((viaja * k) / N, () => {
+        if (l.ko) return;
+        for (const b of luta.blancos(l)) {
+          if (golpeados.has(b) || b.oculto || b.est?.vuelo) continue;
+          const em = lineas.some(s2 => {
+            const ax = s2.x0 + (s2.x1 - s2.x0) * ((k - 1) / N), ay = s2.y0 + (s2.y1 - s2.y0) * ((k - 1) / N), bx = s2.x0 + (s2.x1 - s2.x0) * (k / N), by = s2.y0 + (s2.y1 - s2.y0) * (k / N);
+            return distSegmento(b.x, b.y, ax, ay, bx, by) < (h.ancho ?? 14) + RADIO;
+          });
+          if (!em) continue;
+          golpeados.add(b);
+          const dx = b.x - l.x, dy = b.y - l.y, dd = Math.hypot(dx, dy) || 1;
+          atingir(l, b, pacote(h, extra, ang, { empuje: 70, dirX: dx / dd, dirY: dy / dd, pesado: true }));
         }
       });
-    }
+    });
   }
 
   embestidas(l, h, extra) {

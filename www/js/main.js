@@ -64,13 +64,17 @@ function medir() {
   app.W = W;
   const z = Math.min(innerWidth / W, innerHeight / ALTO);
   app.zoom = z;
-  canvas.width = Math.round(W * z * dpr);
-  canvas.height = Math.round(ALTO * z * dpr);
+  // trocar o tamanho do canvas apaga a tela: só troca quando mudou de verdade
+  const cw = Math.round(W * z * dpr), ch = Math.round(ALTO * z * dpr);
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
   canvas.style.width = `${W * z}px`;
   canvas.style.height = `${ALTO * z}px`;
   app.k = canvas.width / W;
 }
-addEventListener('resize', medir);
+// celulares que ficam mostrando e escondendo as barras do sistema disparam vários resize seguidos:
+// espera a tela parar de mudar antes de medir de novo
+let timerMedir = 0;
+addEventListener('resize', () => { clearTimeout(timerMedir); timerMedir = setTimeout(medir, 150); });
 medir();
 
 const aCoord = (cx, cy) => {

@@ -217,7 +217,7 @@ export class Efectos {
         case 'almasSueltas': for (let i = 0; i < 8 + e.n * 3; i++) { const a = ale() * Math.PI * 2, s = entre(60, 150); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 2, size: entre(2, 3), life: entre(0.4, 0.7), color: (e.l.def?.almaRosa ? ['#ffbfdc', '#f472b6', '#ffffff'] : ['#cfefff', '#a78bfa', '#ffffff'])[i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 6, 30 + e.n * 4, '#a78bfa', 0.4, 2); break;
         case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
         case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
-        case 'luna': this.heroes.push({ k: 'luna', x: e.x, y: e.y, ang: e.ang, r: e.r, lado: e.lado, final: e.final, tipo: e.tipo, t: 0, life: e.final ? 0.55 : 0.42, hue: this.hue }); break;
+        case 'cortesSuelo': this.heroes.push({ k: 'cortesSuelo', lineas: e.lineas, viaja: e.viaja, tipo: e.tipo, t: 0, life: e.viaja + 0.55, hue: this.hue }); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
@@ -559,24 +559,26 @@ export class Efectos {
       for (let i = 0; i < 3; i++) { const r = h.radio * (0.45 + i * 0.27); PX.anilloPix(g, cx, cy, r, r * 0.62, i % 2 ? '#f0f4ff' : '#bfe4ff', 1, 10, Math.floor(t * 20) * (i % 2 ? 1 : -1)); for (let j = 0; j < 5; j++) { const a = t * (2 + i) * (i % 2 ? -1 : 1) + j * 1.2566; PX.carimbar(g, PX.nota(6, j % 2 ? '#ffffff' : '#ff9ad8'), cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62 - 6, 0, 1, 1); } }
       g.globalAlpha = 1; return;
     }
-    if (h.k === 'luna') {
-      // Midnight Claws: meia-lua gigante (grossa no meio, fina nas pontas) que avança e some, com estrelas azuis nas pontas
-      const A = 1.25, abre = Math.min(1, t / 0.1), R = h.r * (0.45 + 0.55 * Math.min(1, t / 0.16)), al = Math.min(1, (1 - k) * 2.2), W = h.final ? 22 : 16;
-      const giro = h.lado * (1 - abre) * 0.9, N = 18, sube = h.final ? 26 : 18;
-      const ponto = (a, r) => [h.x + Math.cos(h.ang + a + giro) * r, h.y + Math.sin(h.ang + a + giro) * r * 0.62 - Math.cos(a / A * 1.5708) * sube * abre];
-      const banda = (fator, cor, alfa) => {
-        g.globalAlpha = al * alfa; g.fillStyle = cor; g.beginPath();
-        for (let i = 0; i <= N; i++) { const a = -A + (2 * A * i) / N, w = Math.cos((a / A) * 1.5708) * W * fator; const [x, y] = ponto(a, R + w * 0.5); i ? g.lineTo(x, y) : g.moveTo(x, y); }
-        for (let i = N; i >= 0; i--) { const a = -A + (2 * A * i) / N, w = Math.cos((a / A) * 1.5708) * W * fator; const [x, y] = ponto(a, R - w * 0.5); g.lineTo(x, y); }
-        g.closePath(); g.fill();
-      };
-      banda(1.5, '#1e1052', 0.35); banda(1, '#3b1d9a', 0.9); banda(0.55, '#6d4cf0', 0.95); banda(0.18, '#d6ccff', 1);
-      for (const s2 of [-1, 1]) {
-        const [x, y] = ponto(s2 * A, R), tam = (h.final ? 9 : 6) * (0.8 + 0.2 * Math.sin(t * 40));
-        g.globalAlpha = al * 0.5; PX.disco(g, x, y, tam * 0.7, '#2563eb'); g.globalAlpha = al;
-        PX.lineaPix(g, x - tam, y, x + tam, y, '#93c5fd', 2); PX.lineaPix(g, x, y - tam, x, y + tam, '#93c5fd', 2);
-        PX.lineaPix(g, x - tam * 0.5, y - tam * 0.5, x + tam * 0.5, y + tam * 0.5, '#ffffff', 1); PX.lineaPix(g, x - tam * 0.5, y + tam * 0.5, x + tam * 0.5, y - tam * 0.5, '#ffffff', 1);
-        PX.disco(g, x, y, 2, '#ffffff');
+    if (h.k === 'cortesSuelo') {
+      // garras roxas brotando do chão em fila, do pé até a ponta de cada linha, com o rasgo no chão por baixo
+      const N = 9, H = 26;
+      for (const s2 of h.lineas) {
+        const fim = Math.min(1, t / h.viaja), al = Math.min(1, (h.life - t) / 0.3);
+        g.globalAlpha = al * 0.8;
+        PX.lineaPix(g, s2.x0, s2.y0, s2.x0 + (s2.x1 - s2.x0) * fim, s2.y0 + (s2.y1 - s2.y0) * fim, '#12041c', 6);
+        PX.lineaPix(g, s2.x0, s2.y0, s2.x0 + (s2.x1 - s2.x0) * fim, s2.y0 + (s2.y1 - s2.y0) * fim, '#9b3fbf', 2);
+        for (let j = 1; j <= N; j++) {
+          const f = j / N, nasce = f * h.viaja, vida = t - nasce;
+          if (vida < 0) continue;
+          const sube = Math.min(1, vida / 0.06) * Math.max(0, Math.min(1, (0.42 - vida) / 0.2)), alto = H * (0.7 + 0.5 * f) * sube;
+          if (alto < 1) continue;
+          const x = s2.x0 + (s2.x1 - s2.x0) * f, y = s2.y0 + (s2.y1 - s2.y0) * f, inc = Math.cos(Math.atan2(s2.y1 - s2.y0, s2.x1 - s2.x0)) * 6;
+          g.globalAlpha = al;
+          g.fillStyle = '#2a0f3a'; g.beginPath(); g.moveTo(x - 5, y); g.lineTo(x + inc, y - alto - 2); g.lineTo(x + 5, y); g.closePath(); g.fill();
+          g.fillStyle = '#9b3fbf'; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x + inc, y - alto); g.lineTo(x + 3, y); g.closePath(); g.fill();
+          PX.lineaPix(g, x - 1, y - 1, x + inc, y - alto, '#f0c8ff', 1);
+          if (vida < 0.08) PX.disco(g, x, y, 3, '#e9b8ff');
+        }
       }
       g.globalAlpha = 1; return;
     }

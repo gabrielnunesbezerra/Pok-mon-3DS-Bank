@@ -107,7 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false;
+    this.almas = 0; this.xListo = false; this.jabHasta = 0;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -273,6 +273,9 @@ export class Lutador {
       const abs = Math.min(this.escudo, d);
       this.escudo -= abs; d -= abs;
       luta.emit({ t: 'anillo', x: this.x, y: this.y - this.alto * 0.5, color: '#7dd3fc' });
+      // Cotton Guard: quebra depois de alguns golpes, mesmo com escudo sobrando
+      const es = this.est.escudo;
+      if (es?.golpesMax && !g.tick && ++es.golpes >= es.golpesMax) { this.escudo = 0; es.roto = true; this.texto('GUARD BROKEN!', '#e5e7eb'); luta.emit({ t: 'burbujaRompe', l: this }); }
       if (this.escudo <= 0) delete this.est.escudo;
       if (d <= 0.01) return 'bloqueo';
     }
@@ -490,9 +493,6 @@ export class Lutador {
     if (this.accion?.angulo != null) this.angulo = this.accion.angulo;
     else if (apuntando) this.angulo = Math.atan2(this.ay - this.y, this.ax - this.x);
     else if (this.moviendo) this.angulo = Math.atan2(my, mx);
-    // Rollout: quando para de rolar (de qualquer jeito), a skill entra em recarga
-    if (this._rodando && !this.est.rodando) this.cd[this._rodando.slot ?? 'esp'] = Math.max(this.cd[this._rodando.slot ?? 'esp'], this._rodando.cd ?? 8);
-    this._rodando = this.est.rodando ?? null;
     // Rollout: atropela quem encosta (cada alvo no máximo uma vez a cada 0,6 s)
     const rod = this.est.rodando;
     if (rod && !this.dash && Math.hypot(this.vx, this.vy) > 20) {
