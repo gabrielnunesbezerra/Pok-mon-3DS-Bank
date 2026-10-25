@@ -321,6 +321,15 @@ export class Combate {
       g.fillStyle = 'rgba(0,0,0,0.42)'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx, ry, 0, 0, 7); g.fill();
       if (!l.ko) { g.strokeStyle = l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
     }
+    // Fly: lá no alto, fora da tela; no chão só o anel azul-claro marcando onde ele vai cair, como no site
+    if (l.est.vuelo?.modo === 'aire') {
+      const pul = 0.5 + 0.5 * Math.sin(this.t * 10), x = Math.round(l.x), y = Math.round(l.y);
+      g.globalAlpha = 0.85; PX.anilloPix(g, x, y, 27 + pul * 2, 16 + pul, '#8fd0ff', 2, 0); PX.anilloPix(g, x, y, 18, 10.5, '#bfe4ff', 1, 0);
+      g.globalAlpha = 0.25; PX.elipsePix(g, x, y, 14, 6, '#0a1830'); g.globalAlpha = 1;
+      return;
+    }
+    // Heavy Slam e afins: some no alto enquanto a mira anda
+    if (l.oculto && l.est.vuelo?.modo === 'meteoro') return;
     if (l.oculto) {
       // Dig: um monte de terra que anda e um anel azul marcando onde ele vai sair, como no site
       const pul = 0.5 + 0.5 * Math.sin(this.t * 10), x = Math.round(l.x), y = Math.round(l.y);

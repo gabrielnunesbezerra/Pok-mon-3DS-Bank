@@ -911,7 +911,7 @@ export class Habilidades {
     const luta = this.luta, subida = 0.3, fijar = 0.15, bajada = 0.14, total = subida + h.aviso + fijar + bajada;
     const marca = fijarCampo(l.ax, l.ay);
     l.animar(h.anim ?? 'Hop', subida);
-    l.ponerEstado('vuelo', total + 0.05, { oculto: false, rapidez: 0 });
+    l.ponerEstado('vuelo', total + 0.05, { oculto: false, rapidez: 0, modo: 'meteoro' });
     l.ponerEstado('invul', total);
     l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: l.angulo };
     let t = 0, bajaDesde = 0;
@@ -976,7 +976,7 @@ export class Habilidades {
     const luta = this.luta;
     const tierra = h.modo === 'tierra';
     l.animar(h.anim ?? 'Hop', 0.3);
-    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5 });
+    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5, modo: tierra ? 'tierra' : 'aire' });
     l.accion = null;
     luta.emit({ t: 'desaparece', l, modo: tierra ? 'tierra' : 'aire' });
     let t = 0;

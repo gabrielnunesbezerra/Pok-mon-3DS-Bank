@@ -81,6 +81,7 @@ export class Efectos {
           this.add({ x: e.x, y: e.y, size: Math.max(12, e.radio * 0.8), life: 0.34, color: '#ffffff', brillo: mezcla(colorTipo(e.tipo), 0.3), forma: 'estouro' });
           this.rafaga(e.x, e.y, e.tipo, 14, 200, { size: 3, life: 0.55 });
           this.anillo(e.x, e.y, 4, e.radio, colorTipo(e.tipo), 0.3, 2);
+          if (e.tipo === 'POISON') for (let i = 0; i < 16; i++) { const a = ale() * Math.PI * 2, s = entre(160, 320); this.add({ x: e.x, y: e.y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 40, drag: 4, size: entre(2, 3.2), life: entre(0.3, 0.5), color: ['#f0abfc', '#d946ef', '#a21caf'][i % 3], forma: 'chispa' }); }
           if (e.humo) this.humo(e.x, e.y, 6, 'rgba(230,230,240,0.55)', 10); else this.humo(e.x, e.y, 3, 'rgba(120,110,110,0.4)', 12);
           break;
         case 'area': this.anillo(e.x, e.y, 2, e.radio, colorTipo(e.tipo), 0.22, 2); break;
@@ -90,7 +91,8 @@ export class Efectos {
           this.anillo(e.x, e.y, 2, e.radio * 0.7, '#ffffff', 0.3, 1);
           this.rafaga(e.x, e.y, e.tipo, 14, 160);
           if (e.estilo === 'electrico') { this.flash = Math.max(this.flash, 0.2); this.flashColor = '#fff6a8'; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + ale() * 0.3, r = e.radio * (0.5 + ale() * 0.45); this.add({ x: e.x + Math.cos(a) * r, y: e.y - 6 + Math.sin(a) * r * 0.6, vx: Math.cos(a) * 60, vy: Math.sin(a) * 40, size: 3, life: 0.3, color: '#ffe066', forma: 'chispa' }); } this.rayos.push({ x: e.x, y: e.y - 6, radio: e.radio, t: 0, life: 0.35, semilla: Math.floor(ale() * 999) }); }
-          if (e.estilo === 'fuego') for (let i = 0; i < 30; i++) { const a = (i / 30) * Math.PI * 2, r = e.radio * (0.75 + 0.15 * ale()); this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 110, vy: Math.cos(a) * 60 - 20, drag: 3, size: 2.2 + ale() * 1.4, life: 0.32 + ale() * 0.15, color: '#ff8a2a', forma: 'llama' }); }
+          // Fire Spin como no site: um anel de chamas em volta, que sobe e gira devagar
+          if (e.estilo === 'fuego') for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 + ale() * 0.1, r = e.radio * 0.85; this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 40, vy: Math.cos(a) * 24 - 20, g: -30, size: 3.2 + ale() * 1.2, grow: 0.8, life: 0.36 + ale() * 0.12, forma: 'llama', rampa: ['#e0400a', '#ff9a1a', '#ffe066', '#ffffff'] }); }
           if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
@@ -274,9 +276,8 @@ export class Efectos {
       const a = Math.min(1, z.t / 0.12) * Math.min(1, (z.life - z.t) / 0.3), pul = 0.5 + 0.5 * Math.sin(z.t * 18);
       g.globalAlpha = a * 0.22; g.fillStyle = '#3f8f2a';
       g.beginPath(); g.ellipse(R(z.x), R(z.y), z.radio, z.radio * 0.62, 0, 0, 7); g.fill();
-      g.globalAlpha = a * (0.6 + 0.3 * pul);
-      PX.anilloPix(g, z.x, z.y, z.radio, z.radio * 0.62, '#04102c', 3, 0);
-      PX.anilloPix(g, z.x, z.y, z.radio, z.radio * 0.62, '#84cc16', 2, 9, Math.floor(z.t * 20));
+      g.globalAlpha = a * (0.25 + 0.15 * pul);
+      PX.anilloPix(g, z.x, z.y, z.radio, z.radio * 0.62, '#84cc16', 1, 9, Math.floor(z.t * 20));
     }
     g.globalAlpha = 1;
   }
@@ -376,6 +377,8 @@ export class Efectos {
       const s = Math.max(0.6, p.size);
       const al = Math.max(0, a);
       switch (p.forma) {
+        // chama deitada no sentido do voo, com a ponta para trás (jato do Flamethrower)
+        case 'llamaDir': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, Math.atan2(p.vy, p.vx) - Math.PI / 2, 1, Math.min(1, (1 - p.t / p.life) * 2.5)); break;
         case 'llama': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, 0, 1, 1); break;
         case 'gota': PX.carimbar(g, PX.gota(Math.max(5, Math.round(s * 3.2)), p.rampa), p.x, p.y, Math.atan2(p.vy, p.vx), 1, al); break;
         case 'hoja': PX.carimbar(g, PX.hoja(Math.max(6, Math.round(s * 3.4))), p.x, p.y, p.rot, 1, al); break;
@@ -636,7 +639,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
     switch (e.tipo) {
       case 'charco': {
         const k = Math.min(1, (e.dur - e.t) / 0.6);
-        g.globalAlpha = 0.85 * k;
+        g.globalAlpha = 0.5 * k;
         PX.elipsePix(g, px(e.x), px(e.y), e.radio + 1, e.radio * 0.6 + 1, '#2a0f3a');
         PX.elipsePix(g, px(e.x), px(e.y), e.radio, e.radio * 0.6, '#7a2c92');
         PX.elipsePix(g, px(e.x - e.radio * 0.1), px(e.y - 1), e.radio * 0.7, e.radio * 0.38, '#9b46bd');
@@ -935,6 +938,18 @@ function dibujarCono(g, e, t, fx) {
     g.globalAlpha = 1;
   }
   const fuego = tipo === 'FIRE' || tipo === 'DRAGON';
+  if (fuego) {
+    // como no site: chamas pequenas que voam em linha (abertura de 30% do leque) até o fim do alcance, com miolo claro
+    const vida = h.alcance / 190;
+    for (let i = 0; i < 3; i++) {
+      const a = e.ang + (ale() - 0.5) * 2 * semi * 0.6, s = entre(150, 220), r0 = entre(2, 8);
+      fx.add({ x: ox + Math.cos(a) * r0, y: oy + Math.sin(a) * r0, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: vida * entre(0.85, 1.05), size: entre(1.8, 2.6), grow: 1, forma: 'llamaDir', rampa: rampaFuego(tipo) });
+    }
+    const a = e.ang + (ale() - 0.5) * semi * 0.4, s = entre(170, 230);
+    fx.add({ x: ox, y: oy, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: vida * 0.7, size: 1.5, grow: 0.6, forma: 'llamaDir', rampa: ['#ffb52e', '#fff3b0', '#ffffff', '#ffffff'] });
+    if (ale() < 0.3) fx.add({ x: ox + Math.cos(e.ang) * h.alcance * 0.5, y: oy + Math.sin(e.ang) * h.alcance * 0.5, vx: Math.cos(e.ang) * 90, vy: Math.sin(e.ang) * 60 - 20, life: vida * 1.1, size: 5, grow: 6, forma: 'circulo', color: 'rgba(80,72,70,0.25)' });
+    return;
+  }
   for (let i = 0; i < 4; i++) {
     const a = e.ang + (ale() - 0.5) * 2 * semi * 0.85, s = h.alcance * entre(2.2, 3.4), r0 = entre(4, 14);
     const base = { x: ox + Math.cos(a) * r0, y: oy + Math.sin(a) * r0, vx: Math.cos(a) * s, vy: Math.sin(a) * s, drag: 1.25, life: entre(0.4, 0.62) * (0.6 + 0.4 * k) };
