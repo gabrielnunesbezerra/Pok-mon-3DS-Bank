@@ -30,7 +30,7 @@ export class Habilidades {
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, descanso: this.descanso,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -66,7 +66,7 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
-    l.cd[slot] = h.cd;
+    if (h.forma !== 'puente') l.cd[slot] = h.cd;
     l.ultimoAtaque = t;
     l.stats.usos++;
     if (slot !== 'lmb') l.tejido = t;
@@ -148,6 +148,7 @@ export class Habilidades {
         if (l.ko || l.est.aturdido) return;
         // Tri Attack (Porygon): cada tiro troca de tipo — fogo queima, gelo deixa lento, elétrico atordoa um instante
         if (hBase.ciclo) h = triAtaque(l, hBase);
+        if (hBase.ultimoGrande && i === n - 1) h = { ...h, escala: (h.escala ?? 1) * 1.9, radio: (h.radio ?? 4) * 1.6, dano: h.dano * 1.6 };
         // leque fixo: o primeiro vai reto, os outros alternam para os lados
         const abre = h.abanicos ? h.abanicos[i % h.abanicos.length] : i ? (i % 2 ? 1 : -1) * (h.abanico ?? 0.06) * Math.ceil(i / 2) : 0;
         const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + abre;
@@ -276,14 +277,13 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- Pulse Turret (Veluza): torreta no chão que solta pulsos em volta
   torreta(l, h, extra) {
-    const luta = this.luta, a = angApunte(l), d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
-    const p = fijarCampo(l.x + Math.cos(a) * d, l.y + Math.sin(a) * d);
+    const luta = this.luta, p = fijarCampo(l.x, l.y + 4);
     const mias = luta.entidades.filter(e => e.tipo === 'torreta' && e.dueno === l && e.vivo);
     if (mias.length >= (h.max ?? 3)) mias[0].vivo = false;
     l.animar(h.anim ?? 'Charge', 0.3);
     l.accion = { hasta: luta.t + 0.2, lento: 0.3 };
     const tr = {
-      tipo: 'torreta', dueno: l, vivo: true, x: p.x, y: p.y, t: 0, acum: 0, aLaser: 0, radio: h.radio, dur: h.dur, cada: h.cada, tipoAtq: h.tipo, enlace: h.enlace ?? 170,
+      tipo: 'torreta', dueno: l, vivo: true, x: p.x, y: p.y, t: 0, acum: 0, aLaser: 0, radio: h.radio, dur: h.permanente ? Infinity : h.dur, cada: h.cada, tipoAtq: h.tipo, enlace: h.enlace ?? 170,
       update: dt => {
         tr.t += dt; tr.acum += dt; tr.aLaser += dt;
         if (!tr.vivo || l.ko || tr.t >= tr.dur) return false;
@@ -318,6 +318,27 @@ export class Habilidades {
     const luta = this.luta;
     luta.emit({ t: 'trazo', x0, y0: y0 - 14, x1, y1: y1 - 14, tipo: 'PSYCHIC' });
     for (const b of luta.blancos(l)) if (!b.oculto && distSegmento(b.x, b.y, x0, y0, x1, y1) < RADIO + 6) atingir(l, b, pacote(h, extra, 0, { dano: h.danoLaser ?? 5, empuje: 20 }));
+  }
+
+  // ---------------------------------------------------------------- Stellar Bridge (Archaludon): investida que empurra e vira ponte,
+  // presa no lugar e atirando laser no básico; apertar de novo sai com outra investida. Na ponte, a ult é uma descarga em volta
+  puente(l, h, extra) {
+    const luta = this.luta, saliendo = !!l.est.puente;
+    const ang = Math.atan2(l.ay - l.y, l.ax - l.x);
+    if (saliendo) { delete l.est.puente; l.kit = l.kitActual(); }
+    l.empezarDash({ dist: h.dist ?? 110, dur: 0.2, dano: h.dano, tipo: h.tipo, empuje: h.empuje ?? 150, estilo: 'acero', invul: true }, ang);
+    l.dash.slot = extra.slot;
+    l.animar('Walk', 0.3);
+    if (saliendo) { l.cd[extra.slot] = h.cd; return; }
+    l.dash.fin = () => {
+      if (l.ko) return;
+      l.ponerEstado('puente', h.dur ?? 10, {});
+      l.ponerEstado('blindaje', h.dur ?? 10, { reduce: h.reduce ?? 0.25 });
+      l.kit = { ...l.kit, lmb: { ...h.laser, forma: 'proyectil' }, e: { ...l.kit.e, ...h.descarga, forma: 'pulso' } };
+      l.texto('BRIDGE!', '#fde68a');
+      luta.emit({ t: 'endurecer', l, estilo: 'acero' });
+    };
+    l.cd[extra.slot] = 0.4;
   }
 
   // ---------------------------------------------------------------- Cyber Arrow (Porygon-Z): flecha grande que quica nas bordas;
@@ -572,6 +593,15 @@ export class Habilidades {
   // ---------------------------------------------------------------- golpe único com investida
   golpe(l, h, extra) {
     const luta = this.luta;
+    // Aqua Tail: enquanto segura o botão, mira (andando devagar); ao soltar, bate
+    if (h.segurar && !extra.solto) {
+      let t = 0;
+      l.animar(h.animCarga ?? 'Charge', h.segurar);
+      l.accion = { hasta: luta.t + h.segurar + 0.1, lento: 0.35, angulo: angApunte(l),
+        update: dt => { t += dt; l.accion.angulo = angApunte(l); if ((t > 0.08 && !l.intento?.[extra.slot]) || t >= h.segurar) { l.accion = null; this.golpe(l, h, { ...extra, solto: true }); } } };
+      luta.emit({ t: 'anillo', x: l.x, y: l.y - l.alto * 0.5, color: '#7ad8ff', r: 14 });
+      return;
+    }
     const lanzar = h.lanzar ?? 0.14, emb = h.embestida ?? 30, r0 = l.rival;
     const ang = asistir(l, angApunte(l), h.alcance + emb + 20, 1.2);
     // como no site: desliza até o alvo durante o lançamento (sem passar dele) e só então bate
@@ -588,6 +618,8 @@ export class Habilidades {
     luta.programar(lanzar, () => {
       if (l.ko || l.est.aturdido) return;
       luta.emit({ t: 'tajo', l, ang, alcance: h.alcance, final: true, estilo: h.estilo ?? 'golpe', tipo: h.tipo, anguloArco: h.angulo ?? 120 });
+      // cauda grande que dá uma volta inteira
+      if (h.giraCola) for (let k = 1; k <= 5; k++) luta.programar(k * 0.05, () => { if (!l.ko) luta.emit({ t: 'tajo', l, ang: ang + k * 1.25, alcance: h.alcance + 14, final: true, estilo: 'agua', tipo: h.tipo, anguloArco: 150 }); });
       this.cortarProyectiles(l, ang, h.alcance, rad(h.angulo ?? 120) / 2);
       const k = h.desesperado ? 1 + h.desesperado * (1 - l.hp / l.hpMax) : 1;
       const ox = l.x + Math.cos(ang) * 20, oy = l.y + Math.sin(ang) * 14;
@@ -599,7 +631,7 @@ export class Habilidades {
         if (enOnda || (d < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo ?? 120) / 2)) {
           const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k, empuje: h.empuje ?? 50, castiga: h.castiga, disipa: h.disipa, dirX: dx / d, dirY: dy / d, pesado: true }));
           // Whirlpool Tail (Milotic): quem leva a rabada fica preso num redemoinho
-          if (h.remolino && res === 'golpe' && !b.esClon) { this.torbellino(l, { ...h.remolino, curaPropia: 0 }, extra); const tb = luta.entidades.at(-1); tb.x = b.x; tb.y = b.y; }
+          if (h.remolino && res === 'golpe' && !b.esClon) luta.programar(0.4, () => { if (l.ko || b.ko) return; this.torbellino(l, { ...h.remolino, curaPropia: 0 }, extra); const tb = luta.entidades.at(-1); tb.x = b.x; tb.y = b.y; l.accion = null; });
         }
       }
       // Aqua Tail (Veluza): a rabada joga as próprias torretas para outro lugar, riscando um laser no caminho

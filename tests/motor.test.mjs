@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente'];
 
 test('o roster tem os 20 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo']);
@@ -388,10 +388,10 @@ test('Snorlax dormindo devolve os golpes; Matcha Geyser puxa o alvo; jato do Bla
   assert.ok(atordoou, 'jato do Hydro Typhoon atordoa');
 });
 
-test('Veluza: torreta pulsa e dá dano; ultimate puxa as torretas e atira no inimigo', () => {
+test('Veluza: torreta nasce onde ela está, pulsa e dá dano; ultimate puxa as torretas e atira no inimigo', () => {
   const l = nuevaLuta('veluza', 'munchlax');
   const [a, b] = l.luchadores;
-  a.energia = 100; b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  a.energia = 100; b.x = a.x + 30; b.y = a.y; a.ax = b.x; a.ay = b.y;
   assert.equal(l.habilidades.usar(a, 'q'), true);
   const hp0 = b.hp;
   correr(l, 2.5, [null, null]);

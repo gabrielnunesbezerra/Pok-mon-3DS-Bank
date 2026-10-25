@@ -402,6 +402,7 @@ export class Lutador {
     // calor do ataque básico
     if (t < this.sobrecargaHasta) this.calor = REGLAS.calorMax * (this.sobrecargaHasta - t) / REGLAS.sobrecargaDur;
     else if (t - this.ultimoBasico > REGLAS.calorEnfriaRetraso) this.calor = Math.max(0, this.calor - REGLAS.calorEnfria * dt);
+    if (this.est.puente && this.est.puente.hasta <= t) { delete this.est.puente; this.kit = this.kitActual(); }
     for (const k of Object.keys(this.est)) if (this.est[k].hasta <= t) delete this.est[k];
     if (this.est.escudo === undefined) this.escudo = 0;
     if (this.cargaTipo && t - this.cargaTipo.desde > REGLAS.estadoVentana) this.cargaTipo = null;
@@ -453,7 +454,7 @@ export class Lutador {
       let vel = this.velBase;
       if (this.est.lento) vel *= 1 - this.est.lento.f;
       if (this.est.enredado) vel *= ESTADOS_TIPO.GRASS.vel;
-      if (this.est.arraigo || this.est.dormido) { vel = 0; this.empX = 0; this.empY = 0; }
+      if (this.est.arraigo || this.est.dormido || this.est.puente) { vel = 0; this.empX = 0; this.empY = 0; }
       if (this.accion?.lento != null) vel *= this.accion.lento;
       if (t < this.sobrecargaHasta) vel *= 0.75;
       if (this.est.rapido) vel *= this.est.rapido.vel;

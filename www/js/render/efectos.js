@@ -86,6 +86,7 @@ export class Efectos {
           break;
         case 'area': this.anillo(e.x, e.y, 2, e.radio, colorTipo(e.tipo), 0.22, 2); break;
         case 'pulso':
+          if (e.estilo === 'hielo') { for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, s = entre(80, 170); this.add({ x: e.x, y: e.y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 60, g: 260, size: entre(2, 3.4), life: entre(0.4, 0.7), color: ['#ffffff', '#bfe9ff', '#7ad8ff'][i % 3], forma: 'chispa' }); } this.anillo(e.x, e.y, 6, e.radio, '#bfe9ff', 0.45, 3); this.humo(e.x, e.y, 5, 'rgba(220,244,255,0.7)', 9); }
           if (e.estilo === 'tierra') this.anillo(e.x, e.y, 6, e.radio * 0.8, '#b08a50', 0.3, 1); else
           this.anillo(e.x, e.y, 6, e.radio, colorTipo(e.tipo), 0.4, 3);
           this.anillo(e.x, e.y, 2, e.radio * 0.7, '#ffffff', 0.3, 1);

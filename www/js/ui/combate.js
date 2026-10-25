@@ -385,6 +385,10 @@ export class Combate {
         PX.arcoPix(g, cx, cy, rx - i, giro, giro + 1.4, '#ffffff', 1, 3);
       }
     }
+    // congelado: bloco de gelo em volta
+    if (l.est.congelado) { const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, w = l.alto * 0.5 + 4, hh = l.alto * 0.6 + 3; g.globalAlpha = 0.35; rect(g, Math.round(cx - w), Math.round(cy - hh), Math.round(w * 2), Math.round(hh * 2), '#bfe9ff'); g.globalAlpha = 0.9; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.strokeRect(Math.round(cx - w) + 0.5, Math.round(cy - hh) + 0.5, Math.round(w * 2), Math.round(hh * 2)); PX.lineaPix(g, cx - w + 3, cy - hh + 3, cx - w + 8, cy - hh + 8, '#ffffff', 1); g.globalAlpha = 1; }
+    // Stellar Bridge: arco dourado de ponte sobre o Archaludon
+    if (l.est.puente) { const cx = l.x, cy = l.y - l.alto * 0.4; PX.arcoPix(g, cx, cy, l.alto * 0.7, Math.PI, Math.PI * 2, '#fde68a', 2, l.alto * 0.5); if (Math.floor(t * 8) % 2) PX.carimbar(g, PX.chispa(3, '#fff6a8'), cx + Math.cos(t * 5) * l.alto * 0.6, cy - Math.abs(Math.sin(t * 5)) * l.alto * 0.4, 0, 1, 1); }
     // Lock-On: mira vermelha em cima de quem está marcado
     if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }
