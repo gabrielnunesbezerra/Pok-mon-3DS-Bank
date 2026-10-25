@@ -154,7 +154,7 @@ export class Habilidades {
         const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + abre;
         const lanzarUno = (desde, mult = 1, esClon = false) => {
           // Razor Leaf: duas folhas em zigue-zague espelhado (fases opostas), que se cruzam na linha da mira
-          const lados = h.doble ? [-1, 1] : h.zigzag && !esClon ? [0, Math.PI] : [0];
+          const lados = h.doble ? [-1, 1] : h.zigzag && !h.zigzag.unico && !esClon ? [0, Math.PI] : [0];
           for (const lado of lados) {
             const off = h.doble ? lado * h.doble * 0.5 : 0;
             const pos = desde ?? { x: l.x, y: l.y, alt: l.alto * 0.55 };
@@ -504,7 +504,7 @@ export class Habilidades {
         if (l.ko || r.ko) return;
         const ultimo = i === n - 1;
         atingir(l, r, pacote(h, extra, 0, { dano: h.dano / n * (ultimo ? 2 : 0.8), tick: i > 0 && !ultimo, empuje: ultimo ? 160 : 0, aturde: ultimo ? h.aturde : undefined, pesado: ultimo }));
-        luta.emit({ t: 'tormentaImpacto', x: r.x, y: r.y, radio: ultimo ? 70 : 30 });
+        if (ultimo) luta.emit({ t: 'tormentaImpacto', x: r.x, y: r.y, radio: 70 }); else luta.emit({ t: 'impacto', x: r.x, y: r.y - r.alto * 0.5, tipo: 'ELECTRIC' });
         if (ultimo) { luta.emit({ t: 'explosion', x: r.x, y: r.y - 8, radio: 60, tipo: 'ELECTRIC' }); luta.emit({ t: 'temblor', f: 0.02 }); }
       });
       return false;
