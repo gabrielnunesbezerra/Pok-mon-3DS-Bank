@@ -8,8 +8,8 @@ import { aleatorio, entre, difAng } from './util.js';
 import { limitarCampo } from './fisica.js';
 
 const NIVELES = {
-  facil: { reaccion: 0.22, error: 22, esquiva: 0.25, basicos: 0.15, reflejo: 0.4, agresividad: 0.4, juicio: 0.45, umbralUlti: 0.45 },
-  normal: { reaccion: 0.13, error: 12, esquiva: 0.5, basicos: 0.3, reflejo: 0.28, agresividad: 0.65, juicio: 0.75, umbralUlti: 0.6 },
+  facil: { reaccion: 0.34, error: 34, esquiva: 0.1, basicos: 0.05, reflejo: 0.55, agresividad: 0.25, juicio: 0.3, umbralUlti: 0.4, ventaja: 0.75 },
+  normal: { reaccion: 0.18, error: 18, esquiva: 0.35, basicos: 0.18, reflejo: 0.34, agresividad: 0.5, juicio: 0.6, umbralUlti: 0.55, ventaja: 0.9 },
   dificil: { reaccion: 0.08, error: 5, esquiva: 0.75, basicos: 0.45, reflejo: 0.2, agresividad: 0.9, juicio: 1, umbralUlti: 0.7 },
 };
 
@@ -38,6 +38,9 @@ const DEFESAS = new Set(['escudo', 'humo', 'clones', 'espejo', 'caparazon', 'bur
 const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil']);
 
 // alcance da skill para quem só quer saber "dá para usar daqui?"
+// nos níveis fáceis a CPU bate mais fraco e aguenta menos (como o "ventaja" do site); só contra a CPU, nunca online
+export const ventajaDe = nivel => NIVELES[nivel]?.ventaja ?? 1;
+
 export function rangoDe(h) {
   switch (h.forma) {
     case 'proyectil': case 'cono': case 'viento': case 'bombaLodo': case 'burbujas': case 'lluvia': return h.alcance;

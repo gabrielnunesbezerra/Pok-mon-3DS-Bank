@@ -757,12 +757,32 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
   }
   // raios e cones por cima do chão
   for (const e of luta.entidades) {
-    if (e.tipo === 'chorro') dibujarChorro(g, e, t, fx);
+    if (e.tipo === 'chorro') { dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
     else if (e.tipo === 'cono') dibujarCono(g, e, t, fx);
   }
 }
 
 const clampK = k => Math.max(0, Math.min(1, k));
+
+// ponta do raio: em vez de terminar reto, fecha num estouro redondo que pulsa, com raios curtos girando
+const RAMPAS_PUNTA = { psiquico: ['#5a1f8a', '#b05ae8', '#f0d0ff', '#ffffff'], acero: ['#4a5a6a', '#a8b8c8', '#e6eef6', '#ffffff'], glitch: ['#c81e5a', '#ff4a8a', '#7df9ff', '#ffffff'], solar: ['#c88a10', '#ffd23c', '#fff6b0', '#ffffff'] };
+function dibujarPunta(g, e, t) {
+  if (!e.activo || e.largoVis < 6 || e.h.paleta === 'aura') return;
+  const b = e.origenVis(), alt = e.dueno.alto * 0.55;
+  const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
+  const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
+  const x2 = px(b.x + Math.cos(e.ang) * e.largoVis), y2 = px(b.y + Math.sin(e.ang) * e.largoVis - alt);
+  const rampa = RAMPAS_PUNTA[e.h.paleta] ?? (e.tipoAtq === 'FIRE' ? PX.RAMPA_FOGO : e.tipoAtq === 'WATER' ? PX.RAMPA_AGUA : rampaTipo(e.tipoAtq));
+  const R = Math.max(3, w * 0.55 * (1 + 0.15 * Math.sin(t * 40)));
+  g.globalAlpha = 0.3; PX.disco(g, x2, y2, R * 1.5, rampa[1]); g.globalAlpha = 1;
+  PX.esfera(g, x2, y2, R, rampa);
+  for (let i = 0; i < 6; i++) {
+    const a = t * 6 + i * 1.047, L = R * (1.5 + 0.5 * Math.sin(t * 30 + i));
+    PX.lineaPix(g, x2 + Math.cos(a) * R * 0.9, y2 + Math.sin(a) * R * 0.9, x2 + Math.cos(a) * L, y2 + Math.sin(a) * L, rampa[2], 1);
+  }
+  // cauda indo embora: também arredondada
+  if (e.cola > 0) PX.esfera(g, px(b.x), px(b.y - alt), Math.max(2, R * 0.6), rampa);
+}
 
 function dibujarChorro(g, e, t, fx) {
   const d = e.dueno, b = e.activo ? e.origenVis() : e.boca(), alt = d.alto * 0.55;

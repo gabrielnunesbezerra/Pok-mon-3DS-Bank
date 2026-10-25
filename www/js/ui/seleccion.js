@@ -43,12 +43,14 @@ export class Seleccion {
       this.arena = Math.max(0, ARENAS.findIndex(a => a.id === c?.arena));
     }
     // o seu Pokémon tem que estar desbloqueado na Liga
-    if (!desbloqueado(ROSTER[this.elegido[this.mi]]?.id)) this.elegido[this.mi] = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
-    if (this.modo === 'versus' && !desbloqueado(ROSTER[this.elegido[1]]?.id)) this.elegido[1] = this.elegido[0];
+    if (!this.liberado(ROSTER[this.elegido[this.mi]]?.id)) this.elegido[this.mi] = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
+    if (this.modo === 'versus' && !this.liberado(ROSTER[this.elegido[1]]?.id)) this.elegido[1] = this.elegido[0];
     this.cursor = this.elegido[this.mi];
     if (this.online) this.preparar();
   }
   // lados controlados por gente só podem usar Pokémon desbloqueados
+  // no treino dá para testar qualquer Pokémon, mesmo os ainda trancados na Liga
+  liberado(id) { return this.modo === 'entreno' || desbloqueado(id); }
   ladoHumano(lado) { return this.online ? lado === this.mi : lado === 0 || (this.modo === 'versus' && lado === 1); }
 
   entrar() { for (const p of ROSTER) { const f = [p, ...(p.evoluciones ?? [])]; for (const x of f) { this.app.bank.hoja(x.dex, 'Idle'); this.app.bank.retrato(x.dex); } } }
@@ -120,7 +122,7 @@ export class Seleccion {
       if (this.online) this.online.enviar({ t: 'shiny', lado: yo, on: this.shiny[yo] });
       return;
     }
-    if (this.ladoHumano(this.lado) && !desbloqueado(ROSTER[i].id)) { sfx('atras'); this.avisoShiny = { t0: this.t, on: false, txt: 'LOCKED: BEAT IT IN THE POKÉMON LEAGUE' }; return; }
+    if (this.ladoHumano(this.lado) && !this.liberado(ROSTER[i].id)) { sfx('atras'); this.avisoShiny = { t0: this.t, on: false, txt: 'LOCKED: BEAT IT IN THE POKÉMON LEAGUE' }; return; }
     if (this.shiny?.[this.lado] && this.elegido[this.lado] !== i && !shinyLiberado(ROSTER[i].id)) this.shiny[this.lado] = false;
     this.elegido[this.lado] = i;
     this.aleatorio[this.lado] = false;
@@ -189,7 +191,7 @@ export class Seleccion {
     ROSTER.forEach((p, i) => {
       const c = this.cajaCarta(i), sel0 = this.elegido[0] === i, sel1 = this.elegido[1] === i && this.modo !== 'entreno', sel2 = this.n >= 3 && this.elegido[2] === i, sel3 = this.n === 4 && this.elegido[3] === i;
       const foco = this.cursor === i && this.foco === 'grade';
-      const trancado = !desbloqueado(p.id);
+      const trancado = !this.liberado(p.id);
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : trancado ? 'apagado' : 'azul');
       const img = bank.retrato(p.dex);
       if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 2, c.y + 3, 24, 24);

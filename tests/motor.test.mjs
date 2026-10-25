@@ -70,8 +70,17 @@ test('golpe sem energia não sai e gasta energia quando sai', () => {
   assert.equal(l.habilidades.usar(a, 'rmb'), false, 'em recarga');
 });
 
+test('Charmander e Bulbasaur não têm ultimate na primeira fase', () => {
+  for (const id of ['charmander', 'bulbasaur']) {
+    const l = nuevaLuta(id, 'munchlax');
+    const a = l.luchadores[0];
+    a.ulti = 100;
+    assert.equal(l.habilidades.usar(a, 'e'), false, id);
+  }
+});
+
 test('ultimate só sai com a barra cheia e zera a barra', () => {
-  const l = nuevaLuta('charmander', 'munchlax');
+  const l = nuevaLuta('squirtle', 'munchlax');
   const [a, b] = l.luchadores;
   a.ax = b.x; a.ay = b.y;
   assert.equal(l.habilidades.usar(a, 'e'), false);

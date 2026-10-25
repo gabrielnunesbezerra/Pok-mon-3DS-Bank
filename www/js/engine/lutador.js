@@ -241,6 +241,7 @@ export class Lutador {
     let d = g.dano * mult * (g.puro ? 1 : REGLAS.danoGlobal);
     if (!g.puro) {
       d *= (fuente?.atk ?? 1) / this.defensa;
+      d *= (fuente?.ventaja ?? 1) / (this.ventaja ?? 1);
       if (g.surge) d *= REGLAS.surgeMult;
       if (this.est.marca) d *= this.est.marca.f ?? REGLAS.marcaMult;
       if (fuente?.est.furia) d *= fuente.est.furia.mult;

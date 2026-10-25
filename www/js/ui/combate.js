@@ -6,7 +6,7 @@ const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80', '#fbbf24'];
 import { ROSTER } from '../data/pokemon.js';
 import { ARENAS } from '../data/arenas.js';
 import { Luta } from '../engine/luta.js';
-import { IA, Muneco } from '../engine/ia.js';
+import { IA, Muneco, ventajaDe } from '../engine/ia.js';
 import { Camara } from '../render/camara.js';
 import { crearArena } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
@@ -90,8 +90,8 @@ export class Combate {
       this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
       if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
       else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
-      else this.ctrls.push(new IA(luta, b, d.nivel));
-      if (luta.luchadores[2]) this.ctrls.push(new IA(luta, luta.luchadores[2], d.nivel));
+      else { this.ctrls.push(new IA(luta, b, d.nivel)); b.ventaja = ventajaDe(d.nivel); }
+      if (luta.luchadores[2]) { this.ctrls.push(new IA(luta, luta.luchadores[2], d.nivel)); luta.luchadores[2].ventaja = ventajaDe(d.nivel); }
       this.humanos = d.modo === 'versus' ? [0, 1] : [0];
     }
     if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
