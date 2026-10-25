@@ -3,7 +3,7 @@
 import { RADIO } from '../config.js';
 import { REGLAS } from '../data/regras.js';
 import { aleatorio, entre, difAng, clamp, dist } from './util.js';
-import { fijarCampo, fueraCampo } from './fisica.js';
+import { fijarCampo, fueraCampo, limitarCampo } from './fisica.js';
 import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir } from './entidades.js';
 import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
 
@@ -29,8 +29,8 @@ export class Habilidades {
     this.luta = luta;
     this.formas = {
       proyectil: this.proyectil, crecimiento: this.crecimiento, dash: this.dash, chorro: this.chorro, helice: this.chorro,
-      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
-      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, descanso: this.descanso,
+      tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
+      viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo,
     };
@@ -63,7 +63,7 @@ export class Habilidades {
     if (!forma) return false;
     const accionAntes = l.accion;
     if (forma.call(this, l, h, { slot, surge }) === false) return false;
-    if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; }
+    if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
     l.cd[slot] = h.cd;
@@ -149,15 +149,16 @@ export class Habilidades {
         // Tri Attack (Porygon): cada tiro troca de tipo — fogo queima, gelo deixa lento, elétrico atordoa um instante
         if (hBase.ciclo) h = triAtaque(l, hBase);
         // leque fixo: o primeiro vai reto, os outros alternam para os lados
-        const abre = i ? (i % 2 ? 1 : -1) * (h.abanico ?? 0.06) * Math.ceil(i / 2) : 0;
+        const abre = h.abanicos ? h.abanicos[i % h.abanicos.length] : i ? (i % 2 ? 1 : -1) * (h.abanico ?? 0.06) * Math.ceil(i / 2) : 0;
         const a2 = asistir(l, angApunte(l), h.alcance + 40, 0.7) + abre;
         const lanzarUno = (desde, mult = 1, esClon = false) => {
-          const lados = h.doble ? [-1, 1] : [0];
+          // Razor Leaf: duas folhas em zigue-zague espelhado (fases opostas), que se cruzam na linha da mira
+          const lados = h.doble ? [-1, 1] : h.zigzag && !esClon ? [0, Math.PI] : [0];
           for (const lado of lados) {
-            const off = lado * (h.doble ?? 0) * 0.5;
+            const off = h.doble ? lado * h.doble * 0.5 : 0;
             const pos = desde ?? { x: l.x, y: l.y, alt: l.alto * 0.55 };
             const origen = { x: pos.x + Math.cos(a2) * 10 - Math.sin(a2) * off, y: pos.y + Math.sin(a2) * 6 + Math.cos(a2) * off, alt: l.alto * 0.55 };
-            luta.add(new Proyectil(luta, l, h, a2, { ...extra, mult: (extra.mult ?? 1) * mult, desde: origen, zig: h.zigzag ? aleatorio() * 6 : undefined, clon: esClon, volea: esClon ? null : volea }));
+            luta.add(new Proyectil(luta, l, h, a2, { ...extra, mult: (extra.mult ?? 1) * mult, desde: origen, zig: h.zigzag && !esClon ? lado : undefined, clon: esClon, volea: esClon ? null : volea }));
           }
         };
         lanzarUno();
@@ -253,17 +254,20 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- Psystrike (Mega Mewtwo Y): rajada de esferas em todas as direções
   estallido(l, h, extra) {
-    const luta = this.luta, lanzar = h.lanzar ?? 0.18;
+    const luta = this.luta, lanzar = h.lanzar ?? 0.2, ang = angApunte(l);
     l.animar(h.anim ?? 'Charge', lanzar + 0.3);
-    l.accion = { hasta: luta.t + lanzar + 0.1, bloquea: true, lento: 0 };
+    l.accion = { hasta: luta.t + lanzar + 0.1, bloquea: true, lento: 0.3, angulo: ang };
+    // Psystrike: protegido enquanto concentra
+    if (h.bloqueo) l.ponerEstado('bloqueo', h.bloqueo);
     luta.programar(lanzar, () => {
-      if (l.ko) return;
+      if (l.ko || l.est.aturdido) return;
+      const cx = l.x, cy = l.y, volea = { golpe: false };
       // apaga projéteis inimigos por perto
-      if (h.anula) for (const e of luta.entidades) if (e.tipo === 'proj' && e.dueno !== l && e.vivo !== false && Math.hypot(e.x - l.x, e.y - l.y) < h.anula + 30) { e.vivo = false; luta.emit({ t: 'finProyectil', x: e.x, y: e.y, tipo: h.tipo }); }
+      if (h.anula) for (const e of luta.entidades) if (e.tipo === 'proj' && e.dueno !== l && e.vivo !== false && Math.hypot(e.x - cx, (e.y - cy) / 0.65) < h.anula) { e.vivo = false; luta.emit({ t: 'finProyectil', x: e.x, y: e.y, tipo: h.tipo }); }
       const n = h.n ?? 12;
       for (let i = 0; i < n; i++) {
-        const a = (i / n) * Math.PI * 2;
-        luta.add(new Proyectil(luta, l, { ...h, forma: 'proyectil' }, a, { ...extra, desde: { x: l.x + Math.cos(a) * 8, y: l.y + Math.sin(a) * 5, alt: l.alto * 0.5 }, mult: 1 }));
+        const a = ang + (i / n) * Math.PI * 2;
+        luta.add(new Proyectil(luta, l, { ...h, forma: 'proyectil' }, a, { ...extra, desde: { x: cx + Math.cos(a) * (RADIO + 2), y: cy + Math.sin(a) * (RADIO + 2) * 0.6, alt: l.alto * 0.5 }, mult: 1, volea }));
       }
       luta.emit({ t: 'estallido', l, n });
       luta.emit({ t: 'temblor', f: 0.008 });
@@ -432,16 +436,28 @@ export class Habilidades {
 
   // Supersonic: sopro instantâneo em cone
   viento(l, h, extra) {
-    const luta = this.luta;
-    const ang = asistir(l, angApunte(l), h.alcance + 30, 1);
-    l.animar(h.anim ?? 'Charge', (h.carga ?? 0.15) + 0.3);
-    l.accion = { hasta: luta.t + (h.carga ?? 0.15) + 0.1, angulo: ang, lento: 0.3 };
-    luta.programar(h.carga ?? 0.15, () => {
+    const luta = this.luta, ang = angApunte(l), mitad = rad(h.angulo) / 2, carga = h.carga ?? 0.15;
+    l.animar(h.anim ?? 'Charge', carga + 0.3);
+    l.accion = { hasta: luta.t + carga + 0.15, bloquea: true, lento: 0.2, angulo: ang };
+    luta.programar(carga, () => {
       if (l.ko) return;
       luta.emit({ t: 'viento', x: l.x, y: l.y - l.alto * 0.4, ang, alcance: h.alcance, angulo: h.angulo, estilo: h.estilo, tipo: h.tipo });
+      // como no site: a rajada desfaz os tiros inimigos dentro do cone
+      for (const e of luta.entidades) {
+        if (e.tipo !== 'proj' || e.dueno === l || e.vivo === false) continue;
+        const dx = e.x - l.x, dy = e.y - l.y;
+        if (Math.hypot(dx, dy) < h.alcance && Math.abs(difAng(Math.atan2(dy, dx), ang)) < mitad + 0.15) {
+          e.vivo = false;
+          luta.emit({ t: 'finProyectil', x: e.x, y: e.y, estilo: e.estilo, tipo: e.tipoAtq });
+        }
+      }
       for (const b of luta.blancos(l)) {
-        const dx = b.x - l.x, dy = b.y - l.y;
-        if (Math.hypot(dx, dy) < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2) atingir(l, b, pacote(h, extra, ang, { pesado: true }));
+        if (b.oculto || b.est?.vuelo) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+        if (d < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < mitad + 0.15) {
+          const pegar = () => { if (!b.ko) atingir(l, b, pacote(h, extra, ang, { dirX: dx / d, dirY: dy / d, pesado: true })); };
+          if (h.viaja) luta.programar(h.viaja * Math.min(1, d / h.alcance), pegar); else pegar();
+        }
       }
     });
   }
@@ -490,7 +506,7 @@ export class Habilidades {
     for (const e of this.luta.entidades) {
       if (e.tipo !== 'proj' || e.dueno === l) continue;
       const dx = e.x - l.x, dy = e.y - l.y;
-      if (Math.hypot(dx, dy) < alcance && Math.abs(difAng(Math.atan2(dy, dx), ang)) < mitad) {
+      if (Math.hypot(dx, dy) < alcance + 10 && Math.abs(difAng(Math.atan2(dy, dx), ang)) < mitad + 0.25) {
         e.vivo = false;
         this.luta.emit({ t: 'finProyectil', x: e.x, y: e.y, estilo: e.estilo, tipo: e.tipoAtq });
         this.luta.emit({ t: 'texto', x: e.x, y: e.y - 14, txt: 'CUT', color: '#e5e7eb' });
@@ -501,22 +517,32 @@ export class Habilidades {
   // ---------------------------------------------------------------- golpe único com investida
   golpe(l, h, extra) {
     const luta = this.luta;
-    const lanzar = h.lanzar ?? 0.12;
-    const ang = asistir(l, angApunte(l), h.alcance + (h.embestida ?? 0) + 40, 1.1);
+    const lanzar = h.lanzar ?? 0.14, emb = h.embestida ?? 30, r0 = l.rival;
+    const ang = asistir(l, angApunte(l), h.alcance + emb + 20, 1.2);
+    // como no site: desliza até o alvo durante o lançamento (sem passar dele) e só então bate
+    const d0 = r0 && !r0.ko ? Math.hypot(r0.x - l.x, r0.y - l.y) : 999;
+    const avance = d0 < h.alcance + emb + 20 ? Math.max(0, Math.min(emb, d0 - 18)) : Math.min(emb, h.lanza ? Math.hypot(l.ax - l.x, l.ay - l.y) : 12);
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance);
+    if (h.lanza || h.blindaje) l.ponerEstado('blindaje', lanzar + 0.15, { reduce: h.blindaje ?? 0.5 });
     l.animar(h.anim ?? 'Attack', lanzar + 0.3);
-    l.accion = { hasta: luta.t + lanzar + 0.2, angulo: ang, lento: 0.35 };
-    if (h.blindaje) l.ponerEstado('blindaje', lanzar + 0.3, { reduce: h.blindaje });
+    let t = 0;
+    l.accion = {
+      hasta: luta.t + lanzar + 0.12, bloquea: true, lento: 0, angulo: ang,
+      update: dt => { t += dt; if (t > lanzar) return; const k = t / lanzar; l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; },
+    };
     luta.programar(lanzar, () => {
       if (l.ko || l.est.aturdido) return;
-      l.empX += Math.cos(ang) * (h.embestida ?? 0) * 6; l.empY += Math.sin(ang) * (h.embestida ?? 0) * 6;
-      luta.emit({ t: 'tajo', l, ang, alcance: h.alcance, final: true, estilo: h.estilo ?? 'golpe', tipo: h.tipo, anguloArco: h.angulo });
+      luta.emit({ t: 'tajo', l, ang, alcance: h.alcance, final: true, estilo: h.estilo ?? 'golpe', tipo: h.tipo, anguloArco: h.angulo ?? 120 });
+      this.cortarProyectiles(l, ang, h.alcance, rad(h.angulo ?? 120) / 2);
       const k = h.desesperado ? 1 + h.desesperado * (1 - l.hp / l.hpMax) : 1;
+      const ox = l.x + Math.cos(ang) * 20, oy = l.y + Math.sin(ang) * 14;
+      if (h.onda) luta.emit({ t: 'anillo', x: ox, y: oy, color: '#ffffff', r: h.onda + 6 });
       for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo) continue;
         const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
-        const cerca = d < h.alcance + (h.embestida ?? 0) * 0.5 + RADIO + 6 && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2 + 0.2;
-        const onda = h.onda && d < h.onda + RADIO;
-        if (cerca || onda) {
-          atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k, empuje: h.empuje ?? (h.lanza ? 90 : 40), dirX: dx / d, dirY: dy / d, pesado: true }));
+        const enOnda = h.onda && Math.hypot(b.x - ox, (b.y - oy) / 0.65) < h.onda + RADIO;
+        if (enOnda || (d < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo ?? 120) / 2)) {
+          atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k, empuje: h.empuje ?? 50, castiga: h.castiga, disipa: h.disipa, dirX: dx / d, dirY: dy / d, pesado: true }));
         }
       }
     });
@@ -704,7 +730,8 @@ export class Habilidades {
   // ---------------------------------------------------------------- Dragon Dance: acumula força, velocidade e cadência
   potenciar(l, h) {
     const luta = this.luta, max = h.acumula ?? 1, n = Math.min(max, (l.est.potencia?.n ?? 0) + 1), pn = h.porNivel ?? {};
-    l.ponerEstado('potencia', h.dur ?? 6, { n, mult: (pn.mult ?? 0) * n, cadencia: 1 + (pn.cadencia ?? 0) * n, vel: (pn.vel ?? 0) * n, reduce: 0, color: '#a78bfa' });
+    // como no site: força e cadência sobem por nível, velocidade é fixa, e no nível máximo o básico não esquenta
+    l.ponerEstado('potencia', h.dur ?? 6, { n, mult: (pn.mult ?? 0) * n, cadencia: 1 + (pn.cadencia ?? 0) * n, vel: pn.vel ?? 0, calor: n >= max ? 0 : 1, reduce: 0, color: '#a78bfa' });
     l.animar(h.anim ?? 'Charge', 0.6);
     l.accion = { hasta: luta.t + (h.quieto ?? 0.4), bloquea: true, lento: 0.3 };
     l.texto(`${h.texto ?? 'POWER UP'} x${n}${n >= max ? '!' : ''}`, '#c4b5fd');
@@ -723,6 +750,41 @@ export class Habilidades {
     // Barrier (Mewtwo): além do escudo, fica mais rápido
     if (h.acelera) l.ponerEstado('rapido', h.acelera.dur, { vel: h.acelera.vel });
     luta.emit({ t: 'endurecer', l, estilo: h.estilo });
+  }
+
+  // ---------------------------------------------------------------- Barrier (Mewtwo): bolha que bloqueia tudo e desfaz os tiros que encostam
+  // Dura h.dur; atacar estoura a bolha na hora. Também deixa mais rápido.
+  burbuja(l, h) {
+    const luta = this.luta, desde = luta.t, dur = h.dur ?? 1.8;
+    l.burbuja?.romper(false);
+    l.ponerEstado('bloqueo', dur, { burbuja: true });
+    if (h.acelera) l.ponerEstado('rapido', h.acelera.dur, { vel: h.acelera.vel });
+    l.animar(h.anim ?? 'Charge', 0.3);
+    const b = {
+      tipo: 'burbuja', dueno: l, h, vivo: true, t: 0, x: l.x, y: l.y, radio: h.radio ?? 22,
+      romper: ruido => {
+        if (!b.vivo) return false;
+        b.vivo = false;
+        if (l.est.bloqueo?.burbuja) delete l.est.bloqueo;
+        if (l.burbuja === b) l.burbuja = null;
+        if (ruido) luta.emit({ t: 'burbujaRompe', l });
+        return false;
+      },
+      update: dt => {
+        b.t += dt; b.x = l.x; b.y = l.y;
+        if (l.ko) return b.romper(false);
+        if (l.ultimoAtaque > desde + 1e-6 || b.t >= dur) return b.romper(true);
+        for (const e of luta.entidades) {
+          if (e.tipo !== 'proj' || e.dueno === l || e.vivo === false || Math.hypot(e.x - l.x, e.y - l.y) >= b.radio + 4) continue;
+          e.vivo = false;
+          luta.emit({ t: 'finProyectil', x: e.x, y: e.y, estilo: e.estilo, tipo: e.tipoAtq });
+        }
+        return true;
+      },
+    };
+    l.burbuja = b;
+    luta.add(b);
+    luta.emit({ t: 'endurecer', l, estilo: 'barrera' });
   }
 
   // ---------------------------------------------------------------- Explosion: carrega, explode em volta e tira um pouco da própria vida
@@ -844,45 +906,67 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- salto alto e queda (Bounce, Heavy Slam, Pancake)
   meteoro(l, h, extra) {
-    const luta = this.luta;
-    const subida = 0.3, bajada = 0.14;
-    l.animar(h.anim ?? 'Hop', subida + h.aviso + bajada);
-    l.ponerEstado('vuelo', subida + h.aviso + bajada + 0.05, { oculto: false, rapidez: 0 });
-    l.accion = { hasta: luta.t + subida + h.aviso + bajada, bloquea: true, lento: 0, angulo: l.angulo };
-    let t = 0;
+    // como no site: sobe e some, a mira sai do cursor e o segue a h.sigue px/s durante o aviso,
+    // trava vermelha por um instante e o lutador cai ali. Com h.choque, errar machuca quem caiu.
+    const luta = this.luta, subida = 0.3, fijar = 0.15, bajada = 0.14, total = subida + h.aviso + fijar + bajada;
+    const marca = fijarCampo(l.ax, l.ay);
+    l.animar(h.anim ?? 'Hop', subida);
+    l.ponerEstado('vuelo', total + 0.05, { oculto: false, rapidez: 0 });
+    l.ponerEstado('invul', total);
+    l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: l.angulo };
+    let t = 0, bajaDesde = 0;
     const ent = {
-      tipo: 'meteoro', dueno: l, h, tipoAtq: h.tipo, vivo: true, x: l.x, y: l.y, radio: h.radio, fase: 'sube', k: 0,
+      tipo: 'meteoro', dueno: l, h, tipoAtq: h.tipo, vivo: true, x: marca.x, y: marca.y, radio: h.radio, fase: 'sube', k: 0,
       update: dt => {
-        if (l.ko) { l.salto = 0; return false; }
+        if (l.ko) { l.salto = 0; if (l.est.vuelo) l.est.vuelo.oculto = false; return false; }
         t += dt;
-        const r = l.rival;
-        if (t < subida) { l.salto = Math.round(h.alto * Math.sin((t / subida) * Math.PI / 2)); ent.fase = 'sube'; ent.k = t / subida; }
-        else if (t < subida + h.aviso) {
-          ent.fase = 'apunta'; ent.k = (t - subida) / h.aviso; l.salto = h.alto;
-          if (r && !r.ko) {
-            const dx = r.x - l.x, dy = r.y - l.y, d = Math.hypot(dx, dy);
-            if (d > 1) { const paso = Math.min(d, h.sigue * dt); l.x += (dx / d) * paso; l.y += (dy / d) * paso; }
-          }
-        } else if (t < subida + h.aviso + bajada) { ent.fase = 'baja'; l.salto = Math.round(h.alto * (1 - (t - subida - h.aviso) / bajada)); ent.k = 1; }
-        else {
-          l.salto = 0; delete l.est.vuelo;
-          areaCirculo(luta, l, l.x, l.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, empuje: 80, alcanzaVuelo: false }));
-          luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: h.estilo === 'rayo' ? 'electrico' : 'aterrizaje' });
-          luta.emit({ t: 'temblor', f: 0.012 });
-          // Thunder Crash: raios caem em volta do impacto
-          if (h.estilo === 'rayo') luta.emit({ t: 'tormentaImpacto', x: l.x, y: l.y, radio: h.radio });
-          // Pancake: quem está perto é puxado para o lugar do impacto
-          if (h.atrae) for (const b of luta.blancos(l)) {
-            if (b.esClon || b.oculto || b.est?.vuelo) continue;
-            const dx = l.x - b.x, dy = l.y - b.y, d = Math.hypot(dx, dy) || 1;
-            if (d < h.atrae && d > 8) { b.empX += (dx / d) * (h.tiron ?? 60) * 5; b.empY += (dy / d) * (h.tiron ?? 60) * 5; }
-          }
-          if (h.atrae) luta.emit({ t: 'succion', x: l.x, y: l.y, radio: h.atrae });
-          return false;
+        if (ent.fase === 'sube') {
+          const k = Math.min(1, t / subida);
+          l.salto = Math.round(h.alto * k * k); ent.k = k;
+          if (k >= 1) { ent.fase = 'apunta'; if (l.est.vuelo) l.est.vuelo.oculto = true; }
+        } else if (ent.fase === 'apunta') {
+          const c = fijarCampo(l.ax, l.ay), dx = c.x - marca.x, dy = c.y - marca.y, dd = Math.hypot(dx, dy), paso = (h.sigue ?? 150) * dt;
+          if (dd > paso) { marca.x += (dx / dd) * paso; marca.y += (dy / dd) * paso; } else { marca.x = c.x; marca.y = c.y; }
+          ent.k = Math.min(1, (t - subida) / h.aviso);
+          if (t >= subida + h.aviso) ent.fase = 'fija';
+        } else if (ent.fase === 'fija') {
+          ent.k = 1;
+          if (t >= subida + h.aviso + fijar) { ent.fase = 'baja'; bajaDesde = t; l.x = marca.x; l.y = marca.y; if (l.est.vuelo) l.est.vuelo.oculto = false; }
+        } else {
+          const k = Math.min(1, (t - bajaDesde) / bajada);
+          l.salto = Math.round(h.alto * (1 - k));
+          if (k >= 1) { aterrizar(); return false; }
         }
-        ent.x = l.x; ent.y = l.y;
+        ent.x = marca.x; ent.y = marca.y;
         return true;
       },
+    };
+    const aterrizar = () => {
+      l.salto = 0; delete l.est.vuelo; delete l.est.invul;
+      const x = l.x, y = l.y, r = l.rival;
+      luta.emit({ t: 'pulso', x, y, radio: h.radio, tipo: h.tipo, estilo: h.estilo === 'rayo' ? 'electrico' : 'aterrizaje' });
+      luta.emit({ t: 'temblor', f: h.radio >= 44 ? 0.02 : 0.013 });
+      // Thunder Crash: raios caem em volta do impacto
+      if (h.estilo === 'rayo') luta.emit({ t: 'tormentaImpacto', x, y, radio: h.radio });
+      if (r && !r.ko && !r.est.vuelo && Math.hypot(r.x - x, (r.y - y) / 0.65) < h.radio + RADIO) {
+        const dx = r.x - x, dy = r.y - y, d = Math.hypot(dx, dy) || 1;
+        atingir(l, r, pacote(h, extra, 0, { empuje: 70, aturde: h.aturde, dirX: dx / d, dirY: dy / d, pesado: true }));
+      } else if (h.choque) {
+        l.texto('CRASH!', '#fca5a5');
+        l.recibir(l, { dano: h.choque, tipo: 'NORMAL', puro: true });
+        l.ponerEstado('aturdido', 0.4);
+      }
+      // clones também caem com o impacto
+      for (const b of luta.blancos(l)) if (b.esClon && Math.hypot(b.x - x, (b.y - y) / 0.65) < h.radio + RADIO) atingir(l, b, pacote(h, extra, 0, {}));
+      // Pancake: quem está perto é puxado para o lugar do impacto
+      if (h.atrae) {
+        for (const b of luta.blancos(l)) {
+          if (b.esClon || b.oculto || b.est?.vuelo) continue;
+          const dx = x - b.x, dy = y - b.y, d = Math.hypot(dx, dy) || 1;
+          if (d < h.atrae && d > 8) { b.empX += (dx / d) * (h.tiron ?? 60) * 5; b.empY += (dy / d) * (h.tiron ?? 60) * 5; }
+        }
+        luta.emit({ t: 'succion', x, y, radio: h.atrae });
+      }
     };
     luta.add(ent);
   }
@@ -920,26 +1004,75 @@ export class Habilidades {
     });
   }
 
-  // ---------------------------------------------------------------- patada saltada (Jump Kick, Body Slam)
+  // ---------------------------------------------------------------- patada saltada (Jump Kick, Body Slam), como no site
+  // Pula no rival se ele está perto e na frente da mira (senão, até a mira) e só acerta se cair em cima dele.
+  // Com h.choque (High Jump Kick), errar machuca e atordoa quem pulou.
   patada(l, h, extra) {
-    const luta = this.luta;
-    let ang = asistir(l, angApunte(l), h.alcance + 40, 1);
-    const dur = 0.32;
-    l.animar(h.anim ?? 'Hop', dur + 0.2);
-    if (h.blindaje) l.ponerEstado('blindaje', dur + 0.2, { reduce: h.blindaje });
-    l.accion = { hasta: luta.t + dur + 0.05, bloquea: false, lento: 0, angulo: ang };
-    l.ponerEstado('invul', 0.1);
-    const r = l.rival;
-    const alc = r && !r.ko ? clamp(Math.hypot(r.x - l.x, r.y - l.y) - 10, 30, h.alcance) : h.alcance;
-    l.dash = { def: { ...h, dist: alc, dur, arco: 22, invul: false, dano: 0 }, ang, dur, t: 0, vel: alc / dur, golpeado: true, fin: () => {
-      if (l.ko) return;
-      const g = pacote(h, extra, ang, { pesado: true, empuje: 70, aturde: h.aturde });
-      const ok = areaCirculo(luta, l, l.x + Math.cos(ang) * 14, l.y + Math.sin(ang) * 14, h.radio, g);
-      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: 'patada' });
-      if (ok && h.choque) l.hp = Math.max(1, l.hp - 0); // sem recuo no PK confront
-      luta.emit({ t: 'temblor', f: 0.006 });
-    } };
+    const luta = this.luta, r0 = l.rival, apunte = angApunte(l);
+    const sobre = r0 && !r0.ko && !r0.oculto && Math.hypot(r0.x - l.x, r0.y - l.y) < h.alcance + 30 && Math.abs(difAng(Math.atan2(r0.y - l.y, r0.x - l.x), apunte)) < 1;
+    const ang = sobre ? Math.atan2(r0.y - l.y, r0.x - l.x) : apunte;
+    const d = sobre ? Math.max(0, Math.min(h.alcance, Math.hypot(r0.x - l.x, r0.y - l.y) - 6)) : Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d);
+    const vuelo = 0.26 + d / 700, arco = 16 + d * 0.1;
+    if (h.blindaje) l.ponerEstado('blindaje', vuelo + 0.2, { reduce: h.blindaje });
+    l.animar(h.anim ?? 'Hop', vuelo);
     l.angulo = ang;
+    let t = 0;
+    l.accion = {
+      hasta: luta.t + vuelo, bloquea: true, lento: 0, angulo: ang,
+      update: dt => { t += dt; const k = Math.min(1, t / vuelo); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * arco); },
+      fin: () => {
+        l.salto = 0;
+        if (l.ko) return;
+        l.animar(h.animGolpe ?? 'Attack', 0.25);
+        luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: 'patada' });
+        const r = l.rival;
+        if (r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO) {
+          atingir(l, r, pacote(h, extra, ang, { empuje: 80, aturde: h.aturde, dirX: Math.cos(ang), dirY: Math.sin(ang), pesado: true }));
+          luta.emit({ t: 'temblor', f: 0.008 });
+        } else if (h.choque) {
+          l.texto('CRASH!', '#fca5a5');
+          l.recibir(l, { dano: h.choque, tipo: 'NORMAL', puro: true });
+          l.ponerEstado('aturdido', 0.35);
+          luta.emit({ t: 'temblor', f: 0.006 });
+        }
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------- Bounce (Gyarados): pula, cai e bate em volta do ponto de queda
+  salto(l, h, extra) {
+    const luta = this.luta, r0 = l.rival, apunte = angApunte(l);
+    const sobre = r0 && !r0.ko && !r0.oculto && Math.hypot(r0.x - l.x, r0.y - l.y) < h.alcance + 25 && Math.abs(difAng(Math.atan2(r0.y - l.y, r0.x - l.x), apunte)) < 1.2;
+    const ang = sobre ? Math.atan2(r0.y - l.y, r0.x - l.x) : apunte;
+    const d = sobre ? Math.min(h.alcance + 10, Math.hypot(r0.x - l.x, r0.y - l.y)) : Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, { x: x1, y: y1 } = limitarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d);
+    const vuelo = 0.32, nube = 0.45, golpes = h.golpes ?? 1;
+    let t = 0;
+    l.animar(h.anim ?? 'Hop', vuelo);
+    l.angulo = ang;
+    l.accion = {
+      hasta: luta.t + vuelo + nube, bloquea: true, lento: 0, angulo: ang,
+      update: dt => { t += dt; if (t <= vuelo) { const k = t / vuelo; l.x = x0 + (x1 - x0) * k; l.y = y0 + (y1 - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 20); } else l.salto = 0; },
+      fin: () => { l.salto = 0; },
+    };
+    luta.programar(vuelo, () => {
+      if (l.ko) return;
+      l.salto = 0;
+      l.animar('Attack', nube);
+      luta.emit({ t: 'pulso', x: x1, y: y1, radio: h.radio, tipo: h.tipo, estilo: h.estilo === 'agua' ? 'agua' : 'patada' });
+      if (h.estilo === 'agua') luta.emit({ t: 'chapoteo', x: x1, y: y1 });
+      luta.emit({ t: 'temblor', f: 0.004 });
+      for (let i = 0; i < golpes; i++) luta.programar(i * 0.15, () => {
+        const r = l.rival;
+        if (l.ko || !r || r.ko || r.est.vuelo || Math.hypot(r.x - x1, r.y - y1) >= h.radio + RADIO) return;
+        const ultimo = i === golpes - 1, dx = r.x - x1, dy = r.y - y1, dd = Math.hypot(dx, dy) || 1;
+        atingir(l, r, pacote(h, extra, ang, {
+          dano: h.dano / golpes, empuje: ultimo ? 50 : 10, dirX: dx / dd, dirY: dy / dd, tick: i > 0 && !ultimo, pesado: ultimo && !!h.aturde,
+          ralentiza: ultimo && h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 1.5 } : undefined, aturde: ultimo ? h.aturde : undefined,
+        }));
+      });
+    });
   }
 
   // ---------------------------------------------------------------- Rest
@@ -980,23 +1113,52 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- investidas cruzadas (Cross Poison)
   embestidas(l, h, extra) {
-    const luta = this.luta;
-    l.animar(h.anim ?? 'Attack', h.golpes * (h.dur + h.pausa));
-    const base = asistir(l, angApunte(l), 260, 1.4);
-    l.accion = { hasta: luta.t + h.golpes * (h.dur + h.pausa) + 0.1, lento: 0, bloquea: true };
-    for (let i = 0; i < h.golpes; i++) {
-      luta.programar(i * (h.dur + h.pausa), () => {
-        if (l.ko || l.est.aturdido) return;
+    // como no site: um centro fixo onde a mira aponta (que segue um pouco o rival a cada passada);
+    // cada passada nasce a ~70 px em diagonal, cruza o centro e passa dele. Invulnerável o tempo todo.
+    const luta = this.luta, dur = h.dur ?? 0.16, pausa = Math.max(0.12, h.pausa ?? 0.08), total = h.golpes * (dur + pausa) + 0.05;
+    l.ponerEstado('invul', total + 0.1);
+    const a0 = angApunte(l), d0 = Math.max(40, Math.min(h.alcance ?? 160, Math.hypot(l.ax - l.x, l.ay - l.y)));
+    const centro = fijarCampo(l.x + Math.cos(a0) * d0, l.y + Math.sin(a0) * d0);
+    let t = 0, i = -1, t0 = 0, x0 = l.x, y0 = l.y, x1 = l.x, y1 = l.y, golpeado = false;
+    const nueva = () => {
+      i++; golpeado = false; t0 = t;
+      const r = l.rival, sigue = h.sigue ?? 30;
+      if (i > 0 && r && !r.ko && sigue > 0) {
+        const dx = r.x - centro.x, dy = r.y - centro.y, d = Math.hypot(dx, dy);
+        if (d > 1) { const k = Math.min(1, sigue / d); centro.x += dx * k; centro.y += dy * k; }
+      }
+      let a = Math.atan2(centro.y - l.y, centro.x - l.x);
+      if (h.cruz) a += ((i % 2 ? 1 : -1) * Math.PI) / 4;
+      else if (i > 0) a += (i % 2 ? 1 : -1) * 0.6;
+      if (h.cruz || i > 0) { const p = fijarCampo(centro.x - Math.cos(a) * (h.cruz ? 70 : 80), centro.y - Math.sin(a) * (h.cruz ? 70 : 80)); l.x = p.x; l.y = p.y; }
+      x0 = l.x; y0 = l.y;
+      const fin = fijarCampo(centro.x + Math.cos(a) * (h.pasa ?? 50), centro.y + Math.sin(a) * (h.pasa ?? 50));
+      x1 = fin.x; y1 = fin.y;
+      if (l.accion) l.accion.angulo = Math.atan2(y1 - y0, x1 - x0);
+      luta.emit({ t: 'cruz', x: centro.x, y: centro.y - 10, ang: Math.atan2(y1 - y0, x1 - x0), tipo: h.tipo, largo: 20 });
+      luta.emit({ t: 'trazo', x0, y0: y0 - l.alto * 0.5, x1, y1: y1 - l.alto * 0.5, tipo: h.tipo, estilo: h.estilo });
+      luta.emit({ t: 'dash', l, def: { estilo: h.estilo, tipo: h.tipo } });
+    };
+    l.animar(h.anim ?? 'Attack', total);
+    l.accion = {
+      hasta: luta.t + total, bloquea: true, lento: 0,
+      update: dt => {
+        t += dt;
+        if (i < 0 || (t - t0 >= dur + pausa && i + 1 < h.golpes)) nueva();
+        const k = Math.min(1, (t - t0) / dur);
+        l.x = x0 + (x1 - x0) * k; l.y = y0 + (y1 - y0) * k;
+        if (k < 1) l.angulo = Math.atan2(y1 - y0, x1 - x0);
         const r = l.rival;
-        if (!r || r.ko) return;
-        const dx = r.x - l.x, dy = r.y - l.y, d = Math.hypot(dx, dy) || 1;
-        const a = Math.atan2(dy, dx) + (h.cruz ? (i % 2 ? 0.7 : -0.7) : 0);
-        const dd = Math.max(40, Math.min(d + (h.pasa ?? 40), 200));
-        const ultimo = i === h.golpes - 1;
-        luta.emit({ t: 'cruz', x: r.x, y: r.y - r.alto * 0.45, ang: a + (h.cruz ? 0 : 0), tipo: h.tipo, largo: 20 });
-        l.empezarDash({ dist: dd, dur: h.dur, dano: h.dano, tipo: h.tipo, estilo: h.estilo, empuje: 30, aturde: ultimo ? h.aturdeFinal : undefined, invul: true, anim: 'Walk' }, a);
-        l.dash.slot = extra.slot;
-      });
-    }
+        if (!golpeado && k < 1 && r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < RADIO * 2 + 8) {
+          golpeado = true;
+          const ultimo = i === h.golpes - 1, dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 1;
+          atingir(l, r, pacote(h, extra, Math.atan2(dy, dx), { dano: h.dano * (ultimo ? 1.5 : 1), aturde: ultimo ? h.aturdeFinal : undefined, empuje: ultimo ? 70 : 30, dirX: dx / d, dirY: dy / d, pesado: ultimo, tick: i > 0 && !ultimo }));
+          luta.emit({ t: 'impacto', x: r.x, y: r.y - r.alto * 0.5, tipo: h.tipo, estilo: h.estilo });
+          if (ultimo) luta.emit({ t: 'temblor', f: 0.01 });
+        }
+      },
+      fin: () => { delete l.est.invul; },
+    };
   }
+
 }

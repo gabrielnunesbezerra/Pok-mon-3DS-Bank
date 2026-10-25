@@ -34,7 +34,7 @@ export class Efectos {
     this.parts = []; this.anillos = []; this.tajos = []; this.textos = []; this.nums = []; this.globos = []; this.cortes = [];
     this.temblor = 0; this.flash = 0; this.flashColor = '#fff';
     this.anuncios = [];
-    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = [];
+    this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = [];
   }
 
   add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
@@ -62,6 +62,8 @@ export class Efectos {
   numero(x, y, dano, mult) { this.nums.push({ x: x + (ale() - 0.5) * 10, y, dano, mult, t: 0, life: 0.8 }); }
   globo(l, txt, tipo = 'NORMAL') { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, tipo, t: 0, life: 1.1 }); }
   banner(txt, tipo) { this.banners.push({ txt, tipo, t: 0, life: 1.15 }); }
+  // rastro de uma passada (Cross Poison): faixa que some, escura por fora e clara no miolo
+  trazo(x0, y0, x1, y1, tipo, estilo) { this.trazos.push({ x0, y0, x1, y1, tipo, estilo, t: 0, life: 0.5 }); }
   cruz(x, y, ang, tipo, largo) { this.cruces.push({ x, y, ang, tipo, largo, t: 0, life: 0.45 }); }
   tajo(x, y, ang, r, color, final, estilo, tipo) { this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, t: 0, life: final ? 0.24 : 0.17 }); }
   onda(x, y, ang, alcance, anguloDeg, tipo, estilo) { this.ondas.push({ x, y, ang, alcance, ang2: (anguloDeg * Math.PI) / 360, tipo, estilo, t: 0, life: 0.45 }); }
@@ -94,6 +96,13 @@ export class Efectos {
           break;
         case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); break;
+        case 'burbujaRompe': {
+          // Barrier estourando: anel que abre e cacos de luz
+          const cy = e.l.y - e.l.alto * 0.5;
+          this.anillo(e.l.x, cy, e.l.alto * 0.5, e.l.alto * 0.9, '#e0b0ff', 0.25, 2);
+          this.chispas(e.l.x, cy, '#f5d0fe', 10, 170);
+          break;
+        }
         case 'endurecer':
           if (e.estilo === 'barrera') { for (let i = 0; i < 3; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 4 + i * 6, e.l.alto * 0.8 + i * 4, i % 2 ? '#ffffff' : '#c084fc', 0.3 + i * 0.06, 2); }
           else if (e.estilo === 'algodon') this.humo(e.l.x, e.l.y - e.l.alto * 0.5, 9, 'rgba(240,244,255,0.85)', 9);
@@ -181,6 +190,7 @@ export class Efectos {
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad': if (e.slot === 'e') this.banner(`${e.h.nombre}!`, e.h.tipo); else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
+        case 'trazo': this.trazo(e.x0, e.y0, e.x1, e.y1, e.tipo, e.estilo); break;
         case 'temblor': this.temblor = Math.max(this.temblor, e.f * 900); break;
         case 'sobrecarga': this.humo(e.l.x, e.l.y - e.l.alto, 6, 'rgba(120,110,110,0.6)', 8); break;
         case 'finProyectil': this.rafaga(e.x, e.y, e.tipo, 6, 100, { size: 2 }); break;
@@ -229,6 +239,7 @@ export class Efectos {
     for (const a of this.anuncios) a.t += dt; this.anuncios = this.anuncios.filter(a => a.t < a.dur);
     for (const b of this.banners) b.t += dt; this.banners = this.banners.filter(b => b.t < b.life);
     for (const c of this.cruces) c.t += dt; this.cruces = this.cruces.filter(c => c.t < c.life);
+    for (const c of this.trazos) c.t += dt; this.trazos = this.trazos.filter(c => c.t < c.life);
     for (const c of this.espinas) c.t += dt; this.espinas = this.espinas.filter(c => c.t < c.life);
     for (const z of this.zonas) z.t += dt; this.zonas = this.zonas.filter(z => z.t < z.life);
     for (const c of this.relampagos) c.t += dt; this.relampagos = this.relampagos.filter(c => c.t < c.life);
@@ -326,6 +337,12 @@ export class Efectos {
     }
     for (const a of this.tajos) this.dibujarTajo(g, a);
     g.globalAlpha = 1;
+    for (const c of this.trazos) {
+      const al = 1 - c.t / c.life, [, c2, c1] = rampaTipo(c.tipo), w = Math.max(1, Math.round(4 * al));
+      g.globalAlpha = al * 0.9;
+      PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, '#04102c', w + 3); PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, c2, w + 1); PX.lineaPix(g, c.x0, c.y0, c.x1, c.y1, c1, Math.max(1, w - 2));
+      g.globalAlpha = 1;
+    }
     for (const c of this.cruces) {
       const k = c.t / c.life, alfa = Math.min(1, (1 - k) * 1.8), cx = c.x, cy = c.y, L = c.largo * (0.55 + 0.45 * Math.min(1, k * 4));
       const ca = Math.cos(c.ang), sa = Math.sin(c.ang), [, c2, c1] = rampaTipo(c.tipo);
@@ -690,9 +707,9 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
         break;
       }
       case 'meteoro': {
-        if (e.fase === 'apunta' || e.fase === 'baja') {
+        if (e.fase === 'apunta' || e.fase === 'fija' || e.fase === 'baja') {
           // mira como no site: anel duplo com quatro setas para dentro; começa branca, vai para laranja e fica vermelha antes do impacto
-          const k = e.fase === 'baja' ? 1 : e.k, R_ = e.radio, cx = px(e.x), cy = px(e.y), gira = t * 1.6, pul = 0.5 + 0.5 * Math.sin(t * (10 + k * 20));
+          const k = e.fase === 'apunta' ? e.k : 1, R_ = e.radio, cx = px(e.x), cy = px(e.y), gira = t * 1.6, pul = 0.5 + 0.5 * Math.sin(t * (10 + k * 20));
           if (e.tipoAtq === 'FLYING') {
             // Bounce: só a sombra crescendo e um anel fino, como no site
             g.globalAlpha = 0.18 + 0.3 * k; PX.elipsePix(g, cx, cy, R_ * (0.5 + 0.5 * k), R_ * 0.6 * (0.5 + 0.5 * k), '#10301a');

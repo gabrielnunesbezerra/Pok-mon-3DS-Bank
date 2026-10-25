@@ -45,10 +45,10 @@ export const MEGA_KITS = {
   },
   mewtwo: {
     lmb: { nombre: 'Mega Confusion', dano: 5.6, alcance: 240, radio: 4.5 },
-    rmb: { nombre: 'Psystrike', forma: 'estallido', tipo: 'PSYCHIC', estilo: 'psico', n: 14, dano: 6, vel: 400, alcance: 170, radio: 5, escala: 1.4, empuje: 90, aturde: 0.15, anula: 40, coste: 30, cd: 7, anim: 'Charge', lanzar: 0.18 },
-    esp: { nombre: 'Mega Barrier', absorbe: 20, acelera: { vel: 1.6, dur: 3 } },
-    q: { nombre: 'Psywave Storm', rafaga: 7, dano: 3.4 },
-    e: { nombre: 'Psybeam Y', dano: 38.5, ancho: 48, largo: 460, anchoVisual: 60 },
+    rmb: { nombre: 'Psystrike', forma: 'estallido', tipo: 'PSYCHIC', estilo: 'psico', n: 14, dano: 6, vel: 400, alcance: 170, radio: 5, escala: 1.4, empuje: 90, aturde: 0.15, anula: 40, bloqueo: 0.35, coste: 30, cd: 7, anim: 'Charge', lanzar: 0.18 },
+    esp: { nombre: 'Mega Barrier', dur: 2.2, radio: 26, acelera: { vel: 1.6, dur: 3 } },
+    q: { nombre: 'Psywave Storm', rafaga: 7, abanicos: [0, 0.3, -0.26, 0.5, -0.46, 0.7, -0.66], anilla: { dur: 3.5, frena: [0.3, 0.6], aturde: 1.1 } },
+    e: { dano: 38.5, ancho: 48, largo: 460, anchoVisual: 60 },
   },
   buneary: {
     lmb: { nombre: 'Power-Up Punch', dano: 6.4, alcance: 62, combo: 4, remate: { dano: 5, empuje: 130, aturde: 0.2 } },

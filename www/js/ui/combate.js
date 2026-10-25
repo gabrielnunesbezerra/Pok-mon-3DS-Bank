@@ -351,7 +351,7 @@ export class Combate {
     if (l.dash) this.dibujarDash(g, l);
     // estados visíveis
     const esE = l.est.escudo?.estilo;
-    if (esE === 'barrera' && (l.est.escudo || l.escudo > 0)) {
+    if ((esE === 'barrera' && (l.est.escudo || l.escudo > 0)) || l.burbuja?.vivo) {
       // Barrier: bolha psíquica com arcos que giram
       const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, rx = l.alto * 0.5 + 6, ry = l.alto * 0.6 + 4;
       g.globalAlpha = 0.18; PX.elipsePix(g, cx, cy, rx, ry, '#c084fc'); g.globalAlpha = 0.9;
@@ -367,6 +367,15 @@ export class Combate {
     if (l.est.espejo) { const cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, rx = l.alto * 0.5 + 5, ry = l.alto * 0.6 + 3; const cs = ['#ff9ad8', '#ffd23c', '#7ad8ff', '#b6f07a']; for (let i = 0; i < 4; i++) PX.arcoPix(g, cx, cy, rx, t * 6 + i * 1.57, t * 6 + i * 1.57 + 0.9, cs[i], 2, ry); }
     // Aqua Ring: gotas girando no chão em volta dos pés
     if (l.est.aquaRing) { for (let i = 0; i < 8; i++) { const a = t * 3 + i * 0.785; PX.carimbar(g, PX.gota(5, PX.RAMPA_AGUA), l.x + Math.cos(a) * 16, l.y + Math.sin(a) * 6 - 3, a + Math.PI / 2, 1, 0.9); } if (Math.random() < 0.15) this.fx.add({ x: l.x + (Math.random() - 0.5) * 20, y: l.y - 2, vy: -30, size: 2, life: 0.6, color: '#bfe9ff', forma: 'burbuja' }); }
+    // Psywave: anéis psíquicos apertando o corpo (um por acerto, três prendem)
+    if (l.est.anillas) {
+      const n = l.est.anillas.n, cx = l.x, base = l.y - l.salto, rx = l.alto * 0.42 + 6;
+      for (let i = 0; i < n; i++) {
+        const cy = base - l.alto * (0.25 + i * 0.25), giro = t * (5 + i) * (i % 2 ? -1 : 1);
+        PX.anilloPix(g, cx, cy, rx - i, 3, n >= 3 ? '#f5d0fe' : '#c084fc', 1, 0);
+        PX.arcoPix(g, cx, cy, rx - i, giro, giro + 1.4, '#ffffff', 1, 3);
+      }
+    }
     // Lock-On: mira vermelha em cima de quem está marcado
     if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }

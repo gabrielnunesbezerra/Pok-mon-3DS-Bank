@@ -106,6 +106,7 @@ export class Lutador {
     this.anim = null; this.animHasta = 0; this.animEscala = 1;
     this.avisos = {};
     this.clones = null;
+    this.burbuja = null;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -301,8 +302,27 @@ export class Lutador {
       this.ponerEstado('quema', g.quema.dur, { dps: g.quema.dps, pilas, fuente });
     }
     if (g.sinDash) this.ponerEstado('sinDash', g.sinDash);
+    if (g.anilla) this.anillar(g.anilla, fuente);
     // Lock-On (Porygon): o alvo marcado leva mais dano por alguns segundos
     if (g.marca) { if (!this.est.marca) this.texto('LOCKED ON', '#7df9ff'); this.ponerEstado('marca', g.marca, { f: g.marcaF ?? REGLAS.marcaMult }); }
+  }
+
+  // Psywave (Mewtwo): cada anel freia mais; o terceiro prende o alvo por um instante
+  anillar(a, fuente) {
+    const previo = this.est.anillas?.n ?? 0;
+    if (previo >= 3) return;
+    const n = previo + 1;
+    this.anillasDe = fuente;
+    if (n >= 3) {
+      this.ponerEstado('aturdido', a.aturde);
+      this.est.anillas = { n: 3, hasta: this.luta.t + a.aturde };
+      this.texto('BOUND!', '#c084fc', { dy: 14 });
+      this.luta.emit({ t: 'anillo', x: this.x, y: this.y - this.alto * 0.5, color: '#c084fc', r: 22 });
+      return;
+    }
+    this.est.anillas = { n, hasta: this.luta.t + a.dur };
+    this.ponerEstado('lento', a.dur, { f: Math.max(a.frena[n - 1], this.est.lento?.f ?? 0) });
+    this.texto(n === 1 ? 'SLOWED' : 'SLOWED!!', '#f0abfc', { dy: 14 });
   }
 
   // dano que este lutador causou: carrega ultimate e experiência, ganha energia, combo e roubo de vida

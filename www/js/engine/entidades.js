@@ -12,7 +12,7 @@ export function pacote(h, extra, ang, mas = {}) {
   return {
     dano: h.dano, tipo: h.tipo, slot: extra?.slot, surge: extra?.surge, dirX: Math.cos(ang), dirY: Math.sin(ang),
     empuje: h.empuje, aturde: h.aturde, confunde: h.confunde || undefined, debilita: h.debilita, drenaje: h.drenaje, quema: h.quema,
-    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
+    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, estado: h.estado, anilla: h.anilla, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
   };
 }
 
@@ -186,7 +186,7 @@ export class Chorro {
     this.dur = h.dur ?? 1;
     this.ang = Math.atan2(dueno.ay - dueno.y, dueno.ax - dueno.x);
     this.largo = h.largo; this.ancho = h.ancho; this.frente = 0; this.cola = 0;
-    this.acum = 0; this.tickEn = 0.1;
+    this.proxPulso = 0; this.nPulsos = h.pulsos ?? 6; this.golpes = new Map();
     this.tipoAtq = h.tipo;
     this.vivo = true;
     dueno.accion = { hasta: luta.t + this.carga + this.dur + 0.05, bloquea: false, lento: 0.35, angulo: this.ang, update: () => { dueno.accion && (dueno.accion.angulo = this.ang); }, fin: () => { this.vivo = false; if (h.recarga && !dueno.ko) luta.programar(0, () => { dueno.accion = { hasta: luta.t + h.recarga, bloquea: true, lento: 0.7 }; dueno.texto('RECHARGE', '#ffd166'); }); } };
@@ -228,28 +228,24 @@ export class Chorro {
         if (distSegmento(e.x, e.y, q.x, q.y, qx, qy) < this.ancho / 2 + 3) { e.vivo = false; luta.emit({ t: 'texto', x: e.x, y: e.y - 12, txt: 'CLASH', color: '#ffffff', dur: 0.5 }); luta.emit({ t: 'finProyectil', x: e.x, y: e.y, tipo: e.tipoAtq }); }
       }
     }
-    // o raio empurra quem está dentro dele sem parar (a ultimate "arrasta" o alvo)
-    if (h.empuje) {
-      const q = this.origenVis(), qx = q.x + Math.cos(this.ang) * this.largoVis, qy = q.y + Math.sin(this.ang) * this.largoVis;
-      for (const b of luta.blancos(dueno)) {
-        if (b.esClon || b.oculto || b.est?.vuelo || b.est?.blindaje || b.dash) continue;
-        if (distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, q.x, q.y - 8, qx, qy - 8) < this.ancho / 2 + RADIO) { b.empX += Math.cos(this.ang) * h.empuje * dt * 14; b.empY += Math.sin(this.ang) * h.empuje * dt * 14; }
-      }
-    }
-    if (!dispara) return true;
     const back = h.retroceso ?? 0;
-    if (back) { dueno.empX -= Math.cos(this.ang) * back * dt * 3; dueno.empY -= Math.sin(this.ang) * back * dt * 3; }
-    this.acum += dt;
-    if (this.acum >= this.tickEn) {
-      this.acum -= this.tickEn;
-      const b0 = this.origenVis(), x2 = b0.x + Math.cos(this.ang) * this.largoVis, y2 = b0.y + Math.sin(this.ang) * this.largoVis;
-      const ticks = this.dur / this.tickEn;
+    if (back && dispara) { dueno.empX -= Math.cos(this.ang) * back * dt * 3; dueno.empY -= Math.sin(this.ang) * back * dt * 3; }
+    // como no site: o dano sai em pulsos (6 por padrão). Cada alvo leva no máximo n pulsos enquanto o raio passa
+    // por ele; os pulsos empurram um pouco e o último (ou o que vem antes da cauda passar) empurra com tudo
+    const n = this.nPulsos, paso = this.dur / n, cos = Math.cos(this.ang), sin = Math.sin(this.ang);
+    while (this.proxPulso <= tc) {
+      const tt = this.proxPulso;
+      this.proxPulso += paso;
+      const b0 = this.origenVis(), x2 = b0.x + cos * this.largoVis, y2 = b0.y + sin * this.largoVis, bc = this.boca();
       for (const b of luta.blancos(dueno)) {
         if (b.oculto || b.est?.vuelo) continue;
-        if (distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, b0.x, b0.y - 8, x2, y2 - 8) < this.ancho / 2 + RADIO) {
-          const g = pacote(h, this.extra, this.ang, { dano: h.dano / ticks, tick: true, empuje: (h.empuje ?? 0) / ticks, aturde: undefined, pesado: false });
-          atingir(dueno, b, g);
-        }
+        const k = this.golpes.get(b) ?? 0;
+        if (k >= n || distSegmento(b.x, b.y - (b.alto ?? 20) * 0.3, b0.x, b0.y - 8, x2, y2 - 8) >= this.ancho / 2 + RADIO) continue;
+        const d = (b.x - bc.x) * cos + (b.y - bc.y) * sin;
+        const ultimo = k === n - 1 || (tt + paso - this.dur) * V >= d;
+        const empuje = ultimo ? h.empuje ?? 0 : h.empujePulso ?? (h.empuje ?? 0) * 0.35;
+        atingir(dueno, b, pacote(h, this.extra, this.ang, { dano: h.dano / n, tick: k > 0 && !ultimo, empuje, aturde: undefined, pesado: ultimo }));
+        this.golpes.set(b, ultimo ? n : k + 1);
       }
     }
     return true;
