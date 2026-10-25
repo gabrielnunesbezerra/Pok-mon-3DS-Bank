@@ -41,7 +41,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Lullaby', confunde: 2.4, dano: 8, alcance: 170, angulo: 72 },
     esp: { nombre: 'Cloud Burst', dano: 7, dist: 160, empuje: 60 },
     q: { nombre: 'Cotton Fortress', absorbe: 30, dur: 4 },
-    e: { nombre: 'Moonblast Concert', tipo: 'FAIRY', dano: 30, ondas: [40, 80, 120, 160], aturde: 0.5 },
+    e: { nombre: 'Moonblast Concert', tipo: 'FAIRY', dano: 17, ondas: [40, 80, 120, 160], aturde: 0.4, repite: 1.1 },
   },
   mewtwo: {
     lmb: { nombre: 'Mega Confusion', dano: 5.6, alcance: 240, radio: 4.5 },

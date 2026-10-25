@@ -54,9 +54,11 @@ export class Proyectil {
       else if (this.soltada && this.recorrido > 10) return this.terminar(true);
     }
     const r = dueno.rival;
-    if (h.teledirigido && r && !r.ko) {
+    // Lock-On (Porygon-Z): com o alvo marcado, todos os tiros o seguem
+    const tele = h.teledirigido || (h.sigueMarca && r?.est.marca ? h.sigueMarca : 0);
+    if (tele && r && !r.ko) {
       const dist = Math.hypot(r.x - this.x, r.y - this.y);
-      const w = h.cerca ? Math.max(h.teledirigido, 1.5 * this.vel / Math.max(20, dist)) : h.teledirigido;
+      const w = h.cerca ? Math.max(tele, 1.5 * this.vel / Math.max(20, dist)) : tele;
       const objetivo = Math.atan2(r.y - this.y, r.x - this.x), giro = w * dt;
       this.ang += clamp(difAng(objetivo, this.ang), -giro, giro);
       this.vx = Math.cos(this.ang) * this.vel; this.vy = Math.sin(this.ang) * this.vel;

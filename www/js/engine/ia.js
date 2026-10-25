@@ -110,6 +110,7 @@ function perfil(h, slot, d) {
       P.tipo = h.dano ? 'embestida' : 'movil'; P.alcance = h.dist * 0.9; P.invul = h.invul !== false;
       P.ancho = RADIO + 4 + (h.latigo ? h.latigo.ancho / 2 : 0); P.retardo = d / (h.dist / h.dur);
       break;
+    case 'flecha': P.alcance = 300; P.ancho = 14; P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 300); break;
     case 'embestidas': P.alcance = 170; P.ancho = 30; P.retardo = 0.1; P.sigue = 0.6; P.invul = true; P.golpes = Math.max(1, (h.golpes ?? 1) * 0.7); break;
     default:
       if (DEFESAS.has(f)) P.tipo = 'defensa';
