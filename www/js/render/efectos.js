@@ -37,7 +37,7 @@ export class Efectos {
     this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = [];
   }
 
-  add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, ...p }); }
+  add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, hue: this.hue || 0, ...p }); }
 
   rafaga(x, y, tipo, n = 10, vel = 120, op = {}) {
     const pal = paleta(tipo);
@@ -65,13 +65,14 @@ export class Efectos {
   // rastro de uma passada (Cross Poison): faixa que some, escura por fora e clara no miolo
   trazo(x0, y0, x1, y1, tipo, estilo) { this.trazos.push({ x0, y0, x1, y1, tipo, estilo, t: 0, life: 0.5 }); }
   cruz(x, y, ang, tipo, largo) { this.cruces.push({ x, y, ang, tipo, largo, t: 0, life: 0.45 }); }
-  tajo(x, y, ang, r, color, final, estilo, tipo) { this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, t: 0, life: final ? 0.24 : 0.17 }); }
+  tajo(x, y, ang, r, color, final, estilo, tipo) { this.tajos.push({ x, y, ang, r, color, final, estilo, tipo, hue: this.hue || 0, t: 0, life: final ? 0.24 : 0.17 }); }
   onda(x, y, ang, alcance, anguloDeg, tipo, estilo) { this.ondas.push({ x, y, ang, alcance, ang2: (anguloDeg * Math.PI) / 360, tipo, estilo, t: 0, life: 0.45 }); }
   anuncio(txt, op = {}) { this.anuncios = this.anuncios.filter(a => a.quien !== op.quien || op.quien === undefined); this.anuncios.push({ txt, color: op.color ?? '#ffffff', tam: op.tam ?? 16, dur: op.dur ?? 0.8, t: 0, quien: op.quien }); }
 
   // ---------------------------------------------------------------- eventos do motor
   consumir(luta, evs, camara) {
     for (const e of evs) {
+      this.hue = hueShiny(e.l ?? e.dueno);
       switch (e.t) {
         case 'texto': this.texto(e.x, e.y, e.txt, e.color, { dur: 0.95 }); break;
         case 'numero': this.numero(e.x, e.y, e.dano, e.mult); break;
@@ -202,7 +203,7 @@ export class Efectos {
         case 'habilidad': if (e.slot === 'e') this.banner(`${e.h.nombre}!`, e.h.tipo); else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo); break;
         case 'cruz': this.cruz(e.x, e.y, e.ang, e.tipo, e.largo); break;
         case 'rastroLlama': for (let i = 0; i < 2; i++) this.add({ x: e.x + entre(-5, 5), y: e.y + entre(-4, 4), vx: entre(-30, 30), vy: entre(10, 40), size: entre(2.4, 3.6), grow: 2, life: 0.4, forma: 'llama', rampa: rampaFuego(e.tipo) }); break;
-        case 'corazones': for (let i = 0; i < 10; i++) { const a = ale() * Math.PI * 2, s = entre(60, 140); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 50, g: 120, size: entre(2.4, 3.4), life: entre(0.5, 0.8), color: ['#ff6fa8', '#ffc2d8', '#ffffff'][i % 3], forma: 'chispa' }); } this.anillo(e.x, e.y + 10, 6, 40, '#ff9ac8', 0.35, 2); break;
+        case 'corazones': for (let i = 0; i < 14; i++) { const a = ale() * Math.PI * 2, s = entre(50, 150); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 60, g: 90, drag: 1, size: entre(1.6, 2.6), life: entre(0.6, 1), forma: 'corazon' }); } for (let i = 0; i < 6; i++) this.add({ x: e.x + entre(-20, 20), y: e.y + entre(-6, 6), vy: -entre(30, 60), size: entre(2, 3), life: 1.1, forma: 'corazon' }); this.anillo(e.x, e.y + 10, 6, 44, '#ff9ac8', 0.4, 2); break;
         case 'colaGigante': this.colas.push({ l: e.l, ang: e.ang, r: e.r, t: 0, life: 0.45 }); break;
         case 'trazo': this.trazo(e.x0, e.y0, e.x1, e.y1, e.tipo, e.estilo); break;
         case 'temblor': this.temblor = Math.max(this.temblor, e.f * 900); break;
@@ -350,7 +351,7 @@ export class Efectos {
         PX.arcoPix(g, o.x, o.y, r, o.ang - a2 * 0.96, o.ang + a2 * 0.96, i === 1 ? '#ffffff' : c, 2);
       }
     }
-    for (const a of this.tajos) this.dibujarTajo(g, a);
+    for (const a of this.tajos) conHue(g, a.hue, () => this.dibujarTajo(g, a));
     g.globalAlpha = 1;
     // cauda gigante da Milotic: faixa azul curva com listras brancas e barbatana, dando uma volta
     for (const c of this.colas) {
@@ -400,7 +401,11 @@ export class Efectos {
       PX.carimbar(g, sp.vid ? PX.vid(h, sp.semilla) : PX.espina(h), sp.x, sp.y - h / 2 + 2, 0, 1, 1);
       void k;
     }
+    const matices = [0, ...new Set(this.parts.map(p => p.hue).filter(Boolean))];
+    for (const hu of matices) {
+    if (hu) { g.save(); g.filter = `hue-rotate(${hu}deg)`; }
     for (const p of this.parts) {
+      if ((p.hue || 0) !== hu) continue;
       const a = 1 - p.t / p.life;
       g.globalAlpha = Math.max(0, a);
       g.fillStyle = p.color;
@@ -409,6 +414,7 @@ export class Efectos {
       switch (p.forma) {
         // chama deitada no sentido do voo, com a ponta para trás (jato do Flamethrower)
         case 'llamaDir': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, Math.atan2(p.vy, p.vx) - Math.PI / 2, 1, Math.min(1, (1 - p.t / p.life) * 2.5)); break;
+        case 'corazon': PX.carimbar(g, PX.corazon(Math.max(1, Math.round(s * 0.7))), p.x, p.y, 0, 1, al); break;
         case 'llama': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, 0, 1, 1); break;
         case 'gota': PX.carimbar(g, PX.gota(Math.max(5, Math.round(s * 3.2)), p.rampa), p.x, p.y, Math.atan2(p.vy, p.vx), 1, al); break;
         case 'hoja': PX.carimbar(g, PX.hoja(Math.max(6, Math.round(s * 3.4))), p.x, p.y, p.rot, 1, al); break;
@@ -429,6 +435,8 @@ export class Efectos {
         case 'raya': g.strokeStyle = p.color; g.lineWidth = Math.max(1, Math.round(s)); PX.lineaPix(g, p.x, p.y, p.x - p.vx * 0.04, p.y - p.vy * 0.04, p.color, Math.max(1, Math.round(s))); break;
         default: g.save(); g.translate(R(p.x), R(p.y)); g.rotate(Math.round(p.rot / (Math.PI / 4)) * (Math.PI / 4)); g.fillRect(-Math.round(s / 2), -Math.round(s / 2), Math.max(1, Math.round(s)), Math.max(1, Math.round(s))); g.restore();
       }
+    }
+    if (hu) g.restore();
     }
     g.globalAlpha = 1;
   }
@@ -665,8 +673,16 @@ export function dibujarTorbellino(g, e, t, fx) {
   if (ale() < 0.3) fx.polvo(e.x + entre(-base, base) * 0.6, e.y, 1, 5);
 }
 
-export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
+export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null) {
+  // primeiro o que é normal, depois cada matiz de shiny com o filtro de cor ligado
+  if (hue === null) {
+    dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, 0);
+    for (const hu of new Set(luta.entidades.map(e => hueShiny(e.dueno)).filter(Boolean))) { fx.hue = hu; conHue(g, hu, () => dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hu)); }
+    fx.hue = 0;
+    return;
+  }
   for (const e of luta.entidades) {
+    if (hueShiny(e.dueno) !== hue) continue;
     switch (e.tipo) {
       case 'charco': {
         const k = Math.min(1, (e.dur - e.t) / 0.6);
@@ -836,12 +852,17 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon) {
   }
   // raios e cones por cima do chão
   for (const e of luta.entidades) {
+    if (hueShiny(e.dueno) !== hue) continue;
     if (e.tipo === 'chorro') { dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
     else if (e.tipo === 'cono') dibujarCono(g, e, t, fx);
   }
 }
 
 const clampK = k => Math.max(0, Math.min(1, k));
+// shiny: os ataques giram de matiz para a cor do shiny de cada linha (graus de hue-rotate)
+const SHINY_HUE = { bulbasaur: -50, charmander: 200, squirtle: 70, zubat: 110, abra: -40, onix: 45, magikarp: 170, munchlax: 30, seedot: 50, buneary: -45, riolu: 180, froakie: 110, poltchageist: 100, tynamo: -70, veluza: 70, duraludon: 130, feebas: 150, swablu: 140, porygon: 90, mewtwo: 200 };
+export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[l.def?.id] ?? 120 : 0);
+export function conHue(g, hu, f) { if (!hu) return f(); g.save(); g.filter = `hue-rotate(${hu}deg)`; f(); g.restore(); }
 // símbolo da Mega Evolução (só no navegador)
 const IMG_MEGA = typeof Image !== 'undefined' ? Object.assign(new Image(), { src: 'img/mega.png' }) : null;
 
