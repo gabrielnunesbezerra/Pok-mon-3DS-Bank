@@ -259,7 +259,7 @@ export class Lutador {
       d *= (fuente?.atk ?? 1) / this.defensa;
       d *= (fuente?.ventaja ?? 1) / (this.ventaja ?? 1);
       // Houndoom: quanto mais quente, mais dano (até +60%)
-      if (fuente?.def?.fervor) d *= 1 + (fuente.fervor / 100) * 0.6;
+      if (fuente?.def?.fervor) d *= 1 + (fuente.fervor / 100) * 0.8;
       if (g.surge) d *= REGLAS.surgeMult;
       if (this.est.marca) d *= this.est.marca.f ?? REGLAS.marcaMult;
       if (fuente?.est.furia) d *= fuente.est.furia.mult;
@@ -452,7 +452,7 @@ export class Lutador {
     // Houndoom: esfria quando para de usar fogo; acima de 75 o corpo queima
     if (this.def.fervor && this.fervor > 0) {
       if (t - this.ultimoFuego > 1.5) this.fervor = Math.max(0, this.fervor - 9 * dt);
-      if (this.fervor > 75) { this.dolorCalor = (this.dolorCalor ?? 0) + (this.fervor - 75) * 0.1 * dt; if (this.dolorCalor >= 1) { const n = Math.floor(this.dolorCalor); this.dolorCalor -= n; this.recibir(this, { dano: n, tipo: 'FIRE', puro: true, tick: true }); } }
+      if (this.fervor > 80) { this.dolorCalor = (this.dolorCalor ?? 0) + (this.fervor - 80) * 0.1 * dt; if (this.dolorCalor >= 1) { const n = Math.floor(this.dolorCalor); this.dolorCalor -= n; this.recibir(this, { dano: n, tipo: 'FIRE', puro: true, tick: true }); } }
     }
     for (const k of Object.keys(this.est)) if (this.est[k].hasta <= t) delete this.est[k];
     if (this.est.escudo === undefined) this.escudo = 0;
