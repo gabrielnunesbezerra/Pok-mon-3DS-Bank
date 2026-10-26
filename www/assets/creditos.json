@@ -26,7 +26,7 @@
   "retrato": [
    "CHUNSOFT",
    "<@!276175146304405514>",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -66,7 +66,7 @@
   "dex": "0006-0001",
   "sprite": [
    "Kevin0itachi",
-   "G〜",
+   "G\u301c",
    "Kevin"
   ],
   "retrato": [
@@ -232,7 +232,7 @@
   "retrato": [
    "CHUNSOFT",
    "Deeshura",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -251,7 +251,7 @@
   ],
   "retrato": [
    "Emmuffin",
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "baronessfaron"
   ]
  },
@@ -301,7 +301,7 @@
   ],
   "retrato": [
    "Emboarger",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -443,7 +443,7 @@
    "Emmuffin"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "Magu"
   ]
  },
@@ -612,7 +612,7 @@
   "retrato": [
    "Emmuffin",
    "Deeshura",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -630,7 +630,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "NOLASMOR",
    "JustAGunk"
   ]
@@ -850,7 +850,7 @@
    "FlowerSnek"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -859,7 +859,7 @@
    "FlowerSnek"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -986,7 +986,7 @@
   "retrato": [
    "Ichor",
    "Emmuffin",
-   "◥θ┴θ◤"
+   "\u25e5\u03b8\u2534\u03b8\u25e4"
   ]
  },
  {
@@ -1058,7 +1058,7 @@
   "retrato": [
    "CHUNSOFT",
    "Fable",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1070,7 +1070,7 @@
   "retrato": [
    "Prismatic",
    "Fable",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1087,7 +1087,7 @@
  {
   "dex": "0884s",
   "sprite": [
-   "G〜"
+   "G\u301c"
   ],
   "retrato": [
    "Caitemis",
@@ -1201,7 +1201,7 @@
    "Soulja"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1210,7 +1210,7 @@
    "Emmuffin"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1219,7 +1219,7 @@
    "Soulja"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1247,7 +1247,7 @@
   ],
   "retrato": [
    "Emboarger",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1271,126 +1271,6 @@
   ]
  },
  {
-  "dex": "0359",
-  "sprite": [
-   "CHUNSOFT",
-   "Deeshura",
-   "Top_Kec"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "Emmuffin",
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0359-0001",
-  "sprite": [
-   "Emboarger"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0359-0001s",
-  "sprite": [
-   "Deeshura"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0359s",
-  "sprite": [
-   "Noo",
-   "Top_Kec",
-   "Deeshura"
-  ],
-  "retrato": [
-   "Lovi",
-   "Emmuffin",
-   "Deeshura"
-  ]
- },
- {
-  "dex": "0679",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "G〜",
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0679s",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "Emmuffin",
-   "G〜"
-  ]
- },
- {
-  "dex": "0680",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0680s",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "Morei"
-  ]
- },
- {
-  "dex": "0681",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "baronessfaron",
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0681-0001",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "Emmuffin",
-   "radpeepo"
-  ]
- },
- {
-  "dex": "0681-0001s",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0681s",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
   "dex": "0690",
   "sprite": [
    "Top_Kec"
@@ -1407,7 +1287,7 @@
   ],
   "retrato": [
    "ShyStarryRain",
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "brookriver"
   ]
  },
@@ -1446,7 +1326,7 @@
    "ShyStarryRain"
   ],
   "retrato": [
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "baronessfaron"
   ]
  },
@@ -1457,7 +1337,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "NOLASMOR",
    "Top_Kec"
   ]
@@ -1468,7 +1348,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "Deeshura",
    "Top_Kec"
   ]
@@ -1571,43 +1451,72 @@
   ]
  },
  {
-  "dex": "0459",
+  "dex": "0246",
   "sprite": [
-   "CHUNSOFT"
+   "CHUNSOFT",
+   "JFain"
   ],
   "retrato": [
    "CHUNSOFT",
-   "Jarleypeño"
+   "Emmuffin"
   ]
  },
  {
-  "dex": "0459s",
+  "dex": "0246s",
   "sprite": [
-   "Scizivire"
+   "Lovi",
+   "JFain"
   ],
   "retrato": [
    "Lovi",
-   "Morei"
+   "Emmuffin"
   ]
  },
  {
-  "dex": "0460",
+  "dex": "0247",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT"
+  ]
+ },
+ {
+  "dex": "0247s",
+  "sprite": [
+   "Tacocoa"
+  ],
+  "retrato": [
+   "Lovi"
+  ]
+ },
+ {
+  "dex": "0248",
   "sprite": [
    "CHUNSOFT"
   ],
   "retrato": [
    "CHUNSOFT",
-   "SingingMudkip"
+   "Ichor"
   ]
  },
  {
-  "dex": "0460s",
+  "dex": "0248-0001",
   "sprite": [
-   "Scizivire"
+   "JFain"
   ],
   "retrato": [
-   "Prismatic",
-   "SingingMudkip"
+   "Sugi"
+  ]
+ },
+ {
+  "dex": "0248s",
+  "sprite": [
+   "Prismatic"
+  ],
+  "retrato": [
+   "Lovi",
+   "Deeshura"
   ]
  }
 ]

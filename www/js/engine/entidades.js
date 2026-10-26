@@ -12,7 +12,7 @@ export function pacote(h, extra, ang, mas = {}) {
   return {
     dano: h.dano, tipo: h.tipo, slot: extra?.slot, surge: extra?.surge, dirX: Math.cos(ang), dirY: Math.sin(ang),
     empuje: h.empuje, aturde: h.aturde, confunde: h.confunde || undefined, debilita: h.debilita, drenaje: h.drenaje, quema: h.quema,
-    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, estado: h.estado, anilla: h.anilla, contraVeneno: h.contraVeneno, escarcha: h.escarcha, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
+    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, estado: h.estado, anilla: h.anilla, contraVeneno: h.contraVeneno, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
   };
 }
 
@@ -370,13 +370,15 @@ export function ponerCharco(luta, dueno, x, y, h, max = 9) {
 export class Charco {
   constructor(luta, dueno, x, y, h) {
     this.luta = luta; this.dueno = dueno; this.tipo = 'charco';
-    this.x = x; this.y = y; this.radio = h.charco.radio; this.dur = h.charco.dur; this.t = 0; this.veneno = h.veneno; this.tipoAtq = h.tipo;
+    this.x = x; this.y = y; this.radio = h.charco.radio; this.dur = h.charco.dur; this.t = 0; this.veneno = h.veneno; this.tipoAtq = h.tipo; this.ralentiza = h.charco.ralentiza ?? 0;
   }
   update(dt) {
     this.t += dt;
     for (const b of this.luta.blancos(this.dueno)) {
       if (b.esClon || b.est?.vuelo) continue;
-      if (Math.hypot(b.x - this.x, b.y - this.y) < this.radio + RADIO && this.veneno) b.ponerEstado('veneno', this.veneno.dur, { dps: this.veneno.dps, fuente: this.dueno });
+      if (Math.hypot(b.x - this.x, (b.y - this.y) / 0.62) >= this.radio + RADIO) continue;
+      if (this.veneno) b.ponerEstado('veneno', this.veneno.dur, { dps: this.veneno.dps, fuente: this.dueno });
+      if (this.ralentiza) b.ponerEstado('lento', 0.4, { f: this.ralentiza });
     }
     return this.t < this.dur;
   }

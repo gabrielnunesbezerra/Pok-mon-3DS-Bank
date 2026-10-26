@@ -44,12 +44,16 @@ export const ventajaDe = nivel => NIVELES[nivel]?.ventaja ?? 1;
 export function rangoDe(h) {
   switch (h.forma) {
     case 'proyectil': case 'cono': case 'viento': case 'bombaLodo': case 'burbujas': case 'lluvia': return h.alcance;
-    case 'chorro': case 'helice': return h.largo;
+    case 'chorro': case 'helice': case 'lineaVeneno': return h.largo;
+    case 'lluviaMeteoros': case 'bombaAcida': return 240;
+    case 'stoneEdge': case 'overheat': return 300;
+    case 'flipTurn': case 'tormentaArena': return h.alcance;
+    case 'mordidaLanza': return (h.dist ?? 100) + 20;
+    case 'tumbaArena': return h.alcance;
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
-    case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': case 'lunas': return h.alcance;
+    case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': return h.alcance;
     case 'ondaToxica': return h.ondas.at(-1);
     case 'overheat': return h.alcance;
-    case 'sheerCold': return h.radio;
     case 'infierno': return 110;
     case 'pulso': return h.radio;
     case 'caparazon': return h.alcance;
@@ -83,10 +87,10 @@ function perfil(h, slot, d) {
       P.alcance = Math.min((h.alcance ?? 170) * 0.85, (h.n * 2 * (RADIO + (h.radio ?? 5))) / (2 * Math.PI));
       P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 250);
       break;
-    case 'chorro': case 'helice':
+    case 'chorro': case 'helice': case 'lineaVeneno':
       P.alcance = h.largo * 0.9; P.ancho = (h.ancho ?? 20) / 2; P.retardo = h.carga ?? 0.3; P.sigue = h.giro ? 0.6 : 0.3;
       break;
-    case 'cono': case 'viento': case 'overheat':
+    case 'cono': case 'viento': case 'tumbaArena':
       P.alcance = h.alcance * 0.85; P.ancho = Math.tan(((h.angulo ?? 50) * Math.PI) / 360) * d + 6; P.retardo = h.carga ?? 0; P.sigue = h.giro ? 0.5 : 0;
       break;
     case 'pulso': P.tipo = 'area'; P.alcance = h.radio + RADIO - 4; P.retardo = h.carga ?? 0; break;
@@ -100,6 +104,11 @@ function perfil(h, slot, d) {
     case 'geiser': P.ancho = h.radio; P.retardo = h.aviso ?? 0.5; break;
     case 'torbellino': P.alcance = h.alcance * 0.8; P.ancho = h.radio; P.retardo = d / (h.vel ?? 120); P.sigue = h.persigue ? 0.7 : 0.3; break;
     case 'bombaLodo': P.ancho = h.radio; P.retardo = (h.lanzar ?? 0.18) + (h.vuelo ?? 0.5); break;
+    case 'lluviaMeteoros': case 'stoneEdge': case 'bombaAcida': case 'overheat': P.ancho = 50; P.retardo = 0.5; break;
+    case 'flipTurn': case 'tormentaArena': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;
+    case 'mordidaLanza': P.tipo = 'mele'; P.alcance = (h.dist ?? 100) + 20; P.retardo = 0.16; break;
+    case 'vorticeArena': P.tipo = 'area'; P.alcance = 110; P.retardo = 1.2; break;
+    case 'aeronave': P.tipo = 'buff'; break;
     case 'trampa': P.ancho = h.radio; P.retardo = h.arma ?? 0.5; break;
     case 'meteoro':
       P.alcance = (h.sigue ?? 150) * (h.aviso ?? 0.6) + h.radio; P.ancho = h.radio; P.retardo = 0.3 + (h.aviso ?? 0.6) + 0.15; P.sigue = 0.9; P.invul = true;
@@ -110,12 +119,9 @@ function perfil(h, slot, d) {
     case 'puente': P.tipo = 'mele'; P.alcance = h.rajada?.alcance ?? 120; P.retardo = 0.05; break;
     case 'patada': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.26 + d / 700; P.sigue = 0.8; break;
     case 'salto': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.32; P.sigue = 0.8; break;
-    case 'lunas': P.tipo = 'mele'; P.alcance = h.alcance + (h.avance ?? 40); P.retardo = 0.12; break;
     case 'ondaToxica': P.tipo = 'area'; P.alcance = h.ondas.at(-1); P.retardo = h.carga ?? 0.25; break;
     case 'detonarCharcos': P.tipo = 'area'; P.alcance = 260; P.retardo = h.carga ?? 0.35; break;
-    case 'kingsShield': P.tipo = 'defensa'; break;
     case 'infierno': P.tipo = 'area'; P.alcance = 110; P.retardo = h.carga ?? 0.25; break;
-    case 'sheerCold': P.tipo = 'area'; P.alcance = h.radio; P.retardo = h.carga ?? 0.4; break;
     case 'cortesSuelo': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.carga ?? 0.15) + (h.viaja ?? 0.25) * 0.5; break;
     case 'jabLuna': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.dur ?? 0.3) * 0.5; break;
     case 'vuelo': P.tipo = 'vuelo'; P.alcance = h.radio; P.ancho = h.radio; P.invul = true; break;
@@ -380,7 +386,7 @@ export class IA {
     const listo = sl => {
       const h = kit[sl];
       // Archaludon: virou ponte, fica ponte até acabar (desfazer não desvia de nada)
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);
@@ -507,13 +513,12 @@ export class IA {
         return !tope && (d < c.buffDist || (h.enfria && yo.calor > 60)) ? u : null;
       }
       case 'torreta': return d < (h.alcance ?? 150) + 80 ? u : null;
+      case 'aeronave': return !yo.est.aeronave && d > 90 && d < 320 ? u : null;
       case 'clones': return d < c.clonesDist && !yo.clones ? u : null;
       case 'humo': return d < c.humoCerca ? u : null;
       case 'espejo': return d < 170 && !s.rivalMele && (r.accion || t - r.ultimoAtaque < 0.3) ? u : null;
       case 'caparazon': return d < P.alcance && !s.rInvul ? u : null;
       case 'escudo': return d < c.escudoDist && (r.accion || viene) ? u : null;
-      // Aegislash: volta ao escudo quando o rival vai atacar ou quando está longe (para não ficar frágil)
-      case 'kingsShield': return yo.postura === 'espada' && ((d < c.escudoDist && (r.accion || viene)) || d > 200) ? u : null;
       case 'chapoteo': return d > c.splashDist || s.vendido ? u : null;
       case 'vuelo': return this.volarOfensivo(sl, h, P, s);
       default: return null;
@@ -523,6 +528,7 @@ export class IA {
   // dash: foge quando está apertado, entra quando é corpo a corpo, ou usa como golpe
   dashear(s, listo, perfiles) {
     const yo = this.l, cfg = this.cfg, c = this.c, h = yo.kit.esp, { d, ux, uy } = s;
+    if (h?.forma === 'corrida') return listo('esp') && ((!yo.est.corrida && d > 200 && yo.fervor > 45) || (yo.est.corrida && (d < 90 || yo.fervor < 15))) ? { slot: 'esp', P: perfiles.esp } : null;
     if (h?.forma === 'rodar') return !yo.est.rodando && listo('esp') && d > 50 && d < 320 && aleatorio() < cfg.agresividad * 0.6 ? { slot: 'esp', P: perfiles.esp } : null;
     if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja')) return null;
     const P = perfiles.esp, hp = yo.hp / yo.hpMax;

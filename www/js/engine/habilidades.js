@@ -40,9 +40,10 @@ export class Habilidades {
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, almas: this.almas, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
-      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, lunas: this.lunas, overheat: this.overheat, infierno: this.infierno, sheerCold: this.sheerCold,
-      ondaToxica: this.ondaToxica, detonarCharcos: this.detonarCharcos, kingsShield: this.kingsShield,
-    };
+      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
+      aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena,
+          };
   }
 
   // ---------------------------------------------------------------- uso de um espaço
@@ -63,6 +64,7 @@ export class Habilidades {
     if (l.accion && !h.interrompe && slot !== 'esp') return false;
     // rolando (Rollout): só dá para parar de rolar ou soltar a ult
     if (l.est.rodando && slot !== 'esp' && slot !== 'e' && !h.usaRodando) return false;
+    if (h.requiereTormenta && !this.enTormenta(l)) { if (l.humano) l.avisar('tormenta', () => l.texto('SANDSTORM FIRST!', '#e8d29a')); return false; }
     if (h.requiereRodar && !l.est.rodando) { if (l.humano) l.avisar('rodar', () => l.texto('ROLL FIRST!', '#e8d8b0')); return false; }
     if (slot === 'e' && !l.ultiLista) {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
@@ -83,9 +85,7 @@ export class Habilidades {
     if (slot === 'e') l.ulti = 0;
     // Houndoom: golpes de fogo esquentam
     if (l.def.fervor && h.calienta) l.calentar(h.calienta);
-    // Aegislash (Stance Change): qualquer ataque troca para a forma de espada
-    if (l.forma.dexEspada && slot !== 'esp' && h.forma !== 'kingsShield' && l.postura !== 'espada') { l.postura = 'espada'; l.texto('BLADE FORM!', '#e5e7eb'); luta.emit({ t: 'endurecer', l, estilo: 'acero' }); }
-    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna') l.cd[slot] = h.cd;
+    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida') l.cd[slot] = h.cd;
     // Sneasler: depois de qualquer skill o próximo básico sai como corte em X
     if (slot !== 'lmb' && l.kit.lmb?.trasSkill) l.xListo = true;
     // skills que giram o Pokémon no lugar
@@ -158,6 +158,8 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- proyétil
   proyectil(l, h, extra) {
+    // Dragapult no modo aeronave: os tiros perseguem o alvo marcado e ficam mais rápidos com o Dragon Dance
+    if (l.est.aeronave) { const k = 1 + (l.est.potencia?.n ?? 0) * 0.12; h = { ...h, teledirigido: 16, vel: (h.vel ?? 300) * 1.25 * k, alcance: (h.alcance ?? 200) * 1.6 }; }
     const luta = this.luta, hBase = h;
     let ang = asistir(l, angApunte(l), h.alcance + 40, 0.7);
     const lanzar = h.lanzar ?? 0.15;
@@ -244,8 +246,12 @@ export class Habilidades {
     l.empezarDash(h, ang);
     l.dash.slot = extra?.slot;
     l.accion = null;
-    // Dragalge: o dash espalha poças de veneno pelo caminho
-    if (h.rastroCharco) for (let i = 1; i <= h.rastroCharco.n; i++) this.luta.programar((h.dur * i) / (h.rastroCharco.n + 1), () => { if (!l.ko) ponerCharco(this.luta, l, l.x, l.y, { charco: h.rastroCharco, veneno: h.rastroCharco.veneno, tipo: h.tipo }); });
+    // Dive (Dragalge): mergulha deixando uma poça de veneno onde entra e outra onde sai
+    if (h.charcoEntraSale) {
+      const c = { charco: h.charcoEntraSale, veneno: h.charcoEntraSale.veneno, tipo: h.tipo };
+      ponerCharco(this.luta, l, l.x, l.y, c); this.luta.emit({ t: 'chapoteo', x: l.x, y: l.y });
+      l.dash.fin = () => { if (l.ko) return; ponerCharco(this.luta, l, l.x, l.y, c); this.luta.emit({ t: 'chapoteo', x: l.x, y: l.y }); };
+    }
     l.animar(h.anim ?? 'Walk', h.dur + 0.1);
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
@@ -468,13 +474,14 @@ export class Habilidades {
     const luta = this.luta;
     if (l.est.rodando) {
       delete l.est.rodando; delete l.est.blindaje;
+      l.cd[extra.slot] = h.cd;
       luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 26, tipo: 'ROCK', estilo: 'tierra' });
       return;
     }
     l.ponerEstado('rodando', h.dur ?? 4, { desde: luta.t, vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, cd: h.cd, golpes: new Map() });
     if (h.reduce) l.ponerEstado('blindaje', h.dur ?? 4, { reduce: h.reduce });
-    // a recarga começa a contar assim que vira bola
-    l.cd[extra.slot] = h.cd;
+    // a recarga grande só começa quando ele para de girar (ver Lutador.update)
+    l.cd[extra.slot] = 0.4;
     l.texto('ROLLOUT!', '#e8d8b0');
     luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 30, tipo: 'ROCK', estilo: 'tierra' });
   }
@@ -1395,27 +1402,42 @@ export class Habilidades {
       if (r && !r.ko && dist(r, l) <= h.alcance + 40) { tx = r.x + r.vx * h.vuelo * 0.6; ty = r.y + r.vy * h.vuelo * 0.6; }
       else { const d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y)); tx = l.x + Math.cos(ang) * d; ty = l.y + Math.sin(ang) * d; }
       const p = fijarCampo(tx, ty);
-      const x0 = l.x, y0 = l.y;
-      let t = 0;
-      const bomba = {
-        tipo: 'bomba', dueno: l, estilo: 'lodo', tipoAtq: h.tipo, x: x0, y: y0, alt: 0, h, objetivo: p, vivo: true,
-        update: dt => {
-          t += dt;
-          const k = Math.min(1, t / h.vuelo);
-          bomba.x = x0 + (p.x - x0) * k; bomba.y = y0 + (p.y - y0) * k;
-          bomba.alt = Math.sin(k * Math.PI) * h.alto + l.alto * 0.5 * (1 - k);
-          if (k >= 1) {
-            areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: false, empuje: 20 }));
-            luta.add(new Charco(luta, l, p.x, p.y, h));
-            luta.emit({ t: 'explosion', x: p.x, y: p.y - 6, radio: h.radio, tipo: h.tipo });
-            return false;
-          }
-          return true;
-        },
+      const cair = q => {
+        areaCirculo(luta, l, q.x, q.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: false, empuje: 20 }));
+        ponerCharco(luta, l, q.x, q.y, h);
+        luta.emit({ t: 'explosion', x: q.x, y: q.y - 6, radio: h.radio, tipo: h.tipo });
+        luta.emit({ t: 'salpico', x: q.x, y: q.y, radio: h.radio, tipo: h.tipo });
       };
-      luta.add(bomba);
+      // Mega: quica uma vez no meio do caminho deixando outra poça, depois cai no alvo
+      if (h.rebote) {
+        const m = fijarCampo(l.x + (p.x - l.x) * 0.5, l.y + (p.y - l.y) * 0.5);
+        this.lanzarBomba(l, h, l.x, l.y, l.alto * 0.5, m, h.vuelo * 0.6, h.alto * 0.7, () => {
+          ponerCharco(luta, l, m.x, m.y, h); luta.emit({ t: 'salpico', x: m.x, y: m.y, radio: h.radio * 0.8, tipo: h.tipo });
+          this.lanzarBomba(l, h, m.x, m.y, 0, p, h.vuelo * 0.7, h.alto * 0.8, () => cair(p));
+        });
+      } else this.lanzarBomba(l, h, l.x, l.y, l.alto * 0.5, p, h.vuelo, h.alto, () => cair(p));
     });
   }
+
+  // bomba em arco de (x0, y0) até p; ao cair chama alCaer
+  lanzarBomba(l, h, x0, y0, alt0, p, vuelo, alto, alCaer, estilo = 'lodo', escala = 1) {
+    let t = 0;
+    const bomba = {
+      tipo: 'bomba', dueno: l, estilo, tipoAtq: h.tipo, x: x0, y: y0, alt: alt0, h, objetivo: p, vivo: true, escala,
+      update: dt => {
+        t += dt;
+        const k = Math.min(1, t / vuelo);
+        bomba.x = x0 + (p.x - x0) * k; bomba.y = y0 + (p.y - y0) * k;
+        bomba.alt = Math.sin(k * Math.PI) * alto + alt0 * (1 - k);
+        if (k < 1) return true;
+        alCaer();
+        return false;
+      },
+    };
+    this.luta.add(bomba);
+    return bomba;
+  }
+
 
   // ---------------------------------------------------------------- salto alto e queda (Bounce, Heavy Slam, Pancake)
   meteoro(l, h, extra) {
@@ -1550,7 +1572,7 @@ export class Habilidades {
         // pulo sem dano (Wall Climb): só movimento
         const acerto = h.dano > 0 && r && !r.ko && !r.est.vuelo && Math.hypot(r.x - l.x, r.y - l.y) < h.radio + RADIO;
         if (acerto) {
-          const res = atingir(l, r, pacote(h, extra, ang, { empuje: h.congela ? 0 : 80, aturde: h.aturde, dirX: Math.cos(ang), dirY: Math.sin(ang), pesado: true }));
+          const res = atingir(l, r, pacote(h, extra, ang, { empuje: h.congela ? 0 : h.empuje ?? 80, aturde: h.aturde, dirX: Math.cos(ang), dirY: Math.sin(ang), pesado: true }));
           // Ice Jump (Milotic): quem estava na área fica congelado um instante
           if (h.congela && res === 'golpe') { r.ponerEstado('aturdido', h.congela); r.ponerEstado('congelado', h.congela); r.texto('FROZEN!', '#bfe9ff'); }
           luta.emit({ t: 'temblor', f: 0.008 });
@@ -1639,87 +1661,10 @@ export class Habilidades {
   }
 
   // ---------------------------------------------------------------- investidas cruzadas (Cross Poison)
-  // ---------------------------------------------------------------- Midnight Slash (Absol): três cortes gigantes em meia-lua para a frente
-  lunas(l, h, extra) {
-    const luta = this.luta, ang = asistir(l, angApunte(l), h.alcance + 30, 1), n = h.golpes ?? 3, entre2 = h.entre ?? 0.17, avance = h.avance ?? 40;
-    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance), total = 0.12 + (n - 1) * entre2 + 0.2;
-    l.ponerEstado('blindaje', total, { reduce: 0.5 });
-    l.animar(h.anim ?? 'Attack', total);
-    l.angulo = ang;
-    let t = 0;
-    l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: ang, update: dt => { t += dt; const k = Math.min(1, t / 0.12); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; } };
-    for (let i = 0; i < n; i++) {
-      luta.programar(0.12 + i * entre2, () => {
-        if (l.ko) return;
-        const ultimo = i === n - 1, lado = ultimo ? 0 : i % 2 ? -1 : 1, R = h.alcance * (ultimo ? 1.15 : 1);
-        l.animar(ultimo ? 'Strike' : 'Attack', entre2 + 0.05);
-        luta.emit({ t: 'luna', x: l.x, y: l.y - l.alto * 0.4, ang, r: R, lado, final: ultimo, tipo: h.tipo });
-        if (ultimo) luta.emit({ t: 'temblor', f: 0.01 });
-        this.cortarProyectiles(l, ang, R, rad(h.angulo) / 2);
-        for (const b of luta.blancos(l)) {
-          if (b.oculto || b.est?.vuelo) continue;
-          const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
-          if (d < R + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2)
-            atingir(l, b, pacote(h, extra, ang, { dano: h.dano * (ultimo ? 1.5 : 1), empuje: ultimo ? 120 : 25, aturde: ultimo ? h.aturde : undefined, dirX: dx / d, dirY: dy / d, pesado: ultimo, tick: !ultimo && i > 0 }));
-        }
-      });
-    }
-  }
-  // ---------------------------------------------------------------- Sludge Wave (Dragalge): onda de lodo que se espalha e deixa um anel de poças
-  ondaToxica(l, h, extra) {
-    const luta = this.luta, carga = h.carga ?? 0.25, x0 = l.x, y0 = l.y, golpeados = new Set();
-    l.animar(h.anim ?? 'Charge', carga + 0.4);
-    l.accion = { hasta: luta.t + carga + 0.3, bloquea: true, lento: 0 };
-    h.ondas.forEach((r, i) => luta.programar(carga + i * (h.cada ?? 0.14), () => {
-      if (l.ko) return;
-      luta.emit({ t: 'pulso', x: x0, y: y0, radio: r, tipo: h.tipo, estilo: 'lodo' });
-      for (const b of luta.blancos(l)) {
-        if (golpeados.has(b) || b.est?.vuelo) continue;
-        const d = Math.hypot(b.x - x0, (b.y - y0) / 0.62);
-        if (d < r + RADIO) { golpeados.add(b); atingir(l, b, pacote(h, extra, Math.atan2(b.y - y0, b.x - x0), { dirX: (b.x - x0) / (d || 1), dirY: (b.y - y0) / (d || 1), pesado: i === h.ondas.length - 1 })); }
-      }
-      if (i === h.ondas.length - 1) for (let k = 0; k < (h.anillo ?? 8); k++) { const a = (k / (h.anillo ?? 8)) * Math.PI * 2, p = fijarCampo(x0 + Math.cos(a) * r * 0.75, y0 + Math.sin(a) * r * 0.75 * 0.62); ponerCharco(luta, l, p.x, p.y, { charco: h.charco, veneno: h.veneno, tipo: h.tipo }, 14); }
-    }));
-  }
-
-  // ---------------------------------------------------------------- Mega Acid Downpour (Mega Dragalge): todas as poças explodem em gêiseres
-  detonarCharcos(l, h, extra) {
-    const luta = this.luta, carga = h.carga ?? 0.35;
-    l.animar(h.anim ?? 'Charge', carga + 0.3);
-    l.accion = { hasta: luta.t + carga + 0.2, bloquea: true, lento: 0 };
-    l.texto('ACID DOWNPOUR!', '#c084fc');
-    luta.programar(carga, () => {
-      if (l.ko) return;
-      const charcos = luta.entidades.filter(e => e.tipo === 'charco' && e.dueno === l && e.t < e.dur);
-      // sem poça nenhuma, nasce uma em volta de si para não perder a ult
-      if (!charcos.length) for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; charcos.push(ponerCharco(luta, l, l.x + Math.cos(a) * 60, l.y + Math.sin(a) * 38, { charco: h.charco, veneno: h.veneno, tipo: h.tipo }, 14)); }
-      const golpeados = new Set();
-      charcos.forEach((c, i) => luta.programar(i * 0.05, () => {
-        luta.emit({ t: 'explosion', x: c.x, y: c.y - 6, radio: h.radio, tipo: h.tipo });
-        luta.emit({ t: 'pulso', x: c.x, y: c.y, radio: h.radio, tipo: h.tipo, estilo: 'lodo' });
-        for (const b of luta.blancos(l)) {
-          if (golpeados.has(b) || b.est?.vuelo) continue;
-          if (Math.hypot(b.x - c.x, b.y - c.y) < h.radio + RADIO) { golpeados.add(b); atingir(l, b, pacote(h, extra, Math.atan2(b.y - c.y, b.x - c.x), { pesado: true })); }
-        }
-        c.t = 0; c.dur = Math.max(c.dur, 4);
-      }));
-      luta.emit({ t: 'temblor', f: 0.012 });
-    });
-  }
-
-  // ---------------------------------------------------------------- Overheat (Houndoom): solta todo o calor num cone de fogo; mais quente, mais forte
-  overheat(l, h, extra) {
-    const luta = this.luta, k = 1 + l.fervor / 100, carga = h.carga ?? 0.3;
-    const hh = { ...h, dano: h.dano * k, alcance: h.alcance * (0.8 + 0.3 * l.fervor / 100), quema: { dps: 2 + l.fervor / 40, dur: 3, max: 3 } };
-    luta.emit({ t: 'overheat', l, k, carga });
-    l.texto(`OVERHEAT x${k.toFixed(1)}`, '#ffb347');
-    l.fervor = 0; l.dolorCalor = 0;
-    return this.cono(l, { ...hh, forma: 'cono' }, extra);
-  }
-
   // ---------------------------------------------------------------- Mega Inferno (Mega Houndoom): pilares de fogo em espiral; o calor vira mais pilares
   infierno(l, h, extra) {
-    const luta = this.luta, n = (h.pilares ?? 8) + Math.round(l.fervor / 15), carga = h.carga ?? 0.25, x0 = l.x, y0 = l.y, golpeados = new Map();
+    // o número de explosões depende do calor (3 frio, 17 no máximo)
+    const luta = this.luta, n = (h.pilares ?? 3) + Math.round(l.fervor / 7), carga = h.carga ?? 0.25, x0 = l.x, y0 = l.y, golpeados = new Map();
     l.animar(h.anim ?? 'Charge', carga + 0.5);
     l.accion = { hasta: luta.t + carga + 0.3, bloquea: true, lento: 0 };
     l.texto('INFERNO!', '#ff7a1f');
@@ -1733,39 +1678,336 @@ export class Habilidades {
         if (Math.hypot(b.x - x, b.y - y) < h.radio + RADIO) { golpeados.set(b, (golpeados.get(b) ?? 0) + 1); atingir(l, b, pacote(h, extra, a, { pesado: true })); }
       }
     });
-    l.fervor = Math.max(0, l.fervor - 40);
+    l.fervor = 0; l.dolorCalor = 0;
   }
 
-  // ---------------------------------------------------------------- Mega Sheer Cold (Mega Abomasnow): nevasca em volta que estilhaça o gelo acumulado
-  sheerCold(l, h, extra) {
-    const luta = this.luta, carga = h.carga ?? 0.4;
-    l.animar(h.anim ?? 'Charge', carga + 0.4);
-    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0 };
-    luta.emit({ t: 'nevasca', x: l.x, y: l.y, radio: h.radio, dur: carga + 0.5 });
+  // ---------------------------------------------------------------- Overheat (Houndoom): erupção que corre pelo chão atrás do rival e explode; mais quente, mais forte
+  overheat(l, h, extra) {
+    const luta = this.luta, k = 1 + l.fervor / 100, carga = h.carga ?? 0.25, r0 = l.rival;
+    l.animar(h.anim ?? 'Charge', carga + 0.2);
+    l.accion = { hasta: luta.t + carga, bloquea: true, lento: 0 };
+    luta.emit({ t: 'overheat', l, k, carga });
+    l.texto(`OVERHEAT x${k.toFixed(1)}`, '#ffb347');
+    l.fervor = 0; l.dolorCalor = 0;
     luta.programar(carga, () => {
       if (l.ko) return;
-      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: 'ICE', estilo: 'hielo' });
-      luta.emit({ t: 'temblor', f: 0.012 });
+      const a0 = r0 && !r0.ko ? Math.atan2(r0.y - l.y, r0.x - l.x) : angApunte(l);
+      const e = { tipo: 'erupcion', dueno: l, vivo: true, x: l.x + Math.cos(a0) * 20, y: l.y + Math.sin(a0) * 12, t: 0, k, rastro: 0, ang: a0,
+        update: dt => {
+          e.t += dt;
+          const r = l.rival, vel = h.vel ?? 175;
+          if (r && !r.ko) { const a = Math.atan2(r.y - e.y, r.x - e.x); e.ang += clamp(difAng(a, e.ang), -4 * dt, 4 * dt); }
+          const p = fijarCampo(e.x + Math.cos(e.ang) * vel * dt, e.y + Math.sin(e.ang) * vel * dt); e.x = p.x; e.y = p.y;
+          if ((e.rastro += dt) > 0.08) { e.rastro = 0; luta.emit({ t: 'rastroLlama', x: e.x, y: e.y }); }
+          const toca = r && !r.ko && !r.est.vuelo && Math.hypot(r.x - e.x, r.y - e.y) < RADIO + 10;
+          if (!toca && e.t < (h.dur ?? 3.5)) return true;
+          const R = (h.radio ?? 44) * (0.8 + 0.4 * (k - 1));
+          luta.emit({ t: 'pilarFuego', x: e.x, y: e.y, tipo: 'FIRE' });
+          luta.emit({ t: 'explosion', x: e.x, y: e.y - 6, radio: R, tipo: 'FIRE' });
+          luta.emit({ t: 'temblor', f: 0.006 + 0.008 * (k - 1) });
+          areaCirculo(luta, l, e.x, e.y, R, pacote(h, extra, e.ang, { dano: h.dano * k, quema: { dps: 2 + 3 * (k - 1), dur: 3, max: 3 }, empuje: 120, pesado: true }));
+          return false;
+        } };
+      luta.add(e);
+    });
+  }
+
+  // ---------------------------------------------------------------- Venoshock (Dragalge): linha de veneno; em envenenado o dano dobra (contraVeneno)
+  lineaVeneno(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.1, rastro = h.rastro && this.enCharco(l);
+    l.animar(h.anim ?? 'Shoot', carga + 0.25);
+    l.accion = { hasta: luta.t + carga + 0.12, bloquea: carga > 0.2, lento: 0.3, angulo: angApunte(l) };
+    if (carga > 0.2) luta.emit({ t: 'cargaVeneno', l, dur: carga, rastro });
+    luta.programar(carga, () => {
+      if (l.ko) return;
+      const ang = asistir(l, angApunte(l), h.largo, 0.5), x0 = l.x, y0 = l.y, x1 = x0 + Math.cos(ang) * h.largo, y1 = y0 + Math.sin(ang) * h.largo;
+      l.angulo = ang;
+      luta.emit({ t: 'rayoVeneno', x0, y0: y0 - l.alto * 0.45, x1, y1: y1 - l.alto * 0.45, ancho: h.ancho, tipo: h.tipo, grande: !!h.carga });
       for (const b of luta.blancos(l)) {
-        if (b.est?.vuelo) continue;
-        const d = Math.hypot(b.x - l.x, (b.y - l.y) / 0.62);
-        if (d > h.radio + RADIO) continue;
-        const capas = b.escarcha?.n ?? 0;
-        atingir(l, b, pacote(h, extra, Math.atan2(b.y - l.y, b.x - l.x), { dano: h.dano + capas * (h.porCapa ?? 4), escarcha: 0, pesado: true }));
-        if (!b.esClon && !b.ko) { b.escarcha = null; b.ponerEstado('aturdido', 0.6 + capas * 0.25); b.ponerEstado('congelado', 0.6 + capas * 0.25); luta.emit({ t: 'estilhaco', l: b }); }
+        if (b.oculto || b.est?.vuelo) continue;
+        if (distSegmento(b.x, b.y, x0, y0, x1, y1) < h.ancho / 2 + RADIO) atingir(l, b, pacote(h, extra, ang, { dirX: Math.cos(ang), dirY: Math.sin(ang) }));
+      }
+      // Mega: disparado de dentro de uma poça, o raio deixa um rastro de poças
+      if (rastro) for (let d = 30; d <= h.largo; d += 34) { const p = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d); ponerCharco(luta, l, p.x, p.y, { charco: h.rastro, veneno: h.veneno ?? { dps: 2, dur: 2 }, tipo: h.tipo }, 16); }
+    });
+  }
+  enCharco(l) { return this.luta.entidades.some(e => e.tipo === 'charco' && e.dueno === l && e.t < e.dur && Math.hypot(e.x - l.x, (e.y - l.y) / 0.62) < e.radio + 4); }
+
+  // ---------------------------------------------------------------- Flip Turn (Dragalge): pula no rival, envenena forte e volta para trás
+  flipTurn(l, h, extra) {
+    const luta = this.luta, r0 = l.rival, apunte = angApunte(l);
+    const sobre = r0 && !r0.ko && !r0.oculto && Math.hypot(r0.x - l.x, r0.y - l.y) < h.alcance + 30;
+    const ang = sobre ? Math.atan2(r0.y - l.y, r0.x - l.x) : apunte;
+    const d = sobre ? Math.max(0, Math.min(h.alcance, Math.hypot(r0.x - l.x, r0.y - l.y) - 14)) : Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d);
+    const p2 = fijarCampo(p1.x - Math.cos(ang) * (h.rebote ?? 90), p1.y - Math.sin(ang) * (h.rebote ?? 90)), ida = 0.22, vuelta = 0.3;
+    l.ponerEstado('invul', ida + vuelta);
+    l.animar('Hop', ida); l.angulo = ang;
+    luta.emit({ t: 'chapoteo', x: x0, y: y0 });
+    let t = 0, bateu = false;
+    l.accion = { hasta: luta.t + ida + vuelta, bloquea: true, lento: 0, angulo: ang,
+      update: dt => {
+        t += dt;
+        if (t <= ida) { const k = t / ida; l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 18); return; }
+        if (!bateu) {
+          bateu = true; l.animar('Attack', vuelta);
+          luta.emit({ t: 'salpico', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo }); luta.emit({ t: 'chapoteo', x: l.x, y: l.y });
+          for (const b of luta.blancos(l)) {
+            if (b.oculto || b.est?.vuelo) continue;
+            const dx = b.x - l.x, dy = b.y - l.y, dd = Math.hypot(dx, dy) || 1;
+            if (dd < h.radio + RADIO) atingir(l, b, pacote(h, extra, ang, { empuje: 110, dirX: dx / dd, dirY: dy / dd, pesado: true }));
+          }
+        }
+        const k = Math.min(1, (t - ida) / vuelta); l.x = p1.x + (p2.x - p1.x) * k; l.y = p1.y + (p2.y - p1.y) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 26);
+      },
+      fin: () => { l.salto = 0; } };
+  }
+
+  // ---------------------------------------------------------------- Mega Acid Downpour (Mega Dragalge): bola de veneno e água que estoura no ar em respingos
+  bombaAcida(l, h, extra) {
+    const luta = this.luta, lanzar = h.lanzar ?? 0.3, r = l.rival;
+    l.animar(h.anim ?? 'Charge', lanzar + 0.3);
+    l.accion = { hasta: luta.t + lanzar + 0.1, bloquea: true, lento: 0 };
+    luta.emit({ t: 'cargaVeneno', l, dur: lanzar, rastro: true });
+    luta.programar(lanzar, () => {
+      if (l.ko) return;
+      const alvo = r && !r.ko ? { x: r.x, y: r.y } : { x: l.ax, y: l.ay };
+      const mid = fijarCampo(l.x + (alvo.x - l.x) * 0.6, l.y + (alvo.y - l.y) * 0.6), altura = h.alto ?? 90, vuelo = h.vuelo ?? 0.45;
+      const x0 = l.x, y0 = l.y, a0 = l.alto * 0.6;
+      let t = 0;
+      const bola = { tipo: 'bomba', dueno: l, estilo: 'acida', tipoAtq: h.tipo, x: x0, y: y0, alt: a0, h, vivo: true, escala: 2.2,
+        update: dt => {
+          t += dt;
+          const k = Math.min(1, t / vuelo);
+          bola.x = x0 + (mid.x - x0) * k; bola.y = y0 + (mid.y - y0) * k; bola.alt = a0 + (altura - a0) * Math.sin((k * Math.PI) / 2);
+          if (k < 1) return true;
+          // estoura no ar: respingos caem em volta do alvo, machucam e deixam poças
+          luta.emit({ t: 'estallidoAcido', x: mid.x, y: mid.y - altura, radio: 40 });
+          luta.emit({ t: 'temblor', f: 0.008 });
+          const n = h.gotas ?? 9;
+          for (let i = 0; i < n; i++) {
+            const a = (i / n) * Math.PI * 2 + aleatorio() * 0.5, rr = 20 + aleatorio() * (h.area ?? 85);
+            const p = fijarCampo(alvo.x + Math.cos(a) * rr, alvo.y + Math.sin(a) * rr * 0.62);
+            this.lanzarBomba(l, h, mid.x, mid.y, altura, p, 0.4 + aleatorio() * 0.15, 20, () => {
+              areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 10 }));
+              ponerCharco(luta, l, p.x, p.y, h, 16);
+              luta.emit({ t: 'salpico', x: p.x, y: p.y, radio: h.radio, tipo: h.tipo });
+            }, 'acida', 0.9);
+          }
+          return false;
+        } };
+      luta.add(bola);
+    });
+  }
+
+  // ---------------------------------------------------------------- Jet Mode (Dragapult): vira aeronave, marca o rival e todos os tiros acertam
+  aeronave(l, h) {
+    const luta = this.luta, r = l.rival;
+    const rumbo = Math.hypot(l.vx, l.vy) > 5 ? Math.atan2(l.vy, l.vx) : l.angulo ?? 0;
+    l.ponerEstado('aeronave', h.dur, { rumbo, vel: h.vel ?? 1.75, giro: h.giro ?? 2.2 });
+    if (r && !r.ko) r.ponerEstado('marca', h.dur, {});
+    l.texto('JET MODE!', '#7ad8c8');
+    luta.emit({ t: 'endurecer', l, estilo: 'dragon' });
+  }
+
+  // ---------------------------------------------------------------- Draco Meteor (Dragapult): chuva de meteoros na área do rival
+  lluviaMeteoros(l, h, extra) {
+    const luta = this.luta;
+    l.animar(h.anim ?? 'Charge', 0.6);
+    l.accion = { hasta: luta.t + 0.35, bloquea: true, lento: 0 };
+    for (let i = 0; i < h.n; i++) luta.programar(0.15 + i * (h.cada ?? 0.16), () => {
+      if (l.ko) return;
+      const r = l.rival, cx = r && !r.ko ? r.x + (r.vx ?? 0) * 0.3 : l.ax, cy = r && !r.ko ? r.y + (r.vy ?? 0) * 0.3 : l.ay;
+      const a = aleatorio() * Math.PI * 2, rr = i === 0 ? 0 : aleatorio() * (h.area ?? 55), p = fijarCampo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.62);
+      luta.emit({ t: 'avisos', puntos: [p], aviso: h.aviso, radio: h.radio, tipo: h.tipo });
+      luta.emit({ t: 'meteorito', x: p.x, y: p.y, caida: h.aviso, tipo: h.tipo });
+      luta.programar(h.aviso, () => {
+        if (l.ko) return;
+        luta.emit({ t: 'explosion', x: p.x, y: p.y - 4, radio: h.radio, tipo: h.tipo });
+        luta.emit({ t: 'temblor', f: 0.005 });
+        areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 40, pesado: true }));
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------- Fire Fang (Houndoom): avança, morde e segura; solta arremessando para onde mira
+  mordidaLanza(l, h, extra) {
+    const luta = this.luta, r0 = l.rival, alc = h.dist ?? 100, ang = asistir(l, angApunte(l), alc + 30, 1);
+    const x0 = l.x, y0 = l.y, d0 = r0 && !r0.ko ? Math.hypot(r0.x - l.x, r0.y - l.y) : 999;
+    const avance = d0 < alc + 30 ? Math.max(0, d0 - 16) : alc, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance), lanzar = 0.16, segura = h.segura ?? 0.55;
+    l.animar('Walk', lanzar); l.angulo = ang;
+    let t = 0, preso = null, tiempo = 0;
+    l.accion = { hasta: luta.t + lanzar + segura + 0.1, bloquea: true, lento: 0, angulo: ang,
+      update: dt => {
+        t += dt;
+        if (!preso && t <= lanzar) { const k = t / lanzar; l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; return; }
+        if (!preso) {
+          if (l.accion.mordeu) return;
+          l.accion.mordeu = true;
+          const r = l.rival;
+          if (!r || r.ko || r.oculto || r.est.vuelo || Math.hypot(r.x - l.x, r.y - l.y) > RADIO * 2 + 14) { l.accion.hasta = luta.t + 0.05; return; }
+          const res = atingir(l, r, pacote(h, extra, ang, { empuje: 0, pesado: true }));
+          if (res !== 'golpe' || r.esClon) { l.accion.hasta = luta.t + 0.05; return; }
+          preso = r; l.animar('Attack', segura);
+          luta.emit({ t: 'mordidaFogo', l, b: r });
+          if (h.siempreQuema || l.fervor >= 75) { r.ponerEstado('quema', 3, { dps: 3, pilas: 2, fuente: l }); r.texto('BURN!', '#ff7a1f'); }
+          this.prender(r, segura + 0.4);
+          return;
+        }
+        tiempo += dt;
+        const a = Math.atan2(l.ay - l.y, l.ax - l.x); l.accion.angulo = a;
+        preso.x = l.x + Math.cos(a) * 18; preso.y = l.y + Math.sin(a) * 12;
+        if (tiempo >= segura || (tiempo > 0.15 && l.humano && !l.intento?.[extra.slot])) { this.arremessar(l, preso, a, h, extra); preso = null; l.accion.hasta = luta.t + 0.1; }
+      } };
+  }
+  // joga o rival numa direção; se bater na parede da arena, explode em fogo
+  arremessar(l, b, a, h, extra) {
+    const luta = this.luta, x0 = b.x, y0 = b.y, L = h.lanza ?? 170, fim = { x: x0 + Math.cos(a) * L, y: y0 + Math.sin(a) * L };
+    const p = limitarCampo(fim.x, fim.y), parede = Math.hypot(p.x - fim.x, p.y - fim.y) > 4, dur = 0.32;
+    let t = 0;
+    luta.emit({ t: 'arremesso', b, x0, y0, x1: p.x, y1: p.y });
+    luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt => {
+      t += dt; const k = Math.min(1, t / dur);
+      if (b.ko) return false;
+      b.x = x0 + (p.x - x0) * k; b.y = y0 + (p.y - y0) * k; b.salto = Math.round(Math.sin(k * Math.PI) * 18);
+      if (k < 1) return true;
+      b.salto = 0;
+      if (parede) {
+        luta.emit({ t: 'pilarFuego', x: b.x, y: b.y, tipo: 'FIRE' }); luta.emit({ t: 'explosion', x: b.x, y: b.y - 6, radio: h.explosion ?? 34, tipo: 'FIRE' }); luta.emit({ t: 'temblor', f: 0.01 });
+        atingir(l, b, pacote(h, extra, a, { dano: h.danoParede ?? 8, empuje: 0, quema: { dps: 2, dur: 3, max: 2 }, pesado: true }));
+        b.ponerEstado('aturdido', 0.35);
+        if (h.fuegoSuelo) for (let i = 0; i < 4; i++) luta.emit({ t: 'rastroLlama', x: b.x + (i - 1.5) * 10, y: b.y });
+      }
+      return false;
+    } });
+  }
+
+  // ---------------------------------------------------------------- Flame Charge (Houndoom): corre gastando o calor até apertar de novo ou o calor acabar
+  corrida(l, h) {
+    if (l.est.corrida) { if (this.luta.t - l.est.corrida.desde < 0.35) return false; delete l.est.corrida; l.cd.esp = h.cd ?? 2; return; }
+    if (l.fervor < 8) { if (l.humano) l.avisar('frio', () => l.texto('NO HEAT', '#9aa0b4')); return false; }
+    l.ponerEstado('corrida', 99, { desde: this.luta.t, vel: h.vel ?? 1.9, gasta: h.gasta ?? 20, rastro: !!h.rastroFuego, dano: h.dano ?? 2, prox: 0 });
+    l.texto('FLAME CHARGE!', '#ff8a2a');
+    l.cd.esp = 0;
+  }
+
+  // ---------------------------------------------------------------- Sandstorm (Tyranitar): se arremessa e cria um círculo de tempestade de areia
+  tormentaArena(l, h, extra) {
+    const luta = this.luta, apunte = angApunte(l), d = Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(apunte) * d, y0 + Math.sin(apunte) * d), vuelo = 0.3 + d / 900;
+    l.animar('Hop', vuelo); l.angulo = apunte;
+    l.ponerEstado('blindaje', vuelo + 0.2, { reduce: 0.4 });
+    let t = 0;
+    l.accion = { hasta: luta.t + vuelo, bloquea: true, lento: 0, angulo: apunte,
+      update: dt => { t += dt; const k = Math.min(1, t / vuelo); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * (22 + d * 0.1)); },
+      fin: () => {
+        l.salto = 0;
+        if (l.ko) return;
+        luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 40, tipo: 'ROCK', estilo: 'aterrizaje' }); luta.emit({ t: 'temblor', f: 0.01 });
+        areaCirculo(luta, l, l.x, l.y, 36, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 90, pesado: true }));
+        for (const e of luta.entidades) if (e.tipo === 'tormenta' && e.dueno === l) e.vivo = false;
+        const tm = { tipo: 'tormenta', dueno: l, vivo: true, x: l.x, y: l.y, radio: h.radio ?? 85, dur: h.dur ?? 7, t: 0, prox: 0.3,
+          update: dt => {
+            tm.t += dt;
+            if (!tm.vivo || tm.t >= tm.dur || l.ko) return false;
+            if (tm.t >= tm.prox) {
+              tm.prox = tm.t + 0.5;
+              for (const b of luta.blancos(l)) {
+                if (b.est?.vuelo || Math.hypot(b.x - tm.x, (b.y - tm.y) / 0.62) > tm.radio + RADIO) continue;
+                atingir(l, b, pacote(h, extra, 0, { dano: h.tick ?? 2.5, tick: true, empuje: 0, dirX: undefined, dirY: undefined }));
+                b.ponerEstado('lento', 0.6, { f: h.ralentiza ?? 0.35 });
+              }
+            }
+            return true;
+          } };
+        luta.add(tm);
+      } };
+  }
+  enTormenta(l) { return this.luta.entidades.some(e => e.tipo === 'tormenta' && e.dueno === l && e.vivo && Math.hypot(l.x - e.x, (l.y - e.y) / 0.62) < e.radio + 6); }
+  tormentaDe(l) { return this.luta.entidades.find(e => e.tipo === 'tormenta' && e.dueno === l && e.vivo); }
+
+  // ---------------------------------------------------------------- Sand Tomb (Tyranitar): uma corrente de areia puxa o rival para perto
+  tumbaArena(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.15, ang = asistir(l, angApunte(l), h.alcance, 0.6), mitad = rad(h.angulo ?? 40) / 2;
+    l.animar(h.anim ?? 'Charge', carga + 0.3);
+    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0, angulo: ang };
+    luta.programar(carga, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'corrienteArena', l, ang, alcance: h.alcance });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+        if (d > h.alcance + RADIO || Math.abs(difAng(Math.atan2(dy, dx), ang)) > mitad + 0.15) continue;
+        const res = atingir(l, b, pacote(h, extra, ang, { empuje: 0, dirX: -dx / d, dirY: -dy / d }));
+        if (res !== 'golpe' || b.esClon) continue;
+        this.prender(b, 0.35);
+        const x0 = b.x, y0 = b.y, x1 = l.x + (dx / d) * 30, y1 = l.y + (dy / d) * 22;
+        let t = 0;
+        luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt2 => { t += dt2; const k = Math.min(1, t / 0.3); if (b.ko) return false; b.x = x0 + (x1 - x0) * k; b.y = y0 + (y1 - y0) * k; return k < 1; } });
+        b.ponerEstado('lento', 1.5, { f: 0.3 });
       }
     });
   }
 
-  // ---------------------------------------------------------------- King's Shield (Aegislash): volta para a forma de escudo e bloqueia um instante
-  kingsShield(l, h) {
+  // ---------------------------------------------------------------- Stone Edge (Tyranitar): só na tempestade; pedras pontudas brotam três vezes debaixo do rival
+  stoneEdge(l, h, extra) {
     const luta = this.luta;
-    l.postura = 'escudo';
-    l.ponerEstado('blindaje', h.dur ?? 0.7, { reduce: h.reduce ?? 0.85 });
-    l.animar(h.anim ?? 'Withdraw', 0.4);
-    l.accion = { hasta: luta.t + 0.25, lento: 0.4 };
-    l.texto('SHIELD FORM!', '#93c5fd');
-    luta.emit({ t: 'endurecer', l, estilo: 'barrera' });
+    l.animar(h.anim ?? 'Charge', 0.5);
+    l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0 };
+    for (let i = 0; i < (h.ondas ?? 3); i++) luta.programar(0.1 + i * 0.4, () => {
+      if (l.ko) return;
+      const r = l.rival, x = r && !r.ko ? r.x : l.ax, y = r && !r.ko ? r.y : l.ay;
+      let saiu = false;
+      const e = { tipo: 'espinho', dueno: l, vivo: true, x, y, radio: h.radio ?? 32, t: 0, aviso: 0.3, dur: 1.05, tipoAtq: 'ROCK', update: dt => {
+        e.t += dt;
+        if (!saiu && e.t >= e.aviso) {
+          saiu = true;
+          luta.emit({ t: 'pulso', x: e.x, y: e.y, radio: e.radio, tipo: 'ROCK', estilo: 'tierra' }); luta.emit({ t: 'temblor', f: 0.008 });
+          for (const b of luta.blancos(l)) {
+            if (b.oculto || b.est?.vuelo || Math.hypot(b.x - e.x, (b.y - e.y) / 0.7) > e.radio + RADIO) continue;
+            if (b.esClon) { b.romper(); continue; }
+            atingir(l, b, pacote(h, extra, 0, { empuje: 0, pesado: true, dirX: undefined, dirY: undefined }));
+            this.lanzarAlto(b, 0.45, 50);
+          }
+        }
+        return e.t < e.dur;
+      } };
+      luta.add(e);
+    });
+  }
+
+  // ---------------------------------------------------------------- Mega Rock Wrecker (Mega Tyranitar): a tempestade vira redemoinho, puxa todos para o centro e uma rocha gigante cai
+  vorticeArena(l, h, extra) {
+    const luta = this.luta, tm = this.tormentaDe(l);
+    if (!tm) return false;
+    l.animar(h.anim ?? 'Charge', 1);
+    l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
+    tm.dur = Math.max(tm.dur, tm.t + 2.2); tm.radio *= 1.25;
+    luta.emit({ t: 'vortice', x: tm.x, y: tm.y, radio: tm.radio, dur: 1.2 });
+    let t = 0;
+    luta.add({ tipo: 'vorticeFuerza', dueno: l, vivo: true, update: dt => {
+      t += dt;
+      for (const b of luta.blancos(l)) {
+        if (b.est?.vuelo || b.esClon) continue;
+        const dx = tm.x - b.x, dy = tm.y - b.y, d = Math.hypot(dx, dy / 0.62);
+        if (d > tm.radio + 30 || d < 6) continue;
+        b.x += (dx / d) * 120 * dt; b.y += (dy / d) * 75 * dt;
+      }
+      return t < 1.2;
+    } });
+    luta.emit({ t: 'meteorito', x: tm.x, y: tm.y, caida: 1.2, tipo: 'ROCK', grande: true });
+    luta.programar(1.2, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'pulso', x: tm.x, y: tm.y, radio: h.radio, tipo: 'ROCK', estilo: 'aterrizaje' });
+      luta.emit({ t: 'explosion', x: tm.x, y: tm.y - 8, radio: h.radio, tipo: 'ROCK' });
+      luta.emit({ t: 'temblor', f: 0.018 });
+      for (const b of luta.blancos(l)) {
+        if (b.est?.vuelo || Math.hypot(b.x - tm.x, (b.y - tm.y) / 0.62) > h.radio + RADIO) continue;
+        if (b.esClon) { b.romper(); continue; }
+        atingir(l, b, pacote(h, extra, 0, { empuje: 0, pesado: true, dirX: undefined, dirY: undefined }));
+        this.lanzarAlto(b, 0.6, 70);
+      }
+    });
   }
 
   // ---------------------------------------------------------------- Poison Jab (Sneasler): avança em meia-lua; dentro da janela, apertar de novo dá um jab que empurra

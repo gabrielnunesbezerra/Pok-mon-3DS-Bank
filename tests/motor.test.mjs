@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'lunas', 'ondaToxica', 'detonarCharcos', 'kingsShield', 'overheat', 'infierno', 'sheerCold'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena'];
 
-test('o roster tem os 30 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'honedge', 'absol', 'dreepy', 'houndour', 'snover']);
+test('o roster tem os 28 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -159,6 +159,8 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
         a.x = 380; a.y = 222; b.x = 520; b.y = 222; a.ax = b.x; a.ay = b.y;
         // a ult do Golem só sai rolando
         if (a.kit[slot].requiereRodar) a.ponerEstado('rodando', 3, { vel: 1.7, dano: 5, empuje: 100, golpes: new Map() });
+        if (a.kit[slot].requiereTormenta) l.add({ tipo: 'tormenta', dueno: a, vivo: true, x: a.x, y: a.y, radio: 80, dur: 5, t: 0, update: () => true });
+        a.fervor = 60;
         const ok = l.habilidades.usar(a, slot);
         // formas bebê não têm ultimate: o botão existe mas não faz nada
         if (a.kit[slot].sinUlti) { assert.equal(ok, false, `${p.id} etapa ${etapa} sem ultimate`); continue; }
@@ -333,59 +335,82 @@ test('Rollout continua rolando com o botão segurado e Wall Climb pula para onde
   assert.ok(s.y < 150 && Math.abs(s.x - 380) < 10, `pulou para cima, longe do rival (${Math.round(s.x)}, ${Math.round(s.y)})`);
 });
 
-test('Dragalge espalha poças, a Mega explode todas; Aegislash troca entre escudo e espada', () => {
+test('Dragalge: mergulho deixa poças, Sludge Bomb deixa lento, Venoshock dobra em envenenado e a Mega chove veneno', () => {
   const l = nuevaLuta('skrelp', 'munchlax', { etapas: [2, 0] });
   const [a, b] = l.luchadores;
-  a.x = 380; a.y = 222; b.x = 600; b.y = 300; a.ax = 500; a.ay = 222; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'lmb'), true);
-  correr(l, 1, [null, null]);
-  a.accion = null; a.cd.esp = 0;
+  const pocas = () => l.entidades.filter(e => e.tipo === 'charco' && e.dueno === a && e.t < e.dur);
+  a.x = 380; a.y = 222; b.x = 640; b.y = 330; a.ax = 500; a.ay = 222; a.energia = 100; b.inmortal = true;
   assert.equal(l.habilidades.usar(a, 'esp'), true);
   correr(l, 0.5, [null, null]);
-  const pocas = () => l.entidades.filter(e => e.tipo === 'charco' && e.dueno === a && e.t < e.dur).length;
-  assert.ok(pocas() >= 3, `tiro e dash deixaram poças (${pocas()})`);
+  assert.equal(pocas().length, 2, 'poça onde entra e onde sai');
+  b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  correr(l, 1.2, [null, null]);
+  assert.ok(b.est.lento && b.est.veneno, 'a poça grande envenena e deixa lento');
+  b.est = {}; a.accion = null; b.x = a.x + 100; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  l.entidades = l.entidades.filter(e => e.tipo !== 'charco');
+  const h0 = b.hp; assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.3, [null, null]); const normal = h0 - b.hp;
+  b.ponerEstado('veneno', 5, { dps: 0.01, fuente: a }); a.cd.q = 0; a.accion = null;
+  const h1 = b.hp; assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.3, [null, null]); const envenenado = h1 - b.hp;
+  assert.ok(envenenado > normal * 1.7, `Venoshock dobra (${normal.toFixed(1)} -> ${envenenado.toFixed(1)})`);
   a.mega = true; a.kit = a.kitActual(); a.ulti = 100; a.accion = null;
-  assert.equal(a.kit.e.forma, 'detonarCharcos');
-  const c0 = l.entidades.find(e => e.tipo === 'charco'); b.x = c0.x; b.y = c0.y; b.est = {};
-  const hp0 = b.hp;
+  const antes = pocas().length;
   assert.equal(l.habilidades.usar(a, 'e'), true);
-  correr(l, 1, [null, null]);
-  assert.ok(b.hp < hp0, 'a poça explodiu em cima do rival');
-
-  const l2 = nuevaLuta('honedge', 'munchlax', { etapas: [2, 0] });
-  const [g, r] = l2.luchadores;
-  g.x = 380; g.y = 222; r.x = 420; r.y = 222; g.ax = r.x; g.ay = r.y; r.inmortal = true;
-  assert.equal(g.postura, 'escudo');
-  assert.ok(!g.dex.includes('0681-0001'), 'começa com o sprite de escudo');
-  assert.equal(l2.habilidades.usar(g, 'lmb'), true);
-  assert.equal(g.postura, 'espada');
-  assert.ok(g.dex.includes('0681-0001'), 'atacou e virou espada');
-  correr(l2, 0.6, [null, null]); g.accion = null;
-  assert.equal(l2.habilidades.usar(g, 'q'), true);
-  assert.equal(g.postura, 'escudo', "King's Shield volta para o escudo");
+  correr(l, 1.6, [null, null]);
+  assert.ok(pocas().length > antes, 'os respingos deixaram poças');
 });
 
-test('Houndoom esquenta, bate mais quente e se queima; Abomasnow acumula gelo e congela na quinta camada', () => {
+test('Dragapult: Jet Mode faz os tiros perseguirem; Draco Meteor chove na área do rival', () => {
+  const l = nuevaLuta('dreepy', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 300; a.y = 222; b.x = 520; b.y = 300; a.ax = 520; a.ay = 150; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  assert.ok(a.est.aeronave && b.est.marca);
+  const hp0 = b.hp; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'lmb'), true);
+  correr(l, 1.5, [{ mx: 0, my: 0, ax: 520, ay: 150 }, null]);
+  assert.ok(b.hp < hp0, 'mirando para longe, o tiro ainda acertou');
+  a.ulti = 100; a.accion = null; const hp1 = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 2.5, [null, null]);
+  assert.ok(b.hp < hp1, 'meteoros acertaram');
+});
+
+test('Tyranitar: tempestade de areia, Sand Tomb puxa e a ult só sai dentro da tempestade', () => {
+  const l = nuevaLuta('larvitar', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 520; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; a.ulti = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'e'), false, 'sem tempestade não tem ult');
+  a.ax = a.x + 40; a.ay = a.y;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  correr(l, 0.8, [null, null]);
+  assert.ok(l.entidades.some(e => e.tipo === 'tormenta'), 'a tempestade nasceu');
+  const d0 = Math.hypot(b.x - a.x, b.y - a.y); a.ax = b.x; a.ay = b.y; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  correr(l, 0.6, [null, null]);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < d0 - 40, 'Sand Tomb puxou');
+  a.accion = null; const hp0 = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true, 'dentro da tempestade a ult sai');
+  correr(l, 1.6, [null, null]);
+  assert.ok(b.hp < hp0);
+});
+
+test('Houndoom: calor queima quando passa do limite, corrida gasta o calor e o Overheat persegue o rival', () => {
   const l = nuevaLuta('houndour', 'munchlax', { etapas: [1, 0] });
   const [a, b] = l.luchadores;
-  a.x = 380; a.y = 222; b.x = 420; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'q'), true);
-  assert.ok(a.fervor >= 40, 'Sunny Day esquenta');
+  a.x = 380; a.y = 222; b.x = 560; b.y = 260; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
   a.fervor = 100; const hp0 = a.hp;
   correr(l, 1, [null, null]);
   assert.ok(a.hp < hp0, 'superaquecido se queima');
-  a.ulti = 100; a.accion = null; const f0 = a.fervor;
-  assert.ok(f0 > 75);
+  a.fervor = 60;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  correr(l, 1, [{ mx: 1, my: 0, ax: 600, ay: 222 }, null]);
+  assert.ok(a.fervor < 50, 'a corrida gasta o calor');
+  a.fervor = 90; a.ulti = 100; a.accion = null; delete a.est.corrida; const hp1 = b.hp;
   assert.equal(l.habilidades.usar(a, 'e'), true);
   assert.equal(a.fervor, 0, 'Overheat descarrega o calor');
-
-  const l2 = nuevaLuta('snover', 'munchlax', { etapas: [1, 0] });
-  const [s, r] = l2.luchadores;
-  s.x = 380; s.y = 222; r.x = 470; r.y = 222; r.inmortal = true;
-  for (let i = 0; i < 4; i++) r.sumarEscarcha(s, 1);
-  assert.equal(r.escarcha.n, 4);
-  r.sumarEscarcha(s, 1);
-  assert.ok(r.est.congelado && !r.escarcha, 'na quinta camada congela e zera');
+  correr(l, 3, [null, null]);
+  assert.ok(b.hp < hp1, 'a erupção alcançou e explodiu');
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {

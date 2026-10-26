@@ -386,7 +386,11 @@ export class Combate {
     let sx = 1, sy = 1, tremor = 0;
     if (l.anim && t - l.animInicio < 0.16) { const k = Math.sin(((t - l.animInicio) / 0.16) * Math.PI); sx = 1 + 0.09 * k; sy = 1 - 0.1 * k; }
     // pulinho do Earthquake: sobe e cai no momento do tremor
-    const br = l.est.brinco, brinco = br ? Math.round(Math.sin(Math.min(1, (this.luta.t - br.t0) / br.dur) * Math.PI) * 18) : 0, alto = l.salto + brinco;
+    const br = l.est.brinco, brinco = br ? Math.round(Math.sin(Math.min(1, (this.luta.t - br.t0) / br.dur) * Math.PI) * 18) : 0;
+    // Jet Mode: voa baixinho, solta rastro de jato; Flame Charge: rastro de fogo e linhas de velocidade
+    const jet = l.est.aeronave ? Math.round(10 + Math.sin(this.t * 6) * 2) : 0, alto = l.salto + brinco + jet;
+    if (jet && Math.random() < 0.8) { const a = l.est.aeronave.rumbo + Math.PI; this.fx.add({ x: l.x + Math.cos(a) * 10, y: l.y - jet - l.alto * 0.3 + Math.sin(a) * 6, vx: Math.cos(a) * 90, vy: Math.sin(a) * 50, size: 2.5, grow: 1.5, life: 0.3, color: Math.random() < 0.5 ? '#7ad8c8' : '#e0fff8', forma: 'chispa' }); }
+    if (l.est.corrida && l.moviendo && Math.random() < 0.9) this.fx.add({ x: l.x + (Math.random() - 0.5) * 10, y: l.y - 2, vx: -l.vx * 0.3, vy: -20, size: 3, grow: 2, life: 0.35, forma: 'llama', rampa: ['#7a1a08', '#ff5a1a', '#ffb347', '#fff3b0'] });
     if (alto > 2) { sx = 0.93; sy = 1.08; }
     if (l._saltoAnt > 2 && alto <= 0) l._cae = t;
     l._saltoAnt = alto;
@@ -436,11 +440,6 @@ export class Combate {
       g.fillStyle = '#04102c'; g.fillRect(Math.round(l.x) - 13, Math.round(cy), 26, 4);
       g.fillStyle = f > 0.75 ? (Math.sin(this.t * 20) > 0 ? '#ff2a1a' : '#ffd23c') : '#ff8a2a'; g.fillRect(Math.round(l.x) - 12, Math.round(cy) + 1, Math.round(24 * f), 2);
       g.fillStyle = '#ffffff'; g.fillRect(Math.round(l.x) - 12 + 18, Math.round(cy), 1, 4);
-    }
-    // camadas de gelo do Abomasnow: cristais girando nos pés
-    if (l.escarcha && !l.ko) for (let i = 0; i < l.escarcha.n; i++) {
-      const a = this.t * 2 + (i / l.escarcha.n) * Math.PI * 2, x = Math.round(l.x + Math.cos(a) * (l.alto * 0.45 + 6)), y = Math.round(l.y - 4 + Math.sin(a) * 6);
-      g.fillStyle = '#0a2a4a'; g.fillRect(x - 2, y - 5, 5, 8); g.fillStyle = '#9fd8ff'; g.fillRect(x - 1, y - 4, 3, 6); g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 4, 1, 3);
     }
     // Sneasler: próximo básico sai em X (garrinha roxa piscando em cima da cabeça)
     if (l.xListo) {

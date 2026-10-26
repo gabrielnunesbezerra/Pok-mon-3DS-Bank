@@ -12,8 +12,8 @@ export const LIGA = {
     { id: 'c3', nombre: 'VOLCANO CIRCUIT', arena: 'crater', cor: '#fb923c', rivales: ['magikarp', 'onix', 'munchlax', 'poltchageist', 'swablu'] },
     { id: 'c4', nombre: 'LEGEND CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['duraludon', 'porygon', 'veluza', 'mewtwo'] },
     { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'halloween', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler'] },
-    { id: 'c6', nombre: 'BEACH CIRCUIT', arena: 'praia', cor: '#fde68a', rivales: ['skrelp', 'snover', 'absol'] },
-    { id: 'c7', nombre: 'HAUNTED CIRCUIT', arena: 'halloween', cor: '#fb923c', rivales: ['honedge', 'dreepy', 'houndour'] },
+    { id: 'c6', nombre: 'BEACH CIRCUIT', arena: 'praia', cor: '#fde68a', rivales: ['skrelp', 'larvitar'] },
+    { id: 'c7', nombre: 'HAUNTED CIRCUIT', arena: 'halloween', cor: '#fb923c', rivales: ['dreepy', 'houndour'] },
   ],
 };
 export const NIVEL_POR_VITORIA = ['facil', 'normal', 'dificil'];

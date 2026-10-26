@@ -1,34 +1,31 @@
 // Versões turbinadas das skills de cada Mega: mais alcance, mais golpes e efeitos novos,
 // não só mais dano. Entram por cima do kit da última forma (ver Lutador.kitActual).
 export const MEGA_KITS = {
-  houndour: {
-    lmb: { nombre: 'Mega Fire Fang', dano: 5.6, calienta: 8 },
-    rmb: { nombre: 'Mega Flamethrower', dano: 18, alcance: 160, angulo: 66 },
-    esp: { nombre: 'Mega Flame Charge', dist: 155, dano: 5, calienta: 14 },
-    q: { nombre: 'Mega Sunny Day', calienta: 50 },
-    e: { nombre: 'Mega Inferno', forma: 'infierno', tipo: 'FIRE', dano: 7, radio: 26, pilares: 8, paso: 9, carga: 0.25, quema: { dps: 2, dur: 3, max: 3 } },
-  },
-  snover: {
-    lmb: { nombre: 'Mega Ice Shard', rafaga: 2, cadaRafaga: 0.08, dano: 3.4 },
-    rmb: { nombre: 'Mega Wood Hammer', dano: 16, empuje: 180, escarcha: 2 },
-    esp: { nombre: 'Mega Ice Spinner', dist: 140, dano: 4 },
-    q: { nombre: 'Mega Aurora Veil', absorbe: 26, dur: 4 },
-    e: { nombre: 'Mega Sheer Cold', forma: 'sheerCold', tipo: 'ICE', dano: 12, porCapa: 5, radio: 150, carga: 0.4 },
-  },
   skrelp: {
-    lmb: { nombre: 'Mega Sludge', rafaga: 2, cadaRafaga: 0.09, dano: 3.6, charcoFin: { radio: 16, dur: 3, veneno: { dps: 2, dur: 2 } } },
-    rmb: { nombre: 'Mega Sludge Bomb', dano: 13, radio: 36, charco: { radio: 36, dur: 5 } },
-    esp: { nombre: 'Mega Dive', dist: 150, rastroCharco: { n: 4, radio: 18, dur: 3.5, veneno: { dps: 2, dur: 2 } } },
-    q: { nombre: 'Mega Venoshock', dano: 8, contraVeneno: 2.2 },
-    e: { nombre: 'Mega Acid Downpour', forma: 'detonarCharcos', tipo: 'POISON', dano: 15, radio: 34, charco: { radio: 22, dur: 5 }, veneno: { dps: 4, dur: 3 }, aturde: 0.3, carga: 0.35 },
+    lmb: { nombre: 'Mega Sludge', rafaga: 2, cadaRafaga: 0.09, dano: 3.6, charcoFin: { radio: 14, dur: 5, veneno: { dps: 2, dur: 2 } } },
+    rmb: { nombre: 'Mega Sludge Bomb', rebote: true, dano: 13, radio: 38, charco: { radio: 38, dur: 8, ralentiza: 0.4 } },
+    esp: { nombre: 'Mega Dive', dist: 160, charcoEntraSale: { radio: 26, dur: 7, veneno: { dps: 3, dur: 2 } } },
+    q: { nombre: 'Mega Venoshock', carga: 0.55, dano: 10, largo: 240, ancho: 20, contraVeneno: 2.2, rastro: { radio: 16, dur: 6 } },
+    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 10, area: 90, alto: 100, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
   },
-  absol: {
-    lmb: { nombre: 'Mega Night Slash', dano: 5.4, alcance: 56, angulo: 160 },
-    rmb: { nombre: 'Mega Sucker Punch', dano: 11, embestida: 100 },
-    esp: { nombre: 'Mega Quick Attack', dist: 150, dano: 4 },
-    q: { nombre: 'Mega Swords Dance', acumula: 4 },
-    e: { nombre: 'Mega Midnight Slash', golpes: 5, entre: 0.12, alcance: 125, dano: 6.2, aturde: 0.45 },
+  houndour: {
+    lmb: { nombre: 'Mega Ember', rafaga: 3, cadaRafaga: 0.06, abanico: 0.12, dano: 3.4 },
+    rmb: { nombre: 'Mega Foul Play', cadena: 2, dano: 9.5 },
+    esp: { nombre: 'Mega Flame Charge', rastroFuego: true, dano: 2, vel: 2.0 },
+    q: { nombre: 'Mega Fire Fang', siempreQuema: true, explosion: 48, danoParede: 12, fuegoSuelo: true, lanza: 210 },
+    e: { nombre: 'Mega Inferno', forma: 'infierno', tipo: 'FIRE', dano: 7, radio: 26, pilares: 3, paso: 9, carga: 0.25, quema: { dps: 2, dur: 3, max: 3 } },
   },
+  larvitar: {
+    lmb: { nombre: 'Mega Crunch', dano: 6.6, alcance: 60 },
+    rmb: { nombre: 'Mega Sandstorm', radio: 105, dur: 8, tick: 3 },
+    esp: { nombre: 'Mega Bulldoze', dist: 140, dano: 5 },
+    q: { nombre: 'Mega Sand Tomb', alcance: 190, angulo: 50 },
+    e: { nombre: 'Mega Rock Wrecker', forma: 'vorticeArena', tipo: 'ROCK', dano: 26, radio: 70, requiereTormenta: true },
+  },
+
+
+
+
   charmander: {
     lmb: { nombre: 'Mega Ember', rafaga: 2, cadaRafaga: 0.07, abanico: 0.05, dano: 4.4, escala: 1.6, explosion: { radio: 20 } },
     rmb: { nombre: 'Mega Flamethrower', tipo: 'DRAGON', dano: 19.2, alcance: 150, angulo: 66, dur: 1.5, quema: { dps: 2, dur: 3, max: 3 } },
