@@ -188,7 +188,7 @@ export class Efectos {
         case 'raices': { const o = e.onda ?? 0, n = 6 + o * 4; for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + o * 0.35 + (ale() - 0.5) * 0.2, d = e.dist + (ale() - 0.5) * 8; this.espinas.push({ x: e.x + Math.cos(a) * d, y: e.y + Math.sin(a) * d * 0.62, alto: 15 + o * 3 + Math.round(ale() * 6), semilla: i + o * 7, vid: true, t: -i * 0.018, life: 0.75 }); } this.anillo(e.x, e.y, e.dist * 0.5, e.dist, '#4caf38', 0.3, 2); this.polvo(e.x, e.y, 6 + (e.onda ?? 0) * 3, 6); this.temblor = Math.max(this.temblor, 3 + (e.onda ?? 0) * 2); break; }
         case 'humo': this.humo(e.x, e.y, 10, 'rgba(140,165,135,0.6)', e.radio * 0.4); break;
         case 'dash': this.polvo(e.l.x, e.l.y, 4, 5); break;
-        case 'desaparece': this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
+        case 'desaparece': if (e.modo === 'agua') { this.add({ x: e.l.x, y: e.l.y - 2, size: 18, life: 0.35, forma: 'salpicadura' }); this.rafaga(e.l.x, e.l.y, 'WATER', 12, 140); this.anillo(e.l.x, e.l.y, 4, 30, '#c084fc', 0.35, 2); break; } this.rafaga(e.l.x, e.l.y, e.modo === 'tierra' ? 'GROUND' : 'FLYING', 14, 150); if (e.modo === 'tierra') this.debris(e.l.x, e.l.y, 'ROCK', 6); break;
         case 'evolucion':
           for (let i = 0; i < 5; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 30, 4, (e.mega ? ['#2f7fe0', '#5fd08a', '#8fd8f0', '#a8e070', '#e6f8ff'] : ['#ff6fd8', '#ffd23c', '#8be09a', '#6fd0ff', '#b07aff'])[i], 0.4 + i * 0.05, 2);
           this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, e.mega ? 'WATER' : 'FAIRY', 30, 220, { life: 0.8 });
@@ -1122,6 +1122,21 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         PX.elipsePix(g, px(e.x), px(e.y - 1), R * 0.6, R * 0.33, '#ff7a1f'); PX.elipsePix(g, px(e.x), px(e.y - 1), R * 0.34, R * 0.19, '#ffe066'); PX.elipsePix(g, px(e.x), px(e.y - 1), R * 0.14, R * 0.08, '#ffffff');
         for (let i = 0; i < 6; i++) { const s = (t * 2.4 + i / 6) % 1, x = e.x + Math.sin(i * 2.4 + t * 9) * 5 * (1 - s); PX.carimbar(g, PX.llama(Math.floor(t * 14 + i), Math.max(4, Math.round(9 - s * 5)), PX.RAMPA_FOGO), x, e.y - 6 - s * 34, 0, 1, 1 - s * 0.8); }
         if (ale() < 0.45) fx.add({ x: e.x + entre(-R, R) * 0.5, y: e.y - 4, vx: entre(-40, 40), vy: entre(-170, -90), g: 260, size: entre(1.5, 2.6), life: entre(0.5, 0.8), color: ale() < 0.5 ? '#ffb52e' : '#ffe066', forma: 'chispa' });
+        break;
+      }
+      case 'ondaArena': {
+        // Sand Tomb: uma crista de areia correndo em linha reta, mais alta no meio, levantando grãos e pedrinhas
+        const ca = Math.cos(e.ang), sa = Math.sin(e.ang), W = e.ancho + 4, N = 7;
+        g.lineCap = 'round';
+        for (const [cor, w, a2] of [['#8a6a3a', W * 1.3, 0.16], ['#c8a868', W * 0.6, 0.22]]) { g.globalAlpha = a2; g.strokeStyle = cor; g.lineWidth = w; g.beginPath(); g.moveTo(e.x - ca * 60, e.y - sa * 60); g.lineTo(e.x - ca * 6, e.y - sa * 6); g.stroke(); }
+        g.lineCap = 'butt'; g.globalAlpha = 1;
+        for (let i = 0; i < N; i++) {
+          const u = i / (N - 1) - 0.5, perfil = Math.cos(u * Math.PI), x = e.x - sa * W * 1.6 * u + ca * perfil * 10, y = e.y + ca * W * 1.6 * u * 0.62 + sa * perfil * 10, hh = 6 + 16 * perfil + Math.sin(t * 25 + i * 1.7) * 2;
+          PX.carimbar(g, PX.humo(Math.round(7 + 6 * perfil), ['#8a6a3a', '#c8a868', '#f4e6c0']), x + ca * 2, y - hh * 0.5, 0, 1, 0.95);
+          PX.disco(g, x + ca * 3, y - hh, 1.5, '#fff6e0');
+        }
+        if (ale() < 0.8) fx.add({ x: e.x - sa * W * entre(-1, 1), y: e.y + ca * W * entre(-1, 1) - 12, vx: -ca * entre(30, 90), vy: -entre(40, 90), g: 220, size: entre(1.2, 2.2), life: 0.5, color: ['#e8d29a', '#c8a868', '#f4e6c0'][Math.floor(ale() * 3)], forma: 'sq' });
+        if (ale() < 0.15) fx.add({ x: e.x, y: e.y - 14, vx: -ca * 60 + entre(-30, 30), vy: -entre(60, 120), g: 420, size: 2, life: 0.6, forma: 'roca', vr: entre(-10, 10) });
         break;
       }
       case 'tormenta': dibujarTormenta(g, e, t); break;

@@ -1509,18 +1509,23 @@ export class Habilidades {
   // ---------------------------------------------------------------- Dig / Fly: some e reaparece
   vuelo(l, h, extra) {
     const luta = this.luta;
-    const tierra = h.modo === 'tierra' || h.modo === 'fantasma';
+    const tierra = h.modo === 'tierra' || h.modo === 'fantasma' || h.modo === 'agua', agua = h.modo === 'agua';
     l.animar(h.anim ?? 'Hop', 0.3);
-    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5, modo: h.modo === 'fantasma' ? 'fantasma' : tierra ? 'tierra' : 'aire' });
+    l.ponerEstado('vuelo', h.dur, { oculto: tierra, rapidez: h.rapidez ?? 1.5, modo: h.modo === 'fantasma' || agua ? h.modo : tierra ? 'tierra' : 'aire' });
     l.accion = null;
-    luta.emit({ t: 'desaparece', l, modo: tierra ? 'tierra' : 'aire' });
+    luta.emit({ t: 'desaparece', l, modo: agua ? 'agua' : tierra ? 'tierra' : 'aire' });
+    // Dive (Dragalge): deixa uma poça de veneno onde mergulha e outra onde sai
+    const poca = h.charcoEntraSale && { charco: h.charcoEntraSale, veneno: h.charcoEntraSale.veneno, tipo: h.tipo };
+    if (poca) ponerCharco(luta, l, l.x, l.y, poca);
     let t = 0;
     const emergir = () => {
       if (!l.est.vuelo) return;
       delete l.est.vuelo; l.salto = 0;
       const g = pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, aturde: h.aturde, empuje: h.empuje ?? 50 });
       areaCirculo(luta, l, l.x, l.y, h.radio, g);
-      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: tierra ? 'tierra' : 'aire' });
+      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, estilo: agua ? 'agua' : tierra ? 'tierra' : 'aire' });
+      if (agua) { luta.emit({ t: 'salpico', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, grande: true }); luta.emit({ t: 'chapoteo', x: l.x, y: l.y }); }
+      if (poca) ponerCharco(luta, l, l.x, l.y, poca);
       luta.emit({ t: 'temblor', f: 0.008 });
       l.ponerEstado('invul', 0.15);
     };
@@ -1786,7 +1791,7 @@ export class Habilidades {
           luta.emit({ t: 'temblor', f: 0.008 });
           const n = h.gotas ?? 9;
           for (let i = 0; i < n; i++) {
-            const a = (i / n) * Math.PI * 2 + aleatorio() * 0.5, rr = 20 + aleatorio() * (h.area ?? 85);
+            const a = (i / n) * Math.PI * 2 + aleatorio() * 0.5, rr = (h.areaMin ?? 20) + aleatorio() * (h.area ?? 85);
             const p = fijarCampo(alvo.x + Math.cos(a) * rr, alvo.y + Math.sin(a) * rr * 0.62);
             this.lanzarBomba(l, h, mid.x, mid.y, altura, p, 0.4 + aleatorio() * 0.15, 20, () => {
               areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 10 }));
@@ -1886,7 +1891,7 @@ export class Habilidades {
   corrida(l, h) {
     if (l.est.corrida) { if (this.luta.t - l.est.corrida.desde < 0.35) return false; delete l.est.corrida; l.cd.esp = h.cd ?? 2; return; }
     if (l.fervor < 8) { if (l.humano) l.avisar('frio', () => l.texto('NO HEAT', '#9aa0b4')); return false; }
-    l.ponerEstado('corrida', 99, { desde: this.luta.t, vel: h.vel ?? 1.9, gasta: h.gasta ?? 20, rastro: !!h.rastroFuego, dano: h.dano ?? 2, prox: 0 });
+    l.ponerEstado('corrida', 99, { desde: this.luta.t, cd: h.cd ?? 2, vel: h.vel ?? 1.9, gasta: h.gasta ?? 20, rastro: !!h.rastroFuego, dano: h.dano ?? 2, prox: 0 });
     l.texto('FLAME CHARGE!', '#ff8a2a');
     l.cd.esp = 0;
   }
@@ -1928,24 +1933,38 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- Sand Tomb (Tyranitar): uma corrente de areia puxa o rival para perto
   tumbaArena(l, h, extra) {
-    const luta = this.luta, carga = h.carga ?? 0.15, ang = asistir(l, angApunte(l), h.alcance, 0.6), mitad = rad(h.angulo ?? 40) / 2;
+    // uma onda de areia corre em linha reta; quem ela pega é arrastado de volta até o Tyranitar (a Mega solta duas)
+    const luta = this.luta, carga = h.carga ?? 0.15, ang = asistir(l, angApunte(l), h.alcance, 0.6);
     l.animar(h.anim ?? 'Charge', carga + 0.3);
-    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0, angulo: ang };
-    luta.programar(carga, () => {
+    l.accion = { hasta: luta.t + carga + 0.2, bloquea: true, lento: 0, angulo: ang };
+    for (let v = 0; v < (h.veces ?? 1); v++) luta.programar(carga + v * 0.55, () => {
       if (l.ko) return;
-      luta.emit({ t: 'corrienteArena', l, ang, alcance: h.alcance });
-      for (const b of luta.blancos(l)) {
-        if (b.oculto || b.est?.vuelo) continue;
-        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
-        if (d > h.alcance + RADIO || Math.abs(difAng(Math.atan2(dy, dx), ang)) > mitad + 0.15) continue;
-        const res = atingir(l, b, pacote(h, extra, ang, { empuje: 0, dirX: -dx / d, dirY: -dy / d }));
-        if (res !== 'golpe' || b.esClon) continue;
-        this.prender(b, 0.35);
-        const x0 = b.x, y0 = b.y, x1 = l.x + (dx / d) * 30, y1 = l.y + (dy / d) * 22;
-        let t = 0;
-        luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt2 => { t += dt2; const k = Math.min(1, t / 0.3); if (b.ko) return false; b.x = x0 + (x1 - x0) * k; b.y = y0 + (y1 - y0) * k; return k < 1; } });
-        b.ponerEstado('lento', 1.5, { f: 0.3 });
-      }
+      const r = l.rival, a = v && r && !r.ko && !r.oculto ? Math.atan2(r.y - l.y, r.x - l.x) : ang, ca = Math.cos(a), sa = Math.sin(a);
+      const vel = h.vel ?? 400, ancho = h.ancho ?? 24, ya = new Set();
+      luta.emit({ t: 'pulso', x: l.x + ca * 16, y: l.y + sa * 12, radio: 22, tipo: 'GROUND', estilo: 'tierra' });
+      const e = { tipo: 'ondaArena', dueno: l, vivo: true, x: l.x + ca * 16, y: l.y + sa * 16, ang: a, d: 0, ancho, t: 0,
+        update: dt => {
+          e.t += dt;
+          const paso = vel * dt; e.d += paso; e.x += ca * paso; e.y += sa * paso;
+          const p = fijarCampo(e.x, e.y);
+          if (e.d >= h.alcance || Math.hypot(p.x - e.x, p.y - e.y) > 3) return false;
+          for (const b of luta.blancos(l)) {
+            if (ya.has(b) || b.oculto || b.est?.vuelo) continue;
+            const dx = b.x - e.x, dy = b.y - e.y, lon = dx * ca + dy * sa, lat = -dx * sa + dy * ca;
+            if (Math.abs(lon) > 12 + RADIO * 0.5 || Math.abs(lat) > ancho + RADIO) continue;
+            ya.add(b);
+            const res = atingir(l, b, pacote(h, extra, a, { empuje: 0, dirX: -ca, dirY: -sa }));
+            if (res !== 'golpe' || b.esClon || l.ko) continue;
+            this.prender(b, 0.35);
+            const ddx = b.x - l.x, ddy = b.y - l.y, dd = Math.hypot(ddx, ddy) || 1, x0 = b.x, y0 = b.y, x1 = l.x + (ddx / dd) * 30, y1 = l.y + (ddy / dd) * 22;
+            luta.emit({ t: 'corrienteArena', l, ang: Math.atan2(ddy, ddx), alcance: dd });
+            let t = 0;
+            luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt2 => { t += dt2; const k = Math.min(1, t / 0.3); if (b.ko) return false; b.x = x0 + (x1 - x0) * k; b.y = y0 + (y1 - y0) * k; return k < 1; } });
+            b.ponerEstado('lento', 1.5, { f: 0.3 });
+          }
+          return true;
+        } };
+      luta.add(e);
     });
   }
 

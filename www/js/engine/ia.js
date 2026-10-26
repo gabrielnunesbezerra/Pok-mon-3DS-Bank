@@ -90,7 +90,8 @@ function perfil(h, slot, d) {
     case 'chorro': case 'helice': case 'lineaVeneno':
       P.alcance = h.largo * 0.9; P.ancho = (h.ancho ?? 20) / 2; P.retardo = h.carga ?? 0.3; P.sigue = h.giro ? 0.6 : 0.3;
       break;
-    case 'cono': case 'viento': case 'tumbaArena':
+    case 'tumbaArena': P.alcance = h.alcance; P.ancho = h.ancho ?? 24; P.retardo = (h.carga ?? 0.15) + d / (h.vel ?? 400); break;
+    case 'cono': case 'viento':
       P.alcance = h.alcance * 0.85; P.ancho = Math.tan(((h.angulo ?? 50) * Math.PI) / 360) * d + 6; P.retardo = h.carga ?? 0; P.sigue = h.giro ? 0.5 : 0;
       break;
     case 'pulso': P.tipo = 'area'; P.alcance = h.radio + RADIO - 4; P.retardo = h.carga ?? 0; break;

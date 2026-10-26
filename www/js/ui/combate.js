@@ -345,6 +345,18 @@ export class Combate {
       if (Math.random() < 0.4) this.fx.add({ x: l.x + (Math.random() - 0.5) * 16, y: l.y - 2, vy: -25, size: 2, life: 0.5, color: '#cfefff', forma: 'burbuja' });
       return;
     }
+    // Dive (Dragalge): mergulhado; ondas roxas e azuis, a barbatana cortando a superfície e bolhas de veneno
+    if (l.oculto && l.est.vuelo?.modo === 'agua') {
+      const x = Math.round(l.x), y = Math.round(l.y), pul = (this.t * 2.2) % 1, lado = l.vx < -5 ? -1 : 1;
+      g.globalAlpha = 0.35; PX.elipsePix(g, x, y, 16, 7, '#3a0f52');
+      g.globalAlpha = 0.8; PX.anilloPix(g, x, y, 8 + pul * 18, 4 + pul * 9, '#c084fc', 1, 0); PX.anilloPix(g, x, y, 20, 10, '#7ad8ff', 1, 6, Math.floor(this.t * 20));
+      g.globalAlpha = 1;
+      for (const [cor, k] of [['#04102c', 1], ['#8b3fbf', 0.7]]) { g.fillStyle = cor; g.beginPath(); g.moveTo(x - 6 * k, y - 1); g.lineTo(x + lado * 4 * k, y - 1 - 12 * k); g.lineTo(x + 6 * k, y - 1); g.closePath(); g.fill(); }
+      PX.lineaPix(g, x - 2, y - 2, x + lado * 2, y - 8, '#e9b8ff', 1);
+      if (Math.random() < 0.4) this.fx.add({ x: l.x + (Math.random() - 0.5) * 16, y: l.y - 2, vy: -25, size: 2, life: 0.5, color: Math.random() < 0.5 ? '#d68cf0' : '#bfe9ff', forma: 'burbuja' });
+      if (l.moviendo && Math.random() < 0.5) this.fx.add({ x: l.x - lado * 8, y: l.y, vx: -lado * 40, vy: -30, g: 200, size: 2, life: 0.35, color: '#9fdcff', forma: 'chispa' });
+      return;
+    }
     // Heavy Slam e afins: some no alto enquanto a mira anda
     if (l.oculto && l.est.vuelo?.modo === 'meteoro') return;
     // Rollout: no lugar do sprite, uma pedra redonda girando conforme anda

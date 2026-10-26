@@ -4,12 +4,12 @@ export const MEGA_KITS = {
   skrelp: {
     lmb: { nombre: 'Mega Sludge', rafaga: 2, cadaRafaga: 0.09, dano: 3.6, charcoFin: { radio: 14, dur: 5, veneno: { dps: 2, dur: 2 } } },
     rmb: { nombre: 'Mega Sludge Bomb', rebote: true, dano: 13, radio: 38, charco: { radio: 38, dur: 8, ralentiza: 0.4 } },
-    esp: { nombre: 'Mega Dive', dist: 160, charcoEntraSale: { radio: 26, dur: 7, veneno: { dps: 3, dur: 2 } } },
+    esp: { nombre: 'Mega Dive', dano: 8, radio: 46, rapidez: 1.8, charcoEntraSale: { radio: 26, dur: 7, veneno: { dps: 3, dur: 2 } } },
     q: { nombre: 'Mega Venoshock', carga: 0.55, dano: 10, largo: 240, ancho: 20, contraVeneno: 2.2, rastro: { radio: 16, dur: 6 } },
-    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 10, area: 90, alto: 100, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
+    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 13, areaMin: 40, area: 150, alto: 110, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
   },
   houndour: {
-    lmb: { nombre: 'Mega Ember', rafaga: 3, cadaRafaga: 0.06, abanico: 0.12, dano: 3.4 },
+    lmb: { nombre: 'Mega Ember', rafaga: 2, cadaRafaga: 0.06, abanico: 0.12, dano: 3.4 },
     rmb: { nombre: 'Mega Foul Play', cadena: 2, dano: 9.5 },
     esp: { nombre: 'Mega Flame Charge', rastroFuego: true, dano: 2, vel: 2.0 },
     q: { nombre: 'Mega Fire Fang', siempreQuema: true, explosion: 48, danoParede: 12, fuegoSuelo: true, lanza: 210 },
@@ -19,7 +19,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Crunch', dano: 6.6, alcance: 60 },
     rmb: { nombre: 'Mega Sandstorm', radio: 105, dur: 8, tick: 3 },
     esp: { nombre: 'Mega Bulldoze', dist: 140, dano: 5 },
-    q: { nombre: 'Mega Sand Tomb', alcance: 190, angulo: 50 },
+    q: { nombre: 'Mega Sand Tomb', alcance: 230, ancho: 28, veces: 2 },
     e: { nombre: 'Mega Rock Wrecker', forma: 'vorticeArena', tipo: 'ROCK', dano: 26, radio: 70, requiereTormenta: true },
   },
 

@@ -335,13 +335,17 @@ test('Rollout continua rolando com o botão segurado e Wall Climb pula para onde
   assert.ok(s.y < 150 && Math.abs(s.x - 380) < 10, `pulou para cima, longe do rival (${Math.round(s.x)}, ${Math.round(s.y)})`);
 });
 
-test('Dragalge: mergulho deixa poças, Sludge Bomb deixa lento, Venoshock dobra em envenenado e a Mega chove veneno', () => {
+test('Dragalge: mergulho (some debaixo da água) deixa poças, Sludge Bomb deixa lento, Venoshock dobra em envenenado e a Mega chove veneno', () => {
   const l = nuevaLuta('skrelp', 'munchlax', { etapas: [2, 0] });
   const [a, b] = l.luchadores;
   const pocas = () => l.entidades.filter(e => e.tipo === 'charco' && e.dueno === a && e.t < e.dur);
   a.x = 380; a.y = 222; b.x = 640; b.y = 330; a.ax = 500; a.ay = 222; a.energia = 100; b.inmortal = true;
   assert.equal(l.habilidades.usar(a, 'esp'), true);
-  correr(l, 0.5, [null, null]);
+  correr(l, 0.3, [null, null]);
+  assert.ok(a.oculto && a.est.vuelo?.modo === 'agua', 'fica debaixo da água como o Dig');
+  assert.equal(pocas().length, 1, 'poça onde mergulha');
+  correr(l, 1.1, [null, null]);
+  assert.ok(!a.oculto);
   assert.equal(pocas().length, 2, 'poça onde entra e onde sai');
   b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null;
   assert.equal(l.habilidades.usar(a, 'rmb'), true);
@@ -615,4 +619,24 @@ test('novos: Mirror Coat devolve, Aqua Ring cura, Lock-On marca, Tri Attack troc
   assert.equal(m.habilidades.usar(e, 'rmb'), true);
   correr(m, 0.25, [null, null]);
   assert.equal(m.entidades.filter(x => x.tipo === 'proj').length, 14);
+});
+
+test('Tyranitar: a onda de areia corre em linha e puxa; a Mega puxa duas vezes. Houndoom sem sobrecarga do básico', () => {
+  const l = nuevaLuta('larvitar', 'munchlax', { etapas: [3, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 300; a.y = 222; b.x = 470; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  correr(l, 0.25, [null, null]);
+  assert.ok(l.entidades.some(e => e.tipo === 'ondaArena'), 'a onda anda pelo chão');
+  correr(l, 0.8, [null, null]);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 60, 'arrastado até o Tyranitar');
+  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.cd.q = 0; a.energia = 100; b.x = a.x + 180; b.y = a.y; a.ax = b.x; a.ay = b.y; b.est = {};
+  let ondas = 0; const add = l.add.bind(l); l.add = e => { if (e.tipo === 'ondaArena') ondas++; return add(e); };
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  correr(l, 1.2, [null, null]);
+  assert.equal(ondas, 2);
+  const h = nuevaLuta('houndour', 'munchlax', { etapas: [2, 0] }), [c] = h.luchadores;
+  for (let i = 0; i < 12; i++) { c.cd.lmb = 0; c.accion = null; h.habilidades.usar(c, 'lmb'); correr(h, 0.05, [null, null]); }
+  assert.equal(h.t < c.sobrecargaHasta, false, 'Ember não sobrecarrega');
+  assert.ok(c.fervor >= 60, 'o Ember esquenta rápido');
 });

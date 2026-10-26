@@ -447,7 +447,7 @@ export class Lutador {
     if (co) {
       this.fervor = Math.max(0, this.fervor - co.gasta * dt); this.ultimoFuego = t;
       if (co.rastro && t >= co.prox && Math.hypot(this.vx, this.vy) > 20) { co.prox = t + 0.12; this.luta.emit({ t: 'rastroLlama', x: this.x, y: this.y }); this.luta.add(llamaSuelo(this.luta, this, this.x, this.y, co.dano)); }
-      if (this.fervor <= 0) { delete this.est.corrida; this.cd.esp = Math.max(this.cd.esp, 2); }
+      if (this.fervor <= 0) { delete this.est.corrida; this.cd.esp = Math.max(this.cd.esp, co.cd ?? 2); }
     }
     // Houndoom: esfria quando para de usar fogo; acima de 75 o corpo queima
     if (this.def.fervor && this.fervor > 0) {
