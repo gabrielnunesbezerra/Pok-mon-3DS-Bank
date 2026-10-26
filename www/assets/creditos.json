@@ -1509,5 +1509,105 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0228",
+  "sprite": [
+   "CHUNSOFT",
+   "JFain"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0228s",
+  "sprite": [
+   "Anonymous",
+   "Morei"
+  ],
+  "retrato": [
+   "Anonymous",
+   "ShyStarryRain"
+  ]
+ },
+ {
+  "dex": "0229",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "<@!967585139485999154>",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0229-0001",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0229-0001s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0229s",
+  "sprite": [
+   "Morei"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0459",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Jarleypeño"
+  ]
+ },
+ {
+  "dex": "0459s",
+  "sprite": [
+   "Scizivire"
+  ],
+  "retrato": [
+   "Lovi",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0460",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "SingingMudkip"
+  ]
+ },
+ {
+  "dex": "0460s",
+  "sprite": [
+   "Scizivire"
+  ],
+  "retrato": [
+   "Prismatic",
+   "SingingMudkip"
+  ]
  }
 ]

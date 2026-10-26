@@ -103,7 +103,7 @@ export class Efectos {
           if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.08); this.flashColor = '#fff6e0'; }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
-        case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
+        case 'tajo': if (e.estilo === 'espada' || e.estilo === 'espadaGigante') { const grande = e.estilo === 'espadaGigante'; this.heroes.push({ k: 'espada', l: e.l, ang: e.ang, alcance: e.alcance, arco: (e.anguloArco ?? 150) * Math.PI / 180, grande, lado: (this.lado = -(this.lado ?? 1)), t: 0, life: grande ? 0.42 : 0.22, hue: this.hue }); if (grande) { this.anillo(e.l.x, e.l.y, 10, e.alcance + 20, '#c4b5fd', 0.4, 3); this.flash = Math.max(this.flash, 0.06); } break; } this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); if (e.estilo === 'sonido') for (let i = 0; i < 8; i++) { const a = e.ang + (ale() - 0.5) * (e.angulo * Math.PI / 180) * 0.8, s = entre(120, 220); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.8 - 20, drag: 1.5, size: entre(5, 7), life: e.alcance / 200, color: ['#ffffff', '#ff9ad8', '#bfe0ff'][i % 3], forma: 'nota' }); } break;
         case 'burbujaRompe': {
           // Barrier estourando: anel que abre e cacos de luz
@@ -218,6 +218,10 @@ export class Efectos {
         case 'corteX': this.heroes.push({ k: 'garraX', x: e.x, y: e.y, ang: e.ang, r: e.r, tipo: e.tipo, t: 0, life: 0.35, hue: this.hue }); this.chispas(e.x, e.y, '#f0d0ff', 6, 170); break;
         case 'auraFantasma': this.heroes.push({ k: 'fantasma', l: e.l, tipo: e.tipo, t: 0, life: e.dur + 0.25, hue: this.hue }); break;
         case 'luna': this.heroes.push({ k: 'luna', x: e.x, y: e.y, ang: e.ang, r: e.r, lado: e.lado, final: e.final, tipo: e.tipo, t: 0, life: e.final ? 0.55 : 0.42, hue: this.hue }); break;
+        case 'escarcha': for (let i = 0; i < 5; i++) { const a = ale() * Math.PI * 2; this.add({ x: e.l.x + Math.cos(a) * 10, y: e.l.y - e.l.alto * 0.5 + Math.sin(a) * 8, vx: Math.cos(a) * 60, vy: Math.sin(a) * 40 - 20, drag: 3, size: 2, life: 0.35, color: i % 2 ? '#e0f6ff' : '#9fd8ff', forma: 'chispa' }); } break;
+        case 'estilhaco': for (let i = 0; i < 18; i++) { const a = ale() * Math.PI * 2, s = entre(80, 200); this.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.5, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7 - 40, drag: 2, size: entre(2, 4), life: entre(0.4, 0.7), color: ['#ffffff', '#bfe9ff', '#7cc8f0'][i % 3], forma: 'chispa' }); } this.anillo(e.l.x, e.l.y - e.l.alto * 0.4, 6, 46, '#bfe9ff', 0.4, 3); this.flash = Math.max(this.flash, 0.05); this.flashColor = '#e0f6ff'; break;
+        case 'overheat': this.heroes.push({ k: 'vapor', l: e.l, t: 0, life: 0.9, hue: this.hue }); break;
+        case 'nevasca': this.heroes.push({ k: 'nevasca', x: e.x, y: e.y, radio: e.radio, t: 0, life: e.dur + 0.4, hue: this.hue }); break;
         case 'cortesSuelo': this.heroes.push({ k: 'cortesSuelo', lineas: e.lineas, viaja: e.viaja, tipo: e.tipo, t: 0, life: e.viaja + 0.55, hue: this.hue }); this.chispas(e.lineas[0].x0, e.lineas[0].y0 - 8, '#e9b8ff', 12, 220); this.anillo(e.lineas[0].x0, e.lineas[0].y0, 8, 40, '#a855f7', 0.35, 2); break;
         case 'xGigante': this.heroes.push({ k: 'equis', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.8, hue: this.hue }); break;
         case 'pilarFuego': this.heroes.push({ k: 'pilar', x: e.x, y: e.y, tipo: e.tipo, t: 0, life: 0.7, hue: this.hue }); break;
@@ -579,6 +583,38 @@ export class Efectos {
         PX.lineaPix(g, x - tam * 0.5, y - tam * 0.5, x + tam * 0.5, y + tam * 0.5, '#ffffff', 1); PX.lineaPix(g, x - tam * 0.5, y + tam * 0.5, x + tam * 0.5, y - tam * 0.5, '#ffffff', 1);
         PX.disco(g, x, y, 2, '#ffffff');
       }
+      g.globalAlpha = 1; return;
+    }
+    if (h.k === 'espada') {
+      // Aegislash: uma espada fantasma de verdade (lâmina, guarda dourada e cabo) varrendo o arco, com rastro roxo
+      const l = h.l, e = 1 - (1 - Math.min(1, k * 1.4)) ** 3, cx = l.x, cy = l.y - l.alto * 0.5, L = h.alcance * (h.grande ? 1.25 : 1.05), W = h.grande ? 7 : 4;
+      const a0 = h.ang - (h.arco / 2) * h.lado, ap = a0 + h.arco * h.lado * e, al = Math.min(1, (1 - k) * 3);
+      const P = (a, r) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.75];
+      // rastro em leque
+      for (let i = 0; i < 7; i++) { const a = a0 + h.arco * h.lado * e * (i / 7), [x1, y1] = P(a, L * 0.35), [x2, y2] = P(a, L); g.globalAlpha = al * (0.08 + i * 0.05); PX.lineaPix(g, x1, y1, x2, y2, i % 2 ? '#a78bfa' : '#6d28d9', W + 2); }
+      g.globalAlpha = al;
+      const [hx, hy] = P(ap, 6), [gx, gy] = P(ap, L * 0.28), [tx, ty] = P(ap, L), px = -Math.sin(ap), py = Math.cos(ap) * 0.75;
+      PX.lineaPix(g, hx, hy, gx, gy, '#3a2a14', W);
+      PX.lineaPix(g, gx - px * W * 2.2, gy - py * W * 2.2, gx + px * W * 2.2, gy + py * W * 2.2, '#ffd23c', Math.max(2, W - 1));
+      g.fillStyle = '#1e1b3a'; g.beginPath(); g.moveTo(gx - px * W, gy - py * W); g.lineTo(tx, ty); g.lineTo(gx + px * W, gy + py * W); g.closePath(); g.fill();
+      g.fillStyle = '#d6dbe4'; g.beginPath(); g.moveTo(gx - px * W * 0.7, gy - py * W * 0.7); g.lineTo(tx, ty); g.lineTo(gx + px * W * 0.7, gy + py * W * 0.7); g.closePath(); g.fill();
+      PX.lineaPix(g, gx, gy, tx, ty, '#ffffff', 1);
+      g.globalAlpha = al * 0.5; PX.disco(g, tx, ty, W, '#c4b5fd');
+      if (h.grande) { g.globalAlpha = al * 0.3; PX.disco(g, gx, gy, W * 3, '#8b5cf6'); }
+      g.globalAlpha = 1; return;
+    }
+    if (h.k === 'vapor') {
+      // Overheat: o corpo solta o calor num jato de vapor branco subindo
+      const l = h.l, al = 1 - k;
+      for (let i = 0; i < 10; i++) { const s = (t * 1.6 + i * 0.1) % 1, x = l.x + Math.sin(i * 2.3 + t * 6) * 10, y = l.y - l.alto * 0.6 - s * 50; g.globalAlpha = al * (1 - s) * 0.6; PX.disco(g, x, y, 4 + s * 8, '#f0f0f0'); }
+      g.globalAlpha = 1; return;
+    }
+    if (h.k === 'nevasca') {
+      // Mega Sheer Cold: redemoinho de neve fechando em volta e o chão congelando
+      const al = Math.min(1, t * 5, (h.life - t) / 0.3), R = h.radio;
+      g.globalAlpha = al * 0.25; PX.elipsePix(g, h.x, h.y, R * Math.min(1, t * 3), R * 0.62 * Math.min(1, t * 3), '#bfe9ff');
+      g.globalAlpha = al;
+      for (let i = 0; i < 40; i++) { const a = i * 0.618 * 6.283 + t * (2 + (i % 3)), r = R * (1 - ((t * 0.8 + i * 0.037) % 1)); PX.disco(g, h.x + Math.cos(a) * r, h.y + Math.sin(a) * r * 0.62 - 10, i % 4 ? 1.5 : 2.5, i % 2 ? '#ffffff' : '#bfe9ff'); }
       g.globalAlpha = 1; return;
     }
     if (h.k === 'cortesSuelo') {

@@ -48,6 +48,9 @@ export function rangoDe(h) {
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
     case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': case 'lunas': return h.alcance;
     case 'ondaToxica': return h.ondas.at(-1);
+    case 'overheat': return h.alcance;
+    case 'sheerCold': return h.radio;
+    case 'infierno': return 110;
     case 'pulso': return h.radio;
     case 'caparazon': return h.alcance;
     case 'meteoro': return (h.sigue ?? 150) * (h.aviso ?? 0.6) + h.radio;
@@ -83,7 +86,7 @@ function perfil(h, slot, d) {
     case 'chorro': case 'helice':
       P.alcance = h.largo * 0.9; P.ancho = (h.ancho ?? 20) / 2; P.retardo = h.carga ?? 0.3; P.sigue = h.giro ? 0.6 : 0.3;
       break;
-    case 'cono': case 'viento':
+    case 'cono': case 'viento': case 'overheat':
       P.alcance = h.alcance * 0.85; P.ancho = Math.tan(((h.angulo ?? 50) * Math.PI) / 360) * d + 6; P.retardo = h.carga ?? 0; P.sigue = h.giro ? 0.5 : 0;
       break;
     case 'pulso': P.tipo = 'area'; P.alcance = h.radio + RADIO - 4; P.retardo = h.carga ?? 0; break;
@@ -111,6 +114,8 @@ function perfil(h, slot, d) {
     case 'ondaToxica': P.tipo = 'area'; P.alcance = h.ondas.at(-1); P.retardo = h.carga ?? 0.25; break;
     case 'detonarCharcos': P.tipo = 'area'; P.alcance = 260; P.retardo = h.carga ?? 0.35; break;
     case 'kingsShield': P.tipo = 'defensa'; break;
+    case 'infierno': P.tipo = 'area'; P.alcance = 110; P.retardo = h.carga ?? 0.25; break;
+    case 'sheerCold': P.tipo = 'area'; P.alcance = h.radio; P.retardo = h.carga ?? 0.4; break;
     case 'cortesSuelo': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.carga ?? 0.15) + (h.viaja ?? 0.25) * 0.5; break;
     case 'jabLuna': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.dur ?? 0.3) * 0.5; break;
     case 'vuelo': P.tipo = 'vuelo'; P.alcance = h.radio; P.ancho = h.radio; P.invul = true; break;

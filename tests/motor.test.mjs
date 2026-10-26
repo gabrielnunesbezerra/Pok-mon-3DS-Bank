@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'lunas', 'ondaToxica', 'detonarCharcos', 'kingsShield'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'lunas', 'ondaToxica', 'detonarCharcos', 'kingsShield', 'overheat', 'infierno', 'sheerCold'];
 
-test('o roster tem os 28 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'honedge', 'absol', 'dreepy']);
+test('o roster tem os 30 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'honedge', 'absol', 'dreepy', 'houndour', 'snover']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -363,6 +363,29 @@ test('Dragalge espalha poças, a Mega explode todas; Aegislash troca entre escud
   correr(l2, 0.6, [null, null]); g.accion = null;
   assert.equal(l2.habilidades.usar(g, 'q'), true);
   assert.equal(g.postura, 'escudo', "King's Shield volta para o escudo");
+});
+
+test('Houndoom esquenta, bate mais quente e se queima; Abomasnow acumula gelo e congela na quinta camada', () => {
+  const l = nuevaLuta('houndour', 'munchlax', { etapas: [1, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 420; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), true);
+  assert.ok(a.fervor >= 40, 'Sunny Day esquenta');
+  a.fervor = 100; const hp0 = a.hp;
+  correr(l, 1, [null, null]);
+  assert.ok(a.hp < hp0, 'superaquecido se queima');
+  a.ulti = 100; a.accion = null; const f0 = a.fervor;
+  assert.ok(f0 > 75);
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  assert.equal(a.fervor, 0, 'Overheat descarrega o calor');
+
+  const l2 = nuevaLuta('snover', 'munchlax', { etapas: [1, 0] });
+  const [s, r] = l2.luchadores;
+  s.x = 380; s.y = 222; r.x = 470; r.y = 222; r.inmortal = true;
+  for (let i = 0; i < 4; i++) r.sumarEscarcha(s, 1);
+  assert.equal(r.escarcha.n, 4);
+  r.sumarEscarcha(s, 1);
+  assert.ok(r.est.congelado && !r.escarcha, 'na quinta camada congela e zera');
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {

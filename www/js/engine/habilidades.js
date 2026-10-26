@@ -40,7 +40,7 @@ export class Habilidades {
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, almas: this.almas, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
-      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, lunas: this.lunas,
+      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, lunas: this.lunas, overheat: this.overheat, infierno: this.infierno, sheerCold: this.sheerCold,
       ondaToxica: this.ondaToxica, detonarCharcos: this.detonarCharcos, kingsShield: this.kingsShield,
     };
   }
@@ -81,6 +81,8 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
+    // Houndoom: golpes de fogo esquentam
+    if (l.def.fervor && h.calienta) l.calentar(h.calienta);
     // Aegislash (Stance Change): qualquer ataque troca para a forma de espada
     if (l.forma.dexEspada && slot !== 'esp' && h.forma !== 'kingsShield' && l.postura !== 'espada') { l.postura = 'espada'; l.texto('BLADE FORM!', '#e5e7eb'); luta.emit({ t: 'endurecer', l, estilo: 'acero' }); }
     if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna') l.cd[slot] = h.cd;
@@ -1702,6 +1704,56 @@ export class Habilidades {
         c.t = 0; c.dur = Math.max(c.dur, 4);
       }));
       luta.emit({ t: 'temblor', f: 0.012 });
+    });
+  }
+
+  // ---------------------------------------------------------------- Overheat (Houndoom): solta todo o calor num cone de fogo; mais quente, mais forte
+  overheat(l, h, extra) {
+    const luta = this.luta, k = 1 + l.fervor / 100, carga = h.carga ?? 0.3;
+    const hh = { ...h, dano: h.dano * k, alcance: h.alcance * (0.8 + 0.3 * l.fervor / 100), quema: { dps: 2 + l.fervor / 40, dur: 3, max: 3 } };
+    luta.emit({ t: 'overheat', l, k, carga });
+    l.texto(`OVERHEAT x${k.toFixed(1)}`, '#ffb347');
+    l.fervor = 0; l.dolorCalor = 0;
+    return this.cono(l, { ...hh, forma: 'cono' }, extra);
+  }
+
+  // ---------------------------------------------------------------- Mega Inferno (Mega Houndoom): pilares de fogo em espiral; o calor vira mais pilares
+  infierno(l, h, extra) {
+    const luta = this.luta, n = (h.pilares ?? 8) + Math.round(l.fervor / 15), carga = h.carga ?? 0.25, x0 = l.x, y0 = l.y, golpeados = new Map();
+    l.animar(h.anim ?? 'Charge', carga + 0.5);
+    l.accion = { hasta: luta.t + carga + 0.3, bloquea: true, lento: 0 };
+    l.texto('INFERNO!', '#ff7a1f');
+    for (let i = 0; i < n; i++) luta.programar(carga + i * 0.06, () => {
+      if (l.ko) return;
+      const a = i * 2.4, r = 30 + i * (h.paso ?? 9), x = x0 + Math.cos(a) * r, y = y0 + Math.sin(a) * r * 0.62;
+      luta.emit({ t: 'pilarFuego', x, y, tipo: 'FIRE' });
+      luta.emit({ t: 'pulso', x, y, radio: h.radio, tipo: 'FIRE', estilo: 'fuego' });
+      for (const b of luta.blancos(l)) {
+        if (b.est?.vuelo || (golpeados.get(b) ?? 0) >= 3) continue;
+        if (Math.hypot(b.x - x, b.y - y) < h.radio + RADIO) { golpeados.set(b, (golpeados.get(b) ?? 0) + 1); atingir(l, b, pacote(h, extra, a, { pesado: true })); }
+      }
+    });
+    l.fervor = Math.max(0, l.fervor - 40);
+  }
+
+  // ---------------------------------------------------------------- Mega Sheer Cold (Mega Abomasnow): nevasca em volta que estilhaça o gelo acumulado
+  sheerCold(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.4;
+    l.animar(h.anim ?? 'Charge', carga + 0.4);
+    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0 };
+    luta.emit({ t: 'nevasca', x: l.x, y: l.y, radio: h.radio, dur: carga + 0.5 });
+    luta.programar(carga, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: h.radio, tipo: 'ICE', estilo: 'hielo' });
+      luta.emit({ t: 'temblor', f: 0.012 });
+      for (const b of luta.blancos(l)) {
+        if (b.est?.vuelo) continue;
+        const d = Math.hypot(b.x - l.x, (b.y - l.y) / 0.62);
+        if (d > h.radio + RADIO) continue;
+        const capas = b.escarcha?.n ?? 0;
+        atingir(l, b, pacote(h, extra, Math.atan2(b.y - l.y, b.x - l.x), { dano: h.dano + capas * (h.porCapa ?? 4), escarcha: 0, pesado: true }));
+        if (!b.esClon && !b.ko) { b.escarcha = null; b.ponerEstado('aturdido', 0.6 + capas * 0.25); b.ponerEstado('congelado', 0.6 + capas * 0.25); luta.emit({ t: 'estilhaco', l: b }); }
+      }
     });
   }
 

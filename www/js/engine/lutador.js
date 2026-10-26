@@ -107,7 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.postura = 'escudo';
+    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.postura = 'escudo'; this.fervor = 0; this.ultimoFuego = -99; this.escarcha = null;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -245,6 +245,8 @@ export class Lutador {
     if (!g.puro) {
       d *= (fuente?.atk ?? 1) / this.defensa;
       d *= (fuente?.ventaja ?? 1) / (this.ventaja ?? 1);
+      // Houndoom: quanto mais quente, mais dano (até +60%)
+      if (fuente?.def?.fervor) d *= 1 + (fuente.fervor / 100) * 0.6;
       // Aegislash: espada bate mais e aguenta menos, escudo o contrário
       if (fuente?.forma?.dexEspada) d *= fuente.postura === 'espada' ? 1.3 : 0.8;
       if (this.forma.dexEspada) d *= this.postura === 'espada' ? 1.15 : 0.7;
@@ -286,6 +288,8 @@ export class Lutador {
     if (d > 0) this.ultimoDano = t;
     if (this.inmortal) { this.hp = Math.max(1, this.hp); luta.anotarEntreno?.(d); }
     if (fuente && fuente !== this) fuente.acierto(d, g);
+    // Abomasnow: cada golpe deixa camadas de gelo; na quinta, congela e estilhaça
+    if (fuente?.def?.escarcha && fuente !== this && !g.tick && !g.puro && d > 0 && !this.ko) this.sumarEscarcha(fuente, g.escarcha ?? 1);
     this.ganarUlti(d * REGLAS.ultiPorDanoRecibido);
     this.ganarExp(d * REGLAS.expPorDanoRecibido);
     this.efectosGolpe(d, mult, g, fuente);
@@ -345,6 +349,27 @@ export class Lutador {
   }
 
   // dano que este lutador causou: carrega ultimate e experiência, ganha energia, combo e roubo de vida
+  // ---------------------------------------------------------------- Abomasnow: camadas de gelo
+  sumarEscarcha(fuente, n) {
+    const t = this.luta.t, e = this.escarcha && this.escarcha.hasta > t ? this.escarcha : { n: 0 };
+    e.n = Math.min(5, e.n + n); e.hasta = t + 4; e.fuente = fuente;
+    this.escarcha = e;
+    this.luta.emit({ t: 'escarcha', l: this, n: e.n });
+    if (e.n >= 5) {
+      this.escarcha = null;
+      this.ponerEstado('aturdido', 1.1); this.ponerEstado('congelado', 1.1);
+      this.texto('SHATTER!', '#bfe9ff');
+      this.luta.emit({ t: 'estilhaco', l: this });
+      this.luta.programar(0, () => { if (!this.ko) this.recibir(fuente, { dano: 8 * (fuente.atk ?? 1), tipo: 'ICE', tick: true, puro: false }); });
+    }
+  }
+  // ---------------------------------------------------------------- Houndoom: superaquecimento
+  calentar(n) {
+    const antes = this.fervor;
+    this.fervor = Math.min(100, this.fervor + n); this.ultimoFuego = this.luta.t;
+    if (antes < 75 && this.fervor >= 75) { this.texto('OVERHEATING!', '#ff5a2a'); this.luta.emit({ t: 'sonido', n: 'surge' }); }
+  }
+
   acierto(d, g) {
     const t = this.luta.t;
     this.ganarUlti(d * REGLAS.ultiPorDanoHecho);
@@ -423,6 +448,12 @@ export class Lutador {
     if (t < this.sobrecargaHasta) this.calor = REGLAS.calorMax * (this.sobrecargaHasta - t) / REGLAS.sobrecargaDur;
     else if (t - this.ultimoBasico > REGLAS.calorEnfriaRetraso) this.calor = Math.max(0, this.calor - REGLAS.calorEnfria * dt);
     if (this.est.puente && this.est.puente.hasta <= t) { delete this.est.puente; this.kit = this.kitActual(); }
+    // Houndoom: esfria quando para de usar fogo; acima de 75 o corpo queima
+    if (this.def.fervor && this.fervor > 0) {
+      if (t - this.ultimoFuego > 1.5) this.fervor = Math.max(0, this.fervor - 9 * dt);
+      if (this.fervor > 75) { this.dolorCalor = (this.dolorCalor ?? 0) + (this.fervor - 75) * 0.2 * dt; if (this.dolorCalor >= 1) { const n = Math.floor(this.dolorCalor); this.dolorCalor -= n; this.recibir(this, { dano: n, tipo: 'FIRE', puro: true, tick: true }); } }
+    }
+    if (this.escarcha && this.escarcha.hasta <= t) this.escarcha = null;
     for (const k of Object.keys(this.est)) if (this.est[k].hasta <= t) delete this.est[k];
     if (this.est.escudo === undefined) this.escudo = 0;
     if (this.cargaTipo && t - this.cargaTipo.desde > REGLAS.estadoVentana) this.cargaTipo = null;
@@ -479,6 +510,7 @@ export class Lutador {
       if (t < this.sobrecargaHasta) vel *= 0.75;
       if (this.est.rapido) vel *= this.est.rapido.vel;
       if (this.est.rodando) vel *= this.est.rodando.vel;
+      if (this.escarcha) vel *= 1 - this.escarcha.n * 0.07;
       if (this.est.potencia?.vel) vel *= 1 + this.est.potencia.vel;
       if (this.est.vuelo) vel *= this.est.vuelo.rapidez ?? 1;
       if (this.est.caparazon) vel *= this.est.caparazon.rapidez ?? 1;

@@ -1,6 +1,20 @@
 // Versões turbinadas das skills de cada Mega: mais alcance, mais golpes e efeitos novos,
 // não só mais dano. Entram por cima do kit da última forma (ver Lutador.kitActual).
 export const MEGA_KITS = {
+  houndour: {
+    lmb: { nombre: 'Mega Fire Fang', dano: 5.6, calienta: 8 },
+    rmb: { nombre: 'Mega Flamethrower', dano: 18, alcance: 160, angulo: 66 },
+    esp: { nombre: 'Mega Flame Charge', dist: 155, dano: 5, calienta: 14 },
+    q: { nombre: 'Mega Sunny Day', calienta: 50 },
+    e: { nombre: 'Mega Inferno', forma: 'infierno', tipo: 'FIRE', dano: 7, radio: 26, pilares: 8, paso: 9, carga: 0.25, quema: { dps: 2, dur: 3, max: 3 } },
+  },
+  snover: {
+    lmb: { nombre: 'Mega Ice Shard', rafaga: 2, cadaRafaga: 0.08, dano: 3.4 },
+    rmb: { nombre: 'Mega Wood Hammer', dano: 16, empuje: 180, escarcha: 2 },
+    esp: { nombre: 'Mega Ice Spinner', dist: 140, dano: 4 },
+    q: { nombre: 'Mega Aurora Veil', absorbe: 26, dur: 4 },
+    e: { nombre: 'Mega Sheer Cold', forma: 'sheerCold', tipo: 'ICE', dano: 12, porCapa: 5, radio: 150, carga: 0.4 },
+  },
   skrelp: {
     lmb: { nombre: 'Mega Sludge', rafaga: 2, cadaRafaga: 0.09, dano: 3.6, charcoFin: { radio: 16, dur: 3, veneno: { dps: 2, dur: 2 } } },
     rmb: { nombre: 'Mega Sludge Bomb', dano: 13, radio: 36, charco: { radio: 36, dur: 5 } },

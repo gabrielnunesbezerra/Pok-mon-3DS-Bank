@@ -428,6 +428,20 @@ export class Combate {
     // Stellar Bridge: arco dourado de ponte sobre o Archaludon
     if (l.est.puente) { const cx = l.x, cy = l.y - l.alto * 0.4; PX.arcoPix(g, cx, cy, l.alto * 0.7, Math.PI, Math.PI * 2, '#fde68a', 2, l.alto * 0.5); if (Math.floor(t * 8) % 2) PX.carimbar(g, PX.chispa(3, '#fff6a8'), cx + Math.cos(t * 5) * l.alto * 0.6, cy - Math.abs(Math.sin(t * 5)) * l.alto * 0.4, 0, 1, 1); }
     // Basculegion: almas de Basculin girando em volta
+    // Houndoom: aura de fogo que cresce com o calor e barra de calor em cima da cabeça
+    if (l.def.fervor && !l.ko) {
+      const f = l.fervor / 100, cy = l.y - l.alto - 8 - (l.salto ?? 0);
+      if (f > 0.05) for (let i = 0; i < Math.round(4 + f * 14); i++) { const a = i * 1.9 + this.t * 3, r = l.alto * 0.4 + Math.sin(this.t * 9 + i) * 3, s = (this.t * (1.5 + f * 2) + i * 0.13) % 1; g.globalAlpha = (1 - s) * (0.35 + f * 0.5); g.fillStyle = s < 0.4 ? '#fff3b0' : s < 0.7 ? (f > 0.75 ? '#ff4a1a' : '#ffa53a') : '#a8361a'; g.fillRect(Math.round(l.x + Math.cos(a) * r), Math.round(l.y - l.alto * 0.4 + Math.sin(a) * r * 0.6 - s * (12 + f * 22)), 2, 2); }
+      g.globalAlpha = 1;
+      g.fillStyle = '#04102c'; g.fillRect(Math.round(l.x) - 13, Math.round(cy), 26, 4);
+      g.fillStyle = f > 0.75 ? (Math.sin(this.t * 20) > 0 ? '#ff2a1a' : '#ffd23c') : '#ff8a2a'; g.fillRect(Math.round(l.x) - 12, Math.round(cy) + 1, Math.round(24 * f), 2);
+      g.fillStyle = '#ffffff'; g.fillRect(Math.round(l.x) - 12 + 18, Math.round(cy), 1, 4);
+    }
+    // camadas de gelo do Abomasnow: cristais girando nos pés
+    if (l.escarcha && !l.ko) for (let i = 0; i < l.escarcha.n; i++) {
+      const a = this.t * 2 + (i / l.escarcha.n) * Math.PI * 2, x = Math.round(l.x + Math.cos(a) * (l.alto * 0.45 + 6)), y = Math.round(l.y - 4 + Math.sin(a) * 6);
+      g.fillStyle = '#0a2a4a'; g.fillRect(x - 2, y - 5, 5, 8); g.fillStyle = '#9fd8ff'; g.fillRect(x - 1, y - 4, 3, 6); g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 4, 1, 3);
+    }
     // Sneasler: próximo básico sai em X (garrinha roxa piscando em cima da cabeça)
     if (l.xListo) {
       const cx = Math.round(l.x), cy = Math.round(l.y - l.alto - 12 - (l.salto ?? 0)), pul = Math.sin(this.t * 10) > 0 ? 1 : 0;
