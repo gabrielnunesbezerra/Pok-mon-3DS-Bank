@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'lunas', 'ondaToxica', 'detonarCharcos', 'kingsShield'];
 
-test('o roster tem os 24 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler']);
+test('o roster tem os 28 Pokémon pedidos', () => {
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'honedge', 'absol', 'dreepy']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -331,6 +331,38 @@ test('Rollout continua rolando com o botão segurado e Wall Climb pula para onde
   s.x = 380; s.y = 222; r.x = 480; r.y = 222;
   correr(l2, 0.6, [{ mx: 0, my: -1, ax: r.x, ay: r.y, esp: true }, null]);
   assert.ok(s.y < 150 && Math.abs(s.x - 380) < 10, `pulou para cima, longe do rival (${Math.round(s.x)}, ${Math.round(s.y)})`);
+});
+
+test('Dragalge espalha poças, a Mega explode todas; Aegislash troca entre escudo e espada', () => {
+  const l = nuevaLuta('skrelp', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 600; b.y = 300; a.ax = 500; a.ay = 222; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'lmb'), true);
+  correr(l, 1, [null, null]);
+  a.accion = null; a.cd.esp = 0;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  correr(l, 0.5, [null, null]);
+  const pocas = () => l.entidades.filter(e => e.tipo === 'charco' && e.dueno === a && e.t < e.dur).length;
+  assert.ok(pocas() >= 3, `tiro e dash deixaram poças (${pocas()})`);
+  a.mega = true; a.kit = a.kitActual(); a.ulti = 100; a.accion = null;
+  assert.equal(a.kit.e.forma, 'detonarCharcos');
+  const c0 = l.entidades.find(e => e.tipo === 'charco'); b.x = c0.x; b.y = c0.y; b.est = {};
+  const hp0 = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true);
+  correr(l, 1, [null, null]);
+  assert.ok(b.hp < hp0, 'a poça explodiu em cima do rival');
+
+  const l2 = nuevaLuta('honedge', 'munchlax', { etapas: [2, 0] });
+  const [g, r] = l2.luchadores;
+  g.x = 380; g.y = 222; r.x = 420; r.y = 222; g.ax = r.x; g.ay = r.y; r.inmortal = true;
+  assert.equal(g.postura, 'escudo');
+  assert.ok(!g.dex.includes('0681-0001'), 'começa com o sprite de escudo');
+  assert.equal(l2.habilidades.usar(g, 'lmb'), true);
+  assert.equal(g.postura, 'espada');
+  assert.ok(g.dex.includes('0681-0001'), 'atacou e virou espada');
+  correr(l2, 0.6, [null, null]); g.accion = null;
+  assert.equal(l2.habilidades.usar(g, 'q'), true);
+  assert.equal(g.postura, 'escudo', "King's Shield volta para o escudo");
 });
 
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {

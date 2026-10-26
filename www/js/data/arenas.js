@@ -31,6 +31,16 @@ export const ARENAS = [
   }
  },
  {
+  "id": "praia",
+  "nombre": "BEACH",
+  "ovalo": { "cx": 480, "cy": 222, "rx": 455, "ry": 168 }
+ },
+ {
+  "id": "halloween",
+  "nombre": "HALLOWEEN",
+  "ovalo": { "cx": 480, "cy": 222, "rx": 455, "ry": 168 }
+ },
+ {
   "id": "ruinas",
   "nombre": "RUINS",
   "ovalo": {

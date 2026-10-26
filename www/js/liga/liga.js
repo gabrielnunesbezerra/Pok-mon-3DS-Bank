@@ -7,11 +7,11 @@ import { ROSTER } from '../data/pokemon.js';
 export const LIGA = {
   iniciales: ['bulbasaur', 'charmander', 'squirtle'],
   circuitos: [
-    { id: 'c1', nombre: 'ROOKIE CIRCUIT', arena: 'estadio', cor: '#7dd3fc', rivales: ['zubat', 'seedot', 'buneary', 'tynamo'] },
+    { id: 'c1', nombre: 'ROOKIE CIRCUIT', arena: 'estadio', cor: '#7dd3fc', rivales: ['zubat', 'seedot', 'buneary', 'tynamo', 'skrelp'] },
     { id: 'c2', nombre: 'EARTH CIRCUIT', arena: 'ruinas', cor: '#86efac', rivales: ['abra', 'riolu', 'geodude', 'froakie', 'feebas'] },
     { id: 'c3', nombre: 'VOLCANO CIRCUIT', arena: 'crater', cor: '#fb923c', rivales: ['magikarp', 'onix', 'munchlax', 'poltchageist', 'swablu'] },
-    { id: 'c4', nombre: 'LEGEND CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['duraludon', 'porygon', 'veluza', 'mewtwo'] },
-    { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler'] },
+    { id: 'c4', nombre: 'LEGEND CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['duraludon', 'porygon', 'veluza', 'mewtwo', 'absol'] },
+    { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'halloween', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler', 'honedge', 'dreepy'] },
   ],
 };
 export const NIVEL_POR_VITORIA = ['facil', 'normal', 'dificil'];

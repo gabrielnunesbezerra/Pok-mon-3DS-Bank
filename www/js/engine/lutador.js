@@ -36,7 +36,7 @@ export class Lutador {
   // ---------------------------------------------------------------- dados derivados
   get forma() { return etapaDe(this.def, this.etapa); }
   // shiny: a mesma forma com "s" no fim (pasta dos sprites shiny do PMD)
-  get dex() { return (this.mega ? this.forma.mega.dex : this.forma.dex) + (this.shiny ? 's' : ''); }
+  get dex() { return (this.mega ? this.forma.mega.dex : this.forma.dexEspada && this.postura === 'espada' ? this.forma.dexEspada : this.forma.dex) + (this.shiny ? 's' : ''); }
   get nombre() { return this.mega ? this.forma.mega.nombre : this.forma.nombre; }
   get tipos() { return (this.mega && this.forma.mega.tipos) || this.forma.tipos; }
   get hpMax() { return Math.round(this.forma.hp * REGLAS.vidaGlobal); }
@@ -107,7 +107,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false; this.jabHasta = 0;
+    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.postura = 'escudo';
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -245,6 +245,9 @@ export class Lutador {
     if (!g.puro) {
       d *= (fuente?.atk ?? 1) / this.defensa;
       d *= (fuente?.ventaja ?? 1) / (this.ventaja ?? 1);
+      // Aegislash: espada bate mais e aguenta menos, escudo o contrário
+      if (fuente?.forma?.dexEspada) d *= fuente.postura === 'espada' ? 1.3 : 0.8;
+      if (this.forma.dexEspada) d *= this.postura === 'espada' ? 1.15 : 0.7;
       if (g.surge) d *= REGLAS.surgeMult;
       if (this.est.marca) d *= this.est.marca.f ?? REGLAS.marcaMult;
       if (fuente?.est.furia) d *= fuente.est.furia.mult;

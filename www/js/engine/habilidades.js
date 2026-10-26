@@ -4,7 +4,7 @@ import { RADIO } from '../config.js';
 import { REGLAS } from '../data/regras.js';
 import { aleatorio, entre, difAng, clamp, dist, distSegmento } from './util.js';
 import { fijarCampo, fueraCampo, limitarCampo } from './fisica.js';
-import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir } from './entidades.js';
+import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir, ponerCharco } from './entidades.js';
 import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
 
 const rad = g => (g * Math.PI) / 180;
@@ -40,7 +40,8 @@ export class Habilidades {
       tajo: this.tajo, golpe: this.golpe, cono: this.cono, pulso: this.pulso, burbujas: this.burbujas, caparazon: this.caparazon, laco: this.laco, geiser: this.geiser, espejo: this.espejo, curaAnillo: this.curaAnillo, recuperar: this.recuperar, estallido: this.estallido, torreta: this.torreta, lanzaTorretas: this.lanzaTorretas, chapoteo: this.chapoteo, potenciar: this.potenciar, escudo: this.escudo, burbuja: this.burbuja, explosion: this.explosion, trampa: this.trampa, torbellino: this.torbellino,
       viento: this.viento, lluvia: this.lluvia, vuelo: this.vuelo, erupcion: this.erupcion, patada: this.patada, salto: this.salto, flecha: this.flecha, puente: this.puente, agarre: this.agarre, sismo: this.sismo, bolaGigante: this.bolaGigante, rodar: this.rodar, arenaRoca: this.arenaRoca, espinho: this.espinho, almas: this.almas, hueso: this.hueso, levitar: this.levitar, enrollar: this.enrollar, descanso: this.descanso,
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
-      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna,
+      bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, lunas: this.lunas,
+      ondaToxica: this.ondaToxica, detonarCharcos: this.detonarCharcos, kingsShield: this.kingsShield,
     };
   }
 
@@ -80,6 +81,8 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
+    // Aegislash (Stance Change): qualquer ataque troca para a forma de espada
+    if (l.forma.dexEspada && slot !== 'esp' && h.forma !== 'kingsShield' && l.postura !== 'espada') { l.postura = 'espada'; l.texto('BLADE FORM!', '#e5e7eb'); luta.emit({ t: 'endurecer', l, estilo: 'acero' }); }
     if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna') l.cd[slot] = h.cd;
     // Sneasler: depois de qualquer skill o próximo básico sai como corte em X
     if (slot !== 'lmb' && l.kit.lmb?.trasSkill) l.xListo = true;
@@ -239,6 +242,8 @@ export class Habilidades {
     l.empezarDash(h, ang);
     l.dash.slot = extra?.slot;
     l.accion = null;
+    // Dragalge: o dash espalha poças de veneno pelo caminho
+    if (h.rastroCharco) for (let i = 1; i <= h.rastroCharco.n; i++) this.luta.programar((h.dur * i) / (h.rastroCharco.n + 1), () => { if (!l.ko) ponerCharco(this.luta, l, l.x, l.y, { charco: h.rastroCharco, veneno: h.rastroCharco.veneno, tipo: h.tipo }); });
     l.animar(h.anim ?? 'Walk', h.dur + 0.1);
     if (h.blindaje) l.ponerEstado('blindaje', h.dur + 0.25, { reduce: h.blindaje });
     if (h.acelera) { l.ponerEstado('rapido', h.dur + h.acelera.dur, { vel: h.acelera.vel }); l.texto('SPEED UP', '#7dd3fc'); }
@@ -1632,6 +1637,85 @@ export class Habilidades {
   }
 
   // ---------------------------------------------------------------- investidas cruzadas (Cross Poison)
+  // ---------------------------------------------------------------- Midnight Slash (Absol): três cortes gigantes em meia-lua para a frente
+  lunas(l, h, extra) {
+    const luta = this.luta, ang = asistir(l, angApunte(l), h.alcance + 30, 1), n = h.golpes ?? 3, entre2 = h.entre ?? 0.17, avance = h.avance ?? 40;
+    const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance), total = 0.12 + (n - 1) * entre2 + 0.2;
+    l.ponerEstado('blindaje', total, { reduce: 0.5 });
+    l.animar(h.anim ?? 'Attack', total);
+    l.angulo = ang;
+    let t = 0;
+    l.accion = { hasta: luta.t + total, bloquea: true, lento: 0, angulo: ang, update: dt => { t += dt; const k = Math.min(1, t / 0.12); l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; } };
+    for (let i = 0; i < n; i++) {
+      luta.programar(0.12 + i * entre2, () => {
+        if (l.ko) return;
+        const ultimo = i === n - 1, lado = ultimo ? 0 : i % 2 ? -1 : 1, R = h.alcance * (ultimo ? 1.15 : 1);
+        l.animar(ultimo ? 'Strike' : 'Attack', entre2 + 0.05);
+        luta.emit({ t: 'luna', x: l.x, y: l.y - l.alto * 0.4, ang, r: R, lado, final: ultimo, tipo: h.tipo });
+        if (ultimo) luta.emit({ t: 'temblor', f: 0.01 });
+        this.cortarProyectiles(l, ang, R, rad(h.angulo) / 2);
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || b.est?.vuelo) continue;
+          const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+          if (d < R + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2)
+            atingir(l, b, pacote(h, extra, ang, { dano: h.dano * (ultimo ? 1.5 : 1), empuje: ultimo ? 120 : 25, aturde: ultimo ? h.aturde : undefined, dirX: dx / d, dirY: dy / d, pesado: ultimo, tick: !ultimo && i > 0 }));
+        }
+      });
+    }
+  }
+  // ---------------------------------------------------------------- Sludge Wave (Dragalge): onda de lodo que se espalha e deixa um anel de poças
+  ondaToxica(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.25, x0 = l.x, y0 = l.y, golpeados = new Set();
+    l.animar(h.anim ?? 'Charge', carga + 0.4);
+    l.accion = { hasta: luta.t + carga + 0.3, bloquea: true, lento: 0 };
+    h.ondas.forEach((r, i) => luta.programar(carga + i * (h.cada ?? 0.14), () => {
+      if (l.ko) return;
+      luta.emit({ t: 'pulso', x: x0, y: y0, radio: r, tipo: h.tipo, estilo: 'lodo' });
+      for (const b of luta.blancos(l)) {
+        if (golpeados.has(b) || b.est?.vuelo) continue;
+        const d = Math.hypot(b.x - x0, (b.y - y0) / 0.62);
+        if (d < r + RADIO) { golpeados.add(b); atingir(l, b, pacote(h, extra, Math.atan2(b.y - y0, b.x - x0), { dirX: (b.x - x0) / (d || 1), dirY: (b.y - y0) / (d || 1), pesado: i === h.ondas.length - 1 })); }
+      }
+      if (i === h.ondas.length - 1) for (let k = 0; k < (h.anillo ?? 8); k++) { const a = (k / (h.anillo ?? 8)) * Math.PI * 2, p = fijarCampo(x0 + Math.cos(a) * r * 0.75, y0 + Math.sin(a) * r * 0.75 * 0.62); ponerCharco(luta, l, p.x, p.y, { charco: h.charco, veneno: h.veneno, tipo: h.tipo }, 14); }
+    }));
+  }
+
+  // ---------------------------------------------------------------- Mega Acid Downpour (Mega Dragalge): todas as poças explodem em gêiseres
+  detonarCharcos(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.35;
+    l.animar(h.anim ?? 'Charge', carga + 0.3);
+    l.accion = { hasta: luta.t + carga + 0.2, bloquea: true, lento: 0 };
+    l.texto('ACID DOWNPOUR!', '#c084fc');
+    luta.programar(carga, () => {
+      if (l.ko) return;
+      const charcos = luta.entidades.filter(e => e.tipo === 'charco' && e.dueno === l && e.t < e.dur);
+      // sem poça nenhuma, nasce uma em volta de si para não perder a ult
+      if (!charcos.length) for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; charcos.push(ponerCharco(luta, l, l.x + Math.cos(a) * 60, l.y + Math.sin(a) * 38, { charco: h.charco, veneno: h.veneno, tipo: h.tipo }, 14)); }
+      const golpeados = new Set();
+      charcos.forEach((c, i) => luta.programar(i * 0.05, () => {
+        luta.emit({ t: 'explosion', x: c.x, y: c.y - 6, radio: h.radio, tipo: h.tipo });
+        luta.emit({ t: 'pulso', x: c.x, y: c.y, radio: h.radio, tipo: h.tipo, estilo: 'lodo' });
+        for (const b of luta.blancos(l)) {
+          if (golpeados.has(b) || b.est?.vuelo) continue;
+          if (Math.hypot(b.x - c.x, b.y - c.y) < h.radio + RADIO) { golpeados.add(b); atingir(l, b, pacote(h, extra, Math.atan2(b.y - c.y, b.x - c.x), { pesado: true })); }
+        }
+        c.t = 0; c.dur = Math.max(c.dur, 4);
+      }));
+      luta.emit({ t: 'temblor', f: 0.012 });
+    });
+  }
+
+  // ---------------------------------------------------------------- King's Shield (Aegislash): volta para a forma de escudo e bloqueia um instante
+  kingsShield(l, h) {
+    const luta = this.luta;
+    l.postura = 'escudo';
+    l.ponerEstado('blindaje', h.dur ?? 0.7, { reduce: h.reduce ?? 0.85 });
+    l.animar(h.anim ?? 'Withdraw', 0.4);
+    l.accion = { hasta: luta.t + 0.25, lento: 0.4 };
+    l.texto('SHIELD FORM!', '#93c5fd');
+    luta.emit({ t: 'endurecer', l, estilo: 'barrera' });
+  }
+
   // ---------------------------------------------------------------- Poison Jab (Sneasler): avança em meia-lua; dentro da janela, apertar de novo dá um jab que empurra
   jabLuna(l, h, extra) {
     const luta = this.luta, slot = extra.slot;

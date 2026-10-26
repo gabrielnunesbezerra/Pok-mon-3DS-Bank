@@ -136,6 +136,8 @@ export class Proyectil {
         luta.add(new Proyectil(luta, dueno, { ...m, tipo: h.tipo, alcance: m.alcance }, a, { desde: { x: this.x, y: this.y, alt: this.alt }, slot: this.extra.slot }));
       }
     }
+    // Dragalge: o tiro deixa uma poça de veneno onde termina
+    if (h.charcoFin) ponerCharco(luta, dueno, this.x, this.y, { charco: h.charcoFin, veneno: h.charcoFin.veneno ?? h.veneno, tipo: h.tipo });
     luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: h.tipo });
     return false;
   }
@@ -356,6 +358,15 @@ export class Humo {
 }
 
 // ---------------------------------------------------------------- poça de veneno
+// poça de veneno com limite por dono (a mais velha some quando passa do máximo)
+export function ponerCharco(luta, dueno, x, y, h, max = 9) {
+  const mias = luta.entidades.filter(e => e.tipo === 'charco' && e.dueno === dueno && e.t < e.dur);
+  if (mias.length >= max) mias[0].t = mias[0].dur;
+  const c = new Charco(luta, dueno, x, y, h);
+  luta.add(c);
+  return c;
+}
+
 export class Charco {
   constructor(luta, dueno, x, y, h) {
     this.luta = luta; this.dueno = dueno; this.tipo = 'charco';

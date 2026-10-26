@@ -1,6 +1,20 @@
 // Versões turbinadas das skills de cada Mega: mais alcance, mais golpes e efeitos novos,
 // não só mais dano. Entram por cima do kit da última forma (ver Lutador.kitActual).
 export const MEGA_KITS = {
+  skrelp: {
+    lmb: { nombre: 'Mega Sludge', rafaga: 2, cadaRafaga: 0.09, dano: 3.6, charcoFin: { radio: 16, dur: 3, veneno: { dps: 2, dur: 2 } } },
+    rmb: { nombre: 'Mega Sludge Bomb', dano: 13, radio: 36, charco: { radio: 36, dur: 5 } },
+    esp: { nombre: 'Mega Dive', dist: 150, rastroCharco: { n: 4, radio: 18, dur: 3.5, veneno: { dps: 2, dur: 2 } } },
+    q: { nombre: 'Mega Venoshock', dano: 8, contraVeneno: 2.2 },
+    e: { nombre: 'Mega Acid Downpour', forma: 'detonarCharcos', tipo: 'POISON', dano: 15, radio: 34, charco: { radio: 22, dur: 5 }, veneno: { dps: 4, dur: 3 }, aturde: 0.3, carga: 0.35 },
+  },
+  absol: {
+    lmb: { nombre: 'Mega Night Slash', dano: 5.4, alcance: 56, angulo: 160 },
+    rmb: { nombre: 'Mega Sucker Punch', dano: 11, embestida: 100 },
+    esp: { nombre: 'Mega Quick Attack', dist: 150, dano: 4 },
+    q: { nombre: 'Mega Swords Dance', acumula: 4 },
+    e: { nombre: 'Mega Midnight Slash', golpes: 5, entre: 0.12, alcance: 125, dano: 6.2, aturde: 0.45 },
+  },
   charmander: {
     lmb: { nombre: 'Mega Ember', rafaga: 2, cadaRafaga: 0.07, abanico: 0.05, dano: 4.4, escala: 1.6, explosion: { radio: 20 } },
     rmb: { nombre: 'Mega Flamethrower', tipo: 'DRAGON', dano: 19.2, alcance: 150, angulo: 66, dur: 1.5, quema: { dps: 2, dur: 3, max: 3 } },

@@ -1269,5 +1269,245 @@
    "Emmuffin",
    "ShyStarryRain"
   ]
+ },
+ {
+  "dex": "0359",
+  "sprite": [
+   "CHUNSOFT",
+   "Deeshura",
+   "Top_Kec"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "Emmuffin",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0359-0001",
+  "sprite": [
+   "Emboarger"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0359-0001s",
+  "sprite": [
+   "Deeshura"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0359s",
+  "sprite": [
+   "Noo",
+   "Top_Kec",
+   "Deeshura"
+  ],
+  "retrato": [
+   "Lovi",
+   "Emmuffin",
+   "Deeshura"
+  ]
+ },
+ {
+  "dex": "0679",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "G〜",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0679s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0680",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0680s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0681",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "baronessfaron",
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0681-0001",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "radpeepo"
+  ]
+ },
+ {
+  "dex": "0681-0001s",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0681s",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0690",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "baronessfaron",
+   "brookriver"
+  ]
+ },
+ {
+  "dex": "0690s",
+  "sprite": [
+   "Top_Kec"
+  ],
+  "retrato": [
+   "ShyStarryRain",
+   "◥θ┴θ◤",
+   "brookriver"
+  ]
+ },
+ {
+  "dex": "0691",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0691-0001",
+  "sprite": [
+   "Soulja",
+   "pi3.14",
+   "DeltaL"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0691-0001s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0691s",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "◥θ┴θ◤",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0885",
+  "sprite": [
+   "Jhony-Rex",
+   "Caitemis"
+  ],
+  "retrato": [
+   "G〜",
+   "NOLASMOR",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0885s",
+  "sprite": [
+   "Caitemis"
+  ],
+  "retrato": [
+   "G〜",
+   "Deeshura",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0886",
+  "sprite": [
+   "Jhony-Rex",
+   "Caitemis"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0886s",
+  "sprite": [
+   "Caitemis"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0887",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0887s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
  }
 ]
