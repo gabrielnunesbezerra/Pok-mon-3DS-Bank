@@ -48,8 +48,9 @@ export class Habilidades {
   usar(l, slot) {
     const h = l.kit[slot];
     const luta = this.luta;
-    // rolando, o botão do Rollout sempre deixa parar (a recarga já está correndo)
-    const pararRodar = h?.forma === 'rodar' && l.est.rodando;
+    // rolando, o botão do Rollout sempre deixa parar (a recarga já está correndo); o mesmo toque que
+    // começou a rolar fica apertado por alguns quadros, por isso só para depois de um instante
+    const pararRodar = h?.forma === 'rodar' && l.est.rodando && luta.t - (l.est.rodando.desde ?? 0) > 0.4;
     if (!h || h.sinUlti || (l.cd[slot] > 0 && !pararRodar) || l.est.aturdido || l.est.dormido) return false;
     if (l.accion?.bloquea) return false;
     // voando (Fly) ou debaixo da terra (Dig) só dá para sair da esquiva: nenhuma skill sai
@@ -463,7 +464,7 @@ export class Habilidades {
       luta.emit({ t: 'pulso', x: l.x, y: l.y, radio: 26, tipo: 'ROCK', estilo: 'tierra' });
       return;
     }
-    l.ponerEstado('rodando', h.dur ?? 4, { vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, cd: h.cd, golpes: new Map() });
+    l.ponerEstado('rodando', h.dur ?? 4, { desde: luta.t, vel: h.vel ?? 1.75, dano: h.dano, empuje: h.empuje ?? 160, tipo: h.tipo, slot: extra.slot, cd: h.cd, golpes: new Map() });
     if (h.reduce) l.ponerEstado('blindaje', h.dur ?? 4, { reduce: h.reduce });
     // a recarga começa a contar assim que vira bola
     l.cd[extra.slot] = h.cd;
@@ -542,7 +543,7 @@ export class Habilidades {
       } };
   }
 
-  // Tectonic Arena (Golem): só rolando. Se arremessa, cai e, se acertar o rival, levanta uma arena de pedra
+  // Tectonic Rage (Golem): só rolando. Se arremessa, cai e, se acertar o rival, levanta uma arena de pedra
   // que prende os dois lá dentro por alguns segundos
   arenaRoca(l, h, extra) {
     const luta = this.luta;
@@ -993,6 +994,8 @@ export class Habilidades {
     const avance = d0 < h.alcance + emb + 20 ? Math.max(0, Math.min(emb, d0 - 18)) : Math.min(emb, h.lanza ? Math.hypot(l.ax - l.x, l.ay - l.y) : h.avanza ? emb : 12);
     const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance);
     if (h.lanza || h.blindaje) l.ponerEstado('blindaje', lanzar + 0.15, { reduce: h.blindaje ?? 0.5 });
+    // rasgo: risco no caminho da investida
+    if (h.rastro) luta.emit({ t: 'trazo', x0, y0: y0 - l.alto * 0.5, x1: p1.x + Math.cos(ang) * 20, y1: p1.y - l.alto * 0.5 + Math.sin(ang) * 14, tipo: h.tipo, estilo: h.estilo });
     l.animar(h.anim ?? 'Attack', lanzar + 0.3);
     let t = 0;
     l.accion = {
@@ -1014,7 +1017,9 @@ export class Habilidades {
         const enOnda = h.onda && Math.hypot(b.x - ox, (b.y - oy) / 0.65) < h.onda + RADIO;
         if (enOnda || (d < h.alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo ?? 120) / 2)) {
           const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano * k + almas * (h.porAlma ?? 0) + faltam * (h.porFalta ?? 0), empuje: h.empuje ?? 50, castiga: h.castiga, disipa: h.disipa, dirX: dx / d, dirY: dy / d, pesado: true }));
-          // Whirlpool Tail (Milotic): quem leva a rabada fica preso num redemoinho
+          // impacto forte quando acerta (segundo toque do Poison Jab)
+          if (h.impactoFuerte && res === 'golpe') { luta.emit({ t: 'impacto', x: b.x, y: b.y - b.alto * 0.5, tipo: h.tipo, estilo: h.estilo }); luta.emit({ t: 'anillo', x: b.x, y: b.y - b.alto * 0.5, color: '#e9b8ff', r: 36 }); luta.emit({ t: 'temblor', f: 0.012 }); }
+          // Whirlpool (Milotic): quem leva a rabada fica preso num redemoinho
           if (h.remolino && res === 'golpe' && !b.esClon) luta.programar(0.4, () => { if (l.ko || b.ko) return; this.torbellino(l, { ...h.remolino, curaPropia: 0 }, extra); const tb = luta.entidades.at(-1); tb.x = b.x; tb.y = b.y; l.accion = null; });
         }
       }
@@ -1509,8 +1514,14 @@ export class Habilidades {
   // Pula no rival se ele está perto e na frente da mira (senão, até a mira) e só acerta se cair em cima dele.
   // Com h.choque (High Jump Kick), errar machuca e atordoa quem pulou.
   patada(l, h, extra) {
-    const luta = this.luta, r0 = l.rival, apunte = angApunte(l);
-    const sobre = r0 && !r0.ko && !r0.oculto && Math.hypot(r0.x - l.x, r0.y - l.y) < h.alcance + 30 && Math.abs(difAng(Math.atan2(r0.y - l.y, r0.x - l.x), apunte)) < 1;
+    const luta = this.luta, r0 = l.rival, mov = l.intento && (l.intento.mx || l.intento.my);
+    // Wall Climb: pula para onde o analógico aponta (parado, para a frente), sem procurar o rival
+    if (h.haciaMov) {
+      const a = mov ? Math.atan2(l.intento.my, l.intento.mx) : l.angulo ?? 0;
+      l.ax = l.x + Math.cos(a) * h.alcance; l.ay = l.y + Math.sin(a) * h.alcance;
+    }
+    const apunte = angApunte(l);
+    const sobre = !h.haciaMov && r0 && !r0.ko && !r0.oculto && Math.hypot(r0.x - l.x, r0.y - l.y) < h.alcance + 30 && Math.abs(difAng(Math.atan2(r0.y - l.y, r0.x - l.x), apunte)) < 1;
     const ang = sobre ? Math.atan2(r0.y - l.y, r0.x - l.x) : apunte;
     const d = sobre ? Math.max(0, Math.min(h.alcance, Math.hypot(r0.x - l.x, r0.y - l.y) - 6)) : Math.min(h.alcance, Math.hypot(l.ax - l.x, l.ay - l.y));
     const x0 = l.x, y0 = l.y, p1 = fijarCampo(x0 + Math.cos(ang) * d, y0 + Math.sin(ang) * d);

@@ -317,6 +317,22 @@ test('Archaludon: recua soltando a rajada que joga o rival para o ar e desfaz a 
   assert.ok(!a.est.puente && Math.abs(a.x - x0) < 2, 'desfez a ponte parado');
 });
 
+test('Rollout continua rolando com o botão segurado e Wall Climb pula para onde o analógico aponta', () => {
+  const l = nuevaLuta('geodude', 'munchlax', { etapas: [2, 0] });
+  const [a, b] = l.luchadores;
+  a.x = 380; a.y = 222; b.x = 700; b.y = 300;
+  correr(l, 0.2, [{ mx: 0, my: 0, ax: 500, ay: 222, esp: true }, null]);
+  assert.ok(a.est.rodando, 'segurar o botão não para o giro que acabou de começar');
+  correr(l, 0.2, [{ mx: 0, my: 0, ax: 500, ay: 222 }, null]);
+  correr(l, 0.05, [{ mx: 0, my: 0, ax: 500, ay: 222, esp: true }, null]);
+  assert.ok(!a.est.rodando, 'apertar de novo para');
+  const l2 = nuevaLuta('sneasler', 'munchlax', { etapas: [1, 0] });
+  const [s, r] = l2.luchadores;
+  s.x = 380; s.y = 222; r.x = 480; r.y = 222;
+  correr(l2, 0.6, [{ mx: 0, my: -1, ax: r.x, ay: r.y, esp: true }, null]);
+  assert.ok(s.y < 150 && Math.abs(s.x - 380) < 10, `pulou para cima, longe do rival (${Math.round(s.x)}, ${Math.round(s.y)})`);
+});
+
 test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de verdade', () => {
   for (const id of ['onix', 'munchlax', 'buneary', 'riolu']) {
     const p = ROSTER.find(x => x.id === id);

@@ -195,7 +195,7 @@ export function burbujaLlena(r) {
   });
 }
 
-// nota musical (Sing, Cloud Concert): cabeça oval, haste e bandeirinha, com contorno escuro
+// nota musical (Sing, Perish Song): cabeça oval, haste e bandeirinha, com contorno escuro
 export function nota(tam = 6, color = '#ffffff') {
   return guardado(`nota${tam}-${color}`, tam * 2 + 6, tam * 3 + 6, (g, W, H) => {
     const cx = Math.floor(W / 2) - 1, base = H - 4;

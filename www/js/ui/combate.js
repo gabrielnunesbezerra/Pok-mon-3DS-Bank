@@ -338,7 +338,7 @@ export class Combate {
       g.globalAlpha = 0.25; PX.elipsePix(g, x, y, 14, 6, '#0a1830'); g.globalAlpha = 1;
       return;
     }
-    // Phantom Dive: debaixo d'água como fantasma; só ondas roxas e bolhas marcando onde está
+    // Phantom Force: debaixo d'água como fantasma; só ondas roxas e bolhas marcando onde está
     if (l.oculto && l.est.vuelo?.modo === 'fantasma') {
       const x = Math.round(l.x), y = Math.round(l.y), pul = (this.t * 2) % 1;
       g.globalAlpha = 0.8; PX.anilloPix(g, x, y, 10 + pul * 18, 5 + pul * 9, '#a78bfa', 1, 0); PX.anilloPix(g, x, y, 22, 11, '#cfefff', 1, 6, Math.floor(this.t * 20)); g.globalAlpha = 0.3; PX.elipsePix(g, x, y, 14, 6, '#3a2a6a'); g.globalAlpha = 1;

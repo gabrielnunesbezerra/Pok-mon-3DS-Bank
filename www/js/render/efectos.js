@@ -553,7 +553,7 @@ export class Efectos {
       void l; return;
     }
     if (h.k === 'pauta') {
-      // Cloud Concert: pauta musical em anéis que giram, com notas correndo nela
+      // Perish Song: pauta musical em anéis que giram, com notas correndo nela
       const cx = h.x, cy = h.y, al = Math.min(1, t * 6, (h.life - t) / 0.3);
       g.globalAlpha = al;
       for (let i = 0; i < 3; i++) { const r = h.radio * (0.45 + i * 0.27); PX.anilloPix(g, cx, cy, r, r * 0.62, i % 2 ? '#f0f4ff' : '#bfe4ff', 1, 10, Math.floor(t * 20) * (i % 2 ? 1 : -1)); for (let j = 0; j < 5; j++) { const a = t * (2 + i) * (i % 2 ? -1 : 1) + j * 1.2566; PX.carimbar(g, PX.nota(6, j % 2 ? '#ffffff' : '#ff9ad8'), cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.62 - 6, 0, 1, 1); } }
@@ -1332,7 +1332,7 @@ export function dibujarEspinho(g, e, t) {
   PX.carimbar(g, PX.roca(4), e.x - 14, e.y - 2, 0.4, 1, 1); PX.carimbar(g, PX.roca(3), e.x + 15, e.y, 1.2, 1, 1);
 }
 
-// Tectonic Arena: anel de pilares de pedra; a metade de trás vai no chão e a da frente por cima dos lutadores
+// Tectonic Rage: anel de pilares de pedra; a metade de trás vai no chão e a da frente por cima dos lutadores
 export function dibujarArenaRoca(g, e, t, frente) {
   const N = 18, sobe = Math.min(1, e.t / 0.3), cai = Math.min(1, (e.dur - e.t) / 0.4), alto = 26 * sobe * cai;
   for (let i = 0; i < N; i++) {

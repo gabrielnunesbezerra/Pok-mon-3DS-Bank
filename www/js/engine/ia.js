@@ -103,6 +103,7 @@ function perfil(h, slot, d) {
     case 'tajo': P.tipo = 'mele'; P.alcance = h.alcance + (h.avance ?? 0) + 14; break;
     case 'rafaga': P.tipo = 'mele'; P.alcance = h.alcance + 6; P.golpes = h.golpes ?? 1; break;
     case 'golpe': P.tipo = 'mele'; P.alcance = h.alcance + (h.embestida ?? 30) * 0.85 + (h.onda ?? 0) * 0.5; P.retardo = h.lanzar ?? 0.14; break;
+    case 'puente': P.tipo = 'mele'; P.alcance = h.rajada?.alcance ?? 120; P.retardo = 0.05; break;
     case 'patada': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.26 + d / 700; P.sigue = 0.8; break;
     case 'salto': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 20; P.retardo = 0.32; P.sigue = 0.8; break;
     case 'cortesSuelo': P.tipo = 'mele'; P.alcance = h.alcance; P.retardo = (h.carga ?? 0.15) + (h.viaja ?? 0.25) * 0.5; break;
@@ -368,7 +369,8 @@ export class IA {
     if (yo.puedeMega && (d < c.megaDist || s.vendido)) { it.mega = true; this.apuntar(s.lmb, s); return; }
     const listo = sl => {
       const h = kit[sl];
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.requiereRodar && !yo.est.rodando) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      // Archaludon: virou ponte, fica ponte até acabar (desfazer não desvia de nada)
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);
