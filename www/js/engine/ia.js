@@ -386,7 +386,7 @@ export class IA {
     const listo = sl => {
       const h = kit[sl];
       // Archaludon: virou ponte, fica ponte até acabar (desfazer não desvia de nada)
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'lmb' && yo.def.fervor && yo.fervor > 80) && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);

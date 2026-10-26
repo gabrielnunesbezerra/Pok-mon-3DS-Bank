@@ -1837,17 +1837,17 @@ export class Habilidades {
     const avance = d0 < alc + 30 ? Math.max(0, d0 - 16) : alc, p1 = fijarCampo(x0 + Math.cos(ang) * avance, y0 + Math.sin(ang) * avance), lanzar = 0.16, segura = h.segura ?? 0.55;
     l.animar('Walk', lanzar); l.angulo = ang;
     let t = 0, preso = null, tiempo = 0;
-    l.accion = { hasta: luta.t + lanzar + segura + 0.1, bloquea: true, lento: 0, angulo: ang,
+    const acc = l.accion = { hasta: luta.t + lanzar + segura + 0.1, bloquea: true, lento: 0, angulo: ang,
       update: dt => {
         t += dt;
         if (!preso && t <= lanzar) { const k = t / lanzar; l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; return; }
         if (!preso) {
-          if (l.accion.mordeu) return;
-          l.accion.mordeu = true;
+          if (acc.mordeu) return;
+          acc.mordeu = true;
           const r = l.rival;
-          if (!r || r.ko || r.oculto || r.est.vuelo || Math.hypot(r.x - l.x, r.y - l.y) > RADIO * 2 + 14) { l.accion.hasta = luta.t + 0.05; return; }
+          if (!r || r.ko || r.oculto || r.est.vuelo || Math.hypot(r.x - l.x, r.y - l.y) > RADIO * 2 + 14) { acc.hasta = luta.t + 0.05; return; }
           const res = atingir(l, r, pacote(h, extra, ang, { empuje: 0, pesado: true }));
-          if (res !== 'golpe' || r.esClon) { l.accion.hasta = luta.t + 0.05; return; }
+          if (res !== 'golpe' || r.esClon) { acc.hasta = luta.t + 0.05; return; }
           preso = r; l.animar('Attack', segura);
           luta.emit({ t: 'mordidaFogo', l, b: r });
           if (h.siempreQuema || l.fervor >= 75) { r.ponerEstado('quema', 3, { dps: 3, pilas: 2, fuente: l }); r.texto('BURN!', '#ff7a1f'); }
@@ -1855,9 +1855,9 @@ export class Habilidades {
           return;
         }
         tiempo += dt;
-        const a = Math.atan2(l.ay - l.y, l.ax - l.x); l.accion.angulo = a;
+        const a = Math.atan2(l.ay - l.y, l.ax - l.x); acc.angulo = a;
         preso.x = l.x + Math.cos(a) * 18; preso.y = l.y + Math.sin(a) * 12;
-        if (tiempo >= segura || (tiempo > 0.15 && l.humano && !l.intento?.[extra.slot])) { this.arremessar(l, preso, a, h, extra); preso = null; l.accion.hasta = luta.t + 0.1; }
+        if (tiempo >= segura || (tiempo > 0.15 && l.humano && !l.intento?.[extra.slot])) { this.arremessar(l, preso, a, h, extra); preso = null; acc.hasta = luta.t + 0.1; }
       } };
   }
   // joga o rival numa direção; se bater na parede da arena, explode em fogo
@@ -1915,7 +1915,7 @@ export class Habilidades {
               for (const b of luta.blancos(l)) {
                 if (b.est?.vuelo || Math.hypot(b.x - tm.x, (b.y - tm.y) / 0.62) > tm.radio + RADIO) continue;
                 atingir(l, b, pacote(h, extra, 0, { dano: h.tick ?? 2.5, tick: true, empuje: 0, dirX: undefined, dirY: undefined }));
-                b.ponerEstado('lento', 0.6, { f: h.ralentiza ?? 0.35 });
+                if (!b.esClon) b.ponerEstado('lento', 0.6, { f: h.ralentiza ?? 0.35 });
               }
             }
             return true;
@@ -2027,13 +2027,13 @@ export class Habilidades {
     const golpeados = new Set();
     let t = 0, ant = { x: x0, y: y0 };
     l.animar(h.anim ?? 'Attack', dur + 0.1);
-    l.accion = {
+    const acc = l.accion = {
       hasta: luta.t + dur, bloquea: true, lento: 0, angulo: ang,
       update: dt => {
         t += dt;
         const p = pos(Math.min(1, t / dur));
         if (Math.hypot(p.x - ant.x, p.y - ant.y) > 6) { luta.emit({ t: 'trazo', x0: ant.x, y0: ant.y - l.alto * 0.5, x1: p.x, y1: p.y - l.alto * 0.5, tipo: h.tipo, estilo: 'veneno' }); }
-        l.accion.angulo = Math.atan2(p.y - ant.y, p.x - ant.x) || ang;
+        acc.angulo = Math.atan2(p.y - ant.y, p.x - ant.x) || ang;
         l.x = p.x; l.y = p.y; ant = p;
         for (const b of luta.blancos(l)) {
           if (golpeados.has(b) || b.oculto || b.est?.vuelo) continue;
