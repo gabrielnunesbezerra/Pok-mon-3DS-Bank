@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "fetch-pmd": "node scripts/fetch-pmd.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-force-exit tests/*.test.mjs",
     "serve": "node scripts/serve.mjs",
     "relay": "node scripts/relay.mjs",
     "cap:sync": "cap sync android"

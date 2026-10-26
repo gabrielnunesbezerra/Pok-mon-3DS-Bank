@@ -203,8 +203,11 @@ export class Combate {
     this.app.tactil.actualizar();
     if (this.sesion) {
       if (this.rivalFuera || luta.fase === 'fin') return;
-      const r = this.sesion.paso(luta, () => this.ctrls[this.lado].intento(dt));
+      const amostra = () => this.ctrls[this.lado].intento(dt);
+      let r = this.sesion.paso(luta, amostra);
       if (r) luta.paso(TICK, r);
+      // ficou para trás (o celular travou um pouco ou a rede segurou os pacotes): alcança rodando passos extras
+      for (let extra = 0; r && extra < 2 && luta.fase !== 'fin' && this.sesion.atrasado(); extra++) { r = this.sesion.paso(luta, amostra); if (r) luta.paso(TICK, r); }
       return;
     }
     const intentos = this.ctrls.map(c => c.intento(dt));
@@ -619,7 +622,8 @@ export class Combate {
     const ms = s.rtt == null ? null : Math.round(s.rtt);
     const col = ms == null ? '#93acd4' : ms < 60 ? '#3ccf4e' : ms < 110 ? '#f2c230' : '#e8463a';
     texto(g, `${s.via} ${ms ?? '--'} MS`, ANCHO / 2, HUD_ALTO + 4, { tam: 8, align: 'center', color: col, borde: 2 });
-    if (s.esperando > 24 && !this.rivalFuera) texto(g, 'WAITING FOR THE OTHER PLAYER...', ANCHO / 2, 120, { tam: 8, align: 'center', color: '#f8c448', borde: 3 });
+    if (s.reconectando && !this.rivalFuera) texto(g, `RECONNECTING${'.'.repeat(1 + Math.floor(this.t * 3) % 3)}`, ANCHO / 2, 120, { tam: 9, align: 'center', color: '#f8c448', borde: 3 });
+    else if (s.esperando > 24 && !this.rivalFuera) texto(g, 'WAITING FOR THE OTHER PLAYER...', ANCHO / 2, 120, { tam: 8, align: 'center', color: '#f8c448', borde: 3 });
     if (s.desync) texto(g, 'OUT OF SYNC - PLEASE REMATCH', ANCHO / 2, 134, { tam: 8, align: 'center', color: '#ff7a7a', borde: 3 });
     if (this.rivalFuera) texto(g, 'THE OTHER PLAYER LEFT', ANCHO / 2, 120, { tam: 9, align: 'center', color: '#ffd23c', borde: 3 });
     if (this.menuSalir) {

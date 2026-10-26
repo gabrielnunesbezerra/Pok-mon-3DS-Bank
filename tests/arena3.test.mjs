@@ -70,6 +70,50 @@ test('lockstep: dois aparelhos com rede lenta ficam idênticos', () => {
   sA.cerrar(); sB.cerrar();
 });
 
+// rede ruim: o canal rápido perde 25% dos pacotes e atrasa de 2 a 9 passos (fora de ordem); o lado B ainda trava às vezes
+function parRuim() {
+  let semente = 7; const azar = () => (semente = (semente * 16807) % 2147483647) / 2147483647;
+  const fila = [[], []];
+  const mk = i => ({ via: 'TEST', alMensaje: null, alCerrar: null,
+    enviar(m) { fila[1 - i].push({ m: JSON.parse(JSON.stringify(m)), t: 3 }); },
+    enviarRapido(m) { if (azar() < 0.25) return; fila[1 - i].push({ m: JSON.parse(JSON.stringify(m)), t: 2 + Math.floor(azar() * 8) }); },
+    cerrar() {} });
+  const a = mk(0), b = mk(1);
+  return { a, b, azar, tick() { fila.forEach((f, i) => { for (const x of f) x.t--; const prontos = f.filter(x => x.t <= 0); fila[i] = f.filter(x => x.t > 0); for (const { m } of prontos) (i === 0 ? a : b).alMensaje?.(m); }); } };
+}
+
+test('lockstep: com perda de pacotes e travadas, ninguém fica para trás e o estado continua igual', () => {
+  const rede = parRuim();
+  const sA = new Sesion(rede.a, 0), sB = new Sesion(rede.b, 1);
+  const lA = new Luta({ p1: def('riolu'), p2: def('onix'), rapido: true, semilla: 5 }), lB = new Luta({ p1: def('riolu'), p2: def('onix'), rapido: true, semilla: 5 });
+  const iaA = new IA(lA, lA.luchadores[0], 'normal'), iaB = new IA(lB, lB.luchadores[1], 'normal');
+  let pasosA = 0, pasosB = 0;
+  const rodar = (s, l, ia, extra) => { let r = s.paso(l, () => ia.intento(1 / 60)), n = 0; if (r) { l.paso(1 / 60, r); l.tomarEventos(); n++; } for (let k = 0; r && k < extra && s.atrasado(); k++) { r = s.paso(l, () => ia.intento(1 / 60)); if (r) { l.paso(1 / 60, r); l.tomarEventos(); n++; } } return n; };
+  for (let i = 0; i < 60 * 40; i++) {
+    rede.tick();
+    pasosA += rodar(sA, lA, iaA, 2);
+    if (rede.azar() < 0.1) continue; // B perdeu este quadro (celular engasgou)
+    pasosB += rodar(sB, lB, iaB, 2);
+  }
+  assert.ok(pasosA > 60 * 20 && pasosB > 60 * 20, `avançou pouco: ${pasosA}/${pasosB}`);
+  assert.ok(Math.abs(pasosA - pasosB) <= 30, `um ficou para trás: ${pasosA}/${pasosB}`);
+  assert.equal(sA.desync, false); assert.equal(sB.desync, false);
+  sA.cerrar(); sB.cerrar();
+});
+
+test('lockstep: sem sinal a luta espera reconectando em vez de acabar', () => {
+  const rede = par(1);
+  const s = new Sesion(rede.a, 0); let fim = false; s.alCerrar = () => { fim = true; };
+  s.listos.set(1, s.id);
+  s.sinSenal = performance.now() - 5000;
+  s.paso(null, () => ({}));
+  assert.equal(s.reconectando, true);
+  assert.equal(fim, false);
+  s.sinSenal = performance.now() - 50000; s.paso(null, () => ({}));
+  assert.equal(fim, true);
+  s.cerrar();
+});
+
 test('o comando é arredondado igual nos dois lados', () => {
   const v = cuantizar({ mx: 0.7071067, my: -0.7071067, ax: 123.6, ay: 80.2, lmb: true, e: true });
   assert.deepEqual(v, [71, -71, 124, 80, 17]);
