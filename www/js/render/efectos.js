@@ -570,12 +570,26 @@ export class Efectos {
       g.globalAlpha = 1; return;
     }
     if (h.k === 'rayoVeneno') {
-      // Venoshock: faixa grossa de veneno com bolhas correndo nela e gotas pingando
-      const al = Math.min(1, (1 - k) * 2.5), dx = h.x1 - h.x0, dy = h.y1 - h.y0, w = h.ancho * (h.grande ? 1.2 : 1) * (0.7 + 0.3 * Math.min(1, t * 10));
-      g.globalAlpha = al * 0.3; PX.lineaPix(g, h.x0, h.y0, h.x1, h.y1, '#c084fc', w + 8);
-      g.globalAlpha = al; PX.lineaPix(g, h.x0, h.y0, h.x1, h.y1, '#3a0f52', w + 2); PX.lineaPix(g, h.x0, h.y0, h.x1, h.y1, '#9b3fbf', w); PX.lineaPix(g, h.x0, h.y0 - 1, h.x1, h.y1 - 1, '#e9b8ff', Math.max(1, w * 0.3));
-      for (let i = 0; i < 10; i++) { const f = (i / 10 + t * 2) % 1, x = h.x0 + dx * f, y = h.y0 + dy * f + Math.sin(i * 3 + t * 20) * w * 0.3; PX.disco(g, x, y, 1.5 + (i % 3), i % 2 ? '#f0c8ff' : '#a3e635'); }
-      for (let i = 0; i < 6; i++) { const f = (i + 0.5) / 6, cai = (t * 60 + i * 9) % 24; PX.disco(g, h.x0 + dx * f, h.y0 + dy * f + cai, 1, '#9b3fbf'); }
+      // Venoshock: fios de veneno em zigue-zague, como raios, que estalam e mudam de forma a cada instante,
+      // com galhinhos saindo e gotas pingando; o fio do meio é mais grosso e claro
+      const al = Math.min(1, (1 - k) * 2.5), dx = h.x1 - h.x0, dy = h.y1 - h.y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+      const N = 14, fios = h.grande ? 4 : 3, amp = h.ancho * (h.grande ? 1.1 : 0.85), passo = Math.floor(t * 24);
+      const ruido = (a, b) => { const v = Math.sin(a * 127.1 + b * 311.7 + passo * 74.7) * 43758.5453; return v - Math.floor(v) - 0.5; };
+      for (let f = 0; f < fios; f++) {
+        const pts = [];
+        for (let i = 0; i <= N; i++) { const u = i / N, o = (i === 0 || i === N ? 0 : ruido(f, i) * amp) * Math.sin(u * Math.PI) + (f - (fios - 1) / 2) * amp * 0.25 * Math.sin(u * Math.PI); pts.push([h.x0 + dx * u + nx * o, h.y0 + dy * u + ny * o]); }
+        const meio = f === Math.floor(fios / 2);
+        for (const [cor, w, a2] of [['#7e22ce', meio ? 6 : 4, 0.35], ['#c026d3', meio ? 3 : 2, 1], [meio ? '#fdf4ff' : '#f0abfc', 1, 1]]) {
+          g.globalAlpha = al * a2;
+          for (let i = 0; i < N; i++) PX.lineaPix(g, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], cor, w);
+        }
+        // galhos curtos saindo de alguns pontos
+        g.globalAlpha = al * 0.8;
+        for (let i = 2; i < N - 1; i += 4) { const [px0, py0] = pts[i], sgn = ruido(f + 9, i) > 0 ? 1 : -1, bx = px0 + dx / L * 8 + nx * sgn * amp * 0.8, by = py0 + dy / L * 8 + ny * sgn * amp * 0.8; PX.lineaPix(g, px0, py0, bx, by, '#e879f9', 1); }
+      }
+      g.globalAlpha = al * 0.5; PX.disco(g, h.x0, h.y0, h.ancho * 0.5, '#d946ef'); PX.disco(g, h.x1, h.y1, h.ancho * 0.6, '#a855f7');
+      g.globalAlpha = al;
+      for (let i = 0; i < 6; i++) { const u = (i + 0.5) / 6, cai = (t * 60 + i * 9) % 22; PX.disco(g, h.x0 + dx * u, h.y0 + dy * u + cai, 1, i % 2 ? '#c026d3' : '#a3e635'); }
       g.globalAlpha = 1; return;
     }
     if (h.k === 'cargaVeneno') {

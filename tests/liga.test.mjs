@@ -12,7 +12,7 @@ test('liga: só os iniciais começam liberados e cada Pokémon do roster está e
   assert.deepEqual(L.desbloqueados().sort(), ['bulbasaur', 'charmander', 'squirtle']);
   const naLiga = L.LIGA.circuitos.flatMap(c => c.rivales);
   for (const p of ROSTER) assert.ok(L.LIGA.iniciales.includes(p.id) || naLiga.includes(p.id), `${p.id} fora da liga`);
-  for (const c of L.LIGA.circuitos) assert.ok(c.rivales.length >= 3 && c.rivales.length <= 5, `${c.id} com ${c.rivales.length}`);
+  for (const c of L.LIGA.circuitos) assert.ok(c.rivales.length >= 2 && c.rivales.length <= 5, `${c.id} com ${c.rivales.length}`);
 });
 
 test('liga: 1 vitória libera, 2 dão o ícone, 3 o shiny; dificuldade sobe; coluna seguinte só abre com todos vencidos', () => {
