@@ -389,7 +389,7 @@ export class Combate {
     const br = l.est.brinco, brinco = br ? Math.round(Math.sin(Math.min(1, (this.luta.t - br.t0) / br.dur) * Math.PI) * 18) : 0;
     // Jet Mode: voa baixinho, solta rastro de jato; Flame Charge: rastro de fogo e linhas de velocidade
     const jet = l.est.aeronave ? Math.round(10 + Math.sin(this.t * 6) * 2) : 0, alto = l.salto + brinco + jet;
-    if (jet && Math.random() < 0.8) { const a = l.est.aeronave.rumbo + Math.PI; this.fx.add({ x: l.x + Math.cos(a) * 10, y: l.y - jet - l.alto * 0.3 + Math.sin(a) * 6, vx: Math.cos(a) * 90, vy: Math.sin(a) * 50, size: 2.5, grow: 1.5, life: 0.3, color: Math.random() < 0.5 ? '#7ad8c8' : '#e0fff8', forma: 'chispa' }); }
+    if (jet) { const a = l.est.aeronave.rumbo + Math.PI, bx = l.x + Math.cos(a) * 10, by = l.y - jet - l.alto * 0.3 + Math.sin(a) * 6; this.fx.add({ x: bx, y: by, vx: Math.cos(a) * 90, vy: Math.sin(a) * 50, size: 2.5, grow: 1.5, life: 0.3, color: Math.random() < 0.5 ? '#7ad8c8' : '#e0fff8', forma: 'chispa' }); if (Math.random() < 0.6) this.fx.add({ x: bx, y: by, vx: Math.cos(a) * 120 + (Math.random() - 0.5) * 30, vy: Math.sin(a) * 70, drag: 3, size: 3.2, grow: -4, life: 0.22, forma: 'llamaDir', rampa: ['#2a1060', '#6a3cf0', '#7ad8ff', '#ffffff'] }); if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * 30, y: l.y - jet - Math.random() * l.alto, vx: Math.cos(a) * 260, vy: Math.sin(a) * 150, size: 1, life: 0.12, color: '#e0fff8', forma: 'raya' }); }
     if (l.est.corrida && l.moviendo && Math.random() < 0.9) this.fx.add({ x: l.x + (Math.random() - 0.5) * 10, y: l.y - 2, vx: -l.vx * 0.3, vy: -20, size: 3, grow: 2, life: 0.35, forma: 'llama', rampa: ['#7a1a08', '#ff5a1a', '#ffb347', '#fff3b0'] });
     if (alto > 2) { sx = 0.93; sy = 1.08; }
     if (l._saltoAnt > 2 && alto <= 0) l._cae = t;
@@ -449,7 +449,7 @@ export class Combate {
     }
     if (l.almas) for (let i = 0; i < l.almas; i++) { const a = this.t * 2.2 + (i / l.almas) * Math.PI * 2, x = l.x + Math.cos(a) * (l.alto * 0.55 + 8), y = l.y - l.alto * 0.5 + Math.sin(a) * 9; pezAlma(g, x, y, a + Math.PI / 2, 0.8, 0.75, !!l.def.almaRosa); }
     // Lock-On: mira vermelha em cima de quem está marcado
-    if (l.est.marca) PX.carimbar(g, PX.mira(7, '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85);
+    if (l.est.marca) { const jetRival = l.rival?.est?.aeronave; PX.carimbar(g, PX.mira(jetRival ? 9 : 7, jetRival ? '#7ad8ff' : '#ff4a4a'), l.x, l.y - l.alto * 0.55 - l.salto, t * 2, 1, 0.85); if (jetRival) PX.anilloPix(g, l.x, l.y, 16 + Math.sin(t * 8) * 2, 7, '#7ad8ff', 1, 4, Math.floor(t * 12)); }
     if (l.est.blindaje) { g.strokeStyle = 'rgba(255,214,120,0.7)'; g.lineWidth = 1; g.beginPath(); g.ellipse(l.x, l.y - l.alto * 0.5 - l.salto, l.alto * 0.4 + 3, l.alto * 0.5 + 2, 0, 0, 7); g.stroke(); }
     if (l.est.dormido && Math.floor(t * 2) % 2) texto(g, 'z', l.x + 12, l.y - l.alto - 6 - (t * 10) % 8, { tam: 8, color: '#fff', borde: 2 });
     if (l.est.confuso) for (let i = 0; i < 3; i++) { g.fillStyle = '#ffe14a'; g.fillRect(l.x + Math.cos(t * 5 + i * 2.1) * 14 - 2, l.y - l.alto - 8 + Math.sin(t * 5 + i * 2.1) * 3, 4, 4); }

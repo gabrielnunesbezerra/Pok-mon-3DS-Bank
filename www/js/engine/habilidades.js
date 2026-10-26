@@ -1703,7 +1703,7 @@ export class Habilidades {
           if (!toca && e.t < (h.dur ?? 3.5)) return true;
           const R = (h.radio ?? 44) * (0.8 + 0.4 * (k - 1));
           luta.emit({ t: 'pilarFuego', x: e.x, y: e.y, tipo: 'FIRE' });
-          luta.emit({ t: 'explosion', x: e.x, y: e.y - 6, radio: R, tipo: 'FIRE' });
+          luta.emit({ t: 'explosion', x: e.x, y: e.y - 6, radio: R, tipo: 'FIRE', estilo: 'erupcion' });
           luta.emit({ t: 'temblor', f: 0.006 + 0.008 * (k - 1) });
           areaCirculo(luta, l, e.x, e.y, R, pacote(h, extra, e.ang, { dano: h.dano * k, quema: { dps: 2 + 3 * (k - 1), dur: 3, max: 3 }, empuje: 120, pesado: true }));
           return false;
@@ -1743,7 +1743,7 @@ export class Habilidades {
     const p2 = fijarCampo(p1.x - Math.cos(ang) * (h.rebote ?? 90), p1.y - Math.sin(ang) * (h.rebote ?? 90)), ida = 0.22, vuelta = 0.3;
     l.ponerEstado('invul', ida + vuelta);
     l.animar('Hop', ida); l.angulo = ang;
-    luta.emit({ t: 'chapoteo', x: x0, y: y0 });
+    luta.emit({ t: 'chapoteo', x: x0, y: y0 }); luta.emit({ t: 'arcoAgua', x0, y0, x1: p1.x, y1: p1.y, alto: 18, dur: ida });
     let t = 0, bateu = false;
     l.accion = { hasta: luta.t + ida + vuelta, bloquea: true, lento: 0, angulo: ang,
       update: dt => {
@@ -1751,7 +1751,7 @@ export class Habilidades {
         if (t <= ida) { const k = t / ida; l.x = x0 + (p1.x - x0) * k; l.y = y0 + (p1.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 18); return; }
         if (!bateu) {
           bateu = true; l.animar('Attack', vuelta);
-          luta.emit({ t: 'salpico', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo }); luta.emit({ t: 'chapoteo', x: l.x, y: l.y });
+          luta.emit({ t: 'salpico', x: l.x, y: l.y, radio: h.radio, tipo: h.tipo, grande: true }); luta.emit({ t: 'chapoteo', x: l.x, y: l.y }); luta.emit({ t: 'arcoAgua', x0: p1.x, y0: p1.y, x1: p2.x, y1: p2.y, alto: 26, dur: vuelta });
           for (const b of luta.blancos(l)) {
             if (b.oculto || b.est?.vuelo) continue;
             const dx = b.x - l.x, dy = b.y - l.y, dd = Math.hypot(dx, dy) || 1;
@@ -1823,7 +1823,7 @@ export class Habilidades {
       luta.emit({ t: 'meteorito', x: p.x, y: p.y, caida: h.aviso, tipo: h.tipo });
       luta.programar(h.aviso, () => {
         if (l.ko) return;
-        luta.emit({ t: 'explosion', x: p.x, y: p.y - 4, radio: h.radio, tipo: h.tipo });
+        luta.emit({ t: 'explosion', x: p.x, y: p.y - 4, radio: h.radio, tipo: h.tipo, estilo: 'meteoro' });
         luta.emit({ t: 'temblor', f: 0.005 });
         areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 40, pesado: true }));
       });
@@ -1999,7 +1999,7 @@ export class Habilidades {
     luta.programar(1.2, () => {
       if (l.ko) return;
       luta.emit({ t: 'pulso', x: tm.x, y: tm.y, radio: h.radio, tipo: 'ROCK', estilo: 'aterrizaje' });
-      luta.emit({ t: 'explosion', x: tm.x, y: tm.y - 8, radio: h.radio, tipo: 'ROCK' });
+      luta.emit({ t: 'explosion', x: tm.x, y: tm.y - 8, radio: h.radio, tipo: 'ROCK', estilo: 'meteoro' });
       luta.emit({ t: 'temblor', f: 0.018 });
       for (const b of luta.blancos(l)) {
         if (b.est?.vuelo || Math.hypot(b.x - tm.x, (b.y - tm.y) / 0.62) > h.radio + RADIO) continue;
