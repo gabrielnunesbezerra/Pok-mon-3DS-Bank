@@ -14,7 +14,8 @@ import { Liga } from './ui/liga.js';
 import { Perfil } from './ui/perfil.js';
 import { social } from './nube/social.js';
 import { formularioAberto } from './ui/formulario.js';
-import { texto as textoPx, rect as rectPx } from './render/pixel.js';
+import { texto as textoPx, rect as rectPx, setTemaMenu } from './render/pixel.js';
+import { halloweenAtivo } from './ui/halloween.js';
 import { FxLab } from './ui/fxlab.js';
 import { Combate } from './ui/combate.js';
 import { PanelTactil } from './controles.js';
@@ -71,6 +72,7 @@ app.musica = () => {
   if (app.ajustes.musica && audio.musicaActual() !== que) audio.tocarMusica(que);
 };
 app.guardarAjustes = () => { try { localStorage.setItem('pkconfront.ajustes', JSON.stringify(app.ajustes)); } catch { /* sem armazenamento */ } };
+setTemaMenu(halloweenAtivo(app.ajustes) ? 'halloween' : null);
 
 // escala: a tela lógica cabe na janela, desenhada em resolução cheia do aparelho
 function medir() {

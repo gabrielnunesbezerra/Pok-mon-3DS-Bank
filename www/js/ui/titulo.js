@@ -2,7 +2,8 @@
 // Pokémon andando no chão. Menus: principal, PLAY e SETTINGS.
 import { ANCHO, ALTO, UI, VERSION, hex } from '../config.js';
 import { HUELLA } from '../data/pokemon.js';
-import { texto, fondoMenu, rect, destello, medir } from '../render/pixel.js';
+import { texto, fondoMenu, rect, destello, medir, setTemaMenu } from '../render/pixel.js';
+import { halloweenAtivo, cieloHalloween, murcielagos, horizonteHalloween, calabaza, fantasma, nevoa, sombrero } from './halloween.js';
 import { FINALES, TODAS_LAS_FORMAS, filaDesdeAngulo } from '../render/sprites.js';
 import { ListaBotones } from './menus.js';
 import { sfx } from '../audio.js';
@@ -33,6 +34,7 @@ const MENUS = {
     { id: 'musica', txt: 'MUSIC', ajuste: 'musica', ico: 'ayuda' },
     { id: 'mira', txt: 'AIM GUIDE', ajuste: 'mira', ico: 'diana' },
     { id: 'graficos', txt: 'GRAPHICS', ajuste: 'graficosBajos', ico: 'engranaje' },
+    { id: 'halloween', txt: 'HALLOWEEN', ajuste: 'halloween', ico: 'engranaje' },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },
   ],
 };
@@ -68,7 +70,7 @@ export class Titulo {
   abrir(menu, desde = null) {
     this.menu = menu;
     this.lista = new ListaBotones({
-      x: BX, y: 112 + BAJA + (menu === 'principal' ? 0 : 2), w: 210, h: menu === 'principal' ? 23 : 24, paso: menu === 'principal' ? 25 : 27,
+      x: BX, y: 112 + BAJA + (menu === 'principal' ? 0 : 2), w: 210, h: menu === 'jugar' ? 24 : 23, paso: menu === 'jugar' ? 27 : 25,
       ops: MENUS[menu].map(o => ({ ...o })),
       alElegir: o => this.elegirOpcion(o),
     });
@@ -78,10 +80,12 @@ export class Titulo {
   }
 
   refrescarAjustes() {
-    for (const o of this.lista.ops) if (o.ajuste) o.txt = o.id === 'graficos' ? `GRAPHICS: ${this.app.ajustes.graficosBajos ? 'LOW' : 'HIGH'}` : `${{ sonido: 'SOUND', musica: 'MUSIC', mira: 'AIM GUIDE' }[o.id]}: ${this.app.ajustes[o.ajuste] !== false && (o.id === 'mira' || this.app.ajustes[o.ajuste]) ? 'ON' : 'OFF'}`;
+    setTemaMenu(halloweenAtivo(this.app.ajustes) ? 'halloween' : null);
+    for (const o of this.lista.ops) if (o.ajuste) o.txt = o.id === 'halloween' ? `HALLOWEEN THEME: ${halloweenAtivo(this.app.ajustes) ? 'ON' : 'OFF'}` : o.id === 'graficos' ? `GRAPHICS: ${this.app.ajustes.graficosBajos ? 'LOW' : 'HIGH'}` : `${{ sonido: 'SOUND', musica: 'MUSIC', mira: 'AIM GUIDE' }[o.id]}: ${this.app.ajustes[o.ajuste] !== false && (o.id === 'mira' || this.app.ajustes[o.ajuste]) ? 'ON' : 'OFF'}`;
   }
 
   elegirOpcion(o) {
+    if (o.ajuste === 'halloween') { this.app.ajustes.halloween = !halloweenAtivo(this.app.ajustes); this.app.guardarAjustes(); this.refrescarAjustes(); return; }
     if (o.ajuste) {
       this.app.ajustes[o.ajuste] = o.ajuste === 'mira' ? this.app.ajustes.mira === false : !this.app.ajustes[o.ajuste];
       this.app.guardarAjustes();
@@ -123,15 +127,19 @@ export class Titulo {
   puntero(tipo, p) { this.lista.puntero(tipo, p); }
 
   dibujar(g) {
-    const t = this.t, bank = this.app.bank;
+    const t = this.t, bank = this.app.bank, hw = halloweenAtivo(this.app.ajustes);
+    if (hw) cieloHalloween(g, t, BX, BAJA);
     // halo atrás do logo
     const hal = g.createRadialGradient(BX, 62 + BAJA, 10, BX, 62 + BAJA, 150);
-    hal.addColorStop(0, 'rgba(120,190,255,0.32)'); hal.addColorStop(1, 'rgba(120,190,255,0)');
+    const cor = hw ? '255,140,40' : '120,190,255';
+    hal.addColorStop(0, `rgba(${cor},${hw ? 0.22 : 0.32})`); hal.addColorStop(1, `rgba(${cor},0)`);
     g.fillStyle = hal; g.fillRect(-300, 0, 1240, 230);
+    if (hw) { murcielagos(g, t); horizonteHalloween(g, LINEA_SUELO); }
     // chão
     rect(g, -300, LINEA_SUELO + 1, 1240, 1, UI.contorno);
-    rect(g, -300, LINEA_SUELO, 1240, 1, 0x2a5a9a);
-    rect(g, -300, LINEA_SUELO + 2, 1240, ALTO - LINEA_SUELO - 2, 0x0a1830);
+    rect(g, -300, LINEA_SUELO, 1240, 1, hw ? 0x6a2fa8 : 0x2a5a9a);
+    rect(g, -300, LINEA_SUELO + 2, 1240, ALTO - LINEA_SUELO - 2, hw ? 0x140a22 : 0x0a1830);
+    if (hw) { const ex = (ANCHO - 640) / 2; calabaza(g, 24 - ex * 0.5, 328, t, 1.1, 0); calabaza(g, 616 + ex * 0.5, 330, t, 1, 1); calabaza(g, 58 - ex * 0.5, 340, t, 0.7, 2); calabaza(g, 586 + ex * 0.5, 342, t, 0.75, 3); }
 
     // dois Pokémon grandes
     const suelo = 114 + BAJA;
@@ -142,8 +150,9 @@ export class Titulo {
       if (atacando) bank.dibujar(g, gd.f.dex, 'Attack', t - gd.ataque, gd.x, suelo, 2, { fila: gd.fila, bucle: false });
       else bank.dibujar(g, gd.f.dex, 'Idle', t, gd.x, suelo, 2, { fila: gd.fila });
     }
+    if (hw) this.guardianes.forEach((gd, i) => fantasma(g, gd.x + (i ? -34 : 34), suelo - 62, t, i * 2));
 
-    this.logo(g, t);
+    this.logo(g, t, hw);
 
     // brilhos
     DESTELLOS.forEach(([x, y, c, gr], i) => {
@@ -151,7 +160,8 @@ export class Titulo {
       if (k > 0.1) { g.globalAlpha = Math.min(1, k * 1.4); destello(g, x, y + BAJA, c, gr); g.globalAlpha = 1; }
     });
 
-    texto(g, SUBTITULO[this.menu], BX, 99 + BAJA, { tam: 8, color: UI.suave, align: 'center' });
+    if (hw && this.menu === 'principal') texto(g, `HAPPY HALLOWEEN! · ALPHA ${VERSION}`, BX, 99 + BAJA, { tam: 8, color: '#ffb35a', align: 'center' });
+    else texto(g, SUBTITULO[this.menu], BX, 99 + BAJA, { tam: 8, color: UI.suave, align: 'center' });
 
     this.lista.dibujar(g, t);
 
@@ -160,11 +170,12 @@ export class Titulo {
       g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(d.x, d.y, 11, 3, 0, 0, 7); g.fill();
       bank.dibujar(g, d.forma.dex, 'Walk', t + d.x * 0.01, d.x, d.y, 1, { fila: d.fila });
     }
+    if (hw) nevoa(g, t, LINEA_SUELO + 14);
     texto(g, 'SPRITES: PMDCOLLAB SPRITECOLLAB (CC BY-NC 4.0) · NON-PROFIT FAN GAME', BX, ALTO - 12, { tam: 8, color: UI.apagado, align: 'center' });
   }
 
   // Logo desenhado por código: pokébola, "PK" grande dourado e "CONFRONT" azul com contorno
-  logo(g, t) {
+  logo(g, t, hw = false) {
     const y = 4 + BAJA + Math.round(Math.sin(t * 2.2) * 2);
     g.save();
     g.translate(BX, y);
@@ -179,15 +190,16 @@ export class Titulo {
     g.beginPath(); g.arc(bx, by, 9, 0, 7); g.fill();
     g.fillStyle = '#fff'; g.beginPath(); g.arc(bx, by, 5.5, 0, 7); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.4)'; g.fillRect(bx - 18, by - 18, 9, 3);
-    // PK
-    const px = x0 + 64;
-    texto(g, 'PK', px, -6, { tam: 44, color: '#5b3300', borde: 9, colorBorde: '#5b3300', peso: 700 });
-    texto(g, 'PK', px, -6, { tam: 44, color: '#ffd23c', borde: 5, colorBorde: '#5b3300', peso: 700 });
-    texto(g, 'PK', px, -8, { tam: 44, color: '#fff2a0', peso: 700 });
+    if (hw) sombrero(g, bx + 2, by - 20);
+    // PK (no Halloween, laranja de abóbora; CONFRONT em roxo)
+    const px = x0 + 64, [cSombra, cBase, cLuz] = hw ? ['#4a1500', '#ff8a1a', '#ffd08a'] : ['#5b3300', '#ffd23c', '#fff2a0'];
+    texto(g, 'PK', px, -6, { tam: 44, color: cSombra, borde: 9, colorBorde: cSombra, peso: 700 });
+    texto(g, 'PK', px, -6, { tam: 44, color: cBase, borde: 5, colorBorde: cSombra, peso: 700 });
+    texto(g, 'PK', px, -8, { tam: 44, color: cLuz, peso: 700 });
     // CONFRONT
     texto(g, 'CONFRONT', 0, 53, { tam: 24, color: '#04102c', borde: 2, colorBorde: '#04102c', peso: 700, align: 'center' });
-    texto(g, 'CONFRONT', 0, 52, { tam: 24, color: '#8fd3ff', peso: 700, align: 'center' });
-    texto(g, 'CONFRONT', 0, 51, { tam: 24, color: '#ffffff', peso: 700, align: 'center', max: 300 });
+    texto(g, 'CONFRONT', 0, 52, { tam: 24, color: hw ? '#b07aff' : '#8fd3ff', peso: 700, align: 'center' });
+    texto(g, 'CONFRONT', 0, 51, { tam: 24, color: hw ? '#efe4ff' : '#ffffff', peso: 700, align: 'center', max: 300 });
     g.restore();
   }
 }

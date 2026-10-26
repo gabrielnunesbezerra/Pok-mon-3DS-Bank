@@ -76,7 +76,18 @@ export function marco(g, x, y, w, h, estilo = 'azul', alfa = 1) {
 }
 
 // Fundo dos menus: azul escuro com quadradinhos em xadrez
+// tema dos menus ('halloween' troca o fundo azul por roxo com quadradinhos laranja)
+let temaMenu = null;
+export const setTemaMenu = t => { temaMenu = t; };
 export function fondoMenu(g, w, h) {
+  if (temaMenu === 'halloween') {
+    rect(g, 0, 0, w, h, 0x170c29);
+    for (let y = -4, f = 0; y < h; y += 16, f++) {
+      const impar = Math.abs(Math.round(y / 16)) % 2;
+      for (let x = impar ? 8 : 0, c = 0; x < w; x += 16, c++) { g.fillStyle = (f * 7 + c * 3) % 11 === 0 ? '#3a1d10' : '#22113a'; g.fillRect(x, y, 7, 7); }
+    }
+    return;
+  }
   rect(g, 0, 0, w, h, UI.fondo);
   g.fillStyle = hex(UI.cuadro);
   for (let y = -4; y < h; y += 16) {
