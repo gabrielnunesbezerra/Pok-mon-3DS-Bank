@@ -621,20 +621,23 @@ test('novos: Mirror Coat devolve, Aqua Ring cura, Lock-On marca, Tri Attack troc
   assert.equal(m.entidades.filter(x => x.tipo === 'proj').length, 14);
 });
 
-test('Tyranitar: a onda de areia corre em linha e puxa; a Mega puxa duas vezes. Houndoom sem sobrecarga do básico', () => {
+test('Tyranitar: só na tempestade, a onda de areia corre em linha e volta arrastando; a Mega puxa duas vezes. Houndoom sem sobrecarga do básico', () => {
   const l = nuevaLuta('larvitar', 'munchlax', { etapas: [3, 0] });
   const [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 470; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  a.x = 300; a.y = 222; b.x = 420; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), false, 'fora da tempestade não funciona');
+  l.add({ tipo: 'tormenta', dueno: a, vivo: true, x: a.x, y: a.y, radio: 105, dur: 30, t: 0, update: () => true });
   assert.equal(l.habilidades.usar(a, 'q'), true);
   correr(l, 0.25, [null, null]);
   assert.ok(l.entidades.some(e => e.tipo === 'ondaArena'), 'a onda anda pelo chão');
   correr(l, 0.8, [null, null]);
   assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 60, 'arrastado até o Tyranitar');
-  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.cd.q = 0; a.energia = 100; b.x = a.x + 180; b.y = a.y; a.ax = b.x; a.ay = b.y; b.est = {};
+  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.cd.q = 0; a.energia = 100; b.x = a.x + 150; b.y = a.y; a.ax = b.x; a.ay = b.y; b.est = {};
   let ondas = 0; const add = l.add.bind(l); l.add = e => { if (e.tipo === 'ondaArena') ondas++; return add(e); };
   assert.equal(l.habilidades.usar(a, 'q'), true);
-  correr(l, 1.2, [null, null]);
+  correr(l, 1.6, [null, null]);
   assert.equal(ondas, 2);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 60, 'a Mega também arrasta');
   const h = nuevaLuta('houndour', 'munchlax', { etapas: [2, 0] }), [c] = h.luchadores;
   for (let i = 0; i < 12; i++) { c.cd.lmb = 0; c.accion = null; h.habilidades.usar(c, 'lmb'); correr(h, 0.05, [null, null]); }
   assert.equal(h.t < c.sobrecargaHasta, false, 'Ember não sobrecarrega');

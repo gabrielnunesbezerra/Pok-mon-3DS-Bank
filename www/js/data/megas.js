@@ -17,9 +17,9 @@ export const MEGA_KITS = {
   },
   larvitar: {
     lmb: { nombre: 'Mega Crunch', dano: 6.6, alcance: 60 },
-    rmb: { nombre: 'Mega Sandstorm', radio: 105, dur: 8, tick: 3 },
+    rmb: { nombre: 'Mega Sandstorm', radio: 125, dur: 8, tick: 3 },
     esp: { nombre: 'Mega Bulldoze', dist: 140, dano: 5 },
-    q: { nombre: 'Mega Sand Tomb', alcance: 230, ancho: 28, veces: 2 },
+    q: { nombre: 'Mega Sand Tomb', alcance: 170, ancho: 28, veces: 2 },
     e: { nombre: 'Mega Rock Wrecker', forma: 'vorticeArena', tipo: 'ROCK', dano: 26, radio: 70, requiereTormenta: true },
   },
 

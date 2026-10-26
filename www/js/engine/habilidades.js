@@ -1933,18 +1933,29 @@ export class Habilidades {
 
   // ---------------------------------------------------------------- Sand Tomb (Tyranitar): uma corrente de areia puxa o rival para perto
   tumbaArena(l, h, extra) {
-    // uma onda de areia corre em linha reta; quem ela pega é arrastado de volta até o Tyranitar (a Mega solta duas)
+    // só na tempestade: uma onda de areia corre em linha reta; quem ela pega volta junto com ela até o Tyranitar
+    // (a Mega solta duas, e a segunda mira de novo no rival)
     const luta = this.luta, carga = h.carga ?? 0.15, ang = asistir(l, angApunte(l), h.alcance, 0.6);
     l.animar(h.anim ?? 'Charge', carga + 0.3);
     l.accion = { hasta: luta.t + carga + 0.2, bloquea: true, lento: 0, angulo: ang };
-    for (let v = 0; v < (h.veces ?? 1); v++) luta.programar(carga + v * 0.55, () => {
+    for (let v = 0; v < (h.veces ?? 1); v++) luta.programar(carga + v * 0.7, () => {
       if (l.ko) return;
       const r = l.rival, a = v && r && !r.ko && !r.oculto ? Math.atan2(r.y - l.y, r.x - l.x) : ang, ca = Math.cos(a), sa = Math.sin(a);
-      const vel = h.vel ?? 400, ancho = h.ancho ?? 24, ya = new Set();
+      const vel = h.vel ?? 380, ancho = h.ancho ?? 24, ya = new Set();
       luta.emit({ t: 'pulso', x: l.x + ca * 16, y: l.y + sa * 12, radio: 22, tipo: 'GROUND', estilo: 'tierra' });
-      const e = { tipo: 'ondaArena', dueno: l, vivo: true, x: l.x + ca * 16, y: l.y + sa * 16, ang: a, d: 0, ancho, t: 0,
+      const e = { tipo: 'ondaArena', dueno: l, vivo: true, x: l.x + ca * 16, y: l.y + sa * 16, ang: a, d: 0, ancho, t: 0, volta: 0, levando: [],
         update: dt => {
           e.t += dt;
+          if (l.ko) return false;
+          if (e.volta) {
+            // voltando: arrasta quem pegou na frente da crista até perto do Tyranitar
+            const dx = l.x - e.x, dy = l.y - e.y, d = Math.hypot(dx, dy) || 1, paso = Math.min(d, (h.velVolta ?? 330) * dt);
+            e.ang = Math.atan2(dy, dx); e.x += (dx / d) * paso; e.y += (dy / d) * paso;
+            for (const b of e.levando) if (!b.ko) { const p = fijarCampo(e.x + (dx / d) * 10, e.y + (dy / d) * 8); b.x = p.x; b.y = p.y; }
+            if (d > 34 + paso && e.t - e.volta < 0.9) return true;
+            for (const b of e.levando) if (!b.ko) b.ponerEstado('lento', 1.2, { f: 0.3 });
+            return false;
+          }
           const paso = vel * dt; e.d += paso; e.x += ca * paso; e.y += sa * paso;
           const p = fijarCampo(e.x, e.y);
           if (e.d >= h.alcance || Math.hypot(p.x - e.x, p.y - e.y) > 3) return false;
@@ -1954,14 +1965,11 @@ export class Habilidades {
             if (Math.abs(lon) > 12 + RADIO * 0.5 || Math.abs(lat) > ancho + RADIO) continue;
             ya.add(b);
             const res = atingir(l, b, pacote(h, extra, a, { empuje: 0, dirX: -ca, dirY: -sa }));
-            if (res !== 'golpe' || b.esClon || l.ko) continue;
-            this.prender(b, 0.35);
-            const ddx = b.x - l.x, ddy = b.y - l.y, dd = Math.hypot(ddx, ddy) || 1, x0 = b.x, y0 = b.y, x1 = l.x + (ddx / dd) * 30, y1 = l.y + (ddy / dd) * 22;
-            luta.emit({ t: 'corrienteArena', l, ang: Math.atan2(ddy, ddx), alcance: dd });
-            let t = 0;
-            luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt2 => { t += dt2; const k = Math.min(1, t / 0.3); if (b.ko) return false; b.x = x0 + (x1 - x0) * k; b.y = y0 + (y1 - y0) * k; return k < 1; } });
-            b.ponerEstado('lento', 1.5, { f: 0.3 });
+            if (res !== 'golpe' || b.esClon) continue;
+            this.prender(b, 0.9);
+            e.levando.push(b);
           }
+          if (e.levando.length) { e.volta = e.t; luta.emit({ t: 'pulso', x: e.x, y: e.y, radio: 26, tipo: 'GROUND', estilo: 'tierra' }); }
           return true;
         } };
       luta.add(e);
