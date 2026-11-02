@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna'];
+const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo'];
 
 test('o roster tem os 28 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'ralts', 'kangaskhan', 'rayquaza', 'zeraora', 'darkrai']);
@@ -79,8 +79,10 @@ test('Charmander e Bulbasaur não têm ultimate na primeira fase', () => {
   }
 });
 
-test('ultimate só sai com a barra cheia e zera a barra', () => {
-  const l = nuevaLuta('squirtle', 'munchlax');
+test('ultimate só sai com a barra cheia e zera a barra (e a primeira forma não tem ult)', () => {
+  const l0 = nuevaLuta('squirtle', 'munchlax'); l0.luchadores[0].ulti = 100;
+  assert.equal(l0.habilidades.usar(l0.luchadores[0], 'e'), false, 'Squirtle ainda sem ult');
+  const l = nuevaLuta('squirtle', 'munchlax', { etapas: [1, 0] });
   const [a, b] = l.luchadores;
   a.ax = b.x; a.ay = b.y;
   assert.equal(l.habilidades.usar(a, 'e'), false);
@@ -576,7 +578,7 @@ test('Snorlax dormindo devolve os golpes; Matcha Geyser puxa o alvo; jato do Bla
 });
 
 test('Veluza: torreta nasce onde ela está, pulsa e dá dano; ultimate puxa as torretas e atira no inimigo', () => {
-  const l = nuevaLuta('veluza', 'munchlax');
+  const l = nuevaLuta('veluza', 'munchlax', { etapas: [1, 0] });
   const [a, b] = l.luchadores;
   a.energia = 100; b.x = a.x + 30; b.y = a.y; a.ax = b.x; a.ay = b.y;
   assert.equal(l.habilidades.usar(a, 'q'), true);
@@ -644,60 +646,41 @@ test('Tyranitar: só na tempestade, a onda de areia corre em linha e volta arras
   assert.ok(c.fervor >= 60, 'o Ember esquenta rápido');
 });
 
-test('Pokémon novos: possessão do Gengar, vínculo da Gardevoir, contra-ataque e eco da Kangaskhan, Delta Stream, Volt Switch e noite do Darkrai', () => {
-  // Gengar: some dentro da sombra do rival, anda junto e sai amaldiçoando
+test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, filhote e gancho da Kangaskhan, cometa do Rayquaza e Darkrai nas costas', () => {
+  // Gengar: a bola deixa poça, o dash pula nela e a língua puxa
   let l = nuevaLuta('gastly', 'munchlax', { etapas: [2, 0] }), [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'q'), true);
-  correr(l, 0.3, [null, null]);
-  assert.ok(a.oculto && b.est.poseido);
-  b.x = 450; correr(l, 0.1, [null, null]);
-  assert.ok(Math.abs(a.x - b.x) < 2, 'anda grudado no rival');
-  correr(l, 2.5, [null, null]);
-  assert.ok(!a.oculto && b.est.maldito, 'sai e amaldiçoa');
-  // Gardevoir: sem aliado, liga no rival e parte do dano volta para ele
+  a.x = 200; a.y = 222; b.x = 340; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 1, [null, null]);
+  const poca = l.entidades.find(e => e.tipo === 'sombraPoca');
+  assert.ok(poca, 'ficou uma poça de sombra');
+  a.accion = null; a.ax = poca.x; a.ay = poca.y; assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(Math.hypot(a.x - poca.x, a.y - poca.y) < 2, 'pulou na poça');
+  b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; a.energia = 100;
+  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.6, [null, null]);
+  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 50 && b.est.maldito, 'a língua puxou e amaldiçoou');
+  // Gardevoir: ergue e arremessa
   l = nuevaLuta('ralts', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 400; b.y = 222; a.energia = 100;
-  assert.equal(l.habilidades.usar(a, 'q'), true);
-  assert.equal(a.est.vinculo.modo, 'inimigo');
-  const hb = b.hp; a.recibir(b, { dano: 20, tipo: 'NORMAL' });
-  assert.ok(b.hp < hb, 'a dor volta para quem bateu');
-  // em duplas, liga no aliado e divide o dano dele
-  l = new Luta({ p1: ROSTER.find(p => p.id === 'ralts'), p2: ROSTER.find(p => p.id === 'munchlax'), p3: ROSTER.find(p => p.id === 'charmander'), p4: ROSTER.find(p => p.id === 'zubat'), equipos: [0, 1, 0, 1], etapas: [2, 0, 0, 0], rapido: true, semilla: 3 });
-  l.inicioRonda = -999; const [g, , ali] = l.luchadores; g.energia = 100; ali.x = g.x + 40; ali.y = g.y;
-  assert.equal(l.habilidades.usar(g, 'q'), true);
-  assert.equal(g.est.vinculo.modo, 'aliado');
-  const hg = g.hp, ha = ali.hp; ali.recibir(l.luchadores[1], { dano: 20, tipo: 'NORMAL', puro: true });
-  assert.ok(g.hp < hg && ha - ali.hp < 20, 'o dano é dividido');
-  // Kangaskhan: na guarda o golpe volta; o filhote repete o básico
+  a.x = 300; a.y = 222; b.x = 380; b.y = 222; a.ax = 300; a.ay = 100; a.energia = 100; b.inmortal = true;
+  const yb = b.y; assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 1.2, [null, null]);
+  assert.ok(b.y < yb - 40, 'foi jogado para onde ela mirou');
+  // Kangaskhan: o soco abre o gancho, que joga para o alto
   l = nuevaLuta('kangaskhan', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 340; b.y = 222; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'q'), true);
-  const ha2 = a.hp, hb2 = b.hp;
-  assert.equal(a.recibir(b, { dano: 15, tipo: 'NORMAL' }), 'bloqueo');
-  assert.ok(a.hp === ha2 && b.hp < hb2, 'COUNTER');
-  correr(l, 1, [null, null]); a.accion = null; a.cd.lmb = 0; b.x = a.x + 40; b.y = a.y; b.empX = b.empY = 0; a.ax = b.x; a.ay = b.y; a.calor = 0;
-  const golpesAntes = a.stats.golpes; l.habilidades.usar(a, 'lmb'); correr(l, 0.5, [null, null]);
-  assert.ok(a.stats.golpes >= golpesAntes + 2, 'mãe e filhote acertam');
-  // Rayquaza: as correntes apagam tiros inimigos
-  l = nuevaLuta('rayquaza', 'charmander', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 420; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100;
-  assert.equal(l.habilidades.usar(a, 'e'), true);
-  b.ax = a.x; b.ay = a.y; b.cd.lmb = 0; l.habilidades.usar(b, 'lmb'); correr(l, 0.4, [null, null]);
-  assert.equal(l.entidades.filter(e => e.tipo === 'proj' && e.dueno === b).length, 0, 'o tiro some na corrente');
-  // Zeraora: apertando de novo, teleporta até a bola
-  l = nuevaLuta('zeraora', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 500; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true);
-  correr(l, 0.35, [null, null]); a.accion = null; a.cd.rmb = 0;
-  const x0 = a.x; assert.equal(l.habilidades.usar(a, 'rmb'), true);
-  assert.ok(a.x > x0 + 60, 'teleportou');
-  // Darkrai: Dark Void faz dormir e a noite cega o rival
+  a.x = 300; a.y = 222; b.x = 340; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 0.4, [null, null]);
+  b.x = a.x + 40; b.y = a.y; a.accion = null; a.cd.rmb = 0;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 0.2, [null, null]);
+  assert.ok(b.salto > 0, 'gancho jogou para o alto');
+  correr(l, 1, [null, null]); a.accion = null; a.energia = 100; b.x = a.x + 100; b.y = a.y; a.ax = b.x; a.ay = b.y;
+  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.6, [null, null]);
+  assert.ok(l.entidades.some(e => e.tipo === 'filhoteGrudado'), 'o filhote grudou');
+  // Rayquaza: o cometa atravessa e deixa rastro
+  l = nuevaLuta('rayquaza', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
+  a.x = 200; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100; b.inmortal = true;
+  const hb = b.hp; assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 0.8, [null, null]);
+  assert.ok(b.hp < hb && l.entidades.some(e => e.tipo === 'ventoVerde'));
+  // Darkrai: aparece nas costas e o próximo golpe sai mais forte
   l = nuevaLuta('darkrai', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; a.ulti = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true);
-  correr(l, 0.9, [null, null]);
-  assert.ok(b.est.dormido, 'dormiu');
-  a.accion = null; assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 0.2, [null, null]);
-  assert.ok(b.est.cegado && b.est.pesadelo);
+  a.x = 200; a.y = 222; b.x = 330; b.y = 222;
+  assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(a.x > b.x && a.est.emboscada, 'nas costas');
 });

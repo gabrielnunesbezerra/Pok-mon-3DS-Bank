@@ -150,6 +150,15 @@ function perfil(h, slot, d) {
     case 'posesion': P.tipo = 'mele'; P.alcance = h.alcance ?? 170; P.retardo = 0.05; break;
     case 'reinoSombras': case 'campoFada': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.8; P.retardo = 0.3; break;
     case 'vinculo': P.tipo = 'buff'; break;
+    case 'bolaSombra': case 'filhoteLanca': P.retardo += d / (h.vel ?? 250); break;
+    case 'lambida': P.alcance = h.alcance ?? 140; P.ancho = 14; P.retardo = 0.12; break;
+    case 'maosSombra': P.tipo = 'area'; P.alcance = (h.radio ?? 40) + 20; P.retardo = h.carga ?? 0.4; break;
+    case 'telecinese': case 'pesadeloDuplo': P.tipo = 'area'; P.alcance = h.alcance ?? 200; P.retardo = 0.2; break;
+    case 'futuroVisao': P.tipo = 'area'; P.alcance = h.alcance ?? 260; P.retardo = h.espera ?? 1.1; break;
+    case 'luaCaindo': P.tipo = 'area'; P.alcance = 300; P.retardo = h.queda ?? 1.1; break;
+    case 'socoCombo': P.tipo = 'mele'; P.alcance = 64; P.retardo = 0.1; break;
+    case 'agarraoSlam': P.tipo = 'mele'; P.alcance = h.alcance ?? 150; P.retardo = 0.1; break;
+    case 'ascensaoDraco': P.alcance = h.largo ?? 300; P.ancho = h.ancho ?? 30; P.retardo = h.sobe ?? 0.6; break;
     case 'teleporte': P.alcance = h.dist ?? 120; P.retardo = 0; break;
     case 'contraataque': P.tipo = 'defensa'; P.alcance = 110; break;
     case 'deltaStream': case 'nocheEterna': P.tipo = 'area'; P.alcance = 280; P.retardo = 0.35; break;
@@ -547,7 +556,7 @@ export class IA {
     const yo = this.l, cfg = this.cfg, c = this.c, h = yo.kit.esp, { d, ux, uy } = s;
     if (h?.forma === 'corrida') return listo('esp') && ((!yo.est.corrida && d > 200 && yo.fervor > 45) || (yo.est.corrida && (d < 90 || yo.fervor < 15))) ? { slot: 'esp', P: perfiles.esp } : null;
     if (h?.forma === 'rodar') return !yo.est.rodando && listo('esp') && d > 50 && d < 320 && this.azar() < cfg.agresividad * 0.6 ? { slot: 'esp', P: perfiles.esp } : null;
-    if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja' && h.forma !== 'teleporte')) return null;
+    if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja' && h.forma !== 'teleporte' && h.forma !== 'saltoSombra' && h.forma !== 'passoSombra')) return null;
     const P = perfiles.esp, hp = yo.hp / yo.hpMax;
     if (h.forma === 'burbuja') {
       const acosado = (hp < c.escapeHp || (s.rivalMele && s.rango >= 60)) && d < c.escapeDist;

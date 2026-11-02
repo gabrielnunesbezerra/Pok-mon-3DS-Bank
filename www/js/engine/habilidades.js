@@ -71,7 +71,7 @@ export class Habilidades {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
       return false;
     }
-    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) || (h.forma === 'voltSwitch' && l.voltPos) ? 0 : h.coste ?? 0;
+    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) || (h.forma === 'voltSwitch' && l.voltPos) || (h.forma === 'socoCombo' && l.comboHasta > t) ? 0 : h.coste ?? 0;
     if (l.energia < coste) {
       if (l.humano) l.avisar('energia', () => { l.texto('NO ENERGY', '#9aa0b4'); luta.emit({ t: 'sonido', n: 'miss' }); }, 1);
       return false;

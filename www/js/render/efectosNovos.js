@@ -197,3 +197,143 @@ export const ENTIDADES_NOVAS = {
     g.restore(); g.globalAlpha = 1;
   },
 };
+
+// ---------------------------------------------------------------- personagens refeitos (Gengar, Gardevoir, Kangaskhan, Rayquaza, Darkrai)
+const TERRA = ['#3a2410', '#8a6a3a', '#c8a868', '#f4e6c0'];
+const VERDE = ['#064e3b', '#10b981', '#6ee7b7', '#ecfdf5'];
+const fumaca = (fx, x, y, n, rampa, sobe = 60) => { for (let i = 0; i < n; i++) fx.add({ x: x + entre(-12, 12), y: y + entre(-4, 4), vx: entre(-30, 30), vy: -entre(sobe * 0.4, sobe), drag: 2, size: entre(3, 5), grow: 3, life: entre(0.35, 0.6), forma: 'llama', rampa }); };
+
+Object.assign(ESTILOS_NOVOS, {
+  // o filhote voando enrolado, girando
+  filhote(g, p, t) {
+    const x = p.x, y = p.y - p.alt, a = t * 18;
+    g.fillStyle = '#5b3a1e'; g.beginPath(); g.ellipse(x, y, 5, 4.5, a, 0, 7); g.fill();
+    g.fillStyle = '#c9925a'; g.beginPath(); g.ellipse(x, y, 4, 3.5, a, 0, 7); g.fill();
+    g.fillStyle = '#f2d2a0'; g.beginPath(); g.ellipse(x + Math.cos(a) * 1.5, y + Math.sin(a) * 1.5, 2, 1.6, a, 0, 7); g.fill();
+    g.fillStyle = '#1a0f08'; g.fillRect(px(x + Math.cos(a + 0.6) * 2.5), px(y + Math.sin(a + 0.6) * 2.5), 1, 1);
+  },
+});
+
+Object.assign(EVENTOS_NOVOS, {
+  pocaSombra(fx, e) { fumaca(fx, e.x, e.y, 8, ROXO, 40); },
+  saltoSombra(fx, e) {
+    fumaca(fx, e.x0, e.y0 - 6, 8, ROXO, 70);
+    fx.heroes.push({ k: 'emergeSombra', x: e.x1, y: e.y1, t: 0, life: 0.5, poca: e.poca, hue: fx.hue });
+    if (e.poca) fx.heroes.push({ k: 'garraSombra', x: e.x1, y: e.y1, ang: 0, t: 0, life: 0.45, hue: fx.hue });
+  },
+  lingua(fx, e) { fx.heroes.push({ k: 'lingua', l: e.l, ang: e.ang, alcance: e.alcance, t: 0, life: 0.38, hue: fx.hue }); },
+  maoAviso(fx, e) { fx.heroes.push({ k: 'fendaSombra', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.45, hue: fx.hue }); },
+  maoGigante(fx, e) { fx.heroes.push({ k: 'maoGigante', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.85, hue: fx.hue }); fumaca(fx, e.x, e.y, 10, ROXO, 90); fx.flash = Math.max(fx.flash, 0.06); fx.flashColor = '#4c1d95'; },
+  telecinese(fx, e) { fx.heroes.push({ k: 'aura Psi', l: e.l, b: e.b, t: 0, life: e.dur + 0.3, hue: fx.hue }); },
+  arremessoPsi(fx, e) { fx.heroes.push({ k: 'rastroPsi', x0: e.x0, y0: e.y0 - 20, x1: e.x1, y1: e.y1 - 10, t: 0, life: 0.45, hue: fx.hue }); },
+  impactoPsi(fx, e) { fx.add({ x: e.x, y: e.y - 10, size: e.parede ? 30 : 18, life: 0.28, color: '#ffffff', brillo: '#f472b6', forma: 'estouro' }); for (let i = 0; i < (e.parede ? 16 : 8); i++) { const a = ale() * 6.28, s = entre(80, 220); fx.add({ x: e.x, y: e.y - 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, drag: 3, size: entre(2, 3.2), life: 0.45, color: ['#f9a8d4', '#c084fc', '#ffffff'][i % 3], forma: 'chispa' }); } if (e.parede) fx.debris(e.x, e.y, 'ROCK', 8); },
+  futuro(fx, e) { fx.heroes.push({ k: 'futuro', x: e.x, y: e.y, radio: e.radio, t: 0, life: e.espera, hue: fx.hue }); },
+  futuroExplode(fx, e) { fx.heroes.push({ k: 'colunaPsi', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.5, hue: fx.hue }); for (let i = 0; i < 14; i++) { const a = (i / 14) * 6.28; fx.add({ x: e.x, y: e.y - 6, vx: Math.cos(a) * 160, vy: Math.sin(a) * 90 - 40, drag: 3, size: 3, grow: 2, life: 0.45, forma: 'llama', rampa: ['#4c1d95', '#c026d3', '#f9a8d4', '#ffffff'] }); } },
+  luaCai(fx, e) { fx.heroes.push({ k: 'lua', x: e.x, y: e.y, radio: e.radio, t: 0, life: e.queda + 0.05, hue: fx.hue }); },
+  luaImpacto(fx, e) { fx.add({ x: e.x, y: e.y - 8, size: 46, life: 0.4, color: '#ffffff', brillo: '#fbcfe8', forma: 'estouro' }); for (let i = 0; i < 26; i++) { const a = ale() * 6.28, s = entre(90, 260); fx.add({ x: e.x, y: e.y - 6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 50, g: 140, drag: 1.5, size: entre(4, 6), life: entre(0.6, 1), forma: i % 3 ? 'chispa' : 'corazon', color: i % 2 ? '#fbcfe8' : '#ffffff' }); } fx.flash = Math.max(fx.flash, 0.22); fx.flashColor = '#fff1f8'; fx.humo(e.x, e.y, 6, 'rgba(251,207,232,0.5)', 14); },
+  filhoteGruda(fx, e) { fx.add({ x: e.b.x, y: e.b.y - e.b.alto * 0.6, size: 16, life: 0.2, color: '#ffffff', brillo: '#fbbf24', forma: 'estouro' }); },
+  filhoteVolta(fx, e) { fx.polvo(e.l.x, e.l.y, 2, 4); },
+  socoFilhote(fx, e) { fx.add({ x: e.x + entre(-6, 6), y: e.y + entre(-6, 6), size: 9, life: 0.14, color: '#ffffff', brillo: '#fbbf24', forma: 'estouro' }); fx.chispas(e.x, e.y, '#fde68a', 3, 140); },
+  socoTonto(fx, e) { fx.add({ x: e.x, y: e.y, size: 16, life: 0.2, color: '#ffffff', brillo: '#fde047', forma: 'estouro' }); for (let i = 0; i < 4; i++) { const a = (i / 4) * 6.28; fx.add({ x: e.x + Math.cos(a) * 10, y: e.y - 12, vx: -Math.sin(a) * 40, vy: Math.cos(a) * 20, size: 5, life: 0.6, color: '#fde047', forma: 'nota' }); } },
+  gancho(fx, e) { fx.heroes.push({ k: 'arcoGancho', x: e.x, y: e.y, ang: e.ang, t: 0, life: 0.3, hue: fx.hue }); fx.add({ x: e.x, y: e.y - 10, size: 26, life: 0.26, color: '#ffffff', brillo: '#fb923c', forma: 'estouro' }); fx.temblor = Math.max(fx.temblor, 5); fx.punch = Math.max(fx.punch ?? 0, 0.04); },
+  agarrao(fx, e) { fx.add({ x: e.b.x, y: e.b.y - e.b.alto * 0.5, size: 18, life: 0.2, color: '#ffffff', brillo: '#fbbf24', forma: 'estouro' }); },
+  slamChao(fx, e) { fx.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.final ? 46 : 30, semilla: Math.floor(ale() * 99), t: 0, life: 1.1, hue: fx.hue }); fx.debris(e.x, e.y, 'ROCK', e.final ? 14 : 7); fx.polvo(e.x, e.y, e.final ? 8 : 4, 10); fx.punch = Math.max(fx.punch ?? 0, e.final ? 0.06 : 0.03); if (e.final) { fx.flash = Math.max(fx.flash, 0.1); fx.flashColor = '#fff7d6'; } },
+  ascensao(fx, e) { for (let i = 0; i < 18; i++) fx.add({ x: e.l.x + entre(-10, 10), y: e.l.y - entre(0, 30), vx: entre(-30, 30), vy: -entre(300, 520), drag: 1, size: entre(2, 4), grow: 2, life: 0.4, forma: 'llama', rampa: VERDE }); fx.polvo(e.l.x, e.l.y, 5, 10); },
+  ascensaoAviso(fx, e) { fx.heroes.push({ k: 'avisoLinha', x0: e.x0, y0: e.y0, ang: e.ang, largo: e.largo, ancho: e.ancho, t: 0, life: e.espera, hue: fx.hue }); },
+  cometaVerde(fx, e) { fx.heroes.push({ k: 'cometaVerde', x0: e.x0, y0: e.y0, x1: e.x1, y1: e.y1, ancho: e.ancho, t: 0, life: 0.6, hue: fx.hue }); fx.flash = Math.max(fx.flash, 0.16); fx.flashColor = '#d1fae5'; fx.punch = Math.max(fx.punch ?? 0, 0.06); for (let i = 0; i <= 10; i++) { const f = i / 10; fx.polvo(e.x0 + (e.x1 - e.x0) * f, e.y0 + (e.y1 - e.y0) * f, 1, 8); } },
+  passoSombra(fx, e) { fumaca(fx, e.x0, e.y0 - 10, 10, ['#04010a', '#1e1b4b', '#7c3aed', '#c4b5fd'], 70); fx.heroes.push({ k: 'emergeSombra', x: e.x1, y: e.y1, t: 0, life: 0.45, hue: fx.hue }); },
+});
+
+Object.assign(HEROES_NOVOS, {
+  // sombra subindo do chão como fumaça escura onde ele aparece
+  emergeSombra(g, h, k) { g.globalAlpha = (1 - k) * 0.7; g.fillStyle = '#1a0830'; g.beginPath(); g.ellipse(h.x, h.y, 18 * (1 - k * 0.5), 6, 0, 0, 7); g.fill(); for (let i = 0; i < 5; i++) { const x = h.x + (i - 2) * 6, alto = (18 + (i % 2) * 8) * Math.sin(k * Math.PI); g.fillStyle = i % 2 ? '#4c1d95' : '#2e1065'; g.beginPath(); g.moveTo(x - 3, h.y); g.quadraticCurveTo(x + Math.sin(i + k * 6) * 4, h.y - alto * 0.6, x, h.y - alto); g.lineTo(x + 3, h.y); g.fill(); } g.globalAlpha = 1; },
+  // língua do Gengar esticando e voltando
+  lingua(g, h, k) {
+    const l = h.l, ex = k < 0.4 ? k / 0.4 : 1 - (k - 0.4) / 0.6, L = h.alcance * ex, x0 = l.x + Math.cos(h.ang) * 8, y0 = l.y - l.alto * 0.45, x1 = x0 + Math.cos(h.ang) * L, y1 = y0 + Math.sin(h.ang) * L * 0.8;
+    g.lineCap = 'round';
+    for (const [c, w] of [['#5a1030', 9], ['#e8577a', 6], ['#ff9ab0', 2]]) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo((x0 + x1) / 2 - Math.sin(h.ang) * 10 * Math.sin(k * 9), (y0 + y1) / 2 + Math.cos(h.ang) * 6, x1, y1); g.stroke(); }
+    g.fillStyle = '#e8577a'; g.beginPath(); g.arc(x1, y1, 5, 0, 7); g.fill();
+    g.lineCap = 'butt';
+  },
+  fendaSombra(g, h, k) { g.globalAlpha = 0.4 + k * 0.5; g.fillStyle = '#1a0830'; g.beginPath(); g.ellipse(h.x, h.y, h.radio * k, h.radio * 0.6 * k, 0, 0, 7); g.fill(); g.globalAlpha = k; g.fillStyle = '#7c3aed'; for (let i = 0; i < 6; i++) { const a = i * 1.05; g.fillRect(px(h.x + Math.cos(a) * h.radio * k * 0.7), px(h.y + Math.sin(a) * h.radio * 0.4 * k), 2, 1); } g.globalAlpha = 1; },
+  // mão gigante de sombra: sobe do chão, abre os dedos e fecha
+  maoGigante(g, h, k, t) {
+    const sobe = Math.min(1, t / 0.15), desce = Math.min(1, (h.life - t) / 0.3), H = h.radio * 2.2 * sobe * desce, fecha = Math.min(1, Math.max(0, (t - 0.15) / 0.2));
+    g.globalAlpha = 0.6; g.fillStyle = '#0b0418'; g.beginPath(); g.ellipse(h.x, h.y, h.radio, h.radio * 0.5, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    for (const [cor, k2] of [['#1a0830', 1.15], ['#4c1d95', 1], ['#7c3aed', 0.7]]) {
+      g.fillStyle = cor;
+      g.beginPath(); g.moveTo(h.x - 12 * k2, h.y); g.quadraticCurveTo(h.x - 14 * k2, h.y - H * 0.5, h.x - 10 * k2, h.y - H * 0.6); g.lineTo(h.x + 10 * k2, h.y - H * 0.6); g.quadraticCurveTo(h.x + 14 * k2, h.y - H * 0.5, h.x + 12 * k2, h.y); g.fill();
+      for (let d = 0; d < 4; d++) { const dx = (d - 1.5) * 6 * k2, abre = (1 - fecha) * (d - 1.5) * 4; g.beginPath(); g.moveTo(h.x + dx - 2.5 * k2, h.y - H * 0.55); g.quadraticCurveTo(h.x + dx + abre, h.y - H * 0.85, h.x + dx + abre * 1.5 + fecha * (1.5 - d) * 3, h.y - H + fecha * H * 0.15); g.lineTo(h.x + dx + 2.5 * k2, h.y - H * 0.55); g.fill(); }
+    }
+    g.fillStyle = '#f0abfc'; g.fillRect(px(h.x - 4), px(h.y - H * 0.45), 2, 2); g.fillRect(px(h.x + 2), px(h.y - H * 0.45), 2, 2);
+  },
+  // telecinese: o rival flutua envolto em névoa rosa e partículas girando
+  'aura Psi'(g, h, k, t) {
+    const b = h.b, cx = b.x, cy = b.y - b.alto * 0.5 - (b.salto ?? 0);
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 10; i++) { const a = t * 5 + i * 0.63, r = 16 + Math.sin(t * 7 + i) * 4; g.globalAlpha = 0.7 * (1 - k * 0.5); g.fillStyle = i % 2 ? '#f472b6' : '#c084fc'; g.beginPath(); g.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.6, 2, 0, 7); g.fill(); }
+    g.globalAlpha = 0.25; g.fillStyle = '#f9a8d4'; g.beginPath(); g.ellipse(cx, cy, 20, 24, 0, 0, 7); g.fill();
+    const l = h.l; g.globalAlpha = 0.5; g.strokeStyle = '#f9a8d4'; g.lineWidth = 2; g.beginPath(); g.moveTo(l.x, l.y - l.alto * 0.6); g.quadraticCurveTo((l.x + cx) / 2, Math.min(l.y, cy) - 30, cx, cy); g.stroke();
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  },
+  rastroPsi(g, h, k) { g.lineCap = 'round'; for (const [c, w, a] of [['#c084fc', 12, 0.3], ['#f9a8d4', 6, 0.7], ['#ffffff', 2, 0.9]]) { g.globalAlpha = a * (1 - k); g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(h.x0, h.y0); g.lineTo(h.x0 + (h.x1 - h.x0) * Math.min(1, k * 2.2), h.y0 + (h.y1 - h.y0) * Math.min(1, k * 2.2)); g.stroke(); } g.lineCap = 'butt'; g.globalAlpha = 1; },
+  // Future Sight: um olho de luz se abre no chão, pulsando até a explosão
+  futuro(g, h, k, t) { const abre = Math.min(1, k * 3), R = h.radio; g.globalAlpha = 0.25 + k * 0.35; g.fillStyle = '#c026d3'; g.beginPath(); g.ellipse(h.x, h.y, R * abre, R * 0.45 * abre * (0.6 + 0.4 * Math.sin(t * 10)), 0, 0, 7); g.fill(); g.globalAlpha = 0.8; g.fillStyle = '#fdf4ff'; g.beginPath(); g.ellipse(h.x, h.y, R * 0.3 * abre, R * 0.25 * abre, 0, 0, 7); g.fill(); g.fillStyle = '#4c1d95'; g.beginPath(); g.arc(h.x, h.y, R * 0.12 * abre, 0, 7); g.fill(); g.globalAlpha = 1; },
+  colunaPsi(g, h, k) { const al = 1 - k, H = 140 * Math.min(1, k * 4); g.globalCompositeOperation = 'lighter'; for (const [c, w, a] of [['#c026d3', h.radio * 1.2, 0.35], ['#f9a8d4', h.radio * 0.6, 0.6], ['#ffffff', h.radio * 0.2, 0.9]]) { g.globalAlpha = a * al; g.fillStyle = c; g.fillRect(h.x - w / 2, h.y - H, w, H); } g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; },
+  // lua descendo: sombra crescendo no chão e a lua com crateras chegando com brilho rosa
+  lua(g, h, k, t) {
+    const R = h.radio, f = k * k, y = h.y - 260 * (1 - f) - 20, r = 12 + 22 * f;
+    g.globalAlpha = 0.25 + 0.4 * k; g.fillStyle = '#1e1b4b'; g.beginPath(); g.ellipse(h.x, h.y, R * k, R * 0.6 * k, 0, 0, 7); g.fill();
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.35; g.fillStyle = '#f9a8d4'; g.beginPath(); g.arc(h.x, y, r * 1.8, 0, 7); g.fill(); g.globalCompositeOperation = 'source-over';
+    g.globalAlpha = 1; g.fillStyle = '#fff1f8'; g.beginPath(); g.arc(h.x, y, r, 0, 7); g.fill();
+    g.fillStyle = '#fbcfe8'; for (const [dx, dy, rr] of [[-0.35, -0.2, 0.22], [0.3, 0.25, 0.16], [0.1, -0.4, 0.1]]) { g.beginPath(); g.arc(h.x + dx * r, y + dy * r, rr * r, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  },
+  arcoGancho(g, h, k) { g.globalAlpha = 1 - k; g.strokeStyle = '#fde68a'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.arc(h.x, h.y + 6, 18, Math.PI * 0.9 - k, Math.PI * 1.9 - k); g.stroke(); g.lineCap = 'butt'; g.globalAlpha = 1; },
+  avisoLinha(g, h, k, t) { const ca = Math.cos(h.ang), sa = Math.sin(h.ang); g.save(); g.translate(h.x0, h.y0); g.rotate(h.ang); g.globalAlpha = 0.15 + 0.25 * k; g.fillStyle = '#10b981'; g.fillRect(0, -h.ancho * 0.6, h.largo, h.ancho * 1.2); g.globalAlpha = 0.5 + 0.4 * Math.sin(t * 20); g.fillStyle = '#6ee7b7'; for (let i = 0; i < 6; i++) g.fillRect(((i / 6 + t * 1.5) % 1) * h.largo, -1, 14, 2); g.restore(); g.globalAlpha = 1; void ca; void sa; },
+  // o cometa verde atravessando: faixa de luz que estreita, com escamas brilhando
+  cometaVerde(g, h, k) {
+    const al = 1 - k, dx = h.x1 - h.x0, dy = h.y1 - h.y0;
+    g.save(); g.lineCap = 'round'; g.globalCompositeOperation = 'lighter';
+    for (const [c, w, a] of [[VERDE[1], h.ancho * 2.2, 0.35], [VERDE[2], h.ancho * 1.1, 0.6], ['#ffffff', h.ancho * 0.35, 0.9]]) { g.globalAlpha = a * al; g.strokeStyle = c; g.lineWidth = w * (1 - k * 0.6); g.beginPath(); g.moveTo(h.x0, h.y0 - 10); g.lineTo(h.x0 + dx * Math.min(1, k * 4), h.y0 + dy * Math.min(1, k * 4) - 10); g.stroke(); }
+    g.restore(); g.globalAlpha = 1;
+  },
+});
+
+Object.assign(ENTIDADES_NOVAS, {
+  // poça de sombra: mancha escura que ondula de leve, com olhos piscando
+  sombraPoca(g, e, t) {
+    const al = Math.min(1, e.t * 4, (e.dur - e.t) / 0.5), R = e.radio * Math.min(1, e.t * 5);
+    g.globalAlpha = al * 0.55; g.fillStyle = '#0b0418'; g.beginPath(); g.ellipse(e.x, e.y, R, R * 0.58, 0, 0, 7); g.fill();
+    g.globalAlpha = al * 0.4; g.fillStyle = '#4c1d95'; g.beginPath(); g.ellipse(e.x + Math.sin(t * 2) * 2, e.y, R * 0.7, R * 0.38, 0, 0, 7); g.fill();
+    if (Math.sin(t * 1.3 + e.x) > -0.6) { g.globalAlpha = al; g.fillStyle = '#f0abfc'; g.fillRect(px(e.x - 4), px(e.y - 1), 2, 1); g.fillRect(px(e.x + 2), px(e.y - 1), 2, 1); }
+    g.globalAlpha = 1;
+  },
+  // rastro de vento verde deixado pelo cometa
+  ventoVerde(g, e, t) {
+    const al = Math.min(1, (e.dur - e.t) / 0.6), ang = Math.atan2(e.y1 - e.y0, e.x1 - e.x0), L = Math.hypot(e.x1 - e.x0, e.y1 - e.y0);
+    g.save(); g.translate(e.x0, e.y0); g.rotate(ang);
+    g.globalAlpha = al * 0.18; g.fillStyle = '#10b981'; g.fillRect(0, -e.ancho, L, e.ancho * 2);
+    g.globalAlpha = al * 0.7; g.strokeStyle = '#a7f3d0'; g.lineWidth = 1.5;
+    for (let i = 0; i < 8; i++) { const f = (t * 1.4 + i / 8) % 1, x = f * L, y = Math.sin(i * 2.1) * e.ancho * 0.6; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 10, y - 4, x + 22, y); g.stroke(); }
+    g.restore(); g.globalAlpha = 1;
+  },
+  // sombra gêmea do Darkrai: vulto escuro com olho azul e rastro de fumaça
+  sombraGemea(g, e, t, fx) {
+    const x = e.x, y = e.y;
+    g.globalAlpha = 0.85; g.fillStyle = '#0b0418'; g.beginPath(); g.moveTo(x, y - 30); g.quadraticCurveTo(x + 12, y - 16, x + 6, y); g.lineTo(x - 6, y); g.quadraticCurveTo(x - 12, y - 16, x, y - 30); g.fill();
+    g.fillStyle = '#e11d48'; g.fillRect(px(x - 6), px(y - 26), 10, 3);
+    g.fillStyle = '#60a5fa'; g.fillRect(px(x + 1), px(y - 20), 2, 2);
+    g.globalAlpha = 1;
+    fx.add({ x: x + entre(-4, 4), y: y - entre(4, 24), vx: entre(-20, 20), vy: -20, size: 3, grow: 2, life: 0.35, forma: 'llama', rampa: ['#04010a', '#1e1b4b', '#4c1d95', '#a78bfa'] });
+  },
+  // filhote grudado no rival, socando
+  filhoteGrudado(g, e, t) {
+    const b = e.alvo; if (!b || b.ko) return;
+    const x = b.x + 10 + Math.sin(t * 25) * 2, y = b.y - b.alto * 0.7 - (b.salto ?? 0);
+    g.fillStyle = '#5b3a1e'; g.beginPath(); g.ellipse(x, y, 6, 6.5, 0, 0, 7); g.fill();
+    g.fillStyle = '#c9925a'; g.beginPath(); g.ellipse(x, y, 5, 5.5, 0, 0, 7); g.fill();
+    g.fillStyle = '#1a0f08'; g.fillRect(px(x - 2), px(y - 2), 1, 1); g.fillRect(px(x + 1), px(y - 2), 1, 1);
+    const soco = Math.sin(t * 30) > 0; g.fillStyle = '#d6a35c'; g.beginPath(); g.arc(x - (soco ? 8 : 4), y + 2, 2.5, 0, 7); g.fill();
+  },
+});

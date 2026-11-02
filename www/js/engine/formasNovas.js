@@ -1,7 +1,7 @@
 // Mecânicas dos Pokémon da última leva (Gengar, Gardevoir, Kangaskhan, Rayquaza, Zeraora e Darkrai).
 // Cada função é uma "forma" como as de habilidades.js: recebe (l, h, extra) com `this` = Habilidades.
 import { RADIO } from '../config.js';
-import { fijarCampo } from './fisica.js';
+import { fijarCampo, limitarCampo } from './fisica.js';
 import { Proyectil, areaCirculo, pacote, atingir } from './entidades.js';
 
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -272,10 +272,328 @@ export const formasNovas = {
   },
 };
 
+
+// ajuda a mirar: se o rival está perto da direção apontada, corrige para ele
+function mirar(l, alcance, cone = 0.7) {
+  const a = angApunte(l), r = l.rival;
+  if (!r || r.ko || r.oculto) return a;
+  const ar = Math.atan2(r.y - l.y, r.x - l.x);
+  return Math.hypot(r.x - l.x, r.y - l.y) < alcance && Math.abs(((ar - a + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < cone ? ar : a;
+}
+// arrasta um lutador de onde está até (x1, y1) em `dur` segundos, com um pulinho opcional
+function arrastar(luta, b, x1, y1, dur, alto = 0, fim) {
+  const x0 = b.x, y0 = b.y; let t = 0;
+  luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt => {
+    t += dt; const k = Math.min(1, t / dur);
+    if (b.ko) { b.salto = 0; return false; }
+    b.x = x0 + (x1 - x0) * k; b.y = y0 + (y1 - y0) * k; b.salto = Math.round(Math.sin(k * Math.PI) * alto);
+    if (k < 1) return true;
+    b.salto = 0; fim?.(); return false;
+  } });
+}
+const pocasDe = (luta, l) => luta.entidades.filter(e => e.tipo === 'sombraPoca' && e.dueno === l && e.vivo !== false);
+
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Shadow Ball (Gengar): onde a bola cai fica uma poça de sombra
+  // (no máximo 3); rival dentro dela anda mais devagar
+  bolaSombra(l, h, extra) {
+    const luta = this.luta, ang = mirar(l, (h.alcance ?? 220) + 40);
+    l.animar(h.anim ?? 'Shoot', 0.35);
+    l.accion = { hasta: luta.t + (h.lanzar ?? 0.18) + 0.05, angulo: ang, lento: 0.6 };
+    luta.programar(h.lanzar ?? 0.18, () => {
+      if (l.ko) return;
+      const bola = new Proyectil(luta, l, h, ang, extra);
+      luta.add(bola);
+      luta.add({ tipo: 'vigiaBola', dueno: l, vivo: true, update: () => {
+        if (bola.vivo !== false) return true;
+        const velhas = pocasDe(luta, l);
+        if (velhas.length >= (h.maxPocas ?? 3)) velhas[0].vivo = false;
+        const R = h.poca ?? 28, dur = h.pocaDur ?? 9;
+        const e = { tipo: 'sombraPoca', dueno: l, vivo: true, x: bola.x, y: bola.y, radio: R, t: 0, dur, update: dt => {
+          e.t += dt;
+          for (const b of luta.blancos(l)) if (!b.esClon && Math.hypot(b.x - e.x, (b.y - e.y) / 0.62) < R) b.ponerEstado('lento', 0.2, { f: 0.25 });
+          return e.t < dur && !l.ko;
+        } };
+        luta.add(e);
+        luta.emit({ t: 'pocaSombra', x: e.x, y: e.y, radio: R });
+        return false;
+      } });
+    });
+  },
+
+  // ---------------------------------------------------------------- Phantom Step (Gengar): mergulha na poça de sombra que estiver mais na
+  // direção do analógico e sai dela com garras; sem poça, um passo fantasma curto
+  saltoSombra(l, h, extra) {
+    const luta = this.luta, mov = l.intento && (l.intento.mx || l.intento.my);
+    const a = mov ? Math.atan2(l.intento.my, l.intento.mx) : angApunte(l);
+    let alvo = null, melhor = -Infinity;
+    for (const e of pocasDe(luta, l)) {
+      const dx = e.x - l.x, dy = e.y - l.y, d = Math.hypot(dx, dy);
+      if (d < 20 || d > (h.alcance ?? 320)) continue;
+      const nota = Math.cos(Math.atan2(dy, dx) - a) * 2 - d / 300;
+      if (nota > melhor) { melhor = nota; alvo = e; }
+    }
+    const x0 = l.x, y0 = l.y, p = alvo ? { x: alvo.x, y: alvo.y } : fijarCampo(l.x + Math.cos(a) * (h.dist ?? 90), l.y + Math.sin(a) * (h.dist ?? 90));
+    l.cortarAccion();
+    l.x = p.x; l.y = p.y; l.vx = l.vy = 0; l.angulo = a;
+    l.ponerEstado('invul', 0.3);
+    luta.emit({ t: 'saltoSombra', l, x0, y0, x1: p.x, y1: p.y, poca: !!alvo });
+    if (alvo) areaCirculo(luta, l, p.x, p.y, h.radio ?? 34, pacote(h, extra, a, { dirX: undefined, dirY: undefined, empuje: 40 }));
+  },
+
+  // ---------------------------------------------------------------- Lick (Gengar): a língua estica em linha reta; quem ela pega é puxado
+  // até a boca do Gengar e fica amaldiçoado
+  lambida(l, h, extra) {
+    const luta = this.luta, a = mirar(l, (h.alcance ?? 150) + 30), ca = Math.cos(a), sa = Math.sin(a), alc = h.alcance ?? 150;
+    l.animar(h.anim ?? 'Attack', 0.4);
+    l.accion = { hasta: luta.t + 0.35, bloquea: true, lento: 0, angulo: a };
+    let preso = null, melhor = Infinity;
+    for (const b of luta.blancos(l)) {
+      if (b.oculto || b.est?.vuelo) continue;
+      const dx = b.x - l.x, dy = b.y - l.y, lon = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca);
+      if (lon < 0 || lon > alc + RADIO || lat > RADIO + 10 || lon >= melhor) continue;
+      melhor = lon; preso = b;
+    }
+    const fim = preso ? melhor : alc;
+    luta.emit({ t: 'lingua', l, ang: a, alcance: fim, pegou: !!preso });
+    if (!preso) return;
+    luta.programar(0.12, () => {
+      if (l.ko || preso.ko) return;
+      const res = atingir(l, preso, pacote(h, extra, a, { empuje: 0 }));
+      if (res !== 'golpe' || preso.esClon) return;
+      preso.ponerEstado('maldito', h.maldicion?.dur ?? 4, { f: h.maldicion?.f ?? 1.2, fuente: l });
+      this.prender(preso, 0.35);
+      arrastar(luta, preso, l.x + ca * 30, l.y + sa * 20, 0.22, 6);
+    });
+  },
+
+  // ---------------------------------------------------------------- Shadow Hands (Gengar): mãos gigantes de sombra saem de todas as poças
+  // (e debaixo do Gengar) e agarram quem estiver perto
+  maosSombra(l, h, extra) {
+    const luta = this.luta, pontos = [{ x: l.x, y: l.y }, ...pocasDe(luta, l).map(e => ({ x: e.x, y: e.y }))];
+    l.animar(h.anim ?? 'Charge', 0.6);
+    l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
+    for (const pt of pontos) luta.emit({ t: 'maoAviso', x: pt.x, y: pt.y, radio: h.radio ?? 42 });
+    luta.programar(h.carga ?? 0.4, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'temblor', f: 0.012 });
+      const ja = new Set();
+      for (const pt of pontos) {
+        luta.emit({ t: 'maoGigante', x: pt.x, y: pt.y, radio: h.radio ?? 42 });
+        for (const b of luta.blancos(l)) {
+          if (ja.has(b) || b.oculto || Math.hypot(b.x - pt.x, (b.y - pt.y) / 0.62) > (h.radio ?? 42) + RADIO) continue;
+          ja.add(b);
+          if (atingir(l, b, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 0, pesado: true })) === 'golpe' && !b.esClon) { this.prender(b, h.prende ?? 0.8); b.ponerEstado('maldito', 4, { f: 1.2, fuente: l }); }
+        }
+      }
+    });
+  },
+
+  // ---------------------------------------------------------------- Psychic (Gardevoir): ergue o rival com a mente, segura no ar e arremessa
+  // para onde você mirar; se bater na parede, leva mais dano e fica tonto
+  telecinese(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 200);
+    if (!r) { if (l.humano) l.avisar('telec', () => l.texto('NO TARGET', '#f9a8d4')); return false; }
+    l.animar(h.anim ?? 'Charge', 0.9);
+    l.accion = { hasta: luta.t + 0.55, lento: 0.3 };
+    luta.emit({ t: 'telecinese', l, b: r, dur: 0.55 });
+    this.prender(r, 0.95);
+    atingir(l, r, pacote(h, extra, 0, { dano: h.dano * 0.4, empuje: 0, dirX: undefined, dirY: undefined }));
+    let t = 0;
+    luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt => { t += dt; if (r.ko) { r.salto = 0; return false; } r.salto = Math.round(Math.min(1, t / 0.3) * 22); return t < 0.55; } });
+    luta.programar(0.55, () => {
+      if (l.ko || r.ko) { r.salto = 0; return; }
+      const a = angApunte(l), L = h.lanza ?? 170, fim = { x: r.x + Math.cos(a) * L, y: r.y + Math.sin(a) * L }, p = limitarCampo(fim.x, fim.y), parede = Math.hypot(p.x - fim.x, p.y - fim.y) > 4;
+      luta.emit({ t: 'arremessoPsi', b: r, x0: r.x, y0: r.y, x1: p.x, y1: p.y });
+      arrastar(luta, r, p.x, p.y, 0.28, 22, () => {
+        atingir(l, r, pacote(h, extra, a, { dano: h.dano * (parede ? 0.9 : 0.6), empuje: 0, aturde: parede ? 0.6 : 0.2, pesado: true }));
+        luta.emit({ t: 'impactoPsi', x: r.x, y: r.y, parede });
+        if (parede) luta.emit({ t: 'temblor', f: 0.012 });
+      });
+    });
+  },
+
+  // ---------------------------------------------------------------- Future Sight (Gardevoir): marca onde o rival está; um instante depois o
+  // futuro chega e o lugar explode
+  futuroVisao(l, h, extra) {
+    const luta = this.luta, r = l.rival, alvo = r && !r.ko && Math.hypot(r.x - l.x, r.y - l.y) < (h.alcance ?? 260) ? { x: r.x, y: r.y } : fijarCampo(l.ax, l.ay);
+    l.animar(h.anim ?? 'Charge', 0.3);
+    l.accion = { hasta: luta.t + 0.15, lento: 0.5 };
+    const espera = h.espera ?? 1.1, R = h.radio ?? 36;
+    luta.emit({ t: 'futuro', x: alvo.x, y: alvo.y, radio: R, espera });
+    luta.programar(espera, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'futuroExplode', x: alvo.x, y: alvo.y, radio: R });
+      areaCirculo(luta, l, alvo.x, alvo.y, R, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 60, aturde: h.aturde ?? 0.3 }));
+    });
+  },
+
+  // ---------------------------------------------------------------- Moonfall (Gardevoir): uma lua desce do céu sobre o rival; quando cai,
+  // machuca os rivais e cura os aliados que estiverem embaixo
+  luaCaindo(l, h, extra) {
+    const luta = this.luta, r = l.rival, alvo = r && !r.ko ? { x: r.x, y: r.y } : fijarCampo(l.ax, l.ay), R = h.radio ?? 80, queda = h.queda ?? 1.1;
+    l.animar(h.anim ?? 'Charge', 0.8);
+    l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
+    luta.emit({ t: 'luaCai', x: alvo.x, y: alvo.y, radio: R, queda });
+    luta.programar(queda, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'luaImpacto', x: alvo.x, y: alvo.y, radio: R });
+      luta.emit({ t: 'temblor', f: 0.016 });
+      areaCirculo(luta, l, alvo.x, alvo.y, R, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 90, aturde: 0.4, pesado: true }));
+      for (const a of [l, ...luta.aliados(l)]) if (!a.ko && Math.hypot(a.x - alvo.x, (a.y - alvo.y) / 0.62) < R + RADIO) a.cura(h.cura ?? 14);
+    });
+  },
+
+  // ---------------------------------------------------------------- Joey Toss (Kangaskhan): joga o filhote; se acertar, ele gruda no rival e
+  // fica socando até pular de volta para a bolsa
+  filhoteLanca(l, h, extra) {
+    const luta = this.luta, ang = mirar(l, (h.alcance ?? 190) + 30);
+    if (l.est.semFilhote) return false;
+    l.animar(h.anim ?? 'Shoot', 0.3);
+    l.accion = { hasta: luta.t + 0.2, angulo: ang, lento: 0.5 };
+    const dur = h.grudado ?? 2;
+    l.ponerEstado('semFilhote', dur + 1);
+    const bola = new Proyectil(luta, l, { ...h, estilo: 'filhote', dano: h.dano * 0.4 }, ang, extra);
+    luta.add(bola);
+    luta.add({ tipo: 'vigiaFilhote', dueno: l, vivo: true, update: () => {
+      if (bola.vivo !== false) return true;
+      const r = l.rival;
+      if (!r || r.ko || Math.hypot(r.x - bola.x, r.y - bola.y) > RADIO * 2 + 10) { delete l.est.semFilhote; luta.emit({ t: 'filhoteVolta', l }); return false; }
+      let t = 0, prox = 0.15;
+      luta.emit({ t: 'filhoteGruda', b: r, dur });
+      luta.add({ tipo: 'filhoteGrudado', dueno: l, vivo: true, alvo: r, update: dt => {
+        t += dt;
+        if (r.ko || l.ko || t >= dur) { delete l.est.semFilhote; luta.emit({ t: 'filhoteVolta', l }); return false; }
+        if (t >= prox) { prox = t + (h.cada ?? 0.3); r.recibir(l, { dano: h.dano * 0.15, tipo: 'NORMAL', slot: 'q' }); luta.emit({ t: 'socoFilhote', x: r.x, y: r.y - r.alto * 0.6 }); }
+        return true;
+      } });
+      return false;
+    } });
+  },
+
+  // ---------------------------------------------------------------- Dizzy Punch + Uppercut (Kangaskhan): o soco deixa tonto e abre um instante
+  // para apertar de novo: o gancho joga o rival para o alto
+  socoCombo(l, h, extra) {
+    const luta = this.luta, a = mirar(l, 70), ca = Math.cos(a), sa = Math.sin(a), segundo = l.comboHasta > luta.t;
+    l.animar('Attack', 0.3);
+    l.accion = { hasta: luta.t + 0.22, bloquea: true, lento: 0, angulo: a };
+    l.empX += ca * 260; l.empY += sa * 160;
+    luta.programar(0.1, () => {
+      if (l.ko) return;
+      const cx = l.x + ca * 30, cy = l.y + sa * 20;
+      let pegou = null;
+      for (const b of luta.blancos(l)) { if (b.oculto || Math.hypot(b.x - cx, b.y - cy) > 30 + RADIO) continue; if (atingir(l, b, pacote(h, extra, a, segundo ? { dano: h.dano * 1.3, empuje: 0, pesado: true } : { confunde: h.confunde ?? 1.2, empuje: 60 })) === 'golpe' && !b.esClon) pegou = b; }
+      luta.emit({ t: segundo ? 'gancho' : 'socoTonto', x: cx, y: cy - 12, ang: a });
+      if (segundo && pegou) { this.lanzarAlto(pegou, 0.6, 46); luta.emit({ t: 'temblor', f: 0.01 }); }
+    });
+    if (segundo) { l.comboHasta = 0; luta.programar(0, () => { l.cd[extra.slot] = h.cdReal ?? 6; }); }
+    else { l.comboHasta = luta.t + (h.janela ?? 1.2); luta.programar(h.janela ?? 1.2, () => { if (l.comboHasta && luta.t >= l.comboHasta) { l.comboHasta = 0; l.cd[extra.slot] = Math.max(l.cd[extra.slot], (h.cdReal ?? 6) - (h.janela ?? 1.2)); } }); }
+  },
+
+  // ---------------------------------------------------------------- Outrage (Kangaskhan): agarra o rival e bate ele no chão três vezes,
+  // a última com tremor e arremesso
+  agarraoSlam(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 150);
+    if (!r) { if (l.humano) l.avisar('agarra', () => l.texto('NO TARGET', '#fde68a')); return false; }
+    const n = h.golpes ?? 3, a = Math.atan2(r.y - l.y, r.x - l.x);
+    const p = fijarCampo(r.x - Math.cos(a) * 26, r.y - Math.sin(a) * 18);
+    l.x = p.x; l.y = p.y; l.angulo = a;
+    l.ponerEstado('invul', n * 0.38 + 0.3);
+    l.accion = { hasta: luta.t + n * 0.38 + 0.2, bloquea: true, lento: 0, angulo: a };
+    this.prender(r, n * 0.38 + 0.15);
+    luta.emit({ t: 'agarrao', l, b: r });
+    for (let i = 0; i < n; i++) luta.programar(0.1 + i * 0.38, () => {
+      if (l.ko || r.ko) return;
+      const ult = i === n - 1;
+      l.animar('Attack', 0.3);
+      let t = 0;
+      luta.add({ tipo: 'lanzado', dueno: null, vivo: true, update: dt => { t += dt; if (r.ko) { r.salto = 0; return false; } r.salto = Math.round(Math.sin(Math.min(1, t / 0.3) * Math.PI) * 30); if (t < 0.3) return true; r.salto = 0; return false; } });
+      luta.programar(0.3, () => {
+        if (l.ko || r.ko) return;
+        luta.emit({ t: 'slamChao', x: r.x, y: r.y, final: ult });
+        luta.emit({ t: 'temblor', f: ult ? 0.018 : 0.008 });
+        atingir(l, r, pacote(h, extra, a, { dano: (h.dano / (n + 1)) * (ult ? 2 : 1), empuje: ult ? 180 : 0, aturde: ult ? 0.6 : 0.1, pesado: true }));
+      });
+    });
+  },
+
+  // ---------------------------------------------------------------- Dragon Ascent (Rayquaza): sobe ao céu e mergulha numa linha reta como um
+  // cometa verde, atravessando a arena; quem estiver no caminho voa e fica um rastro de vento que deixa lento
+  ascensaoDraco(l, h, extra) {
+    const luta = this.luta, a = mirar(l, 400, 1), ca = Math.cos(a), sa = Math.sin(a), sobe = h.sobe ?? 0.6, L = h.largo ?? 300, larg = h.ancho ?? 30;
+    l.cortarAccion();
+    l.ponerEstado('vuelo', sobe + 0.4, { oculto: true, modo: 'aire', rapidez: 0 });
+    l.accion = { hasta: luta.t + sobe + 0.4, bloquea: true, lento: 0, angulo: a };
+    luta.emit({ t: 'ascensao', l });
+    const x0 = l.x - ca * 40, y0 = l.y - sa * 40;
+    luta.emit({ t: 'ascensaoAviso', x0, y0, ang: a, largo: L, ancho: larg, espera: sobe });
+    luta.programar(sobe, () => {
+      if (l.ko) return;
+      const fim = fijarCampo(x0 + ca * L, y0 + sa * L);
+      luta.emit({ t: 'cometaVerde', x0, y0, x1: fim.x, y1: fim.y, ancho: larg });
+      luta.emit({ t: 'temblor', f: 0.02 });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto) continue;
+        const dx = b.x - x0, dy = b.y - y0, lon = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca);
+        if (lon < -RADIO || lon > L + RADIO || lat > larg + RADIO) continue;
+        if (atingir(l, b, pacote(h, extra, a, { empuje: 60, pesado: true })) === 'golpe' && !b.esClon) this.lanzarAlto(b, 0.55, 40);
+      }
+      delete l.est.vuelo; l.x = fim.x; l.y = fim.y;
+      const rastro = { tipo: 'ventoVerde', dueno: l, vivo: true, x0, y0, x1: fim.x, y1: fim.y, ancho: larg, t: 0, dur: h.rastro ?? 3, update: dt => {
+        rastro.t += dt;
+        for (const b of luta.blancos(l)) { const dx = b.x - x0, dy = b.y - y0, lon = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca); if (!b.esClon && lon > 0 && lon < L && lat < larg) b.ponerEstado('lento', 0.2, { f: 0.3 }); }
+        return rastro.t < rastro.dur;
+      } };
+      luta.add(rastro);
+    });
+  },
+
+  // ---------------------------------------------------------------- Shadow Step (Darkrai): some e aparece nas costas do rival; o próximo golpe
+  // sai bem mais forte
+  passoSombra(l, h) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 220);
+    const x0 = l.x, y0 = l.y;
+    let p;
+    if (r) { const costas = Math.atan2(r.y - l.y, r.x - l.x); p = fijarCampo(r.x + Math.cos(costas) * 28, r.y + Math.sin(costas) * 18); l.angulo = costas + Math.PI; }
+    else { const a = angApunte(l); p = fijarCampo(l.x + Math.cos(a) * 110, l.y + Math.sin(a) * 110); }
+    l.cortarAccion();
+    l.x = p.x; l.y = p.y; l.vx = l.vy = 0;
+    l.ponerEstado('invul', 0.3);
+    l.ponerEstado('emboscada', h.dur ?? 1.6, { f: h.bonus ?? 1.5 });
+    luta.emit({ t: 'passoSombra', l, x0, y0, x1: p.x, y1: p.y });
+  },
+
+  // ---------------------------------------------------------------- Nightmare Twins (Darkrai): duas sombras dele saem pelos lados e fazem uma
+  // curva que se cruza no rival; quem dorme leva o dobro
+  pesadeloDuplo(l, h, extra) {
+    const luta = this.luta, r = l.rival, alvo = r && !r.ko ? r : null, tx = alvo ? alvo.x : l.ax, ty = alvo ? alvo.y : l.ay;
+    l.animar(h.anim ?? 'Charge', 0.4);
+    l.accion = { hasta: luta.t + 0.25, lento: 0.4 };
+    const a = Math.atan2(ty - l.y, tx - l.x), dur = h.dur ?? 0.45;
+    for (const lado of [-1, 1]) {
+      const ctrl = { x: (l.x + tx) / 2 - Math.sin(a) * lado * 90, y: (l.y + ty) / 2 + Math.cos(a) * lado * 60 };
+      const x0 = l.x, y0 = l.y, ja = new Set();
+      const e = { tipo: 'sombraGemea', dueno: l, vivo: true, x: x0, y: y0, t: 0, lado, update: dt => {
+        e.t += dt; const k = Math.min(1, e.t / dur), u = 1 - k;
+        const ex = alvo && !alvo.ko ? alvo.x : tx, ey = alvo && !alvo.ko ? alvo.y : ty;
+        e.x = u * u * x0 + 2 * u * k * ctrl.x + k * k * ex; e.y = u * u * y0 + 2 * u * k * ctrl.y + k * k * ey;
+        for (const b of luta.blancos(l)) {
+          if (ja.has(b) || b.oculto || Math.hypot(b.x - e.x, b.y - e.y) > RADIO + 12) continue;
+          ja.add(b);
+          atingir(l, b, pacote(h, extra, Math.atan2(b.y - e.y, b.x - e.x), { empuje: 50, ralentiza: { f: 0.3, dur: 1.5 } }));
+        }
+        return k < 1;
+      } };
+      luta.add(e);
+    }
+  },
+});
+
 // Parental Bond (Kangaskhan): o filhote repete o golpe logo depois, mais fraco — de perto um soquinho, de longe uma ondinha
 export function ecoFilhote(hab, l, h, slot, extra) {
   const luta = hab.luta;
   if (!h.dano) return;
+  if (l.est.semFilhote) return; // o filhote está grudado no rival
   const k = l.mega ? 0.42 : 0.28;
   luta.programar(0.18, () => {
     if (l.ko || l.est.aturdido || l.est.dormido) return;
