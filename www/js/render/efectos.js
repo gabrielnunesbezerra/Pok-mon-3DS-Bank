@@ -218,7 +218,7 @@ export class Efectos {
           if (e.slot !== 'lmb') {
             const c = colorTipo(e.h.tipo), ult = e.slot === 'e', l = e.l;
             this.anillo(l.x, l.y, 4, ult ? 46 : 26, c, ult ? 0.45 : 0.28, ult ? 3 : 2);
-            for (let i = 0; i < (ult ? 14 : 6); i++) { const a = (i / (ult ? 14 : 6)) * Math.PI * 2; this.add({ x: l.x + Math.cos(a) * 12, y: l.y + Math.sin(a) * 6, vx: Math.cos(a) * 20, vy: -entre(50, ult ? 140 : 90), drag: 1.5, size: ult ? 2.6 : 2, life: ult ? 0.6 : 0.4, color: i % 2 ? '#ffffff' : c, forma: 'chispa' }); }
+            for (let i = 0; i < (ult ? 14 : 6); i++) { const a = (i / (ult ? 14 : 6)) * Math.PI * 2; this.add({ x: l.x + Math.cos(a) * 12, y: l.y + Math.sin(a) * 6, vx: Math.cos(a) * 20, vy: -entre(50, ult ? 140 : 90), drag: 1.5, size: ult ? 2.6 : 2, life: ult ? 0.6 : 0.4, color: c, forma: 'chispa' }); }
             if (ult) this.punch = Math.max(this.punch ?? 0, 0.05);
           }
           break;
@@ -483,15 +483,7 @@ export class Efectos {
       PX.disco(g, cx, cy, 2.5, '#ffffff');
       g.globalAlpha = 1;
     }
-    for (const a of this.anillos) {
-      const g = a.hue ? capa(gB, a.hue) : gB;
-      // sem argola: um clarão macio que abre e some
-      const k = a.t / a.dur, r = a.r0 + (a.r1 - a.r0) * Math.sqrt(k);
-      g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - k) * 0.22;
-      g.fillStyle = a.color; g.beginPath(); g.ellipse(a.x, a.y, r, r * 0.6, 0, 0, 7); g.fill();
-      g.globalAlpha = (1 - k) * 0.3; g.beginPath(); g.ellipse(a.x, a.y, r * 0.5, r * 0.3, 0, 0, 7); g.fill();
-      g.globalCompositeOperation = 'source-over';
-    }
+    // argolas não são mais desenhadas (ficaram feias); a lista continua para não quebrar quem emite
     g.globalAlpha = 1;
     for (const sp of [...this.espinas].sort((a, b) => a.y - b.y)) {
       if (sp.t < 0) continue;
@@ -916,12 +908,11 @@ function sombra(g, x, y, r) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(px(x -
 
 // tiro de energia: brilho macio somado à cena e núcleo branco-quente (nada de bolinha de gude)
 function bolaPixel(g, x, y, r, tipo) {
-  const [, c1, c2] = rampaTipo(tipo); r = Math.max(1.5, r);
-  g.globalCompositeOperation = 'lighter';
-  g.globalAlpha = 0.25; g.fillStyle = c1; g.beginPath(); g.arc(x, y, r * 2.3, 0, 7); g.fill();
-  g.globalAlpha = 0.5; g.fillStyle = c2; g.beginPath(); g.arc(x, y, r * 1.4, 0, 7); g.fill();
-  g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, r * 0.75, 0, 7); g.fill();
-  g.globalCompositeOperation = 'source-over';
+  const [c0, c1, c2] = rampaTipo(tipo); r = Math.max(1.5, r);
+  g.globalAlpha = 0.35; g.fillStyle = c1; g.beginPath(); g.arc(x, y, r * 1.6, 0, 7); g.fill();
+  g.globalAlpha = 1; g.fillStyle = c0; g.beginPath(); g.arc(x, y, r + 0.6, 0, 7); g.fill();
+  g.fillStyle = c1; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  g.fillStyle = c2; g.beginPath(); g.arc(x - r * 0.25, y - r * 0.25, r * 0.45, 0, 7); g.fill();
 }
 
 // estela de cauda: bolinhas que encolhem atrás do tiro
@@ -1655,17 +1646,7 @@ export function dibujarProyectil(g, p, t) {
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
-  // cauda ondulada: fita que afina e balança atrás do tiro
-  const L = R0 * 8 + 10, N = 9, fase = t * 26 + (p.x * 0.05);
-  g.globalCompositeOperation = 'lighter';
-  for (const [k, al] of [[1.25, 0.18], [0.6, 0.35]]) {
-    g.globalAlpha = al; g.fillStyle = k > 1 ? cor : '#ffffff'; g.beginPath();
-    const esq = [], dir = [];
-    for (let i = 0; i <= N; i++) { const f = i / N, ond = Math.sin(f * 7 - fase) * R0 * 0.9 * f, cx = p.x - ux * L * f - uy * ond, cy = p.y - p.alt - uy * L * f * 0.8 + ux * ond, w = R0 * k * (1 - f) + 0.2; esq.push([cx - uy * w, cy + ux * w]); dir.push([cx + uy * w, cy - ux * w]); }
-    esq.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); for (let i = N; i >= 0; i--) g.lineTo(dir[i][0], dir[i][1]);
-    g.fill();
-  }
-  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  g.globalAlpha = 1;
   f(g, p, t);
 }
 // Sandstorm (Tyranitar): chão amarelado, parede de poeira na borda, rajadas curvas de vento, nuvens e pedras girando; aparece e some suave
