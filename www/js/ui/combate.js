@@ -276,7 +276,7 @@ export class Combate {
     const sh = fx.temblor, sx = sh ? (Math.random() - 0.5) * sh * 2 : 0, sy = sh ? (Math.random() - 0.5) * sh * 2 : 0;
     g.save();
     g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
-    this.camara.aplicar(g, sx, sy);
+    this.camara.aplicar(g, sx, sy, 1 + (this.fx.punch ?? 0));
     if (this.fondoGen !== this.app.geracaoGrafica) { this.fondo = crearArena(this.datos.arena); this.fondoGen = this.app.geracaoGrafica; }
     g.drawImage(this.fondo.bm ?? this.fondo, -MARGEM.x, -MARGEM.y);
     ambienteArena(g, this.datos.arena, this.t);

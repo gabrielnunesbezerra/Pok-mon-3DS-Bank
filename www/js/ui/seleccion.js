@@ -14,7 +14,7 @@ const NOMBRE_NIVEL = { facil: 'EASY', normal: 'NORMAL', dificil: 'HARD' };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
 const COLS = 4;
 // 30 Pokémon em 8 fileiras de 4 cabendo acima da linha da arena (y 244)
-const CARD = { w: 64, h: 22, gap: 2, x0: 186, y0: 52 };
+const CARD = { w: 64, h: 19, gap: 2, x0: 186, y0: 50 };
 const SHINY_TOQUES = 20;
 
 export class Seleccion {
@@ -218,9 +218,9 @@ export class Seleccion {
       const trancado = !this.liberado(p.id);
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : trancado ? 'apagado' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 2, 18, 18);
-      texto(g, p.nombre, c.x + 24, c.y + 5, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 28 });
-      p.tipos.forEach((tp, k) => { rect(g, c.x + 24 + k * 14, c.y + 13, 12, 7, '#04102c'); rect(g, c.x + 25 + k * 14, c.y + 14, 10, 5, hex(TIPOS[tp] ?? 0xffffff)); });
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 2, 15, 15);
+      texto(g, p.nombre, c.x + 21, c.y + 3, { tam: 6, color: foco ? UI.textoOscuro : '#fff', max: c.w - 24 });
+      p.tipos.forEach((tp, k) => { rect(g, c.x + 21 + k * 14, c.y + 11, 12, 6, '#04102c'); rect(g, c.x + 22 + k * 14, c.y + 12, 10, 4, hex(TIPOS[tp] ?? 0xffffff)); });
       if (trancado) { rect(g, c.x + 1, c.y + 1, c.w - 2, c.h - 2, '#060a18', 0.6); rect(g, c.x + 7, c.y + 11, 10, 8, '#ffd23c'); rect(g, c.x + 9, c.y + 6, 6, 6, '#ffd23c'); rect(g, c.x + 10, c.y + 7, 4, 4, '#060a18'); }
       if (sel0) { rect(g, c.x + c.w - 14, c.y - 5, 16, 10, '#04102c'); rect(g, c.x + c.w - 13, c.y - 4, 14, 8, '#4a9fff'); texto(g, 'P1', c.x + c.w - 6, c.y, { tam: 5, align: 'center', base: 'middle' }); }
       if (sel1) { rect(g, c.x - 2, c.y - 5, 22, 10, '#04102c'); rect(g, c.x - 1, c.y - 4, 20, 8, '#ff5a5a'); texto(g, this.modo === 'cpu' ? 'CPU' : this.modo === 'arena' ? 'CPU1' : 'P2', c.x + 9, c.y, { tam: 5, align: 'center', base: 'middle' }); }

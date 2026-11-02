@@ -27,9 +27,9 @@ export class Camara {
     this.centroY = arriba + vh / 2;
   }
 
-  aplicar(g, sx = 0, sy = 0) {
+  aplicar(g, sx = 0, sy = 0, zoom = 1) {
     g.translate(ANCHO / 2 + sx, this.centroY + sy);
-    g.scale(this.z, this.z);
+    g.scale(this.z * zoom, this.z * zoom);
     g.translate(-this.x, -this.y);
   }
   aMundo(px, py) { return { x: (px - ANCHO / 2) / this.z + this.x, y: (py - this.centroY) / this.z + this.y }; }

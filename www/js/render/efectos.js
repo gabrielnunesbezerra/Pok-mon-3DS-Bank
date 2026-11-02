@@ -214,6 +214,13 @@ export class Efectos {
             this.banner(`${e.h.nombre}!`, e.h.tipo);
             if (e.h.forma === 'plantaFeroz') this.heroes.push({ k: e.h.estilo === 'sonido' ? 'pauta' : 'vinas', l: e.l, x: e.l.x, y: e.l.y, radio: e.h.ondas.at(-1) + 12, tipo: e.h.tipo, t: 0, life: (e.h.carga ?? 0.3) + e.h.ondas.length * e.h.cada + 0.45, hue: this.hue });
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);
+          // começo de skill: anel de energia na cor do tipo nos pés e faíscas subindo (maior na ultimate)
+          if (e.slot !== 'lmb') {
+            const c = colorTipo(e.h.tipo), ult = e.slot === 'e', l = e.l;
+            this.anillo(l.x, l.y, 4, ult ? 46 : 26, c, ult ? 0.45 : 0.28, ult ? 3 : 2);
+            for (let i = 0; i < (ult ? 14 : 6); i++) { const a = (i / (ult ? 14 : 6)) * Math.PI * 2; this.add({ x: l.x + Math.cos(a) * 12, y: l.y + Math.sin(a) * 6, vx: Math.cos(a) * 20, vy: -entre(50, ult ? 140 : 90), drag: 1.5, size: ult ? 2.6 : 2, life: ult ? 0.6 : 0.4, color: i % 2 ? '#ffffff' : c, forma: 'chispa' }); }
+            if (ult) this.punch = Math.max(this.punch ?? 0, 0.05);
+          }
           break;
         case 'novaPsi': for (let i = 0; i < 3; i++) this.anillo(e.x, e.y, 6 + i * 10, e.radio * (1 + i * 0.25), i % 2 ? '#ffffff' : '#e879f9', 0.4 + i * 0.12, 3 - i); for (let i = 0; i < 24; i++) { const a = (i / 24) * Math.PI * 2, s = entre(180, 320); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.65, drag: 3, size: entre(2, 3.5), life: entre(0.4, 0.7), color: ['#f0abfc', '#ffffff', '#c084fc'][i % 3], forma: 'chispa' }); } this.flash = Math.max(this.flash, 0.12); this.flashColor = '#f5d0fe'; break;
         case 'arenaSobe': this.debris(e.x, e.y, 'ROCK', 16); for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2; this.humo(e.x + Math.cos(a) * e.radio, e.y + Math.sin(a) * e.radio * 0.62, 1, 'rgba(214,200,160,0.6)', 10); } this.temblor = Math.max(this.temblor, 8); break;
@@ -256,6 +263,8 @@ export class Efectos {
   impacto(e) {
     if (e.estilo === 'rayo') { this.relampagos.push({ x: e.x, y: e.y, t: 0, life: 0.22, semilla: Math.floor(ale() * 999) }); this.rayos.push({ x: e.x, y: e.y - 4, radio: 40, t: 0, life: 0.25, semilla: Math.floor(ale() * 999) }); this.flash = Math.max(this.flash, 0.18); this.flashColor = '#fff6a8'; this.temblor = Math.max(this.temblor, 3); }
     const c = colorTipo(e.tipo);
+    // golpe forte: a câmera dá um soquinho de zoom
+    if (e.fuerte) this.punch = Math.max(this.punch ?? 0, 0.035);
     this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.28 : 0.22, color: '#ffffff', brillo: mezcla(c, 0.25), forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
     this.chispas(e.x, e.y, '#ffffff', e.fuerte ? 8 : 4, e.fuerte ? 380 : 260);
     for (let i = 0; i < (e.fuerte ? 8 : 4); i++) { const a = ale() * Math.PI * 2, s = entre(420, 620); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 6, size: e.fuerte ? 2 : 1, life: 0.12, color: i % 2 ? '#ffffff' : mezcla(c, 0.5), forma: 'raya' }); }
@@ -329,6 +338,7 @@ export class Efectos {
     for (const c of this.rayos) c.t += dt; this.rayos = this.rayos.filter(c => c.t < c.life);
     for (const c of this.grietas) c.t += dt; this.grietas = this.grietas.filter(c => c.t < c.life);
     this.temblor = Math.max(0, this.temblor - dt * 24);
+    this.punch = Math.max(0, (this.punch ?? 0) - dt * 0.25);
     this.flash = Math.max(0, this.flash - dt * 3);
   }
 

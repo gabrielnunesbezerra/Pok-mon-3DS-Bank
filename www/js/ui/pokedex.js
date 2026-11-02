@@ -14,8 +14,9 @@ const FORMA = {
   plantaFeroz: 'Root waves', chapoteo: 'Nothing?', laco: 'Grab & throw', geiser: 'Geyser pull', torreta: 'Turret', espejo: 'Reflect hits', curaAnillo: 'Heal ring', recuperar: 'Heal', estallido: 'Radial burst', lanzaTorretas: 'Turret volley', potenciar: 'Stack buff', escudo: 'Shield', explosion: 'Blast', trampa: 'Trap', torbellino: 'Tornado', arraigo: 'Root', crecimiento: 'Power up', descanso: 'Rest', clones: 'Decoys', humo: 'Smoke',
 };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
-const COLS = 4;
-const CARD = { w: 40, h: 40, gap: 3, x0: 8, y0: 34 };
+// 5 colunas de cartões menores: cabem todos os Pokémon na tela
+const COLS = 5;
+const CARD = { w: 32, h: 33, gap: 3, x0: 8, y0: 32 };
 
 export class Pokedex {
   constructor(app) { this.app = app; this.t = 0; this.cursor = 0; this.etapa = 0; }
@@ -55,7 +56,7 @@ export class Pokedex {
       const c = this.caja(i), foco = i === this.cursor;
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 4, c.y + 2, 32, 32);
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 2, 26, 26);
       texto(g, p.nombre, c.x + c.w / 2, c.y + c.h - 4, { tam: 5, align: 'center', base: 'bottom', borde: 2, max: c.w - 4 });
     });
     const p = ROSTER[this.cursor], fs = this.formas();
