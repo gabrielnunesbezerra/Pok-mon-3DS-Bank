@@ -307,6 +307,7 @@ export class Combate {
     for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
     this.dibujarOscuro(g);
+    this.dibujarNoche(g, luta);
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
@@ -340,6 +341,15 @@ export class Combate {
     const rx = Math.max(7, Math.round((m.width ?? 18) * 0.5 * sc)), ry = Math.max(3, Math.round(rx * 0.45));
     if (!l.oculto) {
       g.fillStyle = 'rgba(0,0,0,0.42)'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx, ry, 0, 0, 7); g.fill();
+      // possuído pelo Gengar: a sombra fica roxa, cresce e abre olhos
+      if (l.est.poseido && !l.ko) {
+        const pul = 1 + Math.sin(this.t * 8) * 0.08;
+        g.globalAlpha = 0.6; g.fillStyle = '#2e1065'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx * 1.8 * pul, ry * 1.9 * pul, 0, 0, 7); g.fill();
+        g.globalAlpha = 0.9; g.fillStyle = '#f0abfc'; g.fillRect(Math.round(l.x) - 5, Math.round(l.y) - 1, 3, 2); g.fillRect(Math.round(l.x) + 2, Math.round(l.y) - 1, 3, 2);
+        g.fillStyle = '#e11d48'; g.fillRect(Math.round(l.x) - 4, Math.round(l.y) - 1, 1, 1); g.fillRect(Math.round(l.x) + 3, Math.round(l.y) - 1, 1, 1);
+        g.globalAlpha = 1;
+        if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * rx * 2, y: l.y, vy: -30, size: 2.5, grow: 2, life: 0.5, forma: 'llama', rampa: ['#1a0830', '#4c1d95', '#8b5cf6', '#e9d5ff'] });
+      }
       if (!l.ko) { g.strokeStyle = this.luta.equipos || this.luta.luchadores.length > 2 ? corDe(this.luta, l) : l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
     }
     // Fly: lá no alto, fora da tela; no chão só o anel azul-claro marcando onde ele vai cair, como no site
@@ -370,6 +380,8 @@ export class Combate {
     }
     // Heavy Slam e afins: some no alto enquanto a mira anda
     if (l.oculto && l.est.vuelo?.modo === 'meteoro') return;
+    // Shadow Possession: o Gengar está dentro da sombra do rival (quem aparece é a sombra dele, embaixo do alvo)
+    if (l.oculto && l.est.vuelo?.modo === 'sombra') return;
     // Rollout: no lugar do sprite, uma pedra redonda girando conforme anda
     if (l.est.rodando) {
       const R = Math.max(10, Math.round(l.alto * 0.42)), cx = Math.round(l.x), cy = Math.round(l.y - R - l.salto), giro = (l.x + l.y * 0.6) * 0.09;
@@ -609,8 +621,36 @@ export class Combate {
     g.globalAlpha = 1;
   }
   // barrinhas de calor, de estado e de "vida de baixo" em cima dos lutadores
+  // Eternal Night (Darkrai): quem está cego só enxerga em volta de si; o time do Darkrai vê a arena escurecida
+  dibujarNoche(g, luta) {
+    const noche = luta.entidades.find(e => e.tipo === 'noche' && e.vivo !== false);
+    if (!noche) return;
+    const al = Math.max(0, Math.min(1, noche.t * 2.5, (noche.dur - noche.t) / 0.6)), yo = luta.luchadores[this.lado ?? 0];
+    if (yo && !yo.ko && yo.est.cegado) {
+      const p = this.camara.aPantalla(yo.x, yo.y - yo.alto * 0.5), r = 60 * this.camara.z + 18;
+      const gr = g.createRadialGradient(p.x, p.y, r * 0.5, p.x, p.y, r * 1.8);
+      gr.addColorStop(0, 'rgba(6,2,14,0)'); gr.addColorStop(0.45, `rgba(6,2,14,${0.8 * al})`); gr.addColorStop(1, `rgba(6,2,14,${0.96 * al})`);
+      g.fillStyle = gr; g.fillRect(0, 0, ANCHO, ALTO);
+      const d = noche.dueno;
+      if (d && !d.ko) { const q = this.camara.aPantalla(d.x, d.y - d.alto * 0.7); g.globalAlpha = al * (0.6 + 0.4 * Math.sin(this.t * 6)); g.fillStyle = '#ff2a4a'; g.fillRect(Math.round(q.x - 4), Math.round(q.y), 3, 2); g.fillRect(Math.round(q.x + 1), Math.round(q.y), 3, 2); g.globalAlpha = 1; }
+    } else { g.fillStyle = `rgba(20,6,40,${0.38 * al})`; g.fillRect(0, 0, ANCHO, ALTO); }
+  }
+
   barrasMundo(g, luta) {
     const muitos = luta.luchadores.length > 2;
+    // Psychic Link: corrente de luz ondulando entre a Gardevoir e quem está ligado
+    for (const l of luta.luchadores) {
+      const vi = l.est.vinculo;
+      if (!vi || l.ko || vi.con.ko) continue;
+      const a = { x: l.x, y: l.y - l.alto * 0.5 }, b = { x: vi.con.x, y: vi.con.y - vi.con.alto * 0.5 }, cor = vi.modo === 'aliado' ? '#86efac' : '#f472b6';
+      g.save(); g.lineCap = 'round';
+      for (const [c, w, al] of [[cor, 4, 0.25], [cor, 2, 0.8], ['#ffffff', 1, 0.9]]) {
+        g.globalAlpha = al; g.strokeStyle = c; g.lineWidth = w; g.beginPath();
+        for (let i = 0; i <= 12; i++) { const f = i / 12, ond = Math.sin(f * 9 - this.t * 8) * 4 * Math.sin(f * Math.PI), dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1; const x = a.x + dx * f - (dy / L) * ond, y = a.y + dy * f + (dx / L) * ond; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+        g.stroke();
+      }
+      g.restore();
+    }
     for (const l of luta.luchadores) {
       if (l.ko || l.oculto) continue;
       const sx = Math.round(l.x), by = Math.round(l.y - l.alto - l.salto - 9);
@@ -625,6 +665,15 @@ export class Combate {
         rect(g, x - 1, by - 1, w + 2, 6, '#04102c'); rect(g, x, by, w, 4, '#3a1a14');
         rect(g, x, by, Math.round(w * k), 4, luta.t < l.sobrecargaHasta ? (Math.floor(luta.t * 10) % 2 ? '#ff2a2a' : '#ffae2e') : k > 0.75 ? '#ff7a1a' : k > 0.5 ? '#ffae2e' : '#ffe066');
       }
+      // Zeraora: barra de plasma (cheia, pisca e solta faíscas)
+      if (l.def.plasma) {
+        const w = 24, k = Math.min(1, l.plasma / 100), cheio = k >= 1, y = by - 8;
+        rect(g, sx - w / 2 - 1, y - 1, w + 2, 4, '#04102c'); rect(g, sx - w / 2, y, w, 2, '#1e293b');
+        rect(g, sx - w / 2, y, Math.round(w * k), 2, cheio ? (Math.floor(this.t * 10) % 2 ? '#ffffff' : '#fde047') : '#60a5fa');
+        if (cheio && Math.random() < 0.3) this.fx.add({ x: sx + (Math.random() - 0.5) * 20, y: l.y - l.alto * 0.5, vx: (Math.random() - 0.5) * 80, vy: -40, size: 2, life: 0.25, color: '#fde047', forma: 'chispa' });
+      }
+      // amaldiçoado: chaminha roxa em cima da cabeça
+      if (l.est.maldito) PX.carimbar(g, PX.llama(Math.floor(this.t * 12), 7, ['#1a0830', '#6d28d9', '#c084fc', '#f5d0fe']), sx + 10, by - 2, 0, 1, 0.9);
       if (l.cargaTipo) {
         for (let i = 0; i < 3; i++) { const px = sx - 9 + i * 7; rect(g, px - 1, by - 11, 6, 6, '#000'); rect(g, px, by - 10, 4, 4, i < l.cargaTipo.n ? colorTipo(l.cargaTipo.tipo === 'CONFUSION' ? 'PSYCHIC' : l.cargaTipo.tipo) : '#2a3040'); }
       }

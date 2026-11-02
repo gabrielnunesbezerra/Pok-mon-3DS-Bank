@@ -5,6 +5,7 @@ import { hex } from '../config.js';
 import { aleatorio as azar } from '../engine/util.js';
 import { sfx } from '../audio.js';
 import * as PX from './pixelfx.js';
+import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS } from './efectosNovos.js';
 
 const ale = () => Math.random();
 const R = Math.round;
@@ -77,6 +78,7 @@ export class Efectos {
   consumir(luta, evs, camara) {
     for (const e of evs) {
       this.hue = hueShiny(e.l ?? e.dueno ?? e.quien);
+      if (EVENTOS_NOVOS[e.t]) { EVENTOS_NOVOS[e.t](this, e); continue; }
       switch (e.t) {
         case 'texto': this.texto(e.x, e.y, e.txt, e.color, { dur: 0.95 }); break;
         case 'numero': this.numero(e.x, e.y, e.dano, e.mult); break;
@@ -568,6 +570,8 @@ export class Efectos {
   // ================================================================ efeitos grandes das ults (desenhados à mão, como a cauda da Milotic)
   dibujarHeroe(g, h) {
     const k = h.t / h.life, t = h.t;
+    const novo = HEROES_NOVOS[h.k];
+    if (novo) return novo(g, h, k, t);
     const [d0, d1, d2, d3] = rampaTipo(h.tipo);
     if (h.k === 'aura') {
       // entrada de toda ult: pilar de luz, dois anéis girando, faíscas indo para o centro e linhas de velocidade
@@ -1017,6 +1021,8 @@ const ESTILOS_PROJ = {
   shurikenGigante(g, p, t) { const x = px(p.x), y = px(p.y - p.alt), R2 = Math.round(11 * p.escala); g.globalAlpha = 0.3; PX.disco(g, x, y, R2 + 4, '#9fdcff'); g.globalAlpha = 1; PX.carimbar(g, PX.shuriken(R2, ['#3f8ee0', '#9fdcff', '#ffffff']), p.x, p.y - p.alt, t * 18); if (Math.floor(t * 40) % 2) PX.carimbar(g, PX.gota(6, PX.RAMPA_AGUA), x - Math.cos(p.ang) * (R2 + 4), y - Math.sin(p.ang) * (R2 + 4), p.ang, 1, 0.8); },
   bola(g, p) { bolaPixel(g, p.x, p.y - p.alt, 3 * p.escala, p.tipoAtq); },
 };
+// estilos da última leva (Gengar, Gardevoir, Kangaskhan, Rayquaza, Zeraora e Darkrai)
+Object.assign(ESTILOS_PROJ, ESTILOS_NOVOS);
 const i2 = t => Math.floor(t * 12) % 2;
 // bola de fogo: chama virada para trás, núcleo claro na frente
 function llamaProj(g, p, t, tam) {
@@ -1140,6 +1146,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         break;
       }
       case 'tormenta': dibujarTormenta(g, e, t); break;
+      case 'reino': case 'campoFada': case 'delta': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
       case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
       case 'espinho': if (e.t < e.aviso) dibujarEspinho(g, e, t); break;
       case 'hueso': {
