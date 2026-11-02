@@ -485,10 +485,12 @@ export class Efectos {
     }
     for (const a of this.anillos) {
       const g = a.hue ? capa(gB, a.hue) : gB;
+      // sem argola: um clarão macio que abre e some
       const k = a.t / a.dur, r = a.r0 + (a.r1 - a.r0) * Math.sqrt(k);
-      g.globalAlpha = Math.min(1, (1 - k) * 1.4);
-      PX.anilloPix(g, a.x, a.y, r, r * 0.8, '#04102c', a.w + 1, 0);
-      PX.anilloPix(g, a.x, a.y, r, r * 0.8, a.color, a.w, r > 24 ? 7 : 0, Math.floor(a.t * 30));
+      g.globalCompositeOperation = 'lighter'; g.globalAlpha = (1 - k) * 0.22;
+      g.fillStyle = a.color; g.beginPath(); g.ellipse(a.x, a.y, r, r * 0.6, 0, 0, 7); g.fill();
+      g.globalAlpha = (1 - k) * 0.3; g.beginPath(); g.ellipse(a.x, a.y, r * 0.5, r * 0.3, 0, 0, 7); g.fill();
+      g.globalCompositeOperation = 'source-over';
     }
     g.globalAlpha = 1;
     for (const sp of [...this.espinas].sort((a, b) => a.y - b.y)) {
@@ -912,9 +914,27 @@ const px = v => Math.round(v);
 
 function sombra(g, x, y, r) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(px(x - r), px(y - r * 0.3), px(r * 2), Math.max(1, px(r * 0.6))); }
 
-function bolaPixel(g, x, y, r, tipo) { PX.esfera(g, px(x), px(y), Math.max(1.5, r), rampaTipo(tipo)); }
+// tiro de energia: brilho macio somado à cena e núcleo branco-quente (nada de bolinha de gude)
+function bolaPixel(g, x, y, r, tipo) {
+  const [, c1, c2] = rampaTipo(tipo); r = Math.max(1.5, r);
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = 0.25; g.fillStyle = c1; g.beginPath(); g.arc(x, y, r * 2.3, 0, 7); g.fill();
+  g.globalAlpha = 0.5; g.fillStyle = c2; g.beginPath(); g.arc(x, y, r * 1.4, 0, 7); g.fill();
+  g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, r * 0.75, 0, 7); g.fill();
+  g.globalCompositeOperation = 'source-over';
+}
 
 // estela de cauda: bolinhas que encolhem atrás do tiro
+function poca(R, lento) {
+  return PX.guardado(`poca${R}${lento}`, R * 2 + 10, Math.ceil(R * 1.24) + 8, (g, W, H) => {
+    const cx = W / 2, cy = H / 2;
+    g.globalAlpha = 0.35; PX.elipsePix(g, cx, cy, R + 4, R * 0.62 + 3, '#c084fc'); g.globalAlpha = 1;
+    PX.elipsePix(g, cx, cy, R + 1, R * 0.62 + 1, '#1e0a2a');
+    PX.elipsePix(g, cx, cy, R, R * 0.6, lento ? '#5e1f78' : '#7a2c92');
+    PX.elipsePix(g, cx - R * 0.1, cy - 1, R * 0.7, R * 0.38, '#9b46bd');
+    PX.elipsePix(g, cx - R * 0.3, cy - R * 0.18, R * 0.26, R * 0.11, '#e9b8ff');
+  });
+}
 function cola(g, p, n, color, r0) {
   for (let i = 1; i <= n; i++) {
     const k = i / (n + 1), rr = Math.max(0.6, r0 * (1 - k));
@@ -1112,15 +1132,9 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
     switch (e.tipo) {
       case 'charco': {
         const k = Math.min(1, (e.dur - e.t) / 0.8), nace = Math.min(1, e.t / 0.25), R = e.radio * (0.4 + 0.6 * nace), sx = ((e.x * 7 + e.y * 13) % 10) / 10;
-        g.globalAlpha = 0.22 * k; PX.elipsePix(g, px(e.x), px(e.y), R + 4, R * 0.62 + 3, '#c084fc');
-        g.globalAlpha = 0.62 * k;
-        PX.elipsePix(g, px(e.x), px(e.y), R + 1, R * 0.62 + 1, '#1e0a2a');
-        PX.elipsePix(g, px(e.x + R * 0.35 * (sx - 0.5)), px(e.y + 1), R * 0.75, R * 0.45, '#2a0f3a');
-        PX.elipsePix(g, px(e.x), px(e.y), R, R * 0.6, e.ralentiza ? '#5e1f78' : '#7a2c92');
-        PX.elipsePix(g, px(e.x - R * 0.1), px(e.y - 1), R * 0.7, R * 0.38, '#9b46bd');
-        PX.elipsePix(g, px(e.x - R * 0.3), px(e.y - R * 0.18), R * 0.26, R * 0.11, '#e9b8ff');
-        PX.anilloPix(g, px(e.x), px(e.y), R * 0.92, R * 0.56, '#d68cf0', 1, 5, Math.floor(e.t * 8));
-        if (e.ralentiza) PX.anilloPix(g, px(e.x), px(e.y), R * 0.6, R * 0.36, '#3a0f52', 1, 3, -Math.floor(e.t * 5));
+        // a poça é desenhada uma vez por tamanho e só carimbada (muitas poças não travam o celular)
+        const Rq = Math.max(4, Math.round(R / 2) * 2), img = poca(Rq, !!e.ralentiza);
+        g.globalAlpha = k; g.drawImage(img, px(e.x - img.width / 2), px(e.y - img.height / 2)); g.globalAlpha = 0.62 * k;
         // bolhas que crescem e estouram em lugares fixos (sem sortear a cada quadro)
         for (let i = 0; i < 3; i++) { const f = (e.t * 0.9 + i * 0.33 + sx) % 1, bx = e.x + Math.cos(i * 2.1 + sx * 6) * R * 0.55, by = e.y + Math.sin(i * 2.1 + sx * 6) * R * 0.3; if (f < 0.8) PX.disco(g, px(bx), px(by - 1), 0.6 + f * 2.2, '#d68cf0'); else PX.anilloPix(g, px(bx), px(by - 1), 3 + (f - 0.8) * 20, 2 + (f - 0.8) * 10, '#f0c8ff', 1, 0); }
         g.globalAlpha = 1;
@@ -1641,8 +1655,17 @@ export function dibujarProyectil(g, p, t) {
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
-  for (let i = 1; i <= 4; i++) { g.globalAlpha = 0.32 - i * 0.065; PX.disco(g, px(p.x - ux * i * 5), px(p.y - p.alt - uy * i * 4), Math.max(1, R0 * (1 - i * 0.18)), cor); }
-  g.globalAlpha = 1;
+  // cauda ondulada: fita que afina e balança atrás do tiro
+  const L = R0 * 8 + 10, N = 9, fase = t * 26 + (p.x * 0.05);
+  g.globalCompositeOperation = 'lighter';
+  for (const [k, al] of [[1.25, 0.18], [0.6, 0.35]]) {
+    g.globalAlpha = al; g.fillStyle = k > 1 ? cor : '#ffffff'; g.beginPath();
+    const esq = [], dir = [];
+    for (let i = 0; i <= N; i++) { const f = i / N, ond = Math.sin(f * 7 - fase) * R0 * 0.9 * f, cx = p.x - ux * L * f - uy * ond, cy = p.y - p.alt - uy * L * f * 0.8 + ux * ond, w = R0 * k * (1 - f) + 0.2; esq.push([cx - uy * w, cy + ux * w]); dir.push([cx + uy * w, cy - ux * w]); }
+    esq.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); for (let i = N; i >= 0; i--) g.lineTo(dir[i][0], dir[i][1]);
+    g.fill();
+  }
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
   f(g, p, t);
 }
 // Sandstorm (Tyranitar): chão amarelado, parede de poeira na borda, rajadas curvas de vento, nuvens e pedras girando; aparece e some suave

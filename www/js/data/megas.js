@@ -6,7 +6,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Mega Sludge Bomb', rebote: true, dano: 13, radio: 38, charco: { radio: 38, dur: 8, ralentiza: 0.4 } },
     esp: { nombre: 'Mega Dive', dano: 8, radio: 46, rapidez: 1.8, charcoEntraSale: { radio: 26, dur: 7, veneno: { dps: 3, dur: 2 } } },
     q: { nombre: 'Mega Venoshock', carga: 0.55, dano: 10, largo: 240, ancho: 20, contraVeneno: 2.2, rastro: { radio: 16, dur: 6 } },
-    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 13, areaMin: 40, area: 150, alto: 110, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
+    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 9, areaMin: 40, area: 150, alto: 110, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
   },
   houndour: {
     lmb: { nombre: 'Mega Ember', rafaga: 2, cadaRafaga: 0.06, abanico: 0.12, dano: 3.4 },
