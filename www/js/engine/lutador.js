@@ -269,7 +269,7 @@ export class Lutador {
     }
     // Disguise (Mimikyu): o primeiro golpe só rasga o pano; ele volta depois de um tempo sem apanhar
     if (this.disfarce && fuente && fuente !== this && !g.tick && !g.puro && (g.dano ?? 0) > 0) {
-      this.disfarce = false; this.disfarceVolta = t + 14;
+      this.disfarce = false; this.disfarceVolta = t + 22;
       this.texto('DISGUISE BROKE!', '#fde68a'); luta.emit({ t: 'disfarceQuebra', l: this }); luta.hitstop(80);
       return 'bloqueo';
     }
