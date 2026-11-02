@@ -107,15 +107,15 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Air Slash', dano: 4.4, rafaga: 2, cadaRafaga: 0.08 },
     rmb: { nombre: 'Mega Twister', dano: 15, radio: 36, persigue: 1.6 },
     esp: { nombre: 'Mega Extreme Speed', dano: 6.5, dist: 170 },
-    q: { nombre: 'Mega Dragon Ascent', dano: 19, radio: 66, aturde: 0.5 },
+    q: { nombre: 'Mega Dragon Ascent', dano: 14, radio: 66, aturde: 0.5 },
     e: { nombre: 'Mega Delta Stream', dur: 7, dps: 6, ancho: 30, acelera: 1.45 },
   },
   zeraora: {
     lmb: { nombre: 'Mega Plasma Fists', dano: 5.6 },
     rmb: { nombre: 'Mega Volt Switch', dano: 11, danoChegada: 8, raioChegada: 44 },
     esp: { nombre: 'Mega Wild Charge', dano: 6.5, dist: 160 },
-    q: { nombre: 'Mega Discharge', dano: 9.5, saltos: 4, decai: 0.75 },
-    e: { nombre: 'Mega Plasma Overdrive', dano: 44, golpes: 7, cada: 0.12 },
+    q: { nombre: 'Mega Discharge', dano: 7, saltos: 4, decai: 0.7 },
+    e: { nombre: 'Mega Plasma Overdrive', dano: 34, golpes: 7, cada: 0.12 },
   },
   darkrai: {
     lmb: { nombre: 'Mega Dark Pulse', dano: 4.6, rafaga: 2, cadaRafaga: 0.1 },

@@ -16,7 +16,7 @@ export function pacote(h, extra, ang, mas = {}) {
     maldicion: h.maldicion, duerme: h.duerme, pesadillaDps: h.pesadillaDps, contraEstado: h.contraEstado, ...mas,
   };
   // Zeraora sobrecarregado (plasma cheio): a skill sai mais forte e atordoa
-  if (extra?.sobrecarga) { g.dano *= 1.5; g.aturde = Math.max(g.aturde ?? 0, 0.35); }
+  if (extra?.sobrecarga) { g.dano *= 1.3; g.aturde = Math.max(g.aturde ?? 0, 0.35); }
   return g;
 }
 

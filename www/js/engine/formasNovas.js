@@ -276,7 +276,7 @@ export const formasNovas = {
 export function ecoFilhote(hab, l, h, slot, extra) {
   const luta = hab.luta;
   if (!h.dano) return;
-  const k = l.mega ? 0.5 : 0.35;
+  const k = l.mega ? 0.42 : 0.28;
   luta.programar(0.18, () => {
     if (l.ko || l.est.aturdido || l.est.dormido) return;
     const r = l.rival, ang = r && !r.ko ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l), ca = Math.cos(ang), sa = Math.sin(ang);

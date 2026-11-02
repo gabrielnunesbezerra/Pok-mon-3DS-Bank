@@ -215,7 +215,7 @@ export class Lutador {
         if (h.recoil) this.luta.programar(0, () => { if (!this.ko) this.recibir(this, { dano: h.dano * h.recoil, tipo: 'NORMAL', puro: true, tick: true }); });
         const sc = d.sobrecarga;
         r.recibir(this, {
-          dano: h.dano * (sc ? 1.5 : 1), tipo: h.tipo, empuje: h.empuje ?? 60, aturde: sc ? Math.max(h.aturde ?? 0, 0.35) : h.aturde, velocista: h.velocista, maldicion: h.maldicion,
+          dano: h.dano * (sc ? 1.3 : 1), tipo: h.tipo, empuje: h.empuje ?? 60, aturde: sc ? Math.max(h.aturde ?? 0, 0.35) : h.aturde, velocista: h.velocista, maldicion: h.maldicion,
           dirX: c, dirY: s, slot: d.slot ?? 'esp', pesado: !!h.aturde || (h.empuje ?? 0) > 150,
           ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined,
         });

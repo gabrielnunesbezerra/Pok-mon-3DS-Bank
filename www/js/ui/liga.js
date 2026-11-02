@@ -74,6 +74,17 @@ export class Liga {
       ci.rivales.forEach((id, r) => {
         const p = ROSTER.find(q => q.id === id), b = this.caja(c, r), est = estadoRival(id), v = vitorias(id), foco = this.foco.c === c && this.foco.r === r;
         marco(g, b.x, b.y, b.w, b.h, foco ? 'oro' : est === 'cerrado' ? 'apagado' : 'azul');
+        // coluna estreita (muitos circuitos): retrato menor, estrelas ao lado e nome embaixo
+        if (this.cw < 110) {
+          const img2 = p && bank.retrato(p.dex);
+          if (img2) g.drawImage(est === 'cerrado' ? silueta(img2) : img2, 0, 0, img2.naturalWidth, img2.naturalHeight, b.x + 3, b.y + 3, 28, 28);
+          if (est === 'cerrado') { rect(g, b.x + 12, b.y + 15, 10, 8, '#ffd23c'); rect(g, b.x + 14, b.y + 10, 6, 6, '#ffd23c'); rect(g, b.x + 15, b.y + 11, 4, 4, '#0b1226'); }
+          for (let k = 0; k < 3; k++) { const sx = b.x + 34 + k * 8; rect(g, sx, b.y + 5, 7, 7, '#04102c'); rect(g, sx + 1, b.y + 6, 5, 5, k < v ? COR_ESTRELA[k] : '#1d2a3a'); }
+          const pr = v >= 3 ? 'DONE' : est === 'cerrado' ? '' : NOMBRE_DIFICULTAD[nivelProximo(id)];
+          texto(g, pr, b.x + 34, b.y + 16, { tam: 5, color: v >= 3 ? '#ffd23c' : nivelProximo(id) === 'dificil' ? '#ff7a7a' : nivelProximo(id) === 'normal' ? '#ffd166' : '#86efac', max: b.w - 36 });
+          texto(g, est === 'cerrado' ? '???' : p.nombre, b.x + b.w / 2, b.y + 36, { tam: 6, align: 'center', color: foco ? UI.textoOscuro : '#fff', max: b.w - 6 });
+          return;
+        }
         const img = p && bank.retrato(p.dex);
         if (img) g.drawImage(est === 'cerrado' ? silueta(img) : img, 0, 0, img.naturalWidth, img.naturalHeight, b.x + 4, b.y + 4, 38, 38);
         if (est === 'cerrado') { rect(g, b.x + 18, b.y + 20, 10, 8, '#ffd23c'); rect(g, b.x + 20, b.y + 15, 6, 6, '#ffd23c'); rect(g, b.x + 21, b.y + 16, 4, 4, '#0b1226'); }

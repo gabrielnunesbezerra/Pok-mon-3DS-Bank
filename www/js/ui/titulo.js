@@ -5,28 +5,28 @@ import { HUELLA } from '../data/pokemon.js';
 import { texto, fondoMenu, rect, destello, medir, setTemaMenu } from '../render/pixel.js';
 import { halloweenAtivo, cieloHalloween, murcielagos, horizonteHalloween, calabaza, fantasma, nevoa, sombrero } from './halloween.js';
 import { FINALES, TODAS_LAS_FORMAS, filaDesdeAngulo } from '../render/sprites.js';
-import { ListaBotones } from './menus.js';
+import { ListaBotones, MenuTarjetas } from './menus.js';
 import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
 
+// principal e PLAY: cartões grandes com arte (x, y, w, h na tela de 640); SETTINGS continua em lista
 const MENUS = {
   principal: [
-    { id: 'jugar', txt: 'PLAY', menu: 'jugar', ico: 'pokeball' },
-    { id: 'pokedex', txt: 'POKÉDEX', escena: 'pokedex', ico: 'libro' },
-    { id: 'online', txt: 'ONLINE', escena: 'online', ico: 'dos' },
-    { id: 'perfil', txt: 'PROFILE', escena: 'perfil', ico: 'personas' },
-    { id: 'tutorial', txt: 'TUTORIAL', escena: 'combate', datos: { modo: 'tutorial' }, ico: 'ayuda' },
-    { id: 'ajustes', txt: 'SETTINGS', menu: 'ajustes', ico: 'engranaje' },
-    { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas' },
+    { id: 'jugar', txt: 'PLAY', sub: 'CPU · DOUBLES · ARENA', menu: 'jugar', ico: 'pokeball', cor: '#ffd23c', arte: ['0006', '0448'], x: 103, y: 134, w: 140, h: 68 },
+    { id: 'online', txt: 'ONLINE', sub: 'ROOMS · FRIENDS · 2V2', escena: 'online', ico: 'dos', cor: '#4ade80', arte: ['0094', '0282'], x: 250, y: 134, w: 140, h: 68 },
+    { id: 'liga', txt: 'LEAGUE', sub: 'UNLOCK EVERY POKÉMON', escena: 'liga', ico: 'pokeball', cor: '#c084fc', arte: ['0384'], x: 397, y: 134, w: 140, h: 68 },
+    { id: 'pokedex', txt: 'POKÉDEX', escena: 'pokedex', ico: 'libro', cor: '#7dd3fc', x: 103, y: 212, w: 84, h: 24 },
+    { id: 'perfil', txt: 'PROFILE', escena: 'perfil', ico: 'personas', cor: '#7dd3fc', x: 191, y: 212, w: 84, h: 24 },
+    { id: 'tutorial', txt: 'TUTORIAL', escena: 'combate', datos: { modo: 'tutorial' }, ico: 'ayuda', cor: '#7dd3fc', x: 279, y: 212, w: 84, h: 24 },
+    { id: 'ajustes', txt: 'SETTINGS', menu: 'ajustes', ico: 'engranaje', cor: '#7dd3fc', x: 367, y: 212, w: 84, h: 24 },
+    { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas', cor: '#7dd3fc', x: 455, y: 212, w: 82, h: 24 },
   ],
   jugar: [
-    { id: 'liga', txt: 'POKÉMON LEAGUE', escena: 'liga', ico: 'pokeball' },
-    { id: 'cpu', txt: 'VS CPU', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot' },
-    { id: 'duplas', txt: 'DOUBLES (2 VS 2)', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos' },
-    { id: 'arena', txt: 'ARENA (3 FIGHTERS)', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas' },
-    { id: 'versus', txt: '2 PLAYERS', escena: 'seleccion', datos: { modo: 'versus' }, ico: 'dos' },
-    { id: 'entreno', txt: 'TRAINING', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana' },
-    { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },
+    { id: 'cpu', txt: 'VS CPU', sub: '1 VS 1', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot', cor: '#ffd23c', arte: ['0448'], x: 103, y: 134, w: 106, h: 68 },
+    { id: 'duplas', txt: 'DOUBLES', sub: 'YOU + CPU ALLY', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos', cor: '#4ade80', arte: ['0807', '0491'], x: 213, y: 134, w: 106, h: 68 },
+    { id: 'arena', txt: 'ARENA', sub: '3 FIGHTERS', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas', cor: '#fb923c', arte: ['0006', '0009'], x: 323, y: 134, w: 106, h: 68 },
+    { id: 'entreno', txt: 'TRAINING', sub: 'TEST MOVES', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana', cor: '#7dd3fc', arte: ['0115'], x: 433, y: 134, w: 104, h: 68 },
+    { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true, cor: '#9aa0b4', x: 270, y: 212, w: 100, h: 24 },
   ],
   ajustes: [
     { id: 'controles', txt: 'CONTROLS', escena: 'controles', ico: 'engranaje' },
@@ -62,7 +62,7 @@ export class Titulo {
     // dois Pokémon grandes nos lados (formas finais de duas linhas diferentes, que não sejam muito altas)
     const medianos = FINALES.filter(f => { const m = bank.medidas(f.dex); return (m.feet ?? 5) - (m.head ?? -16) <= 40; });
     const pool = [...medianos].sort(() => Math.random() - 0.5);
-    this.guardianes = [{ x: 110 - (ANCHO - 640) / 4, f: pool[0], fila: 2 }, { x: 530 + (ANCHO - 640) / 4, f: pool[1], fila: 6 }].filter(x => x.f);
+    this.guardianes = [{ x: 50 - (ANCHO - 640) / 4, f: pool[0], fila: 2 }, { x: 590 + (ANCHO - 640) / 4, f: pool[1], fila: 6 }].filter(x => x.f);
     for (const gd of this.guardianes) bank.precargar(gd.f.dex, ['Idle', 'Attack']);
     for (let i = 0; i < 5; i++) this.nuevoDesfile(true);
     this.abrir(this.menu);
@@ -70,11 +70,11 @@ export class Titulo {
 
   abrir(menu, desde = null) {
     this.menu = menu;
-    this.lista = new ListaBotones({
-      x: BX, y: 112 + BAJA + (menu === 'principal' ? 0 : 2), w: 210, h: menu === 'jugar' ? 24 : 23, paso: menu === 'jugar' ? 27 : 25,
+    this.lista = menu === 'ajustes' ? new ListaBotones({
+      x: BX, y: 114 + BAJA, w: 210, h: 23, paso: 25,
       ops: MENUS[menu].map(o => ({ ...o })),
       alElegir: o => this.elegirOpcion(o),
-    });
+    }) : new MenuTarjetas({ ops: MENUS[menu].map(o => ({ ...o })), bank: this.app.bank, alElegir: o => this.elegirOpcion(o) });
     const i = MENUS[menu].findIndex(o => o.menu === desde);
     this.lista.foco = Math.max(0, i);
     this.refrescarAjustes();
@@ -143,7 +143,8 @@ export class Titulo {
     if (hw) { const ex = (ANCHO - 640) / 2; calabaza(g, 24 - ex * 0.5, 328, t, 1.1, 0); calabaza(g, 616 + ex * 0.5, 330, t, 1, 1); calabaza(g, 58 - ex * 0.5, 340, t, 0.7, 2); calabaza(g, 586 + ex * 0.5, 342, t, 0.75, 3); }
 
     // dois Pokémon grandes
-    const suelo = 114 + BAJA;
+    // os dois Pokémon grandes ficam no chão, nas pontas, ao lado dos cartões
+    const suelo = LINEA_SUELO + 6;
     for (const gd of this.guardianes) {
       const m = bank.medidas(gd.f.dex);
       g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(gd.x, suelo, 23, 5, 0, 0, 7); g.fill();
