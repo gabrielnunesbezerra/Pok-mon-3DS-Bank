@@ -18,6 +18,20 @@ function llamaSuelo(luta, dueno, x, y, dano) {
   } };
 }
 
+// espada fantasma do Ceruledge: segue o alvo e corta de novo depois de 0,8 s
+function espadaFantasma(luta, dono, alvo, g) {
+  let t = 0;
+  luta.emit({ t: 'espadaAparece', b: alvo });
+  return { tipo: 'espadaFantasma', dueno: dono, vivo: true, alvo, x: alvo.x, y: alvo.y, t: 0, update(dt) {
+    t += dt; this.t = t; this.x = alvo.x; this.y = alvo.y;
+    if (alvo.ko || dono.ko) return false;
+    if (t < 0.8) return true;
+    alvo.recibir(dono, { dano: (g.dano ?? 0) * 0.4, tipo: 'GHOST', slot: g.slot, espada: true, empuje: 30, dirX: g.dirX, dirY: g.dirY });
+    luta.emit({ t: 'corteEspada', x: alvo.x, y: alvo.y - alvo.alto * 0.5 });
+    return false;
+  } };
+}
+
 export const tipoLinea = def => {
   const evs = def.evoluciones ?? [];
   if (!evs.length) return 'L1';
@@ -120,7 +134,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99; this.plasma = 0; this.voltPos = null;
+    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99; this.plasma = 0; this.voltPos = null; this.disfarce = !!this.def.disfarce; this.disfarceVolta = 0; this.carga = 0;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -253,6 +267,12 @@ export class Lutador {
       this.avisar('miss', () => { this.texto(bloquea ? 'BLOCK' : 'MISS', bloquea ? '#ffb347' : '#c8c8d0'); luta.emit({ t: 'sonido', n: bloquea ? 'clash' : 'miss' }); }, 0.4);
       return 'miss';
     }
+    // Disguise (Mimikyu): o primeiro golpe só rasga o pano; ele volta depois de um tempo sem apanhar
+    if (this.disfarce && fuente && fuente !== this && !g.tick && !g.puro && (g.dano ?? 0) > 0) {
+      this.disfarce = false; this.disfarceVolta = t + 14;
+      this.texto('DISGUISE BROKE!', '#fde68a'); luta.emit({ t: 'disfarceQuebra', l: this }); luta.hitstop(80);
+      return 'bloqueo';
+    }
     // Counter (Kangaskhan): na guarda, o golpe não entra e volta como soco (de longe só bloqueia)
     const ct = this.est.contra;
     if (ct && fuente && fuente !== this && !g.tick && !fuente.ko && !g.contragolpe) {
@@ -319,6 +339,8 @@ export class Lutador {
     if (pr && !g.vinculado && fuente !== this && pr.por && !pr.por.ko && d > 0) { const parte = d * pr.reparte; d -= parte; pr.por.recibir(fuente, { dano: parte, tipo: g.tipo, puro: true, tick: true, vinculado: true }); }
     this.hp = Math.max(0, this.hp - d);
     if (d > 0) this.ultimoDano = t;
+    // Ceruledge: golpe de skill deixa uma espada fantasma que corta de novo um instante depois
+    if (fuente?.def?.espadas && g.slot && g.slot !== 'lmb' && !g.tick && !g.espada && d > 0 && !this.ko) luta.add(espadaFantasma(luta, fuente, this, g));
     // ligada a um rival, parte do que ela sofre volta para ele
     const vi = this.est.vinculo;
     if (vi?.modo === 'inimigo' && !g.vinculado && fuente && fuente !== this && d > 0 && !vi.con.ko) { vi.con.recibir(this, { dano: d * vi.refleja, tipo: 'PSYCHIC', puro: true, tick: true, vinculado: true }); luta.emit({ t: 'vinculoDor', l: this, b: vi.con }); }
@@ -340,6 +362,8 @@ export class Lutador {
   }
 
   aplicarEfectos(fuente, g) {
+    // Spirit Shackle: preso no chão (a sombra fica pregada)
+    if (g.prende && !this.ko) { this.cortarAccion(); this.accion = { hasta: this.luta.t + g.prende, bloquea: true, lento: 0 }; this.vx = this.vy = 0; this.ponerEstado('ancorado', g.prende); }
     if (g.maldicion) { if (!this.est.maldito) this.texto('CURSED!', '#c084fc'); this.ponerEstado('maldito', g.maldicion.dur ?? 4, { f: g.maldicion.f ?? 1.2, fuente }); }
     if (g.duerme && !this.est.dormido && !this.ko) { this.ponerEstado('dormido', g.duerme, { cura: 0, acum: 0, pesadilla: true, dps: g.pesadillaDps ?? 0, fuente }); this.cortarAccion(); this.texto('ASLEEP!', '#a5b4fc'); }
     if (g.ralentiza) this.ponerEstado('lento', g.ralentiza.dur, { f: g.ralentiza.f });
@@ -406,6 +430,7 @@ export class Lutador {
       this.plasma = Math.min(100, this.plasma + Math.hypot(this.vx, this.vy) * dt * (this.mega ? 0.16 : 0.1));
       if (antes < 100 && this.plasma >= 100) { this.texto('PLASMA FULL!', '#fde047'); luta.emit({ t: 'plasmaCheio', l: this }); }
     }
+    if (this.def.disfarce && !this.disfarce && luta.t >= this.disfarceVolta) { this.disfarce = true; this.texto('DISGUISE UP', '#fde68a'); luta.emit({ t: 'disfarceVolta', l: this }); }
     const pas = this.mega ? this.forma.mega?.pasiva : null;
     // Mega Gengar (Shadow Tag): quem está perto não consegue dar dash
     if (pas === 'sombra') for (const b of luta.blancos(this)) if (!b.esClon && Math.hypot(b.x - this.x, b.y - this.y) < 150) b.ponerEstado('sinDash', 0.2);
@@ -415,6 +440,7 @@ export class Lutador {
 
   acierto(d, g) {
     const t = this.luta.t;
+    if (g.roubaVida && !g.tick) this.cura(d * g.roubaVida);
     if (this.def.plasma && !g.tick) this.plasma = Math.min(100, this.plasma + (g.slot === 'lmb' ? 5 : 2));
     this.ganarUlti(d * REGLAS.ultiPorDanoHecho);
     this.ganarExp(d * REGLAS.expPorDanoHecho);
@@ -567,6 +593,7 @@ export class Lutador {
       if (this.est.caparazon) vel *= this.est.caparazon.rapidez ?? 1;
       if (luta.enHumo(this)) vel *= 1 - luta.humoFrena(this);
       if (this.est.corrida) vel *= this.est.corrida.vel;
+      if (this.est.surf) vel *= this.est.surf.vel;
       const av = this.est.aeronave;
       if (av) {
         // Jet Mode (Dragapult): anda sempre para a frente e vira devagar, como um carro; o Dragon Dance acelera

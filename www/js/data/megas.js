@@ -93,7 +93,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Dazzling Gleam', dano: 4.6, rafaga: 2, cadaRafaga: 0.1 },
     rmb: { nombre: 'Mega Doom Desire', dano: 16, radio: 48, espera: 0.9 },
     esp: { nombre: 'Mega Ally Switch', dist: 140, estallido: { radio: 42, dano: 7 } },
-    q: { nombre: 'Mega Telekinesis', dano: 21, lanza: 220, alcance: 220 },
+    q: { nombre: 'Mega Telekinesis', dano: 13, lanza: 220, alcance: 220 },
     e: { nombre: 'Mega Moonblast', dano: 36, radio: 100, cura: 20, queda: 0.9 },
   },
   kangaskhan: {
@@ -121,7 +121,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Dark Pulse', dano: 4.6, rafaga: 2, cadaRafaga: 0.1 },
     rmb: { nombre: 'Mega Dark Void', dano: 8, explosion: { radio: 60 }, duerme: 1.7, pesadillaDps: 4 },
     esp: { nombre: 'Mega Feint Attack', bonus: 1.7, alcance: 260 },
-    q: { nombre: 'Mega Nightmare', dano: 12, contraEstado: 2.2 },
+    q: { nombre: 'Mega Nightmare', dano: 7, contraEstado: 1.8 },
     e: { nombre: 'Mega Eternal Night', dur: 7, dps: 4.5, mult: 1.35 },
   },
 };

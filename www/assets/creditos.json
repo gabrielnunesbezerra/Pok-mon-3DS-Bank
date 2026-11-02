@@ -1826,5 +1826,143 @@
    "Emmuffin",
    "Top_Kec"
   ]
+ },
+ {
+  "dex": "0131",
+  "sprite": [
+   "CHUNSOFT"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "C_Pariah",
+   "silverfox88"
+  ]
+ },
+ {
+  "dex": "0131s",
+  "sprite": [
+   "RaoKurai"
+  ],
+  "retrato": [
+   "RaoKurai",
+   "silverfox88",
+   "Deeshura"
+  ]
+ },
+ {
+  "dex": "0722",
+  "sprite": [
+   "Reimu\\_needs\\_$$$",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0722s",
+  "sprite": [
+   "XModxGodX",
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0723",
+  "sprite": [
+   "Reimu\\_needs\\_$$$"
+  ],
+  "retrato": [
+   "◥θ┴θ◤",
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0723s",
+  "sprite": [
+   "XModxGodX",
+   "baronessfaron"
+  ],
+  "retrato": [
+   "◥θ┴θ◤",
+   "JustAGunk"
+  ]
+ },
+ {
+  "dex": "0724",
+  "sprite": [
+   "Reimu\\_needs\\_$$$",
+   "Audino"
+  ],
+  "retrato": [
+   "baronessfaron",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0724s",
+  "sprite": [
+   "◥θ┴θ◤"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0778",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0778s",
+  "sprite": [
+   "ShyStarryRain"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0935",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0935s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0937",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0937s",
+  "sprite": [
+   "baronessfaron"
+  ],
+  "retrato": [
+   "◥θ┴θ◤"
+  ]
  }
 ]

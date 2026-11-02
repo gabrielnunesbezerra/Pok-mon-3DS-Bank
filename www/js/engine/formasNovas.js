@@ -1,6 +1,7 @@
 // Mecânicas dos Pokémon da última leva (Gengar, Gardevoir, Kangaskhan, Rayquaza, Zeraora e Darkrai).
 // Cada função é uma "forma" como as de habilidades.js: recebe (l, h, extra) com `this` = Habilidades.
 import { RADIO } from '../config.js';
+const entre = (a, b) => a + Math.random() * (b - a);
 import { fijarCampo, limitarCampo } from './fisica.js';
 import { Proyectil, areaCirculo, pacote, atingir } from './entidades.js';
 
@@ -311,7 +312,8 @@ Object.assign(formasNovas, {
         const R = h.poca ?? 28, dur = h.pocaDur ?? 9;
         const e = { tipo: 'sombraPoca', dueno: l, vivo: true, x: bola.x, y: bola.y, radio: R, t: 0, dur, update: dt => {
           e.t += dt;
-          for (const b of luta.blancos(l)) if (!b.esClon && Math.hypot(b.x - e.x, (b.y - e.y) / 0.62) < R) b.ponerEstado('lento', 0.2, { f: 0.25 });
+          e.acum = (e.acum ?? 0) + dt; const tick = e.acum >= 0.5; if (tick) e.acum -= 0.5;
+          for (const b of luta.blancos(l)) if (!b.esClon && Math.hypot(b.x - e.x, (b.y - e.y) / 0.62) < R) { b.ponerEstado('lento', 0.2, { f: 0.35 }); if (tick && !b.oculto) b.recibir(l, { dano: (h.pocaDps ?? 2) * 0.5, tipo: 'GHOST', puro: true, tick: true }); }
           return e.t < dur && !l.ko;
         } };
         luta.add(e);
@@ -370,7 +372,9 @@ Object.assign(formasNovas, {
   // ---------------------------------------------------------------- Shadow Hands (Gengar): mãos gigantes de sombra saem de todas as poças
   // (e debaixo do Gengar) e agarram quem estiver perto
   maosSombra(l, h, extra) {
-    const luta = this.luta, pontos = [{ x: l.x, y: l.y }, ...pocasDe(luta, l).map(e => ({ x: e.x, y: e.y }))];
+    const luta = this.luta, r = l.rival, pontos = [{ x: l.x, y: l.y }, ...pocasDe(luta, l).map(e => ({ x: e.x, y: e.y }))];
+    // uma mão nasce sempre embaixo do rival
+    if (r && !r.ko && !r.oculto && Math.hypot(r.x - l.x, r.y - l.y) < 320) pontos.push({ x: r.x, y: r.y });
     l.animar(h.anim ?? 'Charge', 0.6);
     l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
     for (const pt of pontos) luta.emit({ t: 'maoAviso', x: pt.x, y: pt.y, radio: h.radio ?? 42 });
@@ -580,12 +584,191 @@ Object.assign(formasNovas, {
         for (const b of luta.blancos(l)) {
           if (ja.has(b) || b.oculto || Math.hypot(b.x - e.x, b.y - e.y) > RADIO + 12) continue;
           ja.add(b);
-          atingir(l, b, pacote(h, extra, Math.atan2(b.y - e.y, b.x - e.x), { empuje: 50, ralentiza: { f: 0.3, dur: 1.5 } }));
+          atingir(l, b, pacote(h, extra, Math.atan2(b.y - e.y, b.x - e.x), { empuje: 50 }));
         }
         return k < 1;
       } };
       luta.add(e);
     }
+  },
+});
+
+
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Play Rough (Mimikyu): pula no rival e os dois somem numa nuvem de briga,
+  // com vários golpes seguidos
+  brigaNuvem(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 120);
+    // sem ninguém perto: só um pulo para a frente
+    if (!r) { const a0 = angApunte(l), p0 = fijarCampo(l.x + Math.cos(a0) * 60, l.y + Math.sin(a0) * 60); l.x = p0.x; l.y = p0.y; luta.emit({ t: 'nuvemBriga', x: l.x, y: l.y, dur: 0.3 }); return; }
+    const n = h.golpes ?? 4, dur = h.dur ?? 0.6, a = Math.atan2(r.y - l.y, r.x - l.x);
+    const p = fijarCampo(r.x - Math.cos(a) * 16, r.y - Math.sin(a) * 10);
+    l.x = p.x; l.y = p.y; l.angulo = a;
+    l.ponerEstado('invul', dur + 0.15);
+    l.accion = { hasta: luta.t + dur + 0.1, bloquea: true, lento: 0, angulo: a };
+    this.prender(r, dur);
+    luta.emit({ t: 'nuvemBriga', x: (l.x + r.x) / 2, y: (l.y + r.y) / 2, dur });
+    for (let i = 0; i < n; i++) luta.programar((i + 1) * (dur / (n + 1)), () => {
+      if (l.ko || r.ko) return;
+      atingir(l, r, pacote(h, extra, a, { dano: h.dano / n, empuje: i === n - 1 ? 120 : 0, aturde: i === n - 1 ? 0.3 : 0.05 }));
+      luta.emit({ t: 'socoNuvem', x: r.x + entre(-10, 10), y: r.y - r.alto * 0.5 + entre(-8, 8) });
+    });
+  },
+
+  // ---------------------------------------------------------------- Trick Room (Mimikyu): uma sala distorcida; dentro dela o rival fica lento
+  // e o Mimikyu mais rápido
+  salaTruque(l, h) {
+    const luta = this.luta, R = h.radio ?? 95, dur = h.dur ?? 4.5;
+    l.animar(h.anim ?? 'Charge', 0.4);
+    l.accion = { hasta: luta.t + 0.25, lento: 0.3 };
+    luta.emit({ t: 'salaTruque', x: l.x, y: l.y, radio: R });
+    const e = { tipo: 'salaTruque', dueno: l, vivo: true, x: l.x, y: l.y, radio: R, t: 0, dur, update: dt => {
+      e.t += dt;
+      for (const b of luta.blancos(l)) if (!b.esClon && Math.hypot(b.x - e.x, (b.y - e.y) / 0.62) < R) b.ponerEstado('lento', 0.2, { f: h.ralentiza ?? 0.4 });
+      for (const a of [l, ...luta.aliados(l)]) if (Math.hypot(a.x - e.x, (a.y - e.y) / 0.62) < R) a.ponerEstado('rapido', 0.2, { vel: h.acelera ?? 1.3 });
+      return e.t < dur && !l.ko;
+    } };
+    luta.add(e);
+  },
+
+  // ---------------------------------------------------------------- Let's Snuggle Forever (Mimikyu): agarra o rival e puxa para baixo do pano;
+  // lá dentro é só pancada, e no fim ele sai voando
+  abraco(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 150);
+    if (!r) { if (l.humano) l.avisar('abraco', () => l.texto('NO TARGET', '#f9a8d4')); return false; }
+    const dur = h.dur ?? 1.4, n = h.golpes ?? 6, a = Math.atan2(r.y - l.y, r.x - l.x);
+    const p = fijarCampo(r.x - Math.cos(a) * 10, r.y - Math.sin(a) * 6);
+    l.x = p.x; l.y = p.y; l.angulo = a;
+    l.ponerEstado('invul', dur + 0.3);
+    l.ponerEstado('panoAbraco', dur, { alvo: r });
+    l.accion = { hasta: luta.t + dur + 0.2, bloquea: true, lento: 0, angulo: a };
+    this.prender(r, dur + 0.05);
+    luta.emit({ t: 'abraco', l, b: r, dur });
+    for (let i = 0; i < n; i++) luta.programar(0.15 + i * ((dur - 0.2) / n), () => {
+      if (l.ko || r.ko) return;
+      const ult = i === n - 1;
+      atingir(l, r, pacote(h, extra, a, { dano: (h.dano / (n + 1)) * (ult ? 2 : 1), empuje: 0, aturde: 0.05 }));
+      luta.emit({ t: 'socoNuvem', x: r.x + entre(-12, 12), y: r.y - r.alto * 0.5 + entre(-10, 10), forte: ult });
+      if (ult) { this.lanzarAlto(r, 0.6, 50); luta.emit({ t: 'temblor', f: 0.016 }); }
+    });
+  },
+
+  // ---------------------------------------------------------------- arco carregado (Decidueye): segure para puxar a corda; ao soltar, a flecha
+  // sai mais rápida, mais longe e mais forte quanto mais carregou
+  arcoCarga(l, h, extra) {
+    const luta = this.luta, max = h.carga ?? 1.2, min = h.cargaMin ?? 0.3;
+    let t = 0, solto = false;
+    l.animar(h.anim ?? 'Charge', max + 0.2);
+    luta.emit({ t: 'arcoPuxa', l, max });
+    l.accion = { hasta: luta.t + max + 0.4, bloquea: true, lento: 0.45, angulo: angApunte(l),
+      update: dt => {
+        t += dt;
+        l.accion.angulo = angApunte(l); l.carga = Math.min(1, t / max);
+        if (!l.intento?.[extra.slot]) solto = true;
+        if (solto && t >= min || t >= max) {
+          const k = Math.min(1, t / max), a = mirar(l, 400, 0.4);
+          const hh = { ...h, dano: h.dano * (0.45 + 0.75 * k), vel: (h.vel ?? 360) + 340 * k, alcance: (h.alcance ?? 200) + 180 * k, escala: (h.escala ?? 1.4) * (1 + 0.4 * k), estilo: h.estilo ?? 'flechaFolha' };
+          luta.add(new Proyectil(luta, l, hh, a, extra));
+          luta.emit({ t: 'arcoSolta', l, k, ang: a });
+          l.animar('Shoot', 0.25); l.carga = 0;
+          l.accion = { hasta: luta.t + 0.12, lento: 0.6, angulo: a };
+        }
+      },
+      fin: () => { l.carga = 0; } };
+  },
+
+  // ---------------------------------------------------------------- Sinister Arrow Raid (Decidueye): pula para fora da tela e uma chuva de
+  // flechas fantasmas cai em volta do rival
+  chuvaFlechas(l, h, extra) {
+    const luta = this.luta, r = l.rival, alvo = r && !r.ko ? { x: r.x, y: r.y } : fijarCampo(l.ax, l.ay), n = h.n ?? 12, sobe = 0.35;
+    l.cortarAccion();
+    l.ponerEstado('vuelo', sobe + n * (h.cada ?? 0.07) + 0.5, { oculto: true, modo: 'aire', rapidez: 0 });
+    luta.emit({ t: 'pulaCeu', l });
+    for (let i = 0; i < n; i++) luta.programar(sobe + i * (h.cada ?? 0.07), () => {
+      if (l.ko) return;
+      const rr = l.rival, cx = rr && !rr.ko ? rr.x : alvo.x, cy = rr && !rr.ko ? rr.y : alvo.y, a = (i * 2.4) % 6.28, d = i === 0 ? 0 : 12 + ((i * 37) % (h.area ?? 60));
+      const p = fijarCampo(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.62);
+      luta.emit({ t: 'flechaCai', x: p.x, y: p.y, queda: 0.22 });
+      luta.programar(0.22, () => { if (!l.ko) areaCirculo(luta, l, p.x, p.y, h.radio ?? 20, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 20 })); });
+    });
+    luta.programar(sobe + n * (h.cada ?? 0.07) + 0.4, () => { if (l.ko) return; delete l.est.vuelo; const p = fijarCampo(alvo.x - 60, alvo.y); l.x = p.x; l.y = p.y; luta.emit({ t: 'pousa', l }); });
+  },
+
+  // ---------------------------------------------------------------- Ring of Blades (Ceruledge): três espadas de chama giram em volta dele e
+  // cortam quem encosta
+  espadasOrbita(l, h, extra) {
+    const luta = this.luta, dur = h.dur ?? 4, R = h.raio ?? 36, n = h.n ?? 3;
+    l.animar(h.anim ?? 'Charge', 0.3);
+    l.ponerEstado('espadasGiram', dur, { n, R });
+    luta.emit({ t: 'espadasNascem', l });
+    const ultimo = new Map();
+    luta.add({ tipo: 'orbitaEspadas', dueno: l, vivo: true, t: 0, update(dt) {
+      this.t += dt;
+      for (let k = 0; k < n; k++) {
+        const a = luta.t * 5 + (k / n) * Math.PI * 2, x = l.x + Math.cos(a) * R, y = l.y + Math.sin(a) * R * 0.62;
+        for (const b of luta.blancos(l)) {
+          const chave = b.lado * 10 + k;
+          if (b.oculto || Math.hypot(b.x - x, b.y - y) > RADIO + 8 || luta.t - (ultimo.get(chave) ?? -9) < 0.5) continue;
+          ultimo.set(chave, luta.t);
+          atingir(l, b, pacote(h, extra, a + Math.PI / 2, { empuje: 50, espada: true }));
+          luta.emit({ t: 'corteEspada', x: b.x, y: b.y - b.alto * 0.5 });
+        }
+      }
+      return this.t < dur && !l.ko;
+    } });
+  },
+
+  // ---------------------------------------------------------------- Bitter Malice (Ceruledge): uma espada gigante de fogo fantasma cai do céu
+  // no lugar do rival e solta uma onda de chamas
+  espadaGigante(l, h, extra) {
+    const luta = this.luta, r = l.rival, alvo = r && !r.ko ? { x: r.x, y: r.y } : fijarCampo(l.ax, l.ay), R = h.radio ?? 64, queda = h.queda ?? 0.7;
+    l.animar(h.anim ?? 'Charge', 0.7);
+    l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
+    luta.emit({ t: 'espadaCai', x: alvo.x, y: alvo.y, radio: R, queda });
+    luta.programar(queda, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'espadaImpacto', x: alvo.x, y: alvo.y, radio: R });
+      luta.emit({ t: 'temblor', f: 0.02 });
+      areaCirculo(luta, l, alvo.x, alvo.y, R, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 120, aturde: 0.5, pesado: true, quema: { dps: 3, dur: 3, max: 3 } }));
+    });
+  },
+
+  // ---------------------------------------------------------------- Sing (Lapras): notas musicais saem em leque; quem elas pegam dorme
+  cancao(l, h, extra) {
+    const luta = this.luta, a = mirar(l, (h.alcance ?? 140) + 30, 1), meio = ((h.angulo ?? 70) * Math.PI) / 360;
+    l.animar(h.anim ?? 'Charge', 0.6);
+    l.accion = { hasta: luta.t + 0.45, lento: 0.2, angulo: a };
+    luta.emit({ t: 'cancao', l, ang: a, alcance: h.alcance ?? 140, angulo: h.angulo ?? 70 });
+    luta.programar(0.3, () => {
+      if (l.ko) return;
+      for (const b of luta.blancos(l)) {
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy), da = Math.abs(((Math.atan2(dy, dx) - a + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+        if (b.oculto || d > (h.alcance ?? 140) + RADIO || da > meio + 0.15) continue;
+        atingir(l, b, pacote(h, extra, a, { empuje: 0 }));
+      }
+    });
+  },
+
+  // ---------------------------------------------------------------- Surf (Lapras): monta numa onda gigante que corre para onde você guia;
+  // quem a onda pega é arrastado junto
+  surfar(l, h, extra) {
+    const luta = this.luta, dur = h.dur ?? 2.4;
+    l.ponerEstado('surf', dur, { vel: h.vel ?? 1.9 });
+    l.ponerEstado('blindaje', dur, { reduce: 0.3 });
+    luta.emit({ t: 'surfComeca', l });
+    const ultimo = new Map();
+    luta.add({ tipo: 'onda', dueno: l, vivo: true, x: l.x, y: l.y, ang: 0, t: 0, dur, update(dt) {
+      this.t += dt; this.x = l.x; this.y = l.y;
+      const v = Math.hypot(l.vx, l.vy); if (v > 10) this.ang = Math.atan2(l.vy, l.vx);
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || Math.hypot(b.x - l.x, (b.y - l.y) / 0.7) > RADIO + 30) continue;
+        b.empX += Math.cos(this.ang) * 220 * dt * 8; b.empY += Math.sin(this.ang) * 220 * dt * 8;
+        if (luta.t - (ultimo.get(b) ?? -9) < 0.5) continue;
+        ultimo.set(b, luta.t);
+        atingir(l, b, pacote(h, extra, this.ang, { empuje: 60 }));
+      }
+      return this.t < dur && !l.ko;
+    } });
   },
 });
 
