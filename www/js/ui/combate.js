@@ -336,7 +336,7 @@ export class Combate {
   dibujarLutador(g, l) {
     const luta = this.luta, bank = this.app.bank, t = luta.t;
     // campo inclinado: no fundo o Pokémon fica menor, na frente maior
-    const prof = 0.86 + 0.28 * Math.min(1, Math.max(0, (l.y - (OVALO.cy - OVALO.ry)) / (OVALO.ry * 2)));
+    const prof = 0.8 + 0.4 * Math.min(1, Math.max(0, (l.y - (OVALO.cy - OVALO.ry)) / (OVALO.ry * 2)));
     const sc = l.escala * prof, m = bank.medidas(l.dex);
     const rx = Math.max(7, Math.round((m.width ?? 18) * 0.5 * sc)), ry = Math.max(3, Math.round(rx * 0.45));
     if (!l.oculto) {
@@ -431,7 +431,15 @@ export class Combate {
     l._saltoAnt = alto;
     if (l._cae && t - l._cae < 0.14) { const k = 1 - (t - l._cae) / 0.14; sx = 1 + 0.14 * k; sy = 1 - 0.14 * k; }
     if (t < l.dolorHasta) tremor = (Math.floor(t * 60) % 2 ? 1 : -1);
-    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor, l.y - alto, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy });
+    // movimento vivo: inclina para onde anda, balança no passo, avança o corpo no golpe e dá um tranco ao apanhar
+    const v = Math.hypot(l.vx, l.vy), velN = Math.min(1, v / Math.max(60, l.velBase ?? 120));
+    const lean = l.moviendo && !l.dash ? (l.vx / (v || 1)) * velN * 0.14 : 0;
+    l._lean = (l._lean ?? 0) + (lean - (l._lean ?? 0)) * 0.2;
+    let rot = l._lean, ox = 0, oy = 0;
+    if (l.moviendo && !l.dash && alto <= 0) { const ph = this.t * 15; sy *= 1 + Math.sin(ph * 2) * 0.03; oy -= Math.abs(Math.sin(ph)) * 1.6 * velN; if (Math.random() < 0.06 * velN && !this.app.ajustes.graficosBajos) this.fx.polvo(l.x - (l.vx / (v || 1)) * 6, l.y, 1, 3); }
+    if (l.anim && t - l.animInicio < 0.22) { const k = Math.sin(((t - l.animInicio) / 0.22) * Math.PI), a = l.angulo ?? 0; ox += Math.cos(a) * 6 * k; oy += Math.sin(a) * 3 * k; rot += Math.cos(a) * 0.1 * k; }
+    if (t < l.dolorHasta) rot += (Math.floor(t * 30) % 2 ? 0.06 : -0.06);
+    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor + ox, l.y - alto + oy, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy, rot });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - alto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
     if (l.dash) this.dibujarDash(g, l);

@@ -88,6 +88,8 @@ export class SpriteBank {
     const dx = Math.round(x - dw / 2), dy = Math.round(y - ((m.feet ?? 5) * escala + (a.fh * escala) / 2) * sy);
     g.save();
     if (opts.alpha !== undefined) g.globalAlpha *= opts.alpha;
+    // inclinação (andar, avançar no golpe, tranco ao apanhar): gira em volta dos pés
+    if (opts.rot) { g.translate(x, y); g.rotate(opts.rot); g.translate(-x, -y); }
     g.drawImage(img, q * a.fw, fila * a.fh, a.fw, a.fh, dx, dy, dw, dh);
     if (opts.flash) {
       const f = this.blanco(dex, nombre, img);
