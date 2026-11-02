@@ -1,5 +1,5 @@
 // Quem manda no lutador: teclado e mouse (jogador 1), teclado do jogador 2, controle (gamepad) e toque.
-import { ANCHO, ALTO, BARRA_Y, HUD_ALTO, UI, hex } from './config.js';
+import { ANCHO, ALTO, HUD_ALTO, UI, hex } from './config.js';
 import { marco, rect, texto } from './render/pixel.js';
 import { icono, tono } from './render/iconos.js';
 import { TIPOS } from './data/regras.js';
@@ -11,6 +11,7 @@ export const CONTROLES = {
 };
 export const nombreTecla = c => ({ Space: 'SPC', Enter: 'ENTER', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' }[c] ?? c.replace(/^Key|^Digit/, ''));
 
+const rgba = (c, a) => { const n = parseInt(c.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
 const VACIO = () => ({ mx: 0, my: 0, ax: 0, ay: 0, lmb: false, rmb: false, esp: false, q: false, e: false, mega: false });
 
 export class ControlHumano {
@@ -63,19 +64,20 @@ export class ControlHumano {
   }
 }
 
-// Controles de toque: analógico flutuante à esquerda e botões em arco à direita (a mira é automática no rival)
+// Controles de toque: analógico que aparece onde o dedo encosta (metade esquerda) e botões de vidro em arco em volta
+// do ataque, no canto direito. Translúcidos para não esconder a luta; a mira é automática no rival.
 const SLOTS = {
-  lmb: { dx: 0, dy: 0, r: 27, rot: 'ATK' },
-  rmb: { dx: -58, dy: 14, r: 21, rot: 'SKILL' },
-  esp: { dx: -48, dy: -46, r: 19, rot: 'DASH' },
-  q: { dx: -100, dy: -30, r: 18, rot: 'UTIL' },
-  e: { dx: -6, dy: -74, r: 20, rot: 'ULT' },
-  mega: { dx: -104, dy: -76, r: 20, rot: 'EVO' },
+  lmb: { dx: 0, dy: 0, r: 25, rot: 'ATK' },
+  rmb: { dx: -64, dy: 2, r: 18, rot: 'SKILL' },
+  q: { dx: -45, dy: -46, r: 18, rot: 'UTIL' },
+  e: { dx: 2, dy: -64, r: 19, rot: 'ULT' },
+  esp: { dx: -110, dy: 8, r: 15, rot: 'DASH' },
+  mega: { dx: -48, dy: -104, r: 15, rot: 'EVO' },
 };
 
 // Layout personalizável: deslocamentos em relação à posição padrão, tamanho e se o analógico fica fixo
-const CLAVE_LAYOUT = 'pkconfront.layout';
-const LAYOUT0 = () => ({ fijo: true, escala: 1, stick: { x: 0, y: 0 }, b: {} });
+const CLAVE_LAYOUT = 'pkconfront.layout2';
+const LAYOUT0 = () => ({ fijo: false, escala: 1, stick: { x: 0, y: 0 }, b: {} });
 const cargarLayout = () => {
   try { const l = JSON.parse(localStorage.getItem(CLAVE_LAYOUT)); return l ? { ...LAYOUT0(), ...l, stick: { ...LAYOUT0().stick, ...l.stick }, b: { ...l.b } } : LAYOUT0(); } catch { return LAYOUT0(); }
 };
@@ -87,9 +89,9 @@ export class PanelTactil {
     this.activo = !!globalThis.matchMedia?.('(pointer: coarse)').matches;
     this.l = null; this.alPausa = null; this.extras = [];
     this.lay = cargarLayout(); this.editando = false;
-    this.stick = { cx: 62, cy: 284, r: 34, x0: 62, y0: 284 };
+    this.stick = { cx: 70, cy: ALTO - 70, r: 30, x0: 70, y0: ALTO - 70 };
     this.botones = Object.entries(SLOTS).map(([id, s]) => ({ id, r: s.r, x: 0, y: 0, txt: s.rot }));
-    this.pausa = { id: 'pausa', x: 0, y: 66, r: 12 };
+    this.pausa = { id: 'pausa', x: 0, y: HUD_ALTO + 14, r: 11 };
     this.colocar();
     const c = app.canvas;
     const abajo = e => {
@@ -106,8 +108,8 @@ export class PanelTactil {
   }
   // posição padrão de cada botão (ancorada na borda direita, acompanha a largura da tela) sem o ajuste do jogador
   defecto(id) {
-    const k = this.lay.escala, ax = ANCHO - 52, ay = BARRA_Y - 46;
-    if (id === 'stick') return { x: 62, y: 284 };
+    const k = this.lay.escala, ax = ANCHO - 44, ay = ALTO - 42;
+    if (id === 'stick') return { x: 70, y: ALTO - 70 };
     const s = SLOTS[id];
     return { x: ax + s.dx * k, y: ay + s.dy * k };
   }
@@ -121,7 +123,7 @@ export class PanelTactil {
     }
     this.pausa.x = ANCHO - 20;
     const st = this.stick, d = this.defecto('stick'), o = this.lay.stick;
-    st.r = 34 * k;
+    st.r = 30 * k;
     st.x0 = Math.max(st.r + 2, Math.min(ANCHO - st.r - 2, d.x + o.x));
     st.y0 = Math.max(HUD_ALTO + st.r + 2, Math.min(ALTO - st.r - 2, d.y + o.y));
     if (this.lay.fijo) { st.cx = st.x0; st.cy = st.y0; }
@@ -151,8 +153,8 @@ export class PanelTactil {
       if (Math.hypot(t.x - this.stick.x0, t.y - this.stick.y0) < this.stick.r * 2.6) t.stick = true;
     } else if (t.x < ANCHO * 0.45) {
       t.stick = true;
-      this.stick.cx = Math.max(46, Math.min(ANCHO * 0.4, t.x));
-      this.stick.cy = Math.max(110, Math.min(BARRA_Y - 52, t.y));
+      this.stick.cx = Math.max(40, Math.min(ANCHO * 0.4, t.x));
+      this.stick.cy = Math.max(HUD_ALTO + 40, Math.min(ALTO - 36, t.y));
     }
   }
   actualizar() {
@@ -188,22 +190,20 @@ export class PanelTactil {
   dibujar(g, t = 0) {
     if (!this.activo && !this.editando) return;
     this.colocar();
-    const s = this.stick, l = this.l;
-    // analógico
+    const s = this.stick, l = this.l, usado = this.stickActivo || this.editando;
+    // analógico: parado é só um contorno quase invisível; com o dedo, base de vidro e bolinha
     g.save();
-    g.globalAlpha = this.stickActivo ? 0.8 : 0.38;
-    const base = g.createRadialGradient(s.cx, s.cy, 6, s.cx, s.cy, s.r);
-    base.addColorStop(0, 'rgba(20,50,100,0.55)'); base.addColorStop(1, 'rgba(10,30,70,0.85)');
-    g.fillStyle = base; g.beginPath(); g.arc(s.cx, s.cy, s.r, 0, 7); g.fill();
-    g.lineWidth = 3; g.strokeStyle = '#04102c'; g.stroke();
-    g.lineWidth = 1.5; g.strokeStyle = '#8fd3ff'; g.beginPath(); g.arc(s.cx, s.cy, s.r - 2, 0, 7); g.stroke();
-    g.fillStyle = 'rgba(143,211,255,0.55)';
-    for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; g.save(); g.translate(s.cx + Math.cos(a) * (s.r - 11), s.cy + Math.sin(a) * (s.r - 11)); g.rotate(a); g.beginPath(); g.moveTo(3, 0); g.lineTo(-3, -4); g.lineTo(-3, 4); g.fill(); g.restore(); }
-    const kx = s.cx + this.estado.mx * s.r * 0.62, ky = s.cy + this.estado.my * s.r * 0.62;
-    const knob = g.createRadialGradient(kx - 4, ky - 4, 2, kx, ky, 14);
-    knob.addColorStop(0, '#d6f0ff'); knob.addColorStop(1, '#3d86d6');
-    g.fillStyle = knob; g.beginPath(); g.arc(kx, ky, 13, 0, 7); g.fill();
-    g.lineWidth = 2.5; g.strokeStyle = '#04102c'; g.stroke();
+    g.globalAlpha = usado ? 0.9 : 0.22;
+    g.fillStyle = 'rgba(8,14,30,0.35)'; g.beginPath(); g.arc(s.cx, s.cy, s.r, 0, 7); g.fill();
+    g.lineWidth = 1.5; g.strokeStyle = 'rgba(220,236,255,0.7)'; g.stroke();
+    if (usado) {
+      const ang = Math.atan2(this.estado.my, this.estado.mx), forca = Math.hypot(this.estado.mx, this.estado.my);
+      if (forca > 0.1) { g.lineWidth = 3; g.strokeStyle = 'rgba(125,211,252,0.9)'; g.beginPath(); g.arc(s.cx, s.cy, s.r, ang - 0.5, ang + 0.5); g.stroke(); }
+      const kx = s.cx + this.estado.mx * s.r * 0.6, ky = s.cy + this.estado.my * s.r * 0.6;
+      const knob = g.createRadialGradient(kx - 3, ky - 3, 1, kx, ky, 12);
+      knob.addColorStop(0, 'rgba(255,255,255,0.95)'); knob.addColorStop(1, 'rgba(160,200,240,0.75)');
+      g.fillStyle = knob; g.beginPath(); g.arc(kx, ky, 11, 0, 7); g.fill();
+    }
     g.restore();
     // botões
     for (const b of this.botones) {
@@ -213,13 +213,14 @@ export class PanelTactil {
     }
     this.botonPausa(g);
     for (const e of this.extras) {
-      g.save(); g.globalAlpha = 0.85;
-      g.fillStyle = 'rgba(8,24,56,0.85)'; g.beginPath(); g.roundRect(e.x, e.y, e.w, e.h, 6); g.fill();
-      g.lineWidth = 1.5; g.strokeStyle = '#8fd3ff'; g.stroke(); g.restore();
+      g.save(); g.globalAlpha = 0.8;
+      g.fillStyle = 'rgba(8,14,30,0.5)'; g.beginPath(); g.roundRect(e.x, e.y, e.w, e.h, 8); g.fill();
+      g.lineWidth = 1; g.strokeStyle = 'rgba(220,236,255,0.6)'; g.stroke(); g.restore();
       texto(g, e.txt(), e.x + e.w / 2, e.y + e.h / 2, { tam: 7, align: 'center', base: 'middle', color: '#e8f6ff', borde: 2 });
     }
   }
 
+  // botão de vidro: fundo escuro translúcido, aro fino na cor do tipo, símbolo branco; recarga gira por dentro
   boton(g, b, l, t) {
     const id = b.id, on = !!this.estado[id];
     const h = l && id !== 'mega' ? l.kit[id] : null;
@@ -231,50 +232,57 @@ export class PanelTactil {
     const lista = !sobre && !sinEn && ultiOk && !(cd > 0 && cdMax > 1.2);
     const tipo = h?.tipo ?? 'NORMAL';
     let col = id === 'mega' ? (l?.puedeMega ? '#ffd23c' : '#46d6a0') : hex(TIPOS[tipo] ?? 0xa8a878);
-    if (esUlti) col = '#ffb703';
+    if (esUlti) col = '#ffcf4a';
     const forma = id === 'mega' ? (l?.puedeMega ? 'mega' : 'evo') : esUlti && !h?.forma ? 'ulti' : h?.forma ?? 'basico';
-    const r = b.r * (on ? 0.93 : 1), x = b.x, y = b.y;
-    const pulso = id === 'mega' || (esUlti && l?.ultiLista) ? 1 + 0.05 * Math.sin(t * 8) : 1;
+    const r = b.r * (on ? 0.92 : 1), x = b.x, y = b.y;
+    const brilha = lista && (id === 'mega' || esUlti);
     g.save();
-    g.translate(x, y); g.scale(pulso, pulso); g.translate(-x, -y);
-    // sombra e halo
-    if (on || (lista && (esUlti || id === 'mega'))) { g.fillStyle = `rgba(255,226,122,${on ? 0.4 : 0.2})`; g.beginPath(); g.arc(x, y, r + 4, 0, 7); g.fill(); }
-    // corpo: degradê do tipo
-    const cuerpo = g.createRadialGradient(x - r * 0.3, y - r * 0.4, r * 0.1, x, y, r);
-    if (lista) { cuerpo.addColorStop(0, tono(col, 0.35)); cuerpo.addColorStop(0.6, col); cuerpo.addColorStop(1, tono(col, -0.45)); }
-    else { cuerpo.addColorStop(0, '#5b6678'); cuerpo.addColorStop(1, '#262d3b'); }
-    g.globalAlpha = lista ? 0.72 : 0.6;
-    g.fillStyle = cuerpo; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    g.lineWidth = 2; g.strokeStyle = '#04102c'; g.stroke();
-    g.lineWidth = 1.2; g.strokeStyle = on ? '#fff6c8' : lista ? '#d6ecff' : '#7a8498'; g.beginPath(); g.arc(x, y, r - 1.6, 0, 7); g.stroke();
-    // brilho de vidro
-    g.globalAlpha = 0.22; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x - r * 0.18, y - r * 0.5, r * 0.55, r * 0.26, -0.3, 0, 7); g.fill();
+    // brilho de "pronto" (ult e mega) e de toque
+    if (brilha || on) {
+      const halo = g.createRadialGradient(x, y, r * 0.6, x, y, r + 9);
+      halo.addColorStop(0, rgba(col, on ? 0.65 : 0.4)); halo.addColorStop(1, rgba(col, 0));
+      g.globalAlpha = on ? 1 : 0.6 + 0.4 * Math.sin(t * 6);
+      g.fillStyle = halo; g.beginPath(); g.arc(x, y, r + 9, 0, 7); g.fill();
+    }
+    // corpo de vidro
     g.globalAlpha = 1;
+    const vidro = g.createLinearGradient(x, y - r, x, y + r);
+    vidro.addColorStop(0, on ? 'rgba(40,60,100,0.62)' : 'rgba(30,40,70,0.42)'); vidro.addColorStop(1, on ? 'rgba(10,16,34,0.7)' : 'rgba(6,10,24,0.5)');
+    g.fillStyle = vidro; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    // aro: cor do tipo quando pronto, cinza quando não
+    g.lineWidth = id === 'lmb' ? 2.4 : 1.8;
+    g.strokeStyle = lista ? col : 'rgba(150,160,180,0.55)';
+    g.globalAlpha = lista ? 0.95 : 0.7;
+    g.beginPath(); g.arc(x, y, r - 1, 0, 7); g.stroke();
+    g.globalAlpha = 0.18; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y - r * 0.45, r * 0.6, r * 0.22, 0, 0, 7); g.fill();
     // símbolo
-    icono(g, forma, x, y, r * 0.5, lista ? '#ffffff' : '#aab4c8');
-    // recarga: fatia escura que vai girando + segundos
+    g.globalAlpha = lista ? 0.95 : 0.45;
+    icono(g, forma, x, y, r * 0.5, '#ffffff');
+    g.globalAlpha = 1;
+    // recarga: fatia escura que vai abrindo + segundos
     if (cd > 0 && cdMax > 0.01 && !esUlti) {
       const f = Math.min(1, cd / cdMax);
-      g.fillStyle = 'rgba(4,10,28,0.62)'; g.beginPath(); g.moveTo(x, y); g.arc(x, y, r - 1, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.closePath(); g.fill();
-      if (cdMax > 1.2) texto(g, cd >= 10 ? String(Math.ceil(cd)) : cd.toFixed(1), x, y, { tam: 7, align: 'center', base: 'middle', color: '#ffe58a', borde: 3, peso: 700 });
+      g.fillStyle = 'rgba(2,6,16,0.55)'; g.beginPath(); g.moveTo(x, y); g.arc(x, y, r - 2, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); g.closePath(); g.fill();
+      if (cdMax > 1.2) texto(g, cd >= 10 ? String(Math.ceil(cd)) : cd.toFixed(1), x, y, { tam: 7, align: 'center', base: 'middle', color: '#ffffff', borde: 2, peso: 700 });
     }
-    // ultimate / experiência: anel de progresso
-    if (esUlti && l) this.anel(g, x, y, r + 3.5, l.ulti / 100, l.ultiLista ? '#ffe27a' : '#e0a21a');
-    if (id === 'mega' && l) this.anel(g, x, y, r + 3.5, 1, '#fff6c8');
-    if (id === 'lmb' && l && l.calor > 6) this.anel(g, x, y, r + 3.5, Math.min(1, l.calor / 100), sobre ? '#ff3a2a' : '#ff9a2e');
+    // ultimate: anel de progresso dourado; aquecimento do básico em laranja
+    if (esUlti && l) this.anel(g, x, y, r + 3, l.ulti / 100, l.ultiLista ? '#ffe27a' : '#c9a0ff');
+    if (id === 'lmb' && l && l.calor > 6) this.anel(g, x, y, r + 3, Math.min(1, l.calor / 100), sobre ? '#ff3a2a' : '#ff9a2e');
+    // custo sem energia: pontinho vermelho
+    if (sinEn) { g.fillStyle = '#ff6a5a'; g.beginPath(); g.arc(x + r * 0.7, y - r * 0.7, 2.5, 0, 7); g.fill(); }
     g.restore();
   }
   anel(g, x, y, r, f, cor) {
-    g.lineWidth = 3; g.strokeStyle = 'rgba(4,16,44,0.8)'; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke();
+    g.lineWidth = 2; g.strokeStyle = 'rgba(4,10,28,0.45)'; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke();
     if (f <= 0) return;
-    g.strokeStyle = cor; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.min(1, f) * Math.PI * 2); g.stroke();
+    g.lineCap = 'round'; g.strokeStyle = cor; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.min(1, f) * Math.PI * 2); g.stroke(); g.lineCap = 'butt';
   }
   botonPausa(g) {
     const p = this.pausa;
     g.save();
-    g.globalAlpha = 0.8;
-    g.fillStyle = 'rgba(8,24,56,0.85)'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
-    g.lineWidth = 2; g.strokeStyle = '#8fd3ff'; g.stroke();
+    g.globalAlpha = 0.7;
+    g.fillStyle = 'rgba(8,14,30,0.45)'; g.beginPath(); g.arc(p.x, p.y, p.r, 0, 7); g.fill();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(220,236,255,0.6)'; g.stroke();
     g.restore();
     icono(g, 'pausa', p.x, p.y, p.r * 0.5, '#e8f6ff');
   }

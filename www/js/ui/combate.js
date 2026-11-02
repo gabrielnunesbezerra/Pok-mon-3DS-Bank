@@ -230,7 +230,7 @@ export class Combate {
     if (this.rivalFuera && !this.saliendo) { this.saliendo = true; setTimeout(() => this.salirOnline(), 2200); }
     if (!this.pausado) this.fx.update(dt);
     const vivos = luta.luchadores.filter(l => !l.ko);
-    this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, true);
+    this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, !this.app.tactil.activo);
   }
 
   marcar(id) { const p = this.tutorial?.pasos.find(x => x[0] === id); if (p && !p[2]) { p[2] = true; sfx('confirmar'); } }
@@ -268,7 +268,7 @@ export class Combate {
     const luta = this.luta, fx = this.fx, t = luta.t, bank = this.app.bank;
     const sh = fx.temblor, sx = sh ? (Math.random() - 0.5) * sh * 2 : 0, sy = sh ? (Math.random() - 0.5) * sh * 2 : 0;
     g.save();
-    g.beginPath(); g.rect(0, HUD_ALTO, ANCHO, ALTO - HUD_ALTO); g.clip();
+    g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
     this.camara.aplicar(g, sx, sy);
     if (this.fondoGen !== this.app.geracaoGrafica) { this.fondo = crearArena(this.datos.arena); this.fondoGen = this.app.geracaoGrafica; }
     g.drawImage(this.fondo.bm ?? this.fondo, -MARGEM.x, -MARGEM.y);
@@ -304,7 +304,8 @@ export class Combate {
     // HUD
     this.hud.dibujar(g, luta, this.t);
     const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
-    this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk } : { 0: tk, 1: CONTROLES.teclado2 });
+    // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
+    if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : { 0: tk, 1: CONTROLES.teclado2 });
     if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
     if (luta.entreno) this.dibujarEntreno(g, luta);
@@ -621,7 +622,7 @@ export class Combate {
     const s = this.sesion;
     const ms = s.rtt == null ? null : Math.round(s.rtt);
     const col = ms == null ? '#93acd4' : ms < 60 ? '#3ccf4e' : ms < 110 ? '#f2c230' : '#e8463a';
-    texto(g, `${s.via} ${ms ?? '--'} MS`, ANCHO / 2, HUD_ALTO + 4, { tam: 8, align: 'center', color: col, borde: 2 });
+    texto(g, `${s.via} ${ms ?? '--'} MS`, ANCHO / 2, 40, { tam: 8, align: 'center', color: col, borde: 2 });
     if (s.reconectando && !this.rivalFuera) texto(g, `RECONNECTING${'.'.repeat(1 + Math.floor(this.t * 3) % 3)}`, ANCHO / 2, 120, { tam: 9, align: 'center', color: '#f8c448', borde: 3 });
     else if (s.esperando > 24 && !this.rivalFuera) texto(g, 'WAITING FOR THE OTHER PLAYER...', ANCHO / 2, 120, { tam: 8, align: 'center', color: '#f8c448', borde: 3 });
     if (s.desync) texto(g, 'OUT OF SYNC - PLEASE REMATCH', ANCHO / 2, 134, { tam: 8, align: 'center', color: '#ff7a7a', borde: 3 });

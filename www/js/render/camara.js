@@ -6,7 +6,8 @@ export class Camara {
   constructor() { this.z = 0.7; this.x = MUNDO.w / 2; this.y = MUNDO.h / 2; this.listo = false; }
 
   actualizar(dt, luchadores, conBarraAbajo) {
-    const arriba = HUD_ALTO, abajo = conBarraAbajo ? 30 : 0, vh = ALTO - arriba - abajo;
+    // o HUD é de vidro: a arena continua por baixo dele
+    const arriba = Math.round(HUD_ALTO * 0.55), abajo = conBarraAbajo ? 30 : 0, vh = ALTO - arriba - abajo;
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, altoMax = 0;
     for (const l of luchadores) {
       x0 = Math.min(x0, l.x); x1 = Math.max(x1, l.x);
