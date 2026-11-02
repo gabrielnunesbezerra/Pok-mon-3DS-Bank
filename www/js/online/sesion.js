@@ -29,8 +29,11 @@ export function resumen(luta) {
 }
 
 export class Sesion {
-  constructor(tr, lado, n = 2) {
-    this.tr = tr; this.lado = lado; this.n = n; this.nj = n; this.alOtro = null; this.alCerrar = null; this.cerrada = false;
+  // n = lugares na luta; cpus = lugares sem gente (modo duplas): o anfitrião (lugar 0) joga por eles e manda os comandos
+  constructor(tr, lado, n = 2, cpus = []) {
+    this.tr = tr; this.lado = lado; this.n = n; this.nj = n; this.cpus = cpus;
+    this.propios = lado === 0 ? [0, ...cpus] : [lado];
+    this.nHumanos = n - cpus.length; this.alOtro = null; this.alCerrar = null; this.cerrada = false;
     this.rtt = null; this.pico = 0; this.D = D0; this.perdida = false; this.reconectando = false;
     this.listos = new Map();
     this.reiniciar(0);
@@ -42,7 +45,7 @@ export class Sesion {
   get via() { return this.tr.via; }
   // comandos e ping vão pelo canal rápido quando o transporte tem um
   rapido(m) { if (this.tr.enviarRapido) this.tr.enviarRapido(m); else this.tr.enviar(m); }
-  ping() { this.rapido({ t: 'ping', s: performance.now(), de: this.lado }); if (!this.lista) this.tr.enviar({ t: 'listo', s: this.lado, id: this.id }); }
+  ping() { this.rapido({ t: 'ping', s: performance.now(), de: this.lado }); if (!this.lista) for (const s of this.propios) this.tr.enviar({ t: 'listo', s, id: this.id }); }
 
   // começa de novo (nova partida): os primeiros D0 passos são neutros nos dois lados
   // `id` identifica a partida (a semente): ninguém manda comandos antes de todos estarem prontos
@@ -55,15 +58,14 @@ export class Sesion {
     this.ackDe = Array.from({ length: this.nj }, () => new Array(this.nj).fill(D0 - 1)); // até onde cada um diz ter os meus
     this.hLocal = new Map(); this.hRemoto = new Map();
     this.esperando = 0; this.desync = false; this.sinSenal = performance.now(); this.reconectando = false;
-    this.listos.set(this.lado, id);
-    this.tr.enviar({ t: 'listo', s: this.lado, id });
+    for (const s of this.propios) { this.listos.set(s, id); this.tr.enviar({ t: 'listo', s, id }); }
   }
   get lista() { for (let s = 0; s < this.nj; s++) if (this.listos.get(s) !== this.id) return false; return true; }
 
   recibir(m) {
     this.sinSenal = performance.now();
     if (m.t === 'I') {
-      if (m.id !== this.id || !this.ent[m.s] || m.s === this.lado) return;
+      if (m.id !== this.id || !this.ent[m.s] || this.propios.includes(m.s)) return;
       const e = this.ent[m.s];
       for (let j = 0; j < m.v.length; j++) { const k = m.k + j; if (k >= this.paso_) e.set(k, m.v[j]); }
       let a = this.ack[m.s]; while (a + 1 < this.paso_ || e.has(a + 1)) a++; this.ack[m.s] = a;
@@ -77,32 +79,36 @@ export class Sesion {
   }
   comparar(k) {
     const a = this.hLocal.get(k), b = this.hRemoto.get(k);
-    if (a === undefined || !b || b.size < this.nj - 1) return;
+    if (a === undefined || !b || b.size < this.nHumanos - 1) return;
     this.hLocal.delete(k); this.hRemoto.delete(k);
     for (const v of b.values()) if (v !== a) this.desync = true;
   }
 
   // manda os meus comandos que alguém ainda não confirmou (e as minhas confirmações)
   enviarEntradas() {
-    let desde = this.prod;
-    for (let o = 0; o < this.nj; o++) if (o !== this.lado) desde = Math.min(desde, this.ackDe[o][this.lado] + 1);
-    desde = Math.max(desde, this.prod - VENTANA);
-    const v = [];
-    for (let k = desde; k < this.prod; k++) v.push(this.ent[this.lado].get(k) ?? NEUTRO);
-    // com tudo confirmado, só um aviso de vida de vez em quando
-    if (!v.length && (this.tick_ = (this.tick_ ?? 0) + 1) % 6) return;
-    this.rapido({ t: 'I', id: this.id, s: this.lado, k: desde, v, a: this.ack });
+    const vida = (this.tick_ = (this.tick_ ?? 0) + 1) % 6 === 0;
+    for (const s of this.propios) {
+      let desde = this.prod;
+      for (let o = 0; o < this.nj; o++) if (!this.propios.includes(o) && !this.cpus.includes(o)) desde = Math.min(desde, this.ackDe[o][s] + 1);
+      desde = Math.max(desde, this.prod - VENTANA);
+      const v = [];
+      for (let k = desde; k < this.prod; k++) v.push(this.ent[s].get(k) ?? NEUTRO);
+      // com tudo confirmado, só um aviso de vida de vez em quando
+      if (!v.length && !vida) continue;
+      this.rapido({ t: 'I', id: this.id, s, k: desde, v, a: this.ack });
+    }
   }
 
   // está atrás dos outros? (tem comandos deles bem além do próprio passo) então roda passos extras
   atrasado() {
     if (!this.lista) return false;
     let min = Infinity;
-    for (let o = 0; o < this.nj; o++) if (o !== this.lado) min = Math.min(min, this.ack[o]);
+    for (let o = 0; o < this.nj; o++) if (!this.propios.includes(o)) min = Math.min(min, this.ack[o]);
     return min - this.D > this.paso_ + 1;
   }
 
-  // chamada uma vez por passo de 1/60 s. `amostra()` devolve o comando local. Devolve [cmd0, cmd1] ou null se faltar o do outro.
+  // chamada uma vez por passo de 1/60 s. `amostra(lugar)` devolve o comando local daquele lugar (o meu ou o de uma CPU que eu controlo).
+  // Devolve os comandos de todos, ou null se faltar o de alguém.
   paso(luta, amostra) {
     if (!this.lista) { this.esperando++; return null; }
     const mudo = performance.now() - this.sinSenal;
@@ -112,10 +118,10 @@ export class Sesion {
     const base = (this.rtt ?? 0) * 0.75 + this.pico * 0.25;
     this.D = Math.max(D0, Math.min(this.tr.lento ? 30 : 15, Math.ceil((base / 2) / 16.7) + 2));
     while (this.prod < this.paso_ + this.D) {
-      const v = cuantizar(amostra());
-      this.ent[this.lado].set(this.prod, v);
+      for (const s of this.propios) this.ent[s].set(this.prod, cuantizar(amostra(s)));
       this.prod++;
     }
+    for (const s of this.propios) this.ack[s] = this.prod - 1;
     this.enviarEntradas();
     const cmds = this.ent.map(e => e.get(this.paso_));
     if (cmds.some(c => !c)) { this.esperando++; return null; }

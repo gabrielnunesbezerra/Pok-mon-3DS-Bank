@@ -7,6 +7,9 @@ export function aleatorio() {
   semente ^= semente << 5; semente >>>= 0;
   return semente / 4294967296;
 }
+// cada luta guarda o próprio estado do sorteio (duas lutas no mesmo processo não se atrapalham)
+export const estadoAleatorio = () => semente;
+export const restaurarAleatorio = s => { semente = s; };
 export const entre = (a, b) => a + aleatorio() * (b - a);
 export const elegir = l => l[Math.floor(aleatorio() * l.length)];
 export const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);

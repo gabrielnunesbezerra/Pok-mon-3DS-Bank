@@ -5,11 +5,12 @@ import { OVALO, RADIO } from '../config.js';
 import { limitarCampo } from './fisica.js';
 import { Lutador } from './lutador.js';
 import { Habilidades } from './habilidades.js';
-import { sembrar } from './util.js';
+import { sembrar, estadoAleatorio, restaurarAleatorio } from './util.js';
 
 export class Luta {
-  constructor({ p1, p2, p3 = null, p4 = null, etapas = [0, 0, 0, 0], shiny = [], modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
+  constructor({ p1, p2, p3 = null, p4 = null, etapas = [0, 0, 0, 0], shiny = [], equipos = null, modo = 'cpu', arena = 'estadio', medidas = null, semilla = 1, rapido = false }) {
     sembrar(semilla);
+    this.semilla = semilla;
     this.modo = modo;
     this.arena = arena;
     this.medidas = medidas;
@@ -22,7 +23,9 @@ export class Luta {
     this.escalaTiempo = 1;
     this.habilidades = new Habilidades(this);
     this.luchadores = [p1, p2, p3, p4].filter(Boolean).map((def, i) => new Lutador(this, def, i, etapas[i] ?? 0));
-    this.luchadores.forEach((l, i) => { l.shiny = !!shiny?.[i]; });
+    // duplas: equipos[i] = time do lutador i (0 azul, 1 vermelho); sem times, cada um é o seu próprio time
+    this.equipos = equipos;
+    this.luchadores.forEach((l, i) => { l.shiny = !!shiny?.[i]; l.equipo = equipos ? equipos[i] : i; });
     this.victorias = this.luchadores.map(() => 0);
     this.numRonda = 1;
     this.reloj = REGLAS.tiempoRonda;
@@ -31,6 +34,7 @@ export class Luta {
     this.entreno = modo === 'entreno';
     this.registroDano = []; this.mejorCombo = 0; this.comboActual = 0; this.ultimoGolpeEntreno = -9; this.ultimoDanoEntreno = 0;
     this.empezarRonda();
+    this.rng = estadoAleatorio();
   }
 
   // cada evento sabe de quem é (para o desenho pintar o shiny com a cor dele)
@@ -42,7 +46,8 @@ export class Luta {
   // clones (Double Team) e fumaça
   blancos(dueno) {
     const lista = [];
-    for (const o of this.luchadores) if (o !== dueno && !o.ko) lista.push(o, ...(o.clones ?? []));
+    const eq = dueno?.equipo;
+    for (const o of this.luchadores) if (o !== dueno && !o.ko && (eq === undefined || o.equipo !== eq)) lista.push(o, ...(o.clones ?? []));
     return lista.filter(b => !b.ko);
   }
   enHumo(l) { return this.entidades.some(e => e.tipo === 'humo' && e.dueno !== l && Math.hypot(e.x - l.x, e.y - l.y) < e.radio); }
@@ -53,10 +58,16 @@ export class Luta {
     this.entidades = [];
     this.tareas = [];
     const sep = 166;
-    this.luchadores[0].reiniciar(OVALO.cx - sep, OVALO.cy);
-    this.luchadores[1].reiniciar(OVALO.cx + sep, OVALO.cy);
-    this.luchadores[2]?.reiniciar(OVALO.cx, OVALO.cy + 112);
-    this.luchadores[3]?.reiniciar(OVALO.cx, OVALO.cy - 100);
+    if (this.equipos) {
+      // cada time do seu lado, um em cima e outro embaixo
+      const n = [0, 0];
+      for (const l of this.luchadores) { const k = n[l.equipo]++; l.reiniciar(OVALO.cx + (l.equipo ? sep : -sep), OVALO.cy + (k ? 56 : -56)); }
+    } else {
+      this.luchadores[0].reiniciar(OVALO.cx - sep, OVALO.cy);
+      this.luchadores[1].reiniciar(OVALO.cx + sep, OVALO.cy);
+      this.luchadores[2]?.reiniciar(OVALO.cx, OVALO.cy + 112);
+      this.luchadores[3]?.reiniciar(OVALO.cx, OVALO.cy - 100);
+    }
     if (this.entreno) this.luchadores[1].inmortal = true;
     this.reloj = REGLAS.tiempoRonda;
     this.escalaTiempo = 1;
@@ -74,11 +85,11 @@ export class Luta {
   alKO(caido) {
     if (this.fase !== 'lucha') return;
     const vivos = this.luchadores.filter(l => !l.ko);
-    // todos contra todos: a rodada só acaba quando sobra um lutador de pé
-    if (vivos.length > 1) { this.emit({ t: 'ko', l: caido, ganador: -1, parcial: true }); return; }
+    // a rodada só acaba quando sobra um time de pé (sem times: um lutador)
+    if (new Set(vivos.map(l => l.equipo)).size > 1) { this.emit({ t: 'ko', l: caido, ganador: -1, parcial: true }); return; }
     this.fase = 'ko';
     const ganador = vivos.length ? vivos[0].lado : -1;
-    if (ganador >= 0) this.victorias[ganador]++;
+    if (ganador >= 0) this.vencer(ganador);
     this.emit({ t: 'ko', l: caido, ganador });
     if (!this.rapido) { this.hitstop(160); this.escalaTiempo = 0.3; this.programar(1.3 * 0.3, () => { this.escalaTiempo = 1; }); }
     this.programar(this.rapido ? 0.01 : 2.6 * 0.3 + 0.5, () => this.siguiente());
@@ -86,19 +97,26 @@ export class Luta {
 
   tiempoAgotado() {
     this.fase = 'ko';
-    const fr = this.luchadores.map(l => (l.ko ? -1 : l.hp / l.hpMax)), mx = Math.max(...fr);
-    const lideres = fr.filter(f => Math.abs(f - mx) <= 0.001).length;
+    // no tempo: ganha quem tem mais vida (no modo duplas, a soma do time)
+    const vida = l => (l.ko ? 0 : l.hp / l.hpMax);
+    const fr = this.luchadores.map(l => (this.equipos ? this.luchadores.filter(o => o.equipo === l.equipo).reduce((s, o) => s + vida(o), 0) : l.ko ? -1 : vida(l))), mx = Math.max(...fr);
+    const lideres = new Set(this.luchadores.filter((l, i) => Math.abs(fr[i] - mx) <= 0.001).map(l => l.equipo)).size;
     const ganador = lideres === 1 ? fr.indexOf(mx) : -1;
-    if (ganador >= 0) this.victorias[ganador]++;
+    if (ganador >= 0) this.vencer(ganador);
     this.emit({ t: 'tiempo', ganador });
     this.programar(this.rapido ? 0.01 : 2.2, () => this.siguiente());
   }
 
+  // rodada ganha: no modo duplas conta para o time inteiro
+  vencer(i) { const eq = this.luchadores[i].equipo; this.luchadores.forEach((l, k) => { if (l.equipo === eq) this.victorias[k]++; }); }
+  aliados(l) { return this.luchadores.filter(o => o !== l && !o.ko && o.equipo === l.equipo); }
+
   siguiente() {
     if (Math.max(...this.victorias) >= REGLAS.rondasParaGanar) {
       this.fase = 'fin';
-      this.fin = { ganador: this.victorias.indexOf(Math.max(...this.victorias)) };
-      this.emit({ t: 'fin', ganador: this.fin.ganador });
+      const ganador = this.victorias.indexOf(Math.max(...this.victorias));
+      this.fin = { ganador, equipo: this.luchadores[ganador].equipo };
+      this.emit({ t: 'fin', ganador, equipo: this.fin.equipo });
       return;
     }
     this.numRonda++;
@@ -106,7 +124,8 @@ export class Luta {
   }
 
   // dt em segundos; intentos[i] = intenção do lutador i (ou null)
-  paso(dt, intentos) {
+  paso(dt, intentos) { restaurarAleatorio(this.rng); this.avanzar(dt, intentos); this.rng = estadoAleatorio(); }
+  avanzar(dt, intentos) {
     if (this.pausaGolpe > 0) { this.pausaGolpe -= dt * 1000; return; }
     dt *= this.escalaTiempo;
     this.t += dt;

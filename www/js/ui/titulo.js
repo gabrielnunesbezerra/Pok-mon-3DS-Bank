@@ -22,6 +22,7 @@ const MENUS = {
   jugar: [
     { id: 'liga', txt: 'POKÉMON LEAGUE', escena: 'liga', ico: 'pokeball' },
     { id: 'cpu', txt: 'VS CPU', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot' },
+    { id: 'duplas', txt: 'DOUBLES (2 VS 2)', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos' },
     { id: 'arena', txt: 'ARENA (3 FIGHTERS)', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas' },
     { id: 'versus', txt: '2 PLAYERS', escena: 'seleccion', datos: { modo: 'versus' }, ico: 'dos' },
     { id: 'entreno', txt: 'TRAINING', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana' },

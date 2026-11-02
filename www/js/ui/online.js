@@ -94,7 +94,7 @@ export class Online {
       if (tr.rol === 'host') copiar(tr.codigo);
       tr.alCerrar = () => { if (this.estado === 'sala') { this.estado = 'menu'; this.decir('THE ROOM WAS CLOSED', true); } };
       tr.alPar = n => { this.jugadores = n; if (tr.rol === 'host' && n >= MAXJ) this.comenzar(); };
-      tr.alMensaje = m => { if (m.t === 'ir') this.emparejar(tr, m.n); else if (m.t === 'salio') this.jugadores = m.n; };
+      tr.alMensaje = m => { if (m.t === 'ir') this.emparejar(tr, m.n, m.modo); else if (m.t === 'salio') this.jugadores = m.n; };
     } catch (e) { this.decir(e.message === 'ID-TAKEN' ? 'TRY AGAIN' : e.message, true); }
     this.ocupado = false;
   }
@@ -135,15 +135,19 @@ export class Online {
   // o anfitrião manda começar (2 ou 3 jogadores na sala)
   comenzar() {
     if (this.tr?.rol !== 'host' || this.jugadores < 2 || this.hecho) return;
-    this.tr.enviar({ t: 'ir', n: this.jugadores });
-    this.emparejar(this.tr, this.jugadores);
+    const modo = this.duplas ? 'duplas' : 'todos';
+    this.tr.enviar({ t: 'ir', n: this.jugadores, modo });
+    this.emparejar(this.tr, this.jugadores, modo);
   }
 
-  emparejar(tr, n = 2) {
+  // duplas: sempre 4 lugares (times 0+2 contra 1+3); os que faltam de gente viram CPU controlada pelo anfitrião
+  emparejar(tr, n = 2, modo = 'todos') {
     if (this.hecho) return;
     this.hecho = true;
     sfx('confirmar');
-    this.app.online = new Sesion(tr, tr.slot ?? (tr.rol === 'host' ? 0 : 1), n);
+    const duplas = modo === 'duplas', cpus = duplas ? Array.from({ length: Math.max(0, 4 - n) }, (_, k) => n + k) : [];
+    this.app.online = new Sesion(tr, tr.slot ?? (tr.rol === 'host' ? 0 : 1), duplas ? 4 : n, cpus);
+    this.app.online.modo = modo;
     this.app.ir('seleccion', { modo: 'online' });
   }
 
@@ -167,7 +171,7 @@ export class Online {
       if (p.x > 220 && p.x < 420 && p.y > 300 && p.y < 324) this.volver();
       return;
     }
-    if (this.estado === 'sala') { if (tipo === 'down') { if (p.x > 220 && p.x < 420 && p.y > 270 && p.y < 296) this.volver(); else if (p.x > 220 && p.x < 420 && p.y > 236 && p.y < 262) this.comenzar(); else if (cuenta.conectado && p.x > 220 && p.x < 420 && p.y > 302 && p.y < 326) this.abrirAmigos(); } return; }
+    if (this.estado === 'sala') { if (tipo === 'down') { if (this.tr?.rol === 'host' && p.x > 220 && p.x < 420 && p.y > 192 && p.y < 214) { this.duplas = !this.duplas; sfx('seleccion'); } else if (p.x > 220 && p.x < 420 && p.y > 270 && p.y < 296) this.volver(); else if (p.x > 220 && p.x < 420 && p.y > 236 && p.y < 262) this.comenzar(); else if (cuenta.conectado && p.x > 220 && p.x < 420 && p.y > 302 && p.y < 326) this.abrirAmigos(); } return; }
     this.lista.puntero(tipo, p);
   }
   actualizar(dt) { this.t += dt; }
@@ -194,9 +198,12 @@ export class Online {
     if (this.estado === 'sala') {
       texto(g, 'ROOM CODE', ANCHO / 2, 96, { tam: 9, align: 'center', color: UI.suave });
       if (this.tr?.via) texto(g, this.tr.via === 'P2P' ? 'DIRECT CONNECTION' : this.tr.via === 'CLOUD' ? 'CONNECTION: CLOUD (WORKS ON ANY NETWORK)' : `CONNECTION: ${this.tr.via}`, ANCHO / 2, 70, { tam: 7, align: 'center', color: this.tr.via === 'P2P' ? '#86efac' : '#7dd3fc' });
-      texto(g, this.codigo, ANCHO / 2, 150, { tam: 36, align: 'center', base: 'middle', color: '#ffd23c', borde: 6, peso: 700 });
-      texto(g, 'Friends join with this code (JOIN ROOM). Up to 4 players.', ANCHO / 2, 190, { tam: 8, align: 'center', color: '#fff' });
-      texto(g, `PLAYERS ${this.jugadores}/4`, ANCHO / 2, 208, { tam: 9, align: 'center', color: '#ffd23c', borde: 2 });
+      texto(g, this.codigo, ANCHO / 2, 138, { tam: 36, align: 'center', base: 'middle', color: '#ffd23c', borde: 6, peso: 700 });
+      texto(g, 'Friends join with this code (JOIN ROOM). Up to 4 players.', ANCHO / 2, 164, { tam: 8, align: 'center', color: '#fff' });
+      texto(g, `PLAYERS ${this.jugadores}/4`, ANCHO / 2, 178, { tam: 9, align: 'center', color: '#ffd23c', borde: 2 });
+      // modo: todos contra todos ou duplas 2x2 (quem falta vira CPU)
+      if (this.tr?.rol === 'host') { marco(g, 220, 192, 200, 22, this.duplas ? 'oro' : 'azul'); texto(g, this.duplas ? 'MODE: DOUBLES 2 VS 2' : 'MODE: ALL VS ALL', ANCHO / 2, 203, { tam: 8, align: 'center', base: 'middle', color: this.duplas ? UI.textoOscuro : '#fff' }); if (this.duplas && this.jugadores < 4) texto(g, `${4 - this.jugadores} CPU WILL JOIN`, ANCHO / 2, 218, { tam: 6, align: 'center', color: '#86efac' }); }
+      else texto(g, 'THE HOST PICKS THE MODE', ANCHO / 2, 203, { tam: 7, align: 'center', color: UI.suave });
       texto(g, this.msg + '.'.repeat(1 + Math.floor(this.t * 2) % 3), ANCHO / 2, 226, { tam: 8, align: 'center', color: '#7dd3fc' });
       if (this.tr?.rol === 'host') {
         const ok = this.jugadores >= 2;

@@ -135,3 +135,43 @@ test('Double Team: quando o tempo acaba os bonecos somem e não atiram mais', ()
   const tiros = l.entidades.filter(e => e.tipo === 'proj').length;
   assert.ok(tiros <= 3, `só o lutador atira: ${tiros} tiros`);
 });
+
+test('duplas: aliado não acerta aliado, o alvo é sempre do outro time e a rodada acaba quando um time cai', () => {
+  const l = new Luta({ p1: def('charmander'), p2: def('squirtle'), p3: def('bulbasaur'), p4: def('riolu'), equipos: [0, 1, 0, 1], rapido: true, semilla: 4 });
+  const [a, b, c, d] = l.luchadores;
+  assert.deepEqual(l.luchadores.map(x => x.equipo), [0, 1, 0, 1]);
+  assert.ok(a.x < b.x && c.x < d.x, 'cada time do seu lado');
+  assert.ok(!l.blancos(a).includes(c) && l.blancos(a).includes(b) && l.blancos(a).includes(d));
+  c.x = a.x + 20; c.y = a.y;
+  assert.notEqual(a.rival, c);
+  l.fase = 'lucha';
+  b.morir(a);
+  assert.equal(l.fase, 'lucha', 'ainda sobra um do time vermelho');
+  d.morir(a);
+  assert.equal(l.fase, 'ko');
+  assert.deepEqual(l.victorias, [1, 0, 1, 0], 'a rodada conta para o time todo');
+  // uma luta inteira entre CPUs termina com um time vencedor
+  const l2 = new Luta({ p1: def('charmander'), p2: def('squirtle'), p3: def('bulbasaur'), p4: def('riolu'), equipos: [0, 1, 0, 1], rapido: true, semilla: 9 });
+  const ias = l2.luchadores.map(x => new IA(l2, x, 'normal'));
+  let n = 0;
+  while (l2.fase !== 'fin' && n < 60 * 600) { l2.paso(1 / 60, ias.map(ia => ia.intento(1 / 60))); l2.tomarEventos(); n++; }
+  assert.equal(l2.fase, 'fin');
+  assert.ok(l2.fin.equipo === 0 || l2.fin.equipo === 1);
+});
+
+test('lockstep em duplas: o anfitrião manda os comandos das CPUs e os dois aparelhos ficam iguais', () => {
+  const rede = par(3);
+  const sA = new Sesion(rede.a, 0, 4, [2, 3]), sB = new Sesion(rede.b, 1, 4, [2, 3]);
+  const mk = () => new Luta({ p1: def('riolu'), p2: def('onix'), p3: def('zubat'), p4: def('abra'), equipos: [0, 1, 0, 1], rapido: true, semilla: 5 });
+  const lA = mk(), lB = mk();
+  const iaA = new IA(lA, lA.luchadores[0], 'normal'), iaB = new IA(lB, lB.luchadores[1], 'normal'), cpus = { 2: new IA(lA, lA.luchadores[2], 'normal'), 3: new IA(lA, lA.luchadores[3], 'normal') };
+  let pa = 0, pb = 0;
+  for (let i = 0; i < 60 * 20; i++) {
+    rede.tick();
+    const rA = sA.paso(lA, s => (s === 0 ? iaA : cpus[s]).intento(1 / 60)); if (rA) { lA.paso(1 / 60, rA); lA.tomarEventos(); pa++; }
+    const rB = sB.paso(lB, () => iaB.intento(1 / 60)); if (rB) { lB.paso(1 / 60, rB); lB.tomarEventos(); pb++; }
+  }
+  assert.ok(pa > 60 * 10 && pb > 60 * 10, `avançou pouco: ${pa}/${pb}`);
+  assert.equal(sA.desync, false); assert.equal(sB.desync, false);
+  sA.cerrar(); sB.cerrar();
+});

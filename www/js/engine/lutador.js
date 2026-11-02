@@ -70,11 +70,11 @@ export class Lutador {
   get rival() {
     let mejor = null, dm = Infinity;
     for (const o of this.luta.luchadores) {
-      if (o === this || o.ko) continue;
+      if (o === this || o.ko || o.equipo === this.equipo) continue;
       const d = Math.hypot(o.x - this.x, o.y - this.y);
       if (d < dm) { dm = d; mejor = o; }
     }
-    return mejor ?? this.luta.luchadores.find(o => o !== this);
+    return mejor ?? this.luta.luchadores.find(o => o !== this && o.equipo !== this.equipo);
   }
   get cadencia() { return this.est.potencia?.cadencia ?? 1; }
   get pecho() { return { x: this.x, y: this.y - this.alto * 0.5 - this.salto }; }

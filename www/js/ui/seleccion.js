@@ -51,6 +51,7 @@ export class Seleccion {
   }
   // lados controlados por gente só podem usar Pokémon desbloqueados
   // no treino dá para testar qualquer Pokémon, mesmo os ainda trancados na Liga
+  get contraCpu() { return this.modo === 'cpu' || this.modo === 'arena' || this.modo === 'duplas'; }
   liberado(id) { return this.modo === 'entreno' || desbloqueado(id); }
   ladoHumano(lado) { return this.online ? lado === this.mi : lado === 0 || (this.modo === 'versus' && lado === 1); }
 
@@ -89,16 +90,20 @@ export class Seleccion {
   }
   revisar() {
     const o = this.online;
-    if (!this.listo || this.elegido.some(i => i < 0) || this.mi !== 0) return;
-    const msg = { t: 'start', semilla: (Math.random() * 1e9) | 0, picks: this.elegido.map(i => ROSTER[i].id), shiny: this.elegido.map((_, k) => !!this.shiny?.[k]), arena: ARENAS[this.arena].id };
+    if (!this.listo || this.mi !== 0) return;
+    // duplas: o anfitrião sorteia os Pokémon das CPUs que completam os times
+    for (const c of o.cpus ?? []) if (this.elegido[c] < 0) this.elegido[c] = Math.floor(Math.random() * ROSTER.length);
+    if (this.elegido.some(i => i < 0)) return;
+    const duplas = o.modo === 'duplas';
+    const msg = { t: 'start', semilla: (Math.random() * 1e9) | 0, picks: this.elegido.map(i => ROSTER[i].id), shiny: this.elegido.map((_, k) => !!this.shiny?.[k]), arena: ARENAS[this.arena].id, equipos: duplas ? [0, 1, 0, 1] : null, cpus: o.cpus ?? [] };
     o.enviar(msg);
     this.empezarOnline(msg);
   }
   empezarOnline(m) {
-    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, p4: m.picks[3] ?? null, shiny: m.shiny, arena: m.arena, semilla: m.semilla });
+    this.app.ir('combate', { modo: 'online', lado: this.mi, n: this.n, p1: m.picks[0], p2: m.picks[1], p3: m.picks[2] ?? null, p4: m.picks[3] ?? null, shiny: m.shiny, arena: m.arena, semilla: m.semilla, equipos: m.equipos ?? null, cpus: m.cpus ?? [] });
   }
   luchar() {
-    const i = this.aleatorio[1] && this.modo === 'cpu' ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
+    const i = this.aleatorio[1] && (this.modo === 'cpu' || this.modo === 'duplas') ? Math.floor(Math.random() * ROSTER.length) : this.elegido[1];
     if (this.online) {
       if (this.listo || this.cerrado || this.malaVersion) return;
       sfx('confirmar');
@@ -115,6 +120,11 @@ export class Seleccion {
     this.app.ultimaSeleccion = [...this.elegido];
     this.app.ajustes.nivel = this.nivel; this.app.ajustes.arena = ARENAS[this.arena].id; this.app.guardarAjustes();
     sfx('confirmar');
+    if (this.modo === 'duplas') {
+      // você + um parceiro CPU contra duas CPUs; o parceiro e o segundo rival são sorteados
+      const r = () => ROSTER[Math.floor(Math.random() * ROSTER.length)].id;
+      return this.app.ir('combate', { modo: 'duplas', p1: ROSTER[this.elegido[0]].id, p2: ROSTER[i].id, p3: r(), p4: r(), equipos: [0, 1, 0, 1], shiny: [!!this.shiny?.[0], false, false, false], arena: ARENAS[this.arena].id, nivel: this.nivel });
+    }
     const j = this.n === 3 && this.aleatorio[2] ? Math.floor(Math.random() * ROSTER.length) : this.elegido[2];
     this.app.ir('combate', { modo: this.modo, p1: ROSTER[this.elegido[0]].id, p2: ROSTER[this.modo === 'entreno' ? this.elegido[1] : i].id, p3: this.n === 3 ? ROSTER[j].id : null, shiny: [!!this.shiny?.[0], !!this.shiny?.[1], !!this.shiny?.[2]], arena: ARENAS[this.arena].id, nivel: this.nivel });
   }
@@ -150,7 +160,7 @@ export class Seleccion {
     const n = ROSTER.length;
     if (c === 'Escape' || c === 'Backspace') return this.atras();
     if (c === 'Tab') { if (this.modo !== 'entreno' && !this.online && !this.liga) { this.lado = (this.lado + 1) % this.n; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } return; }
-    if (c === 'KeyR' && this.foco === 'grade' && this.lado >= 1 && (this.modo === 'cpu' || this.modo === 'arena')) { this.aleatorio[this.lado] = true; this.elegido[this.lado] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
+    if (c === 'KeyR' && this.foco === 'grade' && this.lado >= 1 && this.contraCpu) { this.aleatorio[this.lado] = true; this.elegido[this.lado] = Math.floor(Math.random() * n); sfx('seleccion'); return; }
     const dx = ['ArrowRight', 'KeyD'].includes(c) ? 1 : ['ArrowLeft', 'KeyA'].includes(c) ? -1 : 0;
     const dy = ['ArrowDown', 'KeyS'].includes(c) ? 1 : ['ArrowUp', 'KeyW'].includes(c) ? -1 : 0;
     const accion = ['Enter', 'Space', 'NumpadEnter'].includes(c);
@@ -159,7 +169,7 @@ export class Seleccion {
       if (dy) { const f = Math.floor(this.cursor / COLS) + dy, filas = Math.ceil(n / COLS); if (f > filas - 1) this.foco = 'arena'; else if (f >= 0) this.cursor = Math.min(n - 1, f * COLS + (this.cursor % COLS)); sfx('seleccion'); }
       if (accion) this.elegirCarta(this.cursor);
     } else {
-      const orden = this.liga ? ['luchar'] : this.modo === 'cpu' || this.modo === 'arena' ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
+      const orden = this.liga ? ['luchar'] : this.contraCpu ? ['arena', 'nivel', 'luchar'] : ['arena', 'luchar'];
       const i = orden.indexOf(this.foco);
       if (dy) { const j = i + dy; if (j < 0) this.foco = 'grade'; else if (j < orden.length) this.foco = orden[j]; sfx('seleccion'); }
       if (this.foco === 'arena' && dx) { this.arena = (this.arena + dx + ARENAS.length) % ARENAS.length; sfx('seleccion'); }
@@ -179,7 +189,7 @@ export class Seleccion {
     if (this.liga) return;
     if (dentro(this.cajaArena(-1))) { this.arena = (this.arena - 1 + ARENAS.length) % ARENAS.length; sfx('seleccion'); return; }
     if (dentro(this.cajaArena(1))) { this.arena = (this.arena + 1) % ARENAS.length; sfx('seleccion'); return; }
-    if (this.modo === 'cpu' || this.modo === 'arena') { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
+    if (this.contraCpu) { if (dentro(this.cajaNivel(-1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 2) % 3]; sfx('seleccion'); return; } if (dentro(this.cajaNivel(1))) { this.nivel = NIVELES[(NIVELES.indexOf(this.nivel) + 1) % 3]; sfx('seleccion'); return; } }
     if (this.modo !== 'entreno' && !this.online) { if (dentro({ x: 4, y: 38, w: 178, h: 24 })) { this.lado = 0; this.cursor = this.elegido[0]; sfx('seleccion'); } if (dentro({ x: 458, y: 38, w: 178, h: 24 })) { this.lado = this.lado === 1 && this.n === 3 ? 2 : 1; this.cursor = this.elegido[this.lado]; sfx('seleccion'); } }
   }
   cajaVolver() { return { x: 4, y: 4, w: 70, h: 18 }; }
@@ -194,7 +204,7 @@ export class Seleccion {
     fondoMenu(g, ANCHO, ALTO);
     marco(g, 0, 0, ANCHO, 26, 'panel');
     const v = this.cajaVolver(); marco(g, v.x, v.y, v.w, v.h); texto(g, '< MENU', v.x + v.w / 2, v.y + v.h / 2, { tam: 7, align: 'center', base: 'middle' });
-    texto(g, this.liga ? 'POKÉMON LEAGUE' : this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : this.modo === 'arena' ? 'ARENA · 3 FIGHTERS' : this.online ? `ONLINE · ${this.n} PLAYERS` : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
+    texto(g, this.liga ? 'POKÉMON LEAGUE' : this.modo === 'versus' ? '2 PLAYERS' : this.modo === 'entreno' ? 'TRAINING' : this.modo === 'arena' ? 'ARENA · 3 FIGHTERS' : this.modo === 'duplas' ? 'DOUBLES · 2 VS 2' : this.online ? (this.online.modo === 'duplas' ? 'ONLINE · DOUBLES 2 VS 2' : null) ??  `ONLINE · ${this.n} PLAYERS` : 'VS CPU', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
     // painéis laterais
     // painel esquerdo: o meu (ou o jogador 1). Direito: o oponente em edição (arena: 1 ou 2) ou o primeiro oponente online
     const izq = this.online ? this.mi : 0;
@@ -232,22 +242,22 @@ export class Seleccion {
       texto(g, `${ARENAS[this.arena].nombre} · ${NOMBRE_DIFICULTAD[this.nivel]}`, 314, 266, { tam: 8, align: 'center', base: 'middle', color: this.nivel === 'dificil' ? '#ff7a7a' : this.nivel === 'normal' ? '#ffd166' : '#86efac' });
       texto(g, v >= 3 ? 'REMATCH · ALL REWARDS EARNED' : ['WIN TO UNLOCK IT', 'WIN AGAIN: PROFILE ICON', 'WIN AGAIN: SHINY'][v], 314, 279, { tam: 6, align: 'center', base: 'middle', color: UI.suave });
     } else fila(244, 'ARENA', ARENAS[this.arena].nombre, this.foco === 'arena', this.cajaArena(-1), this.cajaArena(1));
-    if (!this.liga && (this.modo === 'cpu' || this.modo === 'arena')) fila(266, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
+    if (!this.liga && this.contraCpu) fila(266, 'LEVEL', NOMBRE_NIVEL[this.nivel], this.foco === 'nivel', this.cajaNivel(-1), this.cajaNivel(1));
     const l = this.cajaLuchar();
     marco(g, l.x, l.y, l.w, l.h, this.foco === 'luchar' ? 'oro' : 'azul');
     texto(g, this.online ? (this.listo ? 'WAITING...' : 'READY!') : 'FIGHT!', l.x + l.w / 2, l.y + l.h / 2, { tam: 12, align: 'center', base: 'middle', color: this.foco === 'luchar' ? UI.textoOscuro : '#fff', borde: this.foco === 'luchar' ? 0 : 3 });
     if (this.avisoShiny && this.t - this.avisoShiny.t0 < 1.6) texto(g, this.avisoShiny.txt ?? (this.avisoShiny.on ? 'SHINY ON!' : 'SHINY OFF'), ANCHO / 2, 298, { tam: 12, align: 'center', base: 'middle', color: '#ffe27a', borde: 3 });
-    texto(g, this.esperaTxt || (this.modo === 'cpu' || this.modo === 'arena' ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
+    texto(g, this.esperaTxt || (this.contraCpu ? 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE · R RANDOM CPU' : 'ARROWS MOVE · ENTER PICK · TAB SWITCH SIDE'), ANCHO / 2, ALTO - 10, { tam: 6, color: this.esperaTxt ? '#7dd3fc' : UI.apagado, align: 'center' });
   }
 
   panel(g, lado, x0, t, pos = lado) {
     const bank = this.app.bank;
     if (pos === 1 && this.modo === 'entreno') { marco(g, x0, 30, 178, 270, 'panel'); texto(g, 'DUMMY', x0 + 89, 52, { tam: 10, align: 'center', color: UI.suave }); texto(g, 'Stands still, takes hits.\nNo timer.', x0 + 89, 80, { tam: 7, align: 'center', color: UI.suave }); return; }
-    const idx = lado >= 1 && this.aleatorio[lado] && (this.modo === 'cpu' || this.modo === 'arena') ? -1 : this.elegido[lado];
+    const idx = lado >= 1 && this.aleatorio[lado] && this.contraCpu ? -1 : this.elegido[lado];
     const activo = this.lado === lado && this.modo !== 'entreno' && !this.online;
     marco(g, x0, 30, 178, 270, 'panel');
     const color = ['#1f4f9a', '#9a2a2a', '#2f7d46', '#9a7a1a'][lado] ?? '#9a2a2a';
-    const nombre = this.liga ? (lado === 0 ? 'YOU' : 'LEAGUE RIVAL') : this.online ? (lado === this.mi ? 'YOU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : 'PLAYER 2';
+    const nombre = this.liga ? (lado === 0 ? 'YOU' : 'LEAGUE RIVAL') : this.online ? (lado === this.mi ? 'YOU' : this.online.cpus?.includes(lado) ? 'CPU' : `PLAYER ${lado + 1}`) : this.modo === 'arena' ? (lado === 0 ? 'PLAYER 1' : `CPU ${lado}`) : lado === 0 ? 'PLAYER 1' : this.modo === 'cpu' ? 'CPU' : this.modo === 'duplas' ? 'RIVAL CPU' : 'PLAYER 2';
     rect(g, x0 + 2, 31, 174, 14, color);
     texto(g, nombre, x0 + 89, 38, { tam: 7, align: 'center', base: 'middle', borde: 2 });
     if (activo) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(x0 + 1, 31, 176, 268); }

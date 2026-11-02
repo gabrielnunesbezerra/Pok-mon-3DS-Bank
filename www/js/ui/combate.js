@@ -11,7 +11,7 @@ import { hueShiny, conHue, componer, pezAlma } from '../render/efectos.js';
 import { Camara } from '../render/camara.js';
 import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
-import { Hud } from '../render/hud.js';
+import { Hud, corDe } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
@@ -69,7 +69,7 @@ export class Combate {
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
     const online = d.modo === 'online';
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, shiny: d.shiny ?? [], etapas: d.etapas ?? [0, 0, 0, 0], modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, shiny: d.shiny ?? [], etapas: d.etapas ?? [0, 0, 0, 0], equipos: d.equipos ?? null, modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
     const tactil = app.tactil.activo;
@@ -83,6 +83,9 @@ export class Combate {
     if (online) {
       this.ctrls = luta.luchadores.map((l, i) => (i === this.lado ? new ControlHumano(app, luta, l, tactil ? 'tactil' : 'kbm', this.camara) : null));
       this.humanos = [this.lado];
+      // duplas online: o anfitrião joga pelas CPUs que completam os times
+      this.iasCpu = {};
+      if (this.lado === 0) for (const c of d.cpus ?? []) if (luta.luchadores[c]) this.iasCpu[c] = new IA(luta, luta.luchadores[c], 'normal');
       this.sesion.reiniciar(d.semilla);
       this.sesion.alOtro = m => this.mensajeOnline(m);
       this.sesion.alCerrar = () => { this.rivalFuera = true; };
@@ -92,7 +95,8 @@ export class Combate {
       if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
       else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
       else { this.ctrls.push(new IA(luta, b, d.nivel)); b.ventaja = ventajaDe(d.nivel); }
-      if (luta.luchadores[2]) { this.ctrls.push(new IA(luta, luta.luchadores[2], d.nivel)); luta.luchadores[2].ventaja = ventajaDe(d.nivel); }
+      // arena e duplas: as outras vagas são CPU (no modo duplas o parceiro não ganha a vantagem da dificuldade)
+      for (let i = 2; i < luta.luchadores.length; i++) { const x = luta.luchadores[i]; this.ctrls.push(new IA(luta, x, d.nivel)); if (x.equipo !== a.equipo) x.ventaja = ventajaDe(d.nivel); }
       this.humanos = d.modo === 'versus' ? [0, 1] : [0];
     }
     if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
@@ -153,7 +157,7 @@ export class Combate {
     this.revisarOtra();
   }
   revisarOtra() {
-    if (this.quiereOtra.size < this.luta.luchadores.length || this.lado !== 0) return;
+    if (this.quiereOtra.size < this.sesion.nHumanos || this.lado !== 0) return;
     const semilla = (Math.random() * 1e9) | 0;
     this.sesion.enviar({ t: 'otra', semilla });
     this.app.ir('combate', { ...this.datos, semilla });
@@ -203,7 +207,7 @@ export class Combate {
     this.app.tactil.actualizar();
     if (this.sesion) {
       if (this.rivalFuera || luta.fase === 'fin') return;
-      const amostra = () => this.ctrls[this.lado].intento(dt);
+      const amostra = s => (s === this.lado ? this.ctrls[this.lado].intento(dt) : this.iasCpu[s]?.intento(dt) ?? {});
       let r = this.sesion.paso(luta, amostra);
       if (r) luta.paso(TICK, r);
       // ficou para trás (o celular travou um pouco ou a rede segurou os pacotes): alcança rodando passos extras
@@ -237,10 +241,13 @@ export class Combate {
 
   armarResultado(ganador) {
     const d = this.datos;
-    const l = this.luta.luchadores[ganador];
-    const vs = d.modo === 'cpu' || d.modo === 'arena';
-    const titulo = d.modo === 'online' ? (ganador === this.lado ? 'VICTORY!' : `PLAYER ${ganador + 1} WINS`) : d.modo === 'versus' ? `PLAYER ${ganador + 1} WINS!` : vs ? (ganador === 0 ? 'VICTORY' : 'DEFEAT') : `${l.nombre} WINS`;
-    sfx(vs && ganador !== 0 || (d.modo === 'online' && ganador !== this.lado) ? 'derrota' : 'victoria');
+    const luta = this.luta, l = luta.luchadores[ganador];
+    const vs = d.modo === 'cpu' || d.modo === 'arena' || d.modo === 'duplas';
+    // com times, ganhou quem está no time vencedor
+    const meu = luta.luchadores[this.lado ?? 0], venci = luta.equipos ? l.equipo === meu.equipo : ganador === (this.lado ?? 0);
+    const titulo = luta.equipos && (d.modo === 'online' || vs) ? (venci ? 'VICTORY!' : 'DEFEAT') : d.modo === 'online' ? (venci ? 'VICTORY!' : `PLAYER ${ganador + 1} WINS`) : d.modo === 'versus' ? `PLAYER ${ganador + 1} WINS!` : vs ? (venci ? 'VICTORY' : 'DEFEAT') : `${l.nombre} WINS`;
+    this.venci = venci;
+    sfx((vs || d.modo === 'online') && !venci ? 'derrota' : 'victoria');
     // Liga Pokémon: a vitória conta para o rival e pode liberar Pokémon, ícone ou shiny
     const premios = d.liga && ganador === 0 ? vencerLiga(d.liga) : [];
     if (premios.length) { sfx('evoCarga'); this.app.alProgreso?.(); }
@@ -333,7 +340,7 @@ export class Combate {
     const rx = Math.max(7, Math.round((m.width ?? 18) * 0.5 * sc)), ry = Math.max(3, Math.round(rx * 0.45));
     if (!l.oculto) {
       g.fillStyle = 'rgba(0,0,0,0.42)'; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx, ry, 0, 0, 7); g.fill();
-      if (!l.ko) { g.strokeStyle = l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
+      if (!l.ko) { g.strokeStyle = this.luta.equipos || this.luta.luchadores.length > 2 ? corDe(this.luta, l) : l.lado === 0 ? '#4a9fff' : '#ff5a5a'; g.lineWidth = 1.5; g.globalAlpha = 0.9; g.beginPath(); g.ellipse(Math.round(l.x), Math.round(l.y), rx + 3, ry + 2, 0, 0, 7); g.stroke(); g.globalAlpha = 1; }
     }
     // Fly: lá no alto, fora da tela; no chão só o anel azul-claro marcando onde ele vai cair, como no site
     if (l.est.vuelo?.modo === 'aire') {
@@ -603,9 +610,16 @@ export class Combate {
   }
   // barrinhas de calor, de estado e de "vida de baixo" em cima dos lutadores
   barrasMundo(g, luta) {
+    const muitos = luta.luchadores.length > 2;
     for (const l of luta.luchadores) {
       if (l.ko || l.oculto) continue;
       const sx = Math.round(l.x), by = Math.round(l.y - l.alto - l.salto - 9);
+      // com 3 ou 4 lutadores: vidinha na cor do time em cima de cada um (e "YOU" no seu)
+      if (muitos) {
+        const w = 26, f = Math.max(0, l.hp / l.hpMax), cor = corDe(luta, l), y = by - (l.calor > 12 ? 8 : 0);
+        rect(g, sx - w / 2 - 1, y - 1, w + 2, 5, '#04102c'); rect(g, sx - w / 2, y, w, 3, '#2a1d2a'); rect(g, sx - w / 2, y, Math.round(w * f), 3, cor);
+        if (l.humano) texto(g, 'YOU', sx, y - 9, { tam: 6, align: 'center', color: cor, borde: 2 });
+      }
       if (l.calor > 12 || luta.t < l.sobrecargaHasta) {
         const k = Math.min(1, l.calor / 100), w = 28, x = sx - 14;
         rect(g, x - 1, by - 1, w + 2, 6, '#04102c'); rect(g, x, by, w, 4, '#3a1a14');
@@ -686,14 +700,15 @@ export class Combate {
   dibujarResultado(g) {
     const r = this.resultado, luta = this.luta;
     rect(g, 0, 0, ANCHO, ALTO, 'rgba(0,0,0,0.6)');
-    const perd = this.datos.modo === 'cpu' && r.ganador === 1;
+    const perd = this.venci === false && this.datos.modo !== 'versus';
     texto(g, r.titulo, ANCHO / 2, 70, { tam: 24, color: perd ? '#ff5a5a' : '#ffd23c', borde: 6, align: 'center', base: 'middle', peso: 700 });
     const w = luta.luchadores[r.ganador];
-    texto(g, `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
+    const outro = luta.luchadores.find(x => x.equipo !== w.equipo);
+    texto(g, luta.equipos ? `${w.equipo ? 'RED' : 'BLUE'} TEAM ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 0]}` : `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
     const n = luta.luchadores.length;
     luta.luchadores.forEach((x, i) => {
       const cx = n >= 3 ? ANCHO / 2 + (i - (n - 1) / 2) * (n === 4 ? 140 : 170) : ANCHO / 2 + (i ? 120 : -120);
-      texto(g, x.nombre, cx, 134, { tam: 8, color: COLOR_EQUIPO[i], align: 'center' });
+      texto(g, x.nombre, cx, 134, { tam: 8, color: corDe(luta, x), align: 'center' });
       texto(g, `DAMAGE ${Math.round(x.stats.dano)}`, cx, 150, { tam: 8, align: 'center' });
       texto(g, `HITS ${x.stats.golpes}`, cx, 164, { tam: 8, align: 'center' });
     });

@@ -4,7 +4,12 @@
 // Três níveis: easy, normal, hard. Usa o aleatório com semente, então a luta continua repetível.
 import { RADIO, OVALO } from '../config.js';
 import { REGLAS, efectividad } from '../data/regras.js';
-import { aleatorio, entre, difAng } from './util.js';
+import { difAng } from './util.js';
+
+// a CPU tem o próprio sorteio: não mexe no aleatório da luta (no online só o anfitrião roda a CPU das duplas,
+// e o resto do motor tem que sortear igual nos dois aparelhos)
+const gerador = s => () => { s = (s + 0x6d2b79f5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+let proximaSemente = 0x2545f491;
 import { limitarCampo } from './fisica.js';
 
 const NIVELES = {
@@ -158,12 +163,14 @@ function empujeBorde(x, y, margen, f) {
 }
 
 export class IA {
-  constructor(luta, l, nivel = 'normal') {
+  entre(a, b) { return a + this.azar() * (b - a); }
+  constructor(luta, l, nivel = 'normal', semente = luta.semilla != null ? (Math.imul(luta.semilla, 2654435761) + l.lado * 7919 + 17) >>> 0 : (proximaSemente = (proximaSemente * 1103515245 + 12345) >>> 0)) {
+    this.azar = gerador(semente);
     this.luta = luta; this.l = l;
     this.cfg = NIVELES[nivel] ?? NIVELES.normal;
     this.c = { ...CEREBRO, ...(l.def.ia ?? {}) };
     this.espera = 0;
-    this.lado = aleatorio() < 0.5 ? 1 : -1;
+    this.lado = this.azar() < 0.5 ? 1 : -1;
     this.cambioLado = 1;
     this.it = { mx: 0, my: 0, ax: l.x, ay: l.y };
     this.disparando = false;
@@ -201,7 +208,7 @@ export class IA {
     if (yo.est.vuelo && luta.entidades.some(o => o.tipo === 'vuelo' && o.dueno === yo)) { this.volar(it, r); return { ...it }; }
     if (!r.oculto) this.vistoEn = { x: r.x, y: r.y };
     if (this.espera > 0) return { ...it };
-    this.espera = this.cfg.reaccion * (0.7 + aleatorio() * 0.6);
+    this.espera = this.cfg.reaccion * (0.7 + this.azar() * 0.6);
     const s = this.percibir(r);
     this.mover(s);
     this.elegir(s);
@@ -263,7 +270,7 @@ export class IA {
     }
     // o que os outros lutadores estão fazendo agora
     for (const l of luta.luchadores) {
-      if (l === yo || l.ko) continue;
+      if (l === yo || l.ko || l.equipo === yo.equipo) continue;
       const ox = yo.x - l.x, oy = yo.y - l.y, od = Math.hypot(ox, oy) || 1, hx = -ox / od, hy = -oy / od;
       if (l.dash) {
         const dd = l.dash, resta = Math.max(0, dd.dur - dd.t) * dd.vel, c = Math.cos(dd.ang), sn = Math.sin(dd.ang), a2 = ox * c + oy * sn;
@@ -294,7 +301,7 @@ export class IA {
   }
 
   ve(obj, p) {
-    if (!this.vistas.has(obj)) this.vistas.set(obj, aleatorio() < p);
+    if (!this.vistas.has(obj)) this.vistas.set(obj, this.azar() < p);
     return this.vistas.get(obj);
   }
 
@@ -338,7 +345,7 @@ export class IA {
     this.ultimaDecision = t;
     let mx = 0, my = 0;
     this.cambioLado -= dtDec;
-    if (this.cambioLado <= 0) { this.cambioLado = entre(c.cambioLado[0], c.cambioLado[0] + c.cambioLado[1]); if (aleatorio() < 0.5) this.lado *= -1; }
+    if (this.cambioLado <= 0) { this.cambioLado = this.entre(c.cambioLado[0], c.cambioLado[0] + c.cambioLado[1]); if (this.azar() < 0.5) this.lado *= -1; }
     // distância boa: corpo a corpo entra em zigue-zague contra quem atira; quem atira recua de quem bate
     if (d > rango + c.rangoBanda) {
       const lateral = s.mele && !s.rivalMele ? c.lateralEntrada : c.lateral;
@@ -349,8 +356,8 @@ export class IA {
     }
     // às vezes fica plantado atirando, às vezes rodeia
     if (t >= this.plan.hasta) {
-      const plantado = aleatorio() < c.pPlantarse;
-      this.plan = { plantado, hasta: t + (plantado ? entre(c.plantadoDur[0], c.plantadoDur[0] + c.plantadoDur[1]) : entre(c.rodeoDur[0], c.rodeoDur[0] + c.rodeoDur[1])) };
+      const plantado = this.azar() < c.pPlantarse;
+      this.plan = { plantado, hasta: t + (plantado ? this.entre(c.plantadoDur[0], c.plantadoDur[0] + c.plantadoDur[1]) : this.entre(c.rodeoDur[0], c.rodeoDur[0] + c.rodeoDur[1])) };
     }
     const plantado = this.plan.plantado && !s.mele && d < s.lmb.alcance && !s.peligro?.fuerte && (!s.rivalMele || d > 100);
     const rodeo = plantado ? 0 : s.mele && d < rango + 30 ? c.rodeo * 0.3 : c.rodeo;
@@ -394,7 +401,7 @@ export class IA {
     let usar = null;
     // dentro do Barrier não ataca (atacar estoura a bolha), a não ser que o rival esteja vendido
     const enBurbuja = !!yo.burbuja?.vivo && !s.vendido;
-    if (s.peligro && aleatorio() < this.cfg.esquiva + 0.2) usar = this.responder(s, listo, perfiles);
+    if (s.peligro && this.azar() < this.cfg.esquiva + 0.2) usar = this.responder(s, listo, perfiles);
     if (!usar && !enBurbuja) usar = this.atacar(s, listo, perfiles);
     if (!usar && !enBurbuja) usar = this.dashear(s, listo, perfiles);
     if (usar) {
@@ -438,9 +445,9 @@ export class IA {
         if (!listo(sl)) continue;
         const h = kit[sl], P = perfiles[sl];
         if (h.forma === 'vuelo' && (gordo || p.clase === 'rayo')) return { slot: sl, P };
-        if (h.forma === 'embestidas' && d < P.alcance && aleatorio() < this.cfg.esquiva) return { slot: sl, P };
+        if (h.forma === 'embestidas' && d < P.alcance && this.azar() < this.cfg.esquiva) return { slot: sl, P };
         if (h.forma === 'meteoro' && gordo && this.pAcierto(P, s) > 0.5) return { slot: sl, P };
-        if (sl === 'esp' && h.forma === 'dash' && h.invul !== false && aleatorio() < this.cfg.esquiva) {
+        if (sl === 'esp' && h.forma === 'dash' && h.invul !== false && this.azar() < this.cfg.esquiva) {
           const m = Math.hypot(p.ex, p.ey) || 1;
           return { slot: sl, P, mx: p.ex / m, my: p.ey / m };
         }
@@ -468,7 +475,7 @@ export class IA {
       if (s.rEspejo && P.tipo === 'dirigida') continue;
       let p = this.pAcierto(P, s);
       if (p <= 0) continue;
-      p = p * cfg.juicio + aleatorio() * (1 - cfg.juicio);
+      p = p * cfg.juicio + this.azar() * (1 - cfg.juicio);
       const ef = efectividad(h.tipo, r.tipos);
       const danoEst = (h.dano ?? 0) * P.golpes * ef * (REGLAS.danoGlobal ?? 1) * (yo.atk / r.defensa) * (surge && sl !== 'e' ? REGLAS.surgeMult ?? 1.3 : 1);
       const letal = danoEst >= r.hp;
@@ -487,8 +494,8 @@ export class IA {
         const ganas = surge || yo.energia >= c.energiaTope || ef > 1 || letal || s.vendido || s.rCanaliza || p >= c.pSeguro
           || (acosado && aparta) || (P.tipo === 'area' && luta.t - this.aterrice < 0.6);
         if (p < (ganas ? c.pConGanas : c.pSinGanas)) continue;
-        if (!ganas && aleatorio() > cfg.agresividad * 0.7) continue;
-        if (!ganas && yo.energia < c.reservaEnergia && aleatorio() < c.pAhorro) continue;
+        if (!ganas && this.azar() > cfg.agresividad * 0.7) continue;
+        if (!ganas && yo.energia < c.reservaEnergia && this.azar() < c.pAhorro) continue;
       }
       if (valor > mejorValor) { mejorValor = valor; mejor = { slot: sl, P }; }
     }
@@ -505,7 +512,7 @@ export class IA {
       case 'descanso': return hp < c.restHp && (d > c.restDist || s.vendido) && !viene ? u : null;
       case 'crecimiento':
         if ((d > c.growthDist || s.vendido) && !viene && (!yo.ultiLista || yo.energia < 60)) {
-          this.mantener = { slot: sl, hasta: t + (h.max ?? 3) * (0.5 + aleatorio() * 0.5), cerca: s.vendido ? 40 : c.growthSoltar };
+          this.mantener = { slot: sl, hasta: t + (h.max ?? 3) * (0.5 + this.azar() * 0.5), cerca: s.vendido ? 40 : c.growthSoltar };
           return u;
         }
         return null;
@@ -530,22 +537,22 @@ export class IA {
   dashear(s, listo, perfiles) {
     const yo = this.l, cfg = this.cfg, c = this.c, h = yo.kit.esp, { d, ux, uy } = s;
     if (h?.forma === 'corrida') return listo('esp') && ((!yo.est.corrida && d > 200 && yo.fervor > 45) || (yo.est.corrida && (d < 90 || yo.fervor < 15))) ? { slot: 'esp', P: perfiles.esp } : null;
-    if (h?.forma === 'rodar') return !yo.est.rodando && listo('esp') && d > 50 && d < 320 && aleatorio() < cfg.agresividad * 0.6 ? { slot: 'esp', P: perfiles.esp } : null;
+    if (h?.forma === 'rodar') return !yo.est.rodando && listo('esp') && d > 50 && d < 320 && this.azar() < cfg.agresividad * 0.6 ? { slot: 'esp', P: perfiles.esp } : null;
     if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja')) return null;
     const P = perfiles.esp, hp = yo.hp / yo.hpMax;
     if (h.forma === 'burbuja') {
       const acosado = (hp < c.escapeHp || (s.rivalMele && s.rango >= 60)) && d < c.escapeDist;
-      return !yo.burbuja?.vivo && acosado && aleatorio() < c.pEscape + cfg.esquiva * 0.3 ? { slot: 'esp', P, mx: -ux * 0.7 - uy * this.lado * 0.7, my: -uy * 0.7 + ux * this.lado * 0.7 } : null;
+      return !yo.burbuja?.vivo && acosado && this.azar() < c.pEscape + cfg.esquiva * 0.3 ? { slot: 'esp', P, mx: -ux * 0.7 - uy * this.lado * 0.7, my: -uy * 0.7 + ux * this.lado * 0.7 } : null;
     }
     if (P.tipo === 'vuelo') return this.volarOfensivo('esp', h, P, s);
-    if ((hp < c.escapeHp || (s.rivalMele && s.rango >= 60)) && d < c.escapeDist && aleatorio() < c.pEscape + cfg.esquiva * 0.3) {
+    if ((hp < c.escapeHp || (s.rivalMele && s.rango >= 60)) && d < c.escapeDist && this.azar() < c.pEscape + cfg.esquiva * 0.3) {
       return { slot: 'esp', P, mx: -ux * 0.7 - uy * this.lado * 0.7, my: -uy * 0.7 + ux * this.lado * 0.7 };
     }
-    if (P.tipo === 'embestida' && d > 28 && d < P.alcance && this.pAcierto(P, s) >= c.pEmbestir && aleatorio() < cfg.agresividad) {
+    if (P.tipo === 'embestida' && d > 28 && d < P.alcance && this.pAcierto(P, s) >= c.pEmbestir && this.azar() < cfg.agresividad) {
       const q = this.prever(P, s), qx = q.x - yo.x, qy = q.y - yo.y, m = Math.hypot(qx, qy) || 1;
       return { slot: 'esp', P, mx: qx / m, my: qy / m };
     }
-    if (s.mele && d > 70 && d < P.alcance + 60 && !s.peligro && aleatorio() < cfg.agresividad * c.pEntrar) {
+    if (s.mele && d > 70 && d < P.alcance + 60 && !s.peligro && this.azar() < cfg.agresividad * c.pEntrar) {
       const lado = d > P.alcance ? this.lado * c.entradaLateral : 0, mx = ux - uy * lado, my = uy + ux * lado, m = Math.hypot(mx, my) || 1;
       return { slot: 'esp', P, mx: mx / m, my: my / m };
     }
@@ -555,8 +562,8 @@ export class IA {
   volarOfensivo(sl, h, P, s) {
     const { d } = s, c = this.c, u = { slot: sl, P };
     if (s.rInvul > 0.5) return null;
-    if (d > c.volarLejos && aleatorio() < this.cfg.agresividad * c.pVolar) return u;
-    if (d < h.radio * 0.9 && (s.vendido || s.rCanaliza || aleatorio() < this.cfg.agresividad * c.pCaer)) return u;
+    if (d > c.volarLejos && this.azar() < this.cfg.agresividad * c.pVolar) return u;
+    if (d < h.radio * 0.9 && (s.vendido || s.rCanaliza || this.azar() < this.cfg.agresividad * c.pCaer)) return u;
     if (this.l.hp / this.l.hpMax < c.escapeHp && d < 80) return u;
     return null;
   }
@@ -632,10 +639,10 @@ export class IA {
     const yo = this.l, it = this.it;
     // cortando um disparo: mira no projétil, não no rival
     if (hacia && hacia.clase === 'disparo' && hacia.de !== s.r) { it.ax = yo.x + hacia.dirx * 120; it.ay = yo.y + hacia.diry * 120; return; }
-    if (s.r.oculto && this.vistoEn) { it.ax = this.vistoEn.x + (aleatorio() * 2 - 1) * 20; it.ay = this.vistoEn.y + (aleatorio() * 2 - 1) * 14; return; }
+    if (s.r.oculto && this.vistoEn) { it.ax = this.vistoEn.x + (this.azar() * 2 - 1) * 20; it.ay = this.vistoEn.y + (this.azar() * 2 - 1) * 14; return; }
     const q = this.prever(P, s), err = this.cfg.error * (0.6 + Math.min(1, s.d / 250)) * (P.tipo === 'mele' ? 0.3 : 1);
-    it.ax = q.x + (aleatorio() * 2 - 1) * err;
-    it.ay = q.y + (aleatorio() * 2 - 1) * err;
+    it.ax = q.x + (this.azar() * 2 - 1) * err;
+    it.ay = q.y + (this.azar() * 2 - 1) * err;
   }
 }
 
