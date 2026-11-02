@@ -681,6 +681,8 @@ export class Combate {
         if (cheio && Math.random() < 0.3) this.fx.add({ x: sx + (Math.random() - 0.5) * 20, y: l.y - l.alto * 0.5, vx: (Math.random() - 0.5) * 80, vy: -40, size: 2, life: 0.25, color: '#fde047', forma: 'chispa' });
       }
       // amaldiçoado: chaminha roxa em cima da cabeça
+      // Mega Kangaskhan: o filhote anda do lado da mãe (some quando foi arremessado)
+      if (l.def.eco && l.mega && !l.est.semFilhote) { const lado = Math.cos(l.angulo ?? 0) >= 0 ? 1 : -1, fx2 = sx - lado * 16, fy = l.y - Math.abs(Math.sin(this.t * 12)) * 2 * (l.moviendo ? 1 : 0.3); g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(fx2, l.y, 6, 2, 0, 0, 7); g.fill(); g.fillStyle = '#5b3a1e'; g.beginPath(); g.ellipse(fx2, fy - 8, 6, 7, 0, 0, 7); g.fill(); g.fillStyle = '#c9925a'; g.beginPath(); g.ellipse(fx2, fy - 8, 5, 6, 0, 0, 7); g.fill(); g.fillStyle = '#f2d2a0'; g.beginPath(); g.ellipse(fx2 + lado * 1.5, fy - 6, 2.5, 2.5, 0, 0, 7); g.fill(); g.fillStyle = '#1a0f08'; g.fillRect(Math.round(fx2 + lado * 2), Math.round(fy - 10), 1, 1); }
       if (l.est.maldito) PX.carimbar(g, PX.llama(Math.floor(this.t * 12), 7, ['#1a0830', '#6d28d9', '#c084fc', '#f5d0fe']), sx + 10, by - 2, 0, 1, 0.9);
       if (l.cargaTipo) {
         for (let i = 0; i < 3; i++) { const px = sx - 9 + i * 7; rect(g, px - 1, by - 11, 6, 6, '#000'); rect(g, px, by - 10, 4, 4, i < l.cargaTipo.n ? colorTipo(l.cargaTipo.tipo === 'CONFUSION' ? 'PSYCHIC' : l.cargaTipo.tipo) : '#2a3040'); }

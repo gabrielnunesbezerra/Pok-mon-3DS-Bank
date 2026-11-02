@@ -337,3 +337,62 @@ Object.assign(ENTIDADES_NOVAS, {
     const soco = Math.sin(t * 30) > 0; g.fillStyle = '#d6a35c'; g.beginPath(); g.arc(x - (soco ? 8 : 4), y + 2, 2.5, 0, 7); g.fill();
   },
 });
+
+// ---------------------------------------------------------------- Mimikyu, Decidueye, Ceruledge e Lapras
+const FOGO_FANTASMA = ['#1e1b4b', '#4338ca', '#60a5fa', '#e0f2fe'];
+function flechaDesenho(g, x, y, a, s, corpo, ponta, pena) {
+  g.save(); g.translate(x, y); g.rotate(a);
+  g.strokeStyle = corpo; g.lineWidth = 2 * s; g.beginPath(); g.moveTo(-10 * s, 0); g.lineTo(8 * s, 0); g.stroke();
+  g.fillStyle = ponta; g.beginPath(); g.moveTo(12 * s, 0); g.lineTo(6 * s, -3 * s); g.lineTo(6 * s, 3 * s); g.fill();
+  g.fillStyle = pena; g.beginPath(); g.moveTo(-10 * s, 0); g.lineTo(-14 * s, -3.5 * s); g.lineTo(-8 * s, 0); g.lineTo(-14 * s, 3.5 * s); g.fill();
+  g.restore();
+}
+Object.assign(ESTILOS_NOVOS, {
+  flechaFolha(g, p) { flechaDesenho(g, p.x, p.y - p.alt, p.ang, (p.escala ?? 1.4) / 1.4, '#7c5a2a', '#bef264', '#4ade80'); },
+  flechaSombra(g, p, t) { const x = p.x, y = p.y - p.alt; g.globalAlpha = 0.5; for (let i = 1; i <= 3; i++) { g.fillStyle = '#7c3aed'; g.beginPath(); g.arc(x - Math.cos(p.ang) * i * 6, y - Math.sin(p.ang) * i * 4 + Math.sin(t * 20 + i) * 1.5, 3 - i * 0.7, 0, 7); g.fill(); } g.globalAlpha = 1; flechaDesenho(g, x, y, p.ang, (p.escala ?? 1.4) / 1.4, '#3b2a55', '#e879f9', '#a78bfa'); },
+});
+Object.assign(EVENTOS_NOVOS, {
+  nuvemBriga(fx, e) { fx.heroes.push({ k: 'nuvemBriga', x: e.x, y: e.y, t: 0, life: e.dur + 0.2, hue: fx.hue }); },
+  socoNuvem(fx, e) { fx.add({ x: e.x, y: e.y, size: e.forte ? 26 : 12, life: 0.18, color: '#ffffff', brillo: '#f9a8d4', forma: 'estouro' }); fx.add({ x: e.x, y: e.y - 6, vx: entre(-40, 40), vy: -60, size: 5, life: 0.5, color: '#fde047', forma: 'nota' }); },
+  salaTruque(fx, e) { fx.flash = Math.max(fx.flash, 0.08); fx.flashColor = '#a78bfa'; },
+  abraco(fx, e) { fx.heroes.push({ k: 'nuvemBriga', x: e.b.x, y: e.b.y, t: 0, life: e.dur + 0.1, grande: true, hue: fx.hue }); },
+  disfarceQuebra(fx, e) { for (let i = 0; i < 10; i++) fx.add({ x: e.l.x + entre(-8, 8), y: e.l.y - e.l.alto * 0.8, vx: entre(-60, 60), vy: -entre(40, 120), g: 300, size: entre(2, 3), life: 0.7, color: i % 2 ? '#fde68a' : '#7c5a2a', forma: 'sq', vr: entre(-10, 10) }); },
+  disfarceVolta(fx, e) { fx.chispas(e.l.x, e.l.y - e.l.alto * 0.6, '#fde68a', 6, 120); },
+  arcoPuxa(fx, e) { fx.heroes.push({ k: 'arcoCarga', l: e.l, t: 0, life: e.max + 0.4, hue: fx.hue }); },
+  arcoSolta(fx, e) { const x = e.l.x + Math.cos(e.ang) * 14, y = e.l.y - e.l.alto * 0.5; for (let i = 0; i < 4 + e.k * 8; i++) fx.add({ x, y, vx: Math.cos(e.ang + entre(-0.4, 0.4)) * entre(80, 200), vy: Math.sin(e.ang) * 80 + entre(-40, 40), drag: 3, size: 2.5, life: 0.4, color: '#bef264', forma: 'hoja' }); if (e.k > 0.9) fx.punch = Math.max(fx.punch ?? 0, 0.03); },
+  pulaCeu(fx, e) { for (let i = 0; i < 12; i++) fx.add({ x: e.l.x, y: e.l.y - 10, vx: entre(-60, 60), vy: -entre(150, 300), g: 200, size: 3, life: 0.6, forma: 'hoja' }); },
+  flechaCai(fx, e) { fx.heroes.push({ k: 'flechaCai', x: e.x, y: e.y, t: 0, life: e.queda + 0.35, queda: e.queda, hue: fx.hue }); },
+  pousa(fx, e) { fx.polvo(e.l.x, e.l.y, 3, 6); },
+  espadasNascem(fx, e) { for (let i = 0; i < 10; i++) fx.add({ x: e.l.x + entre(-20, 20), y: e.l.y - 10, vy: -entre(40, 90), size: 3, grow: 2, life: 0.5, forma: 'llama', rampa: FOGO_FANTASMA }); },
+  espadaAparece(fx, e) { fx.heroes.push({ k: 'espadaFantasma', b: e.b, t: 0, life: 0.8, hue: fx.hue }); },
+  corteEspada(fx, e) { fx.heroes.push({ k: 'corteEspada', x: e.x, y: e.y, a: ale() * 3, t: 0, life: 0.22, hue: fx.hue }); fx.chispas(e.x, e.y, '#93c5fd', 5, 200); },
+  espadaCai(fx, e) { fx.heroes.push({ k: 'espadaGigante', x: e.x, y: e.y, radio: e.radio, queda: e.queda, t: 0, life: e.queda + 0.6, hue: fx.hue }); },
+  espadaImpacto(fx, e) { for (let i = 0; i < 22; i++) { const a = (i / 22) * 6.28; fx.add({ x: e.x, y: e.y, vx: Math.cos(a) * entre(120, 220), vy: Math.sin(a) * entre(70, 130), drag: 2.5, size: 4, grow: 2.5, life: 0.55, forma: 'llama', rampa: FOGO_FANTASMA }); } fx.flash = Math.max(fx.flash, 0.15); fx.flashColor = '#bfdbfe'; fx.punch = Math.max(fx.punch ?? 0, 0.06); fx.heroes.push({ k: 'quemado', x: e.x, y: e.y, radio: e.radio, semilla: 1, cores: ['#0b1026', '#1e1b4b', '#60a5fa', '#e0f2fe'], t: 0, life: 2, hue: fx.hue }); },
+  cancao(fx, e) { for (let i = 0; i < 9; i++) { const a = e.ang + (i / 8 - 0.5) * (e.angulo * Math.PI / 180), s = e.alcance / 0.6; fx.add({ x: e.l.x, y: e.l.y - e.l.alto * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 0.6, size: 6, life: 0.7, color: ['#bfdbfe', '#f9a8d4', '#ffffff'][i % 3], forma: 'nota' }); } },
+  surfComeca(fx, e) { fx.add({ x: e.l.x, y: e.l.y, size: 24, life: 0.4, forma: 'salpicadura' }); },
+});
+Object.assign(HEROES_NOVOS, {
+  // nuvem de briga com estrelas, mãos e pés aparecendo
+  nuvemBriga(g, h, k, t) { const al = Math.min(1, (1 - k) * 4), R = h.grande ? 26 : 20; for (let i = 0; i < 7; i++) { const a = i * 0.9 + t * 3; PX.carimbar(g, PX.humo(h.grande ? 13 : 10, ['#a8a29e', '#e7e5e4', '#ffffff']), h.x + Math.cos(a) * R * 0.6, h.y - 14 + Math.sin(a) * R * 0.35, 0, 1, al); } g.globalAlpha = al; for (let i = 0; i < 3; i++) PX.carimbar(g, PX.chispa(3, '#fde047'), h.x + Math.sin(t * 13 + i * 2) * R, h.y - 16 + Math.cos(t * 11 + i) * 10, 0, 1, 1); g.globalAlpha = 1; },
+  arcoCarga(g, h, k, t) { const l = h.l; if (!l.accion || !l.carga) return; const a = l.accion.angulo ?? 0, x = l.x + Math.cos(a) * 12, y = l.y - l.alto * 0.5, c = l.carga; g.strokeStyle = c >= 1 ? '#fde047' : '#bef264'; g.globalAlpha = 0.5 + c * 0.5; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 6 + c * 4, a - 1.1, a + 1.1); g.stroke(); for (let i = 0; i < 3; i++) { const b = t * 8 + i * 2.1, r = 22 * (1 - c) + 6; g.fillStyle = '#d9f99d'; g.fillRect(Math.round(x + Math.cos(b) * r), Math.round(y + Math.sin(b) * r), 2, 2); } g.globalAlpha = 1; },
+  flechaCai(g, h, k, t) { const f = Math.min(1, t / h.queda); if (f < 1) { flechaDesenho(g, h.x + 30 * (1 - f), h.y - 160 * (1 - f) - 6, Math.atan2(160, -30), 1.1, '#3b2a55', '#e879f9', '#a78bfa'); g.globalAlpha = 0.3 * f; g.fillStyle = '#000'; g.beginPath(); g.ellipse(h.x, h.y, 6, 2.5, 0, 0, 7); g.fill(); g.globalAlpha = 1; } else { g.globalAlpha = 1 - (t - h.queda) / 0.35; flechaDesenho(g, h.x, h.y - 8, Math.atan2(160, -30), 1.1, '#3b2a55', '#e879f9', '#a78bfa'); g.globalAlpha = 1; } },
+  espadaFantasma(g, h, k, t) { const b = h.b; if (!b || b.ko) return; const x = b.x + 18, y = b.y - b.alto - 12 + Math.sin(t * 8) * 2, a = -0.6 + k * 0.4; g.save(); g.translate(x, y); g.rotate(a); g.globalAlpha = 0.85; g.fillStyle = '#1e3a8a'; g.fillRect(-1.5, 0, 3, 6); g.fillStyle = '#93c5fd'; g.beginPath(); g.moveTo(-3, 0); g.lineTo(0, -20); g.lineTo(3, 0); g.fill(); g.fillStyle = '#e0f2fe'; g.fillRect(-0.5, -16, 1, 14); g.restore(); g.globalAlpha = 1; },
+  corteEspada(g, h, k) { g.globalAlpha = 1 - k; g.strokeStyle = '#bfdbfe'; g.lineWidth = 3 * (1 - k) + 1; g.lineCap = 'round'; g.beginPath(); g.moveTo(h.x - Math.cos(h.a) * 18, h.y - Math.sin(h.a) * 14); g.lineTo(h.x + Math.cos(h.a) * 18, h.y + Math.sin(h.a) * 14); g.stroke(); g.lineCap = 'butt'; g.globalAlpha = 1; },
+  espadaGigante(g, h, k, t) {
+    const f = Math.min(1, t / h.queda), y = h.y - 220 * (1 - f * f), al = t > h.queda ? Math.max(0, 1 - (t - h.queda) / 0.6) : 1;
+    g.globalAlpha = 0.2 + 0.4 * f; g.fillStyle = '#1e1b4b'; g.beginPath(); g.ellipse(h.x, h.y, h.radio * f, h.radio * 0.6 * f, 0, 0, 7); g.fill();
+    g.globalAlpha = al; g.save(); g.translate(h.x, y);
+    g.fillStyle = '#312e81'; g.fillRect(-4, -66, 8, 18); g.fillRect(-14, -50, 28, 4);
+    g.fillStyle = '#60a5fa'; g.beginPath(); g.moveTo(-8, -46); g.lineTo(0, 4); g.lineTo(8, -46); g.fill();
+    g.fillStyle = '#e0f2fe'; g.fillRect(-1, -44, 2, 40);
+    g.restore(); g.globalAlpha = 1;
+  },
+});
+Object.assign(ENTIDADES_NOVAS, {
+  // Trick Room: chão xadrez roxo distorcido, com quadrados flutuando
+  salaTruque(g, e, t) { const al = Math.min(1, e.t * 4, (e.dur - e.t) / 0.4), R = e.radio; g.save(); g.beginPath(); g.ellipse(e.x, e.y, R, R * 0.62, 0, 0, 7); g.clip(); g.globalAlpha = al * 0.28; for (let i = -6; i <= 6; i++) for (let j = -4; j <= 4; j++) { if ((i + j) % 2) continue; g.fillStyle = '#a78bfa'; g.fillRect(e.x + i * 14 + Math.sin(t * 2 + j) * 4, e.y + j * 9, 14, 9); } g.restore(); g.globalAlpha = al * 0.8; for (let i = 0; i < 5; i++) { const a = t + i * 1.26, x = e.x + Math.cos(a) * R * 0.7, y = e.y + Math.sin(a) * R * 0.4 - 20 - Math.sin(t * 3 + i) * 6; g.strokeStyle = '#c4b5fd'; g.lineWidth = 1.5; g.strokeRect(Math.round(x - 4), Math.round(y - 4), 8, 8); } g.globalAlpha = 1; },
+  // espadas de chama azul girando em volta do Ceruledge
+  orbitaEspadas(g, e, t, fx, luta) { const l = e.dueno, n = l?.est.espadasGiram?.n ?? 3, R = l?.est.espadasGiram?.R ?? 36; if (!l || l.ko) return; for (let k = 0; k < n; k++) { const a = (l.luta.t * 5) + (k / n) * Math.PI * 2, x = l.x + Math.cos(a) * R, y = l.y + Math.sin(a) * R * 0.62 - 14; g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); g.fillStyle = '#93c5fd'; g.beginPath(); g.moveTo(-3, 6); g.lineTo(0, -14); g.lineTo(3, 6); g.fill(); g.fillStyle = '#e0f2fe'; g.fillRect(-0.5, -10, 1, 14); g.restore(); if (Math.random() < 0.3) fx.add({ x, y, vy: -20, size: 2.5, grow: 2, life: 0.3, forma: 'llama', rampa: FOGO_FANTASMA }); } void luta; },
+  // onda do Surf: crista de água curva em volta da Lapras, com espuma
+  onda(g, e, t, fx) { const l = e.dueno; if (!l || l.ko) return; const al = Math.min(1, e.t * 5, (e.dur - e.t) / 0.4), a = e.ang, ca = Math.cos(a), sa = Math.sin(a); g.globalAlpha = al * 0.5; g.fillStyle = '#1d4ed8'; g.beginPath(); g.ellipse(l.x, l.y, 34, 18, 0, 0, 7); g.fill(); g.globalAlpha = al; for (const [c, k] of [['#2563eb', 1], ['#60a5fa', 0.75], ['#e0f2fe', 0.4]]) { g.strokeStyle = c; g.lineWidth = 6 * k + 1; g.lineCap = 'round'; g.beginPath(); g.ellipse(l.x + ca * 8, l.y + sa * 5 - 6, 30 * k + 6, 18 * k + 6, 0, a - 1.4, a + 1.4); g.stroke(); } g.lineCap = 'butt'; g.globalAlpha = 1; if (Math.random() < 0.7) fx.add({ x: l.x + ca * 28 + (Math.random() - 0.5) * 20, y: l.y + sa * 16 - 8, vx: ca * 60 + (Math.random() - 0.5) * 60, vy: -60, g: 300, size: 2, life: 0.5, forma: 'gota', rampa: PX.RAMPA_AGUA }); },
+});

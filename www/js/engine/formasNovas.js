@@ -777,13 +777,15 @@ export function ecoFilhote(hab, l, h, slot, extra) {
   const luta = hab.luta;
   if (!h.dano) return;
   if (l.est.semFilhote) return; // o filhote está grudado no rival
-  const k = l.mega ? 0.42 : 0.28;
+  // na Mega o filhote anda do lado e repete tudo: a mãe bate duas vezes
+  const k = l.mega ? 0.5 : 0.28;
   luta.programar(0.18, () => {
     if (l.ko || l.est.aturdido || l.est.dormido) return;
     const r = l.rival, ang = r && !r.ko ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l), ca = Math.cos(ang), sa = Math.sin(ang);
-    const perto = r && !r.ko && Math.hypot(r.x - l.x, r.y - l.y) < 70;
+    const ox = l.mega ? l.x - Math.sin(ang) * 18 : l.x, oy = l.mega ? l.y + Math.cos(ang) * 10 : l.y;
+    const perto = r && !r.ko && Math.hypot(r.x - ox, r.y - oy) < 70;
     luta.emit({ t: 'ecoFilhote', l, ang, perto });
-    if (perto) areaCirculo(luta, l, l.x + ca * 30, l.y + sa * 20, 22, { dano: h.dano * k, tipo: 'NORMAL', slot, surge: extra.surge, dirX: ca, dirY: sa, empuje: 30 });
-    else luta.add(new Proyectil(luta, l, { nombre: 'Joey', dano: h.dano * k, tipo: 'NORMAL', vel: 340, alcance: 190, radio: 4, escala: 1, estilo: 'eco' }, ang, { slot }));
+    if (perto) areaCirculo(luta, l, ox + ca * 30, oy + sa * 20, 22, { dano: h.dano * k, tipo: 'NORMAL', slot, surge: extra.surge, dirX: ca, dirY: sa, empuje: 30 });
+    else luta.add(new Proyectil(luta, l, { nombre: 'Joey', dano: h.dano * k, tipo: 'NORMAL', vel: 340, alcance: 190, radio: 4, escala: 1, estilo: 'eco' }, ang, { slot, desde: { x: ox, y: oy, alt: 10 } }));
   });
 }

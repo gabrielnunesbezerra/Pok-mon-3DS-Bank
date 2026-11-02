@@ -1161,7 +1161,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         break;
       }
       case 'tormenta': dibujarTormenta(g, e, t); break;
-      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
+      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': case 'salaTruque': case 'orbitaEspadas': case 'onda': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
       case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
       case 'espinho': if (e.t < e.aviso) dibujarEspinho(g, e, t); break;
       case 'hueso': {

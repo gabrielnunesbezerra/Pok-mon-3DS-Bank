@@ -156,6 +156,12 @@ function perfil(h, slot, d) {
     case 'telecinese': case 'pesadeloDuplo': P.tipo = 'area'; P.alcance = h.alcance ?? 200; P.retardo = 0.2; break;
     case 'futuroVisao': P.tipo = 'area'; P.alcance = h.alcance ?? 260; P.retardo = h.espera ?? 1.1; break;
     case 'luaCaindo': P.tipo = 'area'; P.alcance = 300; P.retardo = h.queda ?? 1.1; break;
+    case 'brigaNuvem': case 'abraco': P.tipo = 'mele'; P.alcance = h.alcance ?? 120; P.retardo = 0.1; break;
+    case 'salaTruque': case 'espadasOrbita': P.tipo = 'area'; P.alcance = (h.radio ?? h.raio ?? 60) * 0.9; P.retardo = 0.2; break;
+    case 'arcoCarga': P.retardo = (h.cargaMin ?? 0.3) + d / (h.vel ?? 360); P.alcance = (h.alcance ?? 200) * 1.1; break;
+    case 'chuvaFlechas': case 'espadaGigante': P.tipo = 'area'; P.alcance = 280; P.retardo = h.queda ?? 0.6; break;
+    case 'cancao': P.tipo = 'area'; P.alcance = h.alcance ?? 140; P.retardo = 0.3; break;
+    case 'surfar': P.tipo = 'buff'; break;
     case 'socoCombo': P.tipo = 'mele'; P.alcance = 64; P.retardo = 0.1; break;
     case 'agarraoSlam': P.tipo = 'mele'; P.alcance = h.alcance ?? 150; P.retardo = 0.1; break;
     case 'ascensaoDraco': P.alcance = h.largo ?? 300; P.ancho = h.ancho ?? 30; P.retardo = h.sobe ?? 0.6; break;
