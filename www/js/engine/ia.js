@@ -146,6 +146,15 @@ function perfil(h, slot, d) {
     case 'arenaRoca': P.alcance = (h.alcance ?? 210) + h.radio * 0.5; P.ancho = h.radio; P.retardo = 0.55; P.sigue = 0.3; break;
     case 'flecha': P.alcance = 300; P.ancho = 14; P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 300); break;
     case 'embestidas': P.alcance = 170; P.ancho = 30; P.retardo = 0.1; P.sigue = 0.6; P.invul = true; P.golpes = Math.max(1, (h.golpes ?? 1) * 0.7); break;
+    // última leva: Gengar, Gardevoir, Kangaskhan, Rayquaza, Zeraora e Darkrai
+    case 'posesion': P.tipo = 'mele'; P.alcance = h.alcance ?? 170; P.retardo = 0.05; break;
+    case 'reinoSombras': case 'campoFada': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.8; P.retardo = 0.3; break;
+    case 'vinculo': P.tipo = 'buff'; break;
+    case 'teleporte': P.alcance = h.dist ?? 120; P.retardo = 0; break;
+    case 'contraataque': P.tipo = 'defensa'; P.alcance = 110; break;
+    case 'deltaStream': case 'nocheEterna': P.tipo = 'area'; P.alcance = 280; P.retardo = 0.35; break;
+    case 'voltSwitch': P.retardo += d / (h.vel ?? 300); break;
+    case 'cadenaRayo': case 'blitzPlasma': P.tipo = 'area'; P.alcance = h.alcance ?? 180; P.retardo = 0.1; break;
     default:
       if (DEFESAS.has(f)) P.tipo = 'defensa';
       else if (BUFFS.has(f)) P.tipo = 'buff';
@@ -447,7 +456,7 @@ export class IA {
         if (h.forma === 'vuelo' && (gordo || p.clase === 'rayo')) return { slot: sl, P };
         if (h.forma === 'embestidas' && d < P.alcance && this.azar() < this.cfg.esquiva) return { slot: sl, P };
         if (h.forma === 'meteoro' && gordo && this.pAcierto(P, s) > 0.5) return { slot: sl, P };
-        if (sl === 'esp' && h.forma === 'dash' && h.invul !== false && this.azar() < this.cfg.esquiva) {
+        if (sl === 'esp' && (h.forma === 'dash' || h.forma === 'teleporte') && h.invul !== false && this.azar() < this.cfg.esquiva) {
           const m = Math.hypot(p.ex, p.ey) || 1;
           return { slot: sl, P, mx: p.ex / m, my: p.ey / m };
         }
@@ -538,7 +547,7 @@ export class IA {
     const yo = this.l, cfg = this.cfg, c = this.c, h = yo.kit.esp, { d, ux, uy } = s;
     if (h?.forma === 'corrida') return listo('esp') && ((!yo.est.corrida && d > 200 && yo.fervor > 45) || (yo.est.corrida && (d < 90 || yo.fervor < 15))) ? { slot: 'esp', P: perfiles.esp } : null;
     if (h?.forma === 'rodar') return !yo.est.rodando && listo('esp') && d > 50 && d < 320 && this.azar() < cfg.agresividad * 0.6 ? { slot: 'esp', P: perfiles.esp } : null;
-    if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja')) return null;
+    if (!h || !listo('esp') || (h.forma !== 'dash' && h.forma !== 'vuelo' && h.forma !== 'burbuja' && h.forma !== 'teleporte')) return null;
     const P = perfiles.esp, hp = yo.hp / yo.hpMax;
     if (h.forma === 'burbuja') {
       const acosado = (hp < c.escapeHp || (s.rivalMele && s.rango >= 60)) && d < c.escapeDist;
@@ -640,7 +649,7 @@ export class IA {
     // cortando um disparo: mira no projétil, não no rival
     if (hacia && hacia.clase === 'disparo' && hacia.de !== s.r) { it.ax = yo.x + hacia.dirx * 120; it.ay = yo.y + hacia.diry * 120; return; }
     if (s.r.oculto && this.vistoEn) { it.ax = this.vistoEn.x + (this.azar() * 2 - 1) * 20; it.ay = this.vistoEn.y + (this.azar() * 2 - 1) * 14; return; }
-    const q = this.prever(P, s), err = this.cfg.error * (0.6 + Math.min(1, s.d / 250)) * (P.tipo === 'mele' ? 0.3 : 1);
+    const q = this.prever(P, s), err = (this.l.est.cegado ? 3 : 1) * this.cfg.error * (0.6 + Math.min(1, s.d / 250)) * (P.tipo === 'mele' ? 0.3 : 1);
     it.ax = q.x + (this.azar() * 2 - 1) * err;
     it.ay = q.y + (this.azar() * 2 - 1) * err;
   }

@@ -6,6 +6,7 @@ import { aleatorio, entre, difAng, clamp, dist, distSegmento } from './util.js';
 import { fijarCampo, fueraCampo, limitarCampo } from './fisica.js';
 import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir, ponerCharco } from './entidades.js';
 import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
+import { formasNovas, ecoFilhote } from './formasNovas.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -42,7 +43,7 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas,
           };
   }
 
@@ -70,7 +71,7 @@ export class Habilidades {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
       return false;
     }
-    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) ? 0 : h.coste ?? 0;
+    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) || (h.forma === 'voltSwitch' && l.voltPos) ? 0 : h.coste ?? 0;
     if (l.energia < coste) {
       if (l.humano) l.avisar('energia', () => { l.texto('NO ENERGY', '#9aa0b4'); luta.emit({ t: 'sonido', n: 'miss' }); }, 1);
       return false;
@@ -79,7 +80,12 @@ export class Habilidades {
     const forma = this.formas[h.forma ?? 'proyectil'];
     if (!forma) return false;
     const accionAntes = l.accion;
-    if (forma.call(this, l, h, { slot, surge }) === false) return false;
+    // Zeraora: com o plasma cheio, a próxima skill sai sobrecarregada
+    const sobrecarga = !!l.def.plasma && l.plasma >= 100 && (slot === 'rmb' || slot === 'q' || slot === 'esp');
+    if (forma.call(this, l, h, { slot, surge, sobrecarga }) === false) return false;
+    if (sobrecarga) { l.plasma = 0; l.texto('OVERCHARGE!', '#fde047', { dy: 10 }); luta.emit({ t: 'sobrecargaPlasma', l }); }
+    // Parental Bond (Kangaskhan): o filhote repete o básico (na Mega, tudo menos a ult)
+    if (l.def.eco && slot !== 'e' && (slot === 'lmb' || l.mega)) ecoFilhote(this, l, h, slot, { slot, surge });
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
@@ -245,6 +251,7 @@ export class Habilidades {
     if (h.teleport) return this.teletransporte(l, h, extra, ang);
     l.empezarDash(h, ang);
     l.dash.slot = extra?.slot;
+    l.dash.sobrecarga = extra?.sobrecarga;
     l.accion = null;
     // Dive (Dragalge): mergulha deixando uma poça de veneno onde entra e outra onde sai
     if (h.charcoEntraSale) {

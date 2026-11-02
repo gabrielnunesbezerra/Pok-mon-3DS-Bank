@@ -120,7 +120,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99;
+    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99; this.plasma = 0; this.voltPos = null;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }
@@ -213,8 +213,9 @@ export class Lutador {
       if (h.dano) {
         // Wave Crash (Basculegion): a investida machuca quem bate também
         if (h.recoil) this.luta.programar(0, () => { if (!this.ko) this.recibir(this, { dano: h.dano * h.recoil, tipo: 'NORMAL', puro: true, tick: true }); });
+        const sc = d.sobrecarga;
         r.recibir(this, {
-          dano: h.dano, tipo: h.tipo, empuje: h.empuje ?? 60, aturde: h.aturde, velocista: h.velocista,
+          dano: h.dano * (sc ? 1.5 : 1), tipo: h.tipo, empuje: h.empuje ?? 60, aturde: sc ? Math.max(h.aturde ?? 0, 0.35) : h.aturde, velocista: h.velocista, maldicion: h.maldicion,
           dirX: c, dirY: s, slot: d.slot ?? 'esp', pesado: !!h.aturde || (h.empuje ?? 0) > 150,
           ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined,
         });
@@ -252,6 +253,20 @@ export class Lutador {
       this.avisar('miss', () => { this.texto(bloquea ? 'BLOCK' : 'MISS', bloquea ? '#ffb347' : '#c8c8d0'); luta.emit({ t: 'sonido', n: bloquea ? 'clash' : 'miss' }); }, 0.4);
       return 'miss';
     }
+    // Counter (Kangaskhan): na guarda, o golpe não entra e volta como soco (de longe só bloqueia)
+    const ct = this.est.contra;
+    if (ct && fuente && fuente !== this && !g.tick && !fuente.ko && !g.contragolpe) {
+      delete this.est.contra; this.accion = null;
+      const h = ct.h, dx = fuente.x - this.x, dy = fuente.y - this.y, dd = Math.hypot(dx, dy) || 1;
+      this.ponerEstado('invul', 0.3);
+      this.texto('COUNTER!', '#ffd166');
+      luta.emit({ t: 'contragolpe', l: this, b: fuente, perto: dd < 200 });
+      if (dd < 200) { this.animar('Attack', 0.4); this.angulo = Math.atan2(dy, dx); fuente.recibir(this, { dano: h.dano + (g.dano ?? 0) * (h.devuelve ?? 0.5), tipo: h.tipo, slot: 'q', dirX: dx / dd, dirY: dy / dd, empuje: 150, aturde: h.aturde ?? 0.6, pesado: true, contragolpe: true }); luta.hitstop(110); }
+      return 'bloqueo';
+    }
+    // Dark Void (Darkrai): quem dorme com pesadelo acorda com o golpe, que entra mais forte
+    const pesadilla = this.est.dormido?.pesadilla && fuente && fuente !== this && !g.tick;
+    if (pesadilla) { delete this.est.dormido; this.texto('NIGHTMARE!', '#a78bfa'); luta.emit({ t: 'despertar', l: this }); }
     // clone: leva o golpe no lugar do lutador
     const mult = g.puro || (REGLAS.basicosNeutros && g.slot === 'lmb') ? 1 : efectividad(g.tipo, this.tipos);
     let d = g.dano * mult * (g.puro ? 1 : REGLAS.danoGlobal);
@@ -267,6 +282,11 @@ export class Lutador {
       if (fuente?.est.quemado) d *= ESTADOS_TIPO.FIRE.dano;
       if (fuente?.est.emboscada && g.slot) { d *= fuente.est.emboscada.f; delete fuente.est.emboscada; }
       if (this.est.defBaja) d *= 1.2;
+      // maldição (Gengar), pesadelo (Darkrai) e Hex: dano a mais
+      if (this.est.maldito) d *= this.est.maldito.f;
+      if (this.est.pesadelo && fuente === this.est.pesadelo.fuente) d *= this.est.pesadelo.f;
+      if (pesadilla) d *= 1.5;
+      if (g.contraEstado && (this.tieneEstado() || this.est.maldito)) { d *= g.contraEstado; this.avisar('hex', () => this.texto('HEX!', '#c084fc', { dy: 10 }), 0.5); }
       // Venoshock (Sneasler): bem mais forte em quem está envenenado
       if (g.contraVeneno && this.est.veneno) { d *= g.contraVeneno; this.avisar('vshock', () => this.texto('VENOM BONUS!', '#e879f9', { dy: 10 }), 0.5); }
       if (this.est.arraigo) d *= 1 - this.est.arraigo.reduce;
@@ -294,8 +314,14 @@ export class Lutador {
       if (this.escudo <= 0) delete this.est.escudo;
       if (d <= 0.01) return 'bloqueo';
     }
+    // Psychic Link (Gardevoir): o aliado ligado divide o dano com ela
+    const pr = this.est.protegido;
+    if (pr && !g.vinculado && fuente !== this && pr.por && !pr.por.ko && d > 0) { const parte = d * pr.reparte; d -= parte; pr.por.recibir(fuente, { dano: parte, tipo: g.tipo, puro: true, tick: true, vinculado: true }); }
     this.hp = Math.max(0, this.hp - d);
     if (d > 0) this.ultimoDano = t;
+    // ligada a um rival, parte do que ela sofre volta para ele
+    const vi = this.est.vinculo;
+    if (vi?.modo === 'inimigo' && !g.vinculado && fuente && fuente !== this && d > 0 && !vi.con.ko) { vi.con.recibir(this, { dano: d * vi.refleja, tipo: 'PSYCHIC', puro: true, tick: true, vinculado: true }); luta.emit({ t: 'vinculoDor', l: this, b: vi.con }); }
     if (this.inmortal) { this.hp = Math.max(1, this.hp); luta.anotarEntreno?.(d); }
     if (fuente && fuente !== this) fuente.acierto(d, g);
     this.ganarUlti(d * REGLAS.ultiPorDanoRecibido);
@@ -314,6 +340,8 @@ export class Lutador {
   }
 
   aplicarEfectos(fuente, g) {
+    if (g.maldicion) { if (!this.est.maldito) this.texto('CURSED!', '#c084fc'); this.ponerEstado('maldito', g.maldicion.dur ?? 4, { f: g.maldicion.f ?? 1.2, fuente }); }
+    if (g.duerme && !this.est.dormido && !this.ko) { this.ponerEstado('dormido', g.duerme, { cura: 0, acum: 0, pesadilla: true, dps: g.pesadillaDps ?? 0, fuente }); this.cortarAccion(); this.texto('ASLEEP!', '#a5b4fc'); }
     if (g.ralentiza) this.ponerEstado('lento', g.ralentiza.dur, { f: g.ralentiza.f });
     if (g.confunde) {
       if (!this.est.confuso) this.texto('CONFUSED!', '#ff9de2');
@@ -364,8 +392,30 @@ export class Lutador {
     if (antes < 75 && this.fervor >= 75) { this.texto('OVERHEATING!', '#ff5a2a'); this.luta.emit({ t: 'sonido', n: 'surge' }); }
   }
 
+  // Psychic Link, plasma do Zeraora e passivas das Megas novas
+  pasivasNuevas(dt) {
+    const luta = this.luta, vi = this.est.vinculo;
+    if (vi) {
+      if (vi.con.ko || Math.hypot(vi.con.x - this.x, vi.con.y - this.y) > 320) {
+        delete this.est.vinculo; delete vi.con.est.protegido; delete vi.con.est.ligado;
+        luta.emit({ t: 'vinculoRompe', l: this, b: vi.con });
+      } else if (vi.modo === 'aliado') { vi.acum = (vi.acum ?? 0) + dt; if (vi.acum >= 1) { vi.acum -= 1; vi.con.cura(vi.cura); } }
+    }
+    if (this.def.plasma) {
+      const antes = this.plasma;
+      this.plasma = Math.min(100, this.plasma + Math.hypot(this.vx, this.vy) * dt * (this.mega ? 0.16 : 0.1));
+      if (antes < 100 && this.plasma >= 100) { this.texto('PLASMA FULL!', '#fde047'); luta.emit({ t: 'plasmaCheio', l: this }); }
+    }
+    const pas = this.mega ? this.forma.mega?.pasiva : null;
+    // Mega Gengar (Shadow Tag): quem está perto não consegue dar dash
+    if (pas === 'sombra') for (const b of luta.blancos(this)) if (!b.esClon && Math.hypot(b.x - this.x, b.y - this.y) < 150) b.ponerEstado('sinDash', 0.2);
+    // Mega Rayquaza (Delta Stream): tiros inimigos perto dele perdem força
+    if (pas === 'delta') for (const o of luta.entidades) if (o.tipo === 'proj' && o.dueno && o.dueno.equipo !== this.equipo && Math.hypot(o.x - this.x, o.y - this.y) < 110) { const f = Math.exp(-2.2 * dt); o.vx *= f; o.vy *= f; }
+  }
+
   acierto(d, g) {
     const t = this.luta.t;
+    if (this.def.plasma && !g.tick) this.plasma = Math.min(100, this.plasma + (g.slot === 'lmb' ? 5 : 2));
     this.ganarUlti(d * REGLAS.ultiPorDanoHecho);
     this.ganarExp(d * REGLAS.expPorDanoHecho);
     this.stats.dano += d;
@@ -479,7 +529,7 @@ export class Lutador {
       if (!e) continue;
       e.acum = (e.acum ?? 0) + dt;
       const paso = nombre === 'dormido' ? 0.5 : 1;
-      if (e.acum >= paso) { e.acum -= paso; this.cura(nombre === 'dormido' ? e.cura * 0.5 : e.cura); }
+      if (e.acum >= paso) { e.acum -= paso; this.cura(nombre === 'dormido' ? e.cura * 0.5 : e.cura); if (nombre === 'dormido' && e.dps) { this.recibir(e.fuente, { dano: e.dps * 0.5, tipo: 'DARK', puro: true, tick: true }); if (this.ko) return; } }
     }
     for (const clave of ['quema', 'quemado', 'veneno']) {
       const q = this.est[clave];
@@ -492,6 +542,7 @@ export class Lutador {
       }
     }
 
+    this.pasivasNuevas(dt);
     const aturdido = !!this.est.aturdido || !!this.est.dormido;
     if (aturdido) this.cortarAccion();
     let mx = 0, my = 0;
@@ -505,6 +556,7 @@ export class Lutador {
       let vel = this.velBase;
       if (this.est.lento) vel *= 1 - this.est.lento.f;
       if (this.est.enredado) vel *= ESTADOS_TIPO.GRASS.vel;
+      if (this.est.ligado) vel *= 1 - this.est.ligado.f;
       if (this.est.arraigo || this.est.dormido || this.est.puente) { vel = 0; this.empX = 0; this.empY = 0; }
       if (this.accion?.lento != null) vel *= this.accion.lento;
       if (t < this.sobrecargaHasta) vel *= 0.75;

@@ -9,11 +9,15 @@ const rad = g => (g * Math.PI) / 180;
 
 // monta o pacote de dano que vai para Lutador.recibir
 export function pacote(h, extra, ang, mas = {}) {
-  return {
+  const g = {
     dano: h.dano, tipo: h.tipo, slot: extra?.slot, surge: extra?.surge, dirX: Math.cos(ang), dirY: Math.sin(ang),
     empuje: h.empuje, aturde: h.aturde, confunde: h.confunde || undefined, debilita: h.debilita, drenaje: h.drenaje, quema: h.quema,
-    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, estado: h.estado, anilla: h.anilla, contraVeneno: h.contraVeneno, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined, ...mas,
+    veneno: h.veneno, marca: h.marca, marcaF: h.marcaF, estado: h.estado, anilla: h.anilla, contraVeneno: h.contraVeneno, ralentiza: h.ralentiza ? { f: h.ralentiza, dur: h.ralentizaDur ?? 2 } : undefined,
+    maldicion: h.maldicion, duerme: h.duerme, pesadillaDps: h.pesadillaDps, contraEstado: h.contraEstado, ...mas,
   };
+  // Zeraora sobrecarregado (plasma cheio): a skill sai mais forte e atordoa
+  if (extra?.sobrecarga) { g.dano *= 1.5; g.aturde = Math.max(g.aturde ?? 0, 0.35); }
+  return g;
 }
 
 // golpeia um alvo (lutador ou clone) e devolve o resultado
