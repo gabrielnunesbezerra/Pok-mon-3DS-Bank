@@ -762,17 +762,26 @@ export class Combate {
     const w = luta.luchadores[r.ganador];
     const outro = luta.luchadores.find(x => x.equipo !== w.equipo);
     texto(g, luta.equipos ? `${w.equipo ? 'RED' : 'BLUE'} TEAM ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 0]}` : `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
-    const n = luta.luchadores.length;
+    // um cartão de vidro por lutador: retrato, nome na cor do time, dano e acertos; selo de MVP em quem mais machucou
+    const n = luta.luchadores.length, cw = n >= 4 ? 112 : n === 3 ? 130 : 150, mvp = luta.luchadores.reduce((m, x) => (x.stats.dano > m.stats.dano ? x : m));
     luta.luchadores.forEach((x, i) => {
-      const cx = n >= 3 ? ANCHO / 2 + (i - (n - 1) / 2) * (n === 4 ? 140 : 170) : ANCHO / 2 + (i ? 120 : -120);
-      texto(g, x.nombre, cx, 134, { tam: 8, color: corDe(luta, x), align: 'center' });
-      texto(g, `DAMAGE ${Math.round(x.stats.dano)}`, cx, 150, { tam: 8, align: 'center' });
-      texto(g, `HITS ${x.stats.golpes}`, cx, 164, { tam: 8, align: 'center' });
+      const cx = ANCHO / 2 + (i - (n - 1) / 2) * (cw + 8), x0 = cx - cw / 2, y0 = 112, cor = corDe(luta, x), ganhou = x.equipo === w.equipo;
+      g.save();
+      g.fillStyle = 'rgba(8,14,34,0.85)'; g.beginPath(); g.roundRect(x0, y0, cw, 62, 9); g.fill();
+      g.lineWidth = ganhou ? 2 : 1; g.strokeStyle = cor; g.globalAlpha = ganhou ? 1 : 0.6; g.stroke(); g.globalAlpha = 1;
+      const img = this.app.bank.retrato(x.dex);
+      if (img) { g.save(); g.beginPath(); g.roundRect(x0 + 5, y0 + 5, 36, 36, 6); g.clip(); g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, x0 + 5, y0 + 5, 36, 36); g.restore(); }
+      g.restore();
+      texto(g, x.nombre, x0 + 46, y0 + 6, { tam: 7, color: cor, max: cw - 50 });
+      texto(g, `DMG ${Math.round(x.stats.dano)}`, x0 + 46, y0 + 19, { tam: 7, color: '#ffffff' });
+      texto(g, `HITS ${x.stats.golpes}`, x0 + 46, y0 + 30, { tam: 7, color: '#c8d4ec' });
+      texto(g, ganhou ? 'WIN' : 'LOSE', x0 + 5, y0 + 46, { tam: 7, color: ganhou ? '#86efac' : '#9aa0b4' });
+      if (x === mvp && mvp.stats.dano > 0) { g.fillStyle = '#ffd23c'; g.beginPath(); g.roundRect(x0 + cw - 34, y0 + 44, 28, 12, 5); g.fill(); texto(g, 'MVP', x0 + cw - 20, y0 + 46, { tam: 6, color: '#3a2a00', align: 'center' }); }
     });
     if (r.premios?.length) {
       const nome = luta.luchadores[1].def.nombre, TXT = { pokemon: `${nome} UNLOCKED!`, icono: `${nome} PROFILE ICON UNLOCKED!`, shiny: `SHINY ${nome} UNLOCKED!`, liga: 'LEAGUE CLEARED!' };
-      r.premios.forEach((k, i) => texto(g, TXT[k], ANCHO / 2, 186 + i * 14, { tam: 9, color: k === 'shiny' || k === 'liga' ? '#ffe27a' : '#86efac', align: 'center', borde: 3, peso: 700 }));
-    } else texto(g, this.datos.liga ? (r.ganador === 0 ? 'WIN AGAIN FOR MORE REWARDS' : 'TRY AGAIN!') : this.sesion ? 'R  REMATCH      ESC  LEAVE' : 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
+      r.premios.forEach((k, i) => texto(g, TXT[k], ANCHO / 2, 190 + i * 14, { tam: 9, color: k === 'shiny' || k === 'liga' ? '#ffe27a' : '#86efac', align: 'center', borde: 3, peso: 700 }));
+    } else texto(g, this.datos.liga ? (r.ganador === 0 ? 'WIN AGAIN FOR MORE REWARDS' : 'TRY AGAIN!') : this.app.tactil.activo ? '' : this.sesion ? 'R  REMATCH      ESC  LEAVE' : 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
     r.lista.dibujar(g, this.t);
   }
 
