@@ -79,7 +79,7 @@ export class Luta {
     if (this.rapido) { this.fase = 'lucha'; return; }
     this.emit({ t: 'anuncio', txt: final ? 'FINAL ROUND' : `ROUND ${this.numRonda}`, color: '#f8c448', dur: 0.7 });
     ['3', '2', '1'].forEach((n, i) => this.programar(0.95 + i * 0.55, () => { this.emit({ t: 'anuncio', txt: n, tam: 32, dur: 0.35 }); this.emit({ t: 'sonido', n: 'cuenta' }); }));
-    this.programar(0.95 + 3 * 0.55, () => { this.emit({ t: 'anuncio', txt: 'FIGHT!', color: '#ffd23c', tam: 24, dur: 0.45 }); this.emit({ t: 'sonido', n: 'fight' }); this.fase = 'lucha'; });
+    this.programar(0.95 + 3 * 0.55, () => { this.emit({ t: 'anuncio', txt: 'GO!', color: '#ffd23c', tam: 28, dur: 0.5 }); this.emit({ t: 'sonido', n: 'fight' }); this.fase = 'lucha'; });
   }
 
   alKO(caido) {

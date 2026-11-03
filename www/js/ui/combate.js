@@ -23,6 +23,18 @@ const oscuro = (c, k) => mezcla(c, -k);
 const claro = (c, k) => mezcla(c, k);
 import { filaDesdeAngulo } from '../render/sprites.js';
 const SEM_INCLINAR = new Set(['0003-0001', '0003-0001s']);
+// Pokébola pequena no chão: metade de baixo branca, de cima vermelha (abre girando pela dobradiça), faixa e botão
+function pokebolaMini(g, x, y, R, rot, abre, al = 1) {
+  g.save(); g.globalAlpha = al; g.translate(Math.round(x), Math.round(y)); g.rotate(rot); g.lineWidth = 1.5; g.strokeStyle = '#111';
+  g.fillStyle = '#f1f5f9'; g.beginPath(); g.arc(0, 0, R, 0, Math.PI); g.closePath(); g.fill(); g.stroke();
+  g.save(); g.translate(-R, 0); g.rotate(-abre * 1.9); g.translate(R, 0);
+  g.fillStyle = '#e11d48'; g.beginPath(); g.arc(0, 0, R, Math.PI, Math.PI * 2); g.closePath(); g.fill(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(-R * 0.55, -R * 0.7, R * 0.35, R * 0.22);
+  g.restore();
+  g.fillStyle = '#111'; g.fillRect(-R, -1, R * 2, 2);
+  g.fillStyle = '#f8fafc'; g.beginPath(); g.arc(0, 0, R * 0.32, 0, 7); g.fill(); g.stroke();
+  g.restore();
+}
 const colorTipoHex = t => '#' + (TIPOS[t] ?? 0xffffff).toString(16).padStart(6, '0');
 function brilhoDash(g, l) {
   const v = Math.hypot(l.vx + l.empX, l.vy + l.empY) || 1, ux = (l.vx + l.empX) / v, uy = (l.vy + l.empY) / v, L = Math.min(90, 30 + v * 0.12), y = l.y - l.alto * 0.45 - (l.salto ?? 0);
@@ -250,6 +262,11 @@ export class Combate {
     if (!this.pausado) this.fx.update(dt);
     const vivos = luta.luchadores.filter(l => !l.ko);
     this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, !this.app.tactil.activo);
+    if (this._faseAnt === 'intro' && luta.fase === 'lucha' && !luta.rapido) {
+      this.tGo = this.t;
+      for (const l of luta.luchadores) { if (l.ko) continue; this.fx.chispas(l.x, l.y - 10, '#ffffff', 10, 220); this.fx.anillo(l.x, l.y, 4, 34, '#ffffff', 0.35, 2); }
+    }
+    this._faseAnt = luta.fase;
   }
 
   marcar(id) { const p = this.tutorial?.pasos.find(x => x[0] === id); if (p && !p[2]) { p[2] = true; sfx('confirmar'); } }
@@ -359,6 +376,15 @@ export class Combate {
   // sombra, aro da equipe e sprite
   dibujarLutador(g, l) {
     const luta = this.luta, bank = this.app.bank, t = luta.t;
+    // antes do GO! todo mundo fica na Pokébola (balançando de vez em quando); no GO! ela abre e o Pokémon sai
+    if (luta.fase === 'intro' && !l.ko && !luta.rapido) {
+      g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(l.x, l.y, 8, 3, 0, 0, 7); g.fill();
+      const bal = Math.floor(this.t * 1.4 + l.lado * 0.7) % 3 === 0 ? Math.sin(this.t * 18) * 0.3 : 0;
+      pokebolaMini(g, l.x, l.y - 7, 7, bal, 0);
+      return;
+    }
+    const sai = this.t - (this.tGo ?? -9);
+    if (sai >= 0 && sai < 0.5) pokebolaMini(g, l.x, l.y - 7, 7, 0, Math.min(1, sai / 0.12), 1 - sai / 0.5);
     // campo inclinado: no fundo o Pokémon fica menor, na frente maior
     const prof = 0.8 + 0.4 * Math.min(1, Math.max(0, (l.y - (OVALO.cy - OVALO.ry)) / (OVALO.ry * 2)));
     const sc = l.escala * prof, m = bank.medidas(l.dex);
@@ -464,7 +490,8 @@ export class Combate {
     if (l.moviendo && !l.dash && alto <= 0) { const ph = this.t * 15; sy *= 1 + Math.sin(ph * 2) * 0.03; oy -= Math.abs(Math.sin(ph)) * 1.6 * velN; if (Math.random() < 0.06 * velN && !this.app.ajustes.graficosBajos) this.fx.polvo(l.x - (l.vx / (v || 1)) * 6, l.y, 1, 3); }
     if (l.anim && t - l.animInicio < 0.22) { const k = Math.sin(((t - l.animInicio) / 0.22) * Math.PI), a = l.angulo ?? 0; ox += Math.cos(a) * 6 * k; oy += Math.sin(a) * 3 * k; rot += Math.cos(a) * 0.1 * k; }
     if (t < l.dolorHasta) rot += (Math.floor(t * 30) % 2 ? 0.06 : -0.06);
-    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor + ox, l.y - alto + oy, sc, { fila, bucle, flash, alpha: parpadeo, sx, sy, rot });
+    const kSai = Math.min(1, Math.max(0, (this.t - (this.tGo ?? -9)) / 0.32)), luzSai = this.t - (this.tGo ?? -9) < 0.45 ? 1 - (this.t - this.tGo) / 0.45 : 0;
+    const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor + ox, l.y - alto + oy, sc * (0.25 + 0.75 * (1 - (1 - kSai) ** 3)), { fila, bucle, flash: Math.max(flash, luzSai), alpha: parpadeo, sx, sy, rot });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - alto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
     if (l.dash) this.dibujarDash(g, l);
