@@ -1736,8 +1736,8 @@ export function dibujarProyectil(g, p, t) {
   // duas camadas em todo tiro, sem brilho em volta: cauda pixelada que desce a paleta do tipo (claro perto do tiro,
   // escuro na ponta) e, por cima, o desenho do próprio tiro (o núcleo)
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, pl = pal(p.tipoAtq), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
-  for (let i = 5; i >= 1; i--) {
-    const k = i / 5, r = Math.max(1, R0 * (1 - k * 0.7));
+  for (let i = 3; i >= 1; i--) {
+    const k = i / 3, r = Math.max(1, R0 * (1 - k * 0.7));
     g.globalAlpha = k < 0.5 ? 0.9 : 0.6;
     PX.disco(g, px(p.x - ux * i * R0 * 1.9), px(p.y - p.alt - uy * i * R0 * 1.45), r, pl[Math.min(4, 1 + Math.floor(k * 3))]);
   }
