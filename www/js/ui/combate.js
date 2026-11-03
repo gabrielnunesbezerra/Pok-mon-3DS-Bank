@@ -18,7 +18,6 @@ import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
 import { pal, BASE, CLARO, NUCLEO } from '../render/paletas.js';
-import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
 const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
 const oscuro = (c, k) => mezcla(c, -k);
@@ -347,7 +346,6 @@ export class Combate {
     if (this.app.ajustes.mira !== false) this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
     fx.dibujarTextos(g, FUENTE);
-    for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
     // cego pela Mega Gengar: a tela escurece e só se enxerga em volta de si
     const eu = luta.luchadores[this.lado];
@@ -360,6 +358,8 @@ export class Combate {
     this.dibujarNoche(g, luta);
 
     // HUD
+    // o nome do golpe usado aparece no painel do HUD (e não mais num balão em cima do Pokémon)
+    this.hud.globos = fx.globos;
     this.hud.dibujar(g, luta, this.t);
     const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
     // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
@@ -675,15 +675,6 @@ export class Combate {
     g.globalAlpha = 0.65;
     g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(c.x, c.y, 8, 3.5, 0, 0, 7); g.fill();
     bank.dibujar(g, l.dex, l.moviendo ? 'Walk' : 'Idle', this.luta.t, c.x, c.y, l.escala, { fila: filaDesdeAngulo(l.angulo) });
-    g.globalAlpha = 1;
-  }
-  // nome da skill num balão com a cor do tipo (como no site)
-  dibujarGlobo(g, b) {
-    const l = b.l, k = b.t / b.life;
-    g.globalAlpha = Math.min(1, (1 - k) * 3);
-    const col = hexTipo(b.tipo), w = Math.ceil(medir(g, b.txt, 7, 700)) + 8, x = Math.round(l.x - w / 2), y = Math.round(l.y - l.alto - 30 - k * 5);
-    rect(g, x - 1, y - 1, w + 2, 14, oscuro(col, 0.55)); rect(g, x, y, w, 12, col); rect(g, x, y, w, 1, 'rgba(255,255,255,0.35)');
-    texto(g, b.txt, l.x, y + 6.5, { tam: 7, color: '#ffffff', align: 'center', base: 'middle', peso: 700, sombra: true });
     g.globalAlpha = 1;
   }
   // faixa da ultimate: desliza da esquerda, escurece a cena e some

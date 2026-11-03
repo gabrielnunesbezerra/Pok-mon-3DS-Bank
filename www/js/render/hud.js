@@ -1,5 +1,6 @@
-// HUD do combate: painel de cada lutador no alto (retrato, nome, tipos, vida, evolução, energia, ultimate e estados),
-// relógio e rounds no centro, e a faixa de skills embaixo com recarga, custo e nome de cada espaço.
+// HUD do combate no estilo do Pokémon Arena 2D: painel escuro e sólido de cada lutador no alto (retrato, nome, tipos,
+// vida com coração e número, evolução, energia, ultimate, o nome do golpe que acabou de usar e estados), relógio em
+// minutos e rounds no centro, e a faixa de skills embaixo com recarga, custo e nome de cada espaço.
 import { temDormindo } from '../engine/formasNovas.js';
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, FUENTE, hex } from '../config.js';
 import { REGLAS, TIPOS, ESTADOS_TIPO } from '../data/regras.js';
@@ -26,10 +27,17 @@ function etiquetas(l, parpadeo, tecla) {
   return est;
 }
 
+// coração de vida em pixels (7x6), no canto da barra
+function coracao(g, x, y) {
+  g.fillStyle = '#ff4a5a';
+  g.fillRect(x + 1, y, 2, 1); g.fillRect(x + 4, y, 2, 1); g.fillRect(x, y + 1, 7, 2); g.fillRect(x + 1, y + 3, 5, 1); g.fillRect(x + 2, y + 4, 3, 1); g.fillRect(x + 3, y + 5, 1, 1);
+  g.fillStyle = '#ffd0d6'; g.fillRect(x + 1, y + 1, 1, 1);
+}
+
 export class Hud {
   constructor(bank) { this.bank = bank; this.estela = [1, 1, 1, 1]; }
 
-  // cartões de vidro flutuando no alto (sem faixa opaca: a arena aparece atrás) e o relógio numa pílula no meio
+  // painéis presos nos cantos de cima e o relógio numa caixa no meio
   dibujar(g, luta, t) {
     const parpadeo = Math.floor(t * 4) % 2 === 0, L = luta.luchadores;
     // ordem: no modo duplas, o time azul à esquerda e o vermelho à direita
@@ -54,7 +62,7 @@ export class Hud {
     g.fillStyle = 'rgba(6,12,30,0.72)'; g.beginPath(); g.roundRect(x - 28, 4, 56, 26, 9); g.fill();
     g.lineWidth = 1; g.strokeStyle = urg ? (Math.floor(t * 4) % 2 ? '#ff6a6a' : '#7a2a2a') : 'rgba(214,166,58,0.8)'; g.stroke();
     g.restore();
-    texto(g, luta.entreno ? '--' : String(tiempo).padStart(2, '0'), x, 6, { tam: 13, align: 'center', color: urg ? '#ff6a6a' : '#ffffff', borde: 2, peso: 700 });
+    texto(g, luta.entreno ? '--' : `${Math.floor(tiempo / 60)}:${String(tiempo % 60).padStart(2, '0')}`, x, 6, { tam: 13, align: 'center', color: urg ? '#ff6a6a' : '#ffffff', borde: 2, peso: 700 });
     texto(g, luta.entreno ? 'TRAINING' : `ROUND ${luta.numRonda}`, x, 21, { tam: 6, align: 'center', color: '#d6a63a' });
     if (luta.entreno) return;
     // rounds ganhos: bolinhas embaixo da pílula (por time no modo duplas)
@@ -75,11 +83,13 @@ export class Hud {
     const i = l.lado, cor = corDe(luta, l), h = compacta ? 36 : 40, ret = compacta ? 22 : 32, morto = l.ko;
     g.save();
     g.globalAlpha = morto ? 0.45 : 1;
-    // fundo de vidro: mais escuro na borda da tela, quase transparente para o meio
-    const fundo = g.createLinearGradient(der ? x + w : x, 0, der ? x : x + w, 0);
-    fundo.addColorStop(0, 'rgba(6,12,30,0.8)'); fundo.addColorStop(1, 'rgba(6,12,30,0.35)');
-    g.fillStyle = fundo; g.beginPath(); g.roundRect(x, y, w, h, 8); g.fill();
-    g.lineWidth = 1; g.strokeStyle = cor; g.globalAlpha *= 0.75; g.stroke(); g.globalAlpha = morto ? 0.45 : 1;
+    // fundo escuro e sólido com o canto de dentro cortado na diagonal e uma faixa fina na cor do time no alto
+    const corte = 10;
+    g.fillStyle = 'rgba(8,12,26,0.92)'; g.beginPath();
+    if (der) { g.moveTo(x, y); g.lineTo(x + w, y); g.lineTo(x + w, y + h); g.lineTo(x + corte, y + h); }
+    else { g.moveTo(x, y); g.lineTo(x + w, y); g.lineTo(x + w - corte, y + h); g.lineTo(x, y + h); }
+    g.closePath(); g.fill();
+    g.fillStyle = cor; g.fillRect(x, y, w, 2);
     // retrato
     const px = der ? x + w - ret - 4 : x + 4, py = y + 3;
     g.save(); g.beginPath(); g.roundRect(px, py, ret, ret, 6); g.clip();
@@ -108,12 +118,17 @@ export class Hud {
     const we = bw * this.estela[i], wv = bw * f;
     if (we > 1) { g.fillStyle = 'rgba(255,255,255,0.8)'; g.beginPath(); g.roundRect(der ? bx + bw - we : bx, vy, we, vh, 3); g.fill(); }
     if (wv > 1) {
-      const gv = g.createLinearGradient(0, vy, 0, vy + vh), c1 = f > 0.5 ? '#5ef07a' : f > 0.2 ? '#ffd84a' : '#ff5a4a', c2 = f > 0.5 ? '#1fa83c' : f > 0.2 ? '#d19a1a' : '#b8221a';
-      gv.addColorStop(0, c1); gv.addColorStop(1, c2);
-      g.fillStyle = gv; g.beginPath(); g.roundRect(der ? bx + bw - wv : bx, vy, wv, vh, 3); g.fill();
+      // cor chapada com uma faixa mais escura embaixo (sem degradê)
+      const c1 = f > 0.5 ? '#4fd866' : f > 0.2 ? '#f2c63a' : '#e8483a', c2 = f > 0.5 ? '#2a9a42' : f > 0.2 ? '#b8881a' : '#a82a20', bx0 = der ? bx + bw - wv : bx;
+      g.fillStyle = c1; g.fillRect(bx0, vy, wv, vh); g.fillStyle = c2; g.fillRect(bx0, vy + vh - 2, wv, 2);
     }
     for (let k = 1; k < 10; k++) { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(Math.round(bx + (bw * k) / 10), vy + vh - 3, 1, 3); }
-    if (!compacta) texto(g, morto ? 'K.O.' : `${Math.ceil(l.hp)}`, der ? bx + 3 : bx + bw - 3, vy, { tam: 6, align: der ? 'left' : 'right', color: '#ffffff', borde: 2 });
+    if (!compacta) {
+      // coração e número da vida
+      const num = morto ? 'K.O.' : `${Math.ceil(l.hp)}`, nw = Math.ceil(medir(g, num, 6)), hx = der ? bx + 3 + nw + 3 : bx + bw - 3 - nw - 8;
+      if (!morto) coracao(g, hx, vy + 1);
+      texto(g, num, der ? bx + 3 : bx + bw - 3, vy, { tam: 6, align: der ? 'left' : 'right', color: '#ffffff', borde: 2 });
+    }
     // energia (marca do SURGE) e ultimate
     const ey = vy + vh + 3, eh = compacta ? 2 : 3, ew = Math.round(bw * 0.55), uw = bw - ew - 3;
     const surge = l.energia >= REGLAS.surgeUmbral;
@@ -126,9 +141,18 @@ export class Hud {
       g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(bx, xy, bw, 1);
       g.fillStyle = final ? '#4b6e63' : l.puedeEvolucionar ? (parpadeo ? '#ffffff' : '#7dd3fc') : '#38bdf8'; g.fillRect(der ? bx + bw - Math.round(bw * k) : bx, xy, Math.round(bw * k), 1);
     }
-    // estados em pílulas pequenas
+    // nome do golpe que acabou de usar numa etiqueta marrom (como no Pokémon Arena 2D), depois os estados em pílulas
     if (!compacta) {
       let sx = der ? x + w - ret - 8 : x + ret + 8;
+      const b = this.globos?.find(gb => gb.l === l);
+      if (b) {
+        const txt = b.txt.toUpperCase(), tw = Math.ceil(medir(g, txt, 6, 700)) + 8, tx = der ? sx - tw : sx;
+        g.globalAlpha = (morto ? 0.45 : 1) * Math.min(1, (b.life - b.t) * 4);
+        g.fillStyle = '#3a2412'; g.fillRect(tx - 1, y + h, tw + 2, 11); g.fillStyle = '#7a4a22'; g.fillRect(tx, y + h + 1, tw, 9);
+        texto(g, txt, tx + tw / 2, y + h + 2, { tam: 6, align: 'center', color: '#ffe8c0', peso: 700 });
+        g.globalAlpha = morto ? 0.45 : 1;
+        sx += der ? -(tw + 3) : tw + 3;
+      }
       for (const [txt, c] of etiquetas(l, parpadeo, this.teclaDe(l, 'mega')).slice(0, 4)) {
         const tw = Math.ceil(medir(g, txt, 6)) + 6, tx = der ? sx - tw : sx;
         g.fillStyle = 'rgba(6,12,30,0.75)'; g.beginPath(); g.roundRect(tx, y + h + 1, tw, 9, 4); g.fill();
