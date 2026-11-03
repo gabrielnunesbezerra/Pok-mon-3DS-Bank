@@ -97,7 +97,7 @@ export const MEGA_KITS = {
   },
   sceptile: {
     lmb: { nombre: 'Mega Leaf Blade', dano: 5.4, xGrande: 2.6, danoX: 8 },
-    rmb: { nombre: 'Mega Dragon Pulse', dano: 17, largura: 22, alcance: 340, vel: 600, explosion: { radio: 66 } },
+    rmb: { nombre: 'Mega Dragon Pulse', dano: 15, largura: 22, alcance: 340, vel: 600, explosion: { radio: 66 } },
     esp: { nombre: 'Mega Agility', dano: 6, dist: 160 },
     q: { nombre: 'Mega Leaf Hurricane', dano: 11, alcance: 115 },
     e: { nombre: 'Tail Missile', forma: 'caudaMissil', tipo: 'GRASS', dano: 38, radio: 72, trava: 0.6, vel: 440, alcance: 420, aturde: 0.6, anim: 'Charge' },
