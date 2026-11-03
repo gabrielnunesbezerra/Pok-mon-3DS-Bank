@@ -86,7 +86,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Lick', dano: 5, stacks: 3, paralisa: 0.9, alcance: 80 },
     rmb: { nombre: 'Mega Shadow Ball', forma: 'pesadeloDuplo', entidade: 'chamaRoxa', dividir: true, dano: 14, dur: 0.5, coste: 25, cd: 5, anim: 'Charge' },
     esp: { nombre: 'Mega Shadow Portal', dist: 180, ar: 2 },
-    e: { nombre: 'Nightmare Bomb', forma: 'bolaPesadelo', dano: 36, raioEscuro: 260, radio: 100, carga: 0.85, vel: 300, alcance: 380, contraSono: 1.4, aturde: 0.7, anim: 'Charge' },
+    e: { nombre: 'Nightmare Bomb', forma: 'bolaPesadelo', dano: 30, raioEscuro: 260, radio: 100, carga: 0.85, vel: 300, alcance: 380, contraSono: 1.4, aturde: 0.7, anim: 'Charge' },
   },
   zeraora: {
     lmb: { nombre: 'Mega Plasma Fists', dano: 5.8, raioFinal: 6 },

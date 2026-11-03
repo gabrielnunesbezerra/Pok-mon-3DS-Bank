@@ -58,4 +58,4 @@ jobs:
           Como instalar: baixe o PKconfront.apk no celular Android, abra o arquivo e permita instalar apps de fontes desconhecidas quando o Android pedir. As próximas versões instalam por cima, sem perder nada.
 
           Projeto de fã, sem fins lucrativos."
-          gh release create "$tag" PKconfront.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "PK confront (APK)" --notes "$notes"
+          gh release create "$tag" PKconfront.apk --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest --title "PK confront 1.0" --notes "$notes"

@@ -39,7 +39,7 @@ const MENUS = {
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true },
   ],
 };
-const SUBTITULO = { principal: `ALPHA ${VERSION} · ${HUELLA} · FAN GAME`, jugar: 'PLAY ON THIS DEVICE · NO INTERNET NEEDED', ajustes: `ALPHA ${VERSION} · ${HUELLA} · FAN GAME` };
+const SUBTITULO = { principal: `VERSION ${VERSION} · ${HUELLA} · FAN GAME`, jugar: 'PLAY ON THIS DEVICE · NO INTERNET NEEDED', ajustes: `ALPHA ${VERSION} · ${HUELLA} · FAN GAME` };
 const BX = 320, BAJA = 24, LINEA_SUELO = 312, SUELO = 334;
 const DESTELLOS = [[245, 14, '#7fe8ff', 0], [469, 31, '#ffd23c', 1], [132, 50, '#c9a0ff', 0], [195, 72, '#ffd23c', 1], [470, 74, '#c9a0ff', 0], [433, 93, '#7fe8ff', 1], [140, 103, '#7fe8ff', 0], [83, 88, '#ff9ccf', 0], [554, 68, '#ff9ccf', 0], [555, 106, '#7fe8ff', 0], [60, 40, '#ffd23c', 1], [585, 30, '#7fe8ff', 1]];
 
@@ -162,7 +162,7 @@ export class Titulo {
       if (k > 0.1) { g.globalAlpha = Math.min(1, k * 1.4); destello(g, x, y + BAJA, c, gr); g.globalAlpha = 1; }
     });
 
-    if (hw && this.menu === 'principal') texto(g, `HAPPY HALLOWEEN! · ALPHA ${VERSION}`, BX, 99 + BAJA, { tam: 8, color: '#ffb35a', align: 'center' });
+    if (hw && this.menu === 'principal') texto(g, `HAPPY HALLOWEEN! · v${VERSION}`, BX, 99 + BAJA, { tam: 8, color: '#ffb35a', align: 'center' });
     else texto(g, SUBTITULO[this.menu], BX, 99 + BAJA, { tam: 8, color: UI.suave, align: 'center' });
 
     this.lista.dibujar(g, t);
