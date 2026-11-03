@@ -173,6 +173,7 @@ export class Hud {
       else if (cd > 0) { st = cd >= 1 ? `${Math.ceil(cd)}s` : 'HEAT'; cs = '#ff9d2e'; }
       else if (l.energia < (h.coste ?? 0)) { st = 'NO EN'; cs = '#9aa0b4'; }
       else if (h.forma === 'teleSono' && l.luta && !temDormindo(l.luta, l, h.alcance)) { st = 'SLEEP'; cs = '#a78bfa'; }
+      else if (h.forma === 'xFolha' && !l.xListo) { st = 'DASH'; cs = '#86efac'; }
       else { st = 'READY'; cs = '#3ccf4e'; }
       if (cd > 0 && h.cd) rect(g, x + 3, y + 1, Math.round((w - 4) * cd / h.cd), 21, 'rgba(0,0,0,0.45)');
       if (slot === 'lmb') {

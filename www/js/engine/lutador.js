@@ -427,7 +427,7 @@ export class Lutador {
     }
     if (this.def.plasma) {
       const antes = this.plasma;
-      this.plasma = Math.min(100, this.plasma + Math.hypot(this.vx, this.vy) * dt * (this.mega ? 0.16 : 0.1));
+      this.plasma = Math.min(100, this.plasma + Math.hypot(this.vx, this.vy) * dt * (this.mega ? 0.42 : 0.12));
       if (antes < 100 && this.plasma >= 100) { this.texto('PLASMA FULL!', '#fde047'); luta.emit({ t: 'plasmaCheio', l: this }); }
     }
     if (this.def.disfarce && !this.disfarce && luta.t >= this.disfarceVolta) { this.disfarce = true; this.texto('DISGUISE UP', '#fde68a'); luta.emit({ t: 'disfarceVolta', l: this }); }

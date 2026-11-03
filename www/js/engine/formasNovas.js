@@ -402,7 +402,7 @@ Object.assign(formasNovas, {
     if (!r) { if (l.humano) l.avisar('telec', () => l.texto('NO TARGET', '#f9a8d4')); return false; }
     l.animar(h.anim ?? 'Charge', 0.9);
     l.accion = { hasta: luta.t + 0.55, lento: 0.3 };
-    luta.emit({ t: 'telecinese', l, b: r, dur: 0.55 });
+    luta.emit({ t: 'telecinese', l, b: r, dur: 0.55, vinha: h.vinha });
     this.prender(r, 0.95);
     atingir(l, r, pacote(h, extra, 0, { dano: h.dano * 0.4, empuje: 0, dirX: undefined, dirY: undefined }));
     let t = 0;
@@ -410,10 +410,10 @@ Object.assign(formasNovas, {
     luta.programar(0.55, () => {
       if (l.ko || r.ko) { r.salto = 0; return; }
       const a = angApunte(l), L = h.lanza ?? 170, fim = { x: r.x + Math.cos(a) * L, y: r.y + Math.sin(a) * L }, p = limitarCampo(fim.x, fim.y), parede = Math.hypot(p.x - fim.x, p.y - fim.y) > 4;
-      luta.emit({ t: 'arremessoPsi', b: r, x0: r.x, y0: r.y, x1: p.x, y1: p.y });
+      luta.emit({ t: 'arremessoPsi', l, b: r, x0: r.x, y0: r.y, x1: p.x, y1: p.y, vinha: h.vinha });
       arrastar(luta, r, p.x, p.y, 0.28, 22, () => {
         atingir(l, r, pacote(h, extra, a, { dano: h.dano * (parede ? 0.9 : 0.6), empuje: 0, aturde: parede ? 0.6 : 0.2, pesado: true }));
-        luta.emit({ t: 'impactoPsi', x: r.x, y: r.y, parede });
+        luta.emit({ t: 'impactoPsi', x: r.x, y: r.y, parede, vinha: h.vinha });
         if (parede) luta.emit({ t: 'temblor', f: 0.012 });
       });
     });
@@ -1109,7 +1109,10 @@ Object.assign(formasNovas, {
     l.accion = { hasta: luta.t + carga + 0.15, bloquea: true, lento: 0 };
     l.ponerEstado('blindaje', carga, { reduce: 0.5 });
     l.texto('NIGHTMARE BOMB!', '#e9d5ff');
-    luta.emit({ t: 'pesadeloCarga', l, dur: carga, radio: R });
+    const RE = h.raioEscuro ?? 260, cx = l.x, cy = l.y;
+    luta.emit({ t: 'pesadeloCarga', l, dur: carga, radio: R, escuro: RE });
+    // quem está dentro da escuridão fica cego (só enxerga a si mesmo) até a bomba acabar
+    for (const b of luta.blancos(l)) if (!b.esClon && Math.hypot(b.x - cx, b.y - cy) < RE) b.ponerEstado('cego', carga + 1.6, { fuente: l });
     const explodir = (x, y) => {
       for (const b of luta.blancos(l)) {
         if (b.oculto || !dentroElipse(b, x, y, R)) continue;
@@ -1125,16 +1128,16 @@ Object.assign(formasNovas, {
         if (l.ko) return false;
         bola.x = l.x; bola.y = l.y; bola.alt = l.alto + 34; bola.tam = Math.min(1, bola.t / carga);
         if (bola.t >= carga) {
-          bola.voando = true; bola.alvo = r && !r.ko ? r : null;
-          bola.tx = bola.alvo ? bola.alvo.x : l.ax; bola.ty = bola.alvo ? bola.alvo.y : l.ay;
+          bola.voando = true; bola.alvo = null;
+          // arremessada para onde mira, no máximo até a borda da escuridão
+          const ax = r && !r.ko ? r.x : l.ax, ay = r && !r.ko ? r.y : l.ay, da = Math.hypot(ax - cx, ay - cy) || 1, k = Math.min(1, (RE - 20) / da);
+          bola.tx = cx + (ax - cx) * k; bola.ty = cy + (ay - cy) * k;
           bola.d0 = Math.max(1, Math.hypot(bola.tx - bola.x, bola.ty - bola.y)); bola.alt0 = bola.alt;
           l.animar('Shoot', 0.4);
           luta.emit({ t: 'pesadeloLanca', l });
         }
         return true;
       }
-      const a = bola.alvo;
-      if (a && !a.ko && !a.oculto) { bola.tx = a.x; bola.ty = a.y; }
       const dx = bola.tx - bola.x, dy = bola.ty - bola.y, d = Math.hypot(dx, dy), v = (h.vel ?? 300) * dt;
       bola.alt = Math.max(8, bola.alt0 * Math.min(1, d / bola.d0));
       if (d <= v + 10 || bola.t > carga + 2.5) { explodir(bola.tx, bola.ty); return false; }
@@ -1142,5 +1145,118 @@ Object.assign(formasNovas, {
       return true;
     } };
     luta.add(bola);
+  },
+});
+
+// ================================================================ Mega Venusaur, Mega Blastoise e os novos de Gengar e Sceptile
+function arrastarSaltando(luta, b, x1, y1, dur, alto, fim) { arrastar(luta, b, x1, y1, dur, alto, fim); }
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Ingrain + Sludge Wave (Mega Venusaur): finca as raízes e solta uma onda de
+  // veneno em volta que empurra e envenena
+  arraigoOnda(l, h, extra) {
+    this.formas.arraigo.call(this, l, h, extra);
+    const luta = this.luta, R = h.onda?.radio ?? 95;
+    luta.emit({ t: 'ondaVeneno', x: l.x, y: l.y, radio: R });
+    luta.programar(0.12, () => {
+      if (l.ko) return;
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || !dentroElipse(b, l.x, l.y, R)) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+        atingir(l, b, pacote(h, extra, Math.atan2(dy, dx), { dano: h.onda?.dano ?? 9, empuje: h.onda?.empuje ?? 150, dirX: dx / d, dirY: dy / d, veneno: h.onda?.veneno ?? { dps: 3, dur: 3 }, tipo: 'POISON' }));
+      }
+    });
+  },
+  // ---------------------------------------------------------------- Solar Beam (Mega Venusaur): junta o sol antes e solta um raio enorme
+  raioSolar(l, h, extra) {
+    this.luta.emit({ t: 'solarCarga', l, dur: h.carga ?? 0.9 });
+    this.formas.chorro.call(this, l, h, extra);
+  },
+  // ---------------------------------------------------------------- Surf (Mega Blastoise, no lugar do dash): monta numa onda devagar e leva quem pegar
+  // (usa o Surf: só muda a velocidade e o tempo)
+  // ---------------------------------------------------------------- Shell Smash (Mega Blastoise): se arremessa no rival, quem está perto voa para
+  // o alto, e aí começa a girar no casco
+  cascoSalto(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, (h.salto ?? 120) + 40), a = r ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l);
+    const d = r ? Math.min(h.salto ?? 120, Math.hypot(r.x - l.x, r.y - l.y)) : h.salto ?? 120, p = fijarCampo(l.x + Math.cos(a) * d, l.y + Math.sin(a) * d);
+    l.cortarAccion();
+    l.animar('Hop', 0.4); l.ponerEstado('invul', 0.3);
+    l.accion = { hasta: luta.t + 0.32, bloquea: true, lento: 0, angulo: a };
+    luta.emit({ t: 'cascoPula', l });
+    arrastar(luta, l, p.x, p.y, 0.3, 46, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'cascoCai', x: l.x, y: l.y, radio: h.radioImpacto ?? 60 });
+      luta.emit({ t: 'temblor', f: 0.01 });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo || !dentroElipse(b, l.x, l.y, h.radioImpacto ?? 60)) continue;
+        atingir(l, b, pacote(h, extra, 0, { dano: h.danoImpacto ?? 9, empuje: 0, aturde: 0.5, dirX: undefined, dirY: undefined, pesado: true }));
+        arrastar(luta, b, b.x + (b.x - l.x) * 0.3, b.y + (b.y - l.y) * 0.3, 0.55, 60);
+      }
+      l.accion = null;
+      this.formas.caparazon.call(this, l, h, extra);
+    });
+  },
+  // ---------------------------------------------------------------- Hydro Cannon (ult da Mega Blastoise): finca no chão, solta um surf em volta
+  // que empurra todo mundo e depois carrega o supercanhão
+  canhaoAncorado(l, h, extra) {
+    const luta = this.luta, R = h.radioSurf ?? 105;
+    l.ponerEstado('arraigo', (h.carga ?? 0.9) + (h.dur ?? 1.4) + 0.5, { cura: 0, acum: 0 });
+    luta.emit({ t: 'surfVolta', x: l.x, y: l.y, radio: R });
+    for (const b of luta.blancos(l)) {
+      if (b.oculto || !dentroElipse(b, l.x, l.y, R)) continue;
+      const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+      atingir(l, b, pacote(h, extra, Math.atan2(dy, dx), { dano: h.danoSurf ?? 8, empuje: 170, dirX: dx / d, dirY: dy / d }));
+    }
+    luta.programar(0.3, () => { if (!l.ko) this.formas.chorro.call(this, l, h, extra); });
+  },
+
+  // ---------------------------------------------------------------- Hypnosis (Gengar): olhar hipnótico em quem está perto; pega garantido
+  hipnoseToque(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 110);
+    if (!r) { if (l.humano) l.avisar('hipnose', () => l.texto('GET CLOSER', '#c4b5fd')); return false; }
+    l.animar(h.anim ?? 'Charge', 0.4); l.angulo = Math.atan2(r.y - l.y, r.x - l.x);
+    l.accion = { hasta: luta.t + 0.3, lento: 0.2, angulo: l.angulo };
+    luta.emit({ t: 'olharHipnose', l, b: r });
+    luta.programar(0.15, () => { if (!l.ko && !r.ko) atingir(l, r, pacote(h, extra, 0, { empuje: 0, dirX: undefined, dirY: undefined })); });
+  },
+  // ---------------------------------------------------------------- Shadow Portal (dash do Gengar): entra num portal no chão, sai pulando de outro
+  // na frente e fica no ar um tempo (pode usar skills); depois volta pelo portal para onde estava
+  portalSombra(l, h, extra) {
+    const luta = this.luta, a = Math.hypot(l.vx, l.vy) > 5 ? Math.atan2(l.vy, l.vx) : angApunte(l);
+    const x0 = l.x, y0 = l.y, p = fijarCampo(l.x + Math.cos(a) * (h.dist ?? 150), l.y + Math.sin(a) * (h.dist ?? 150)), ar = h.ar ?? 1.6;
+    l.cortarAccion(); l.vx = l.vy = 0;
+    l.ponerEstado('vuelo', 0.18, { oculto: true, modo: 'sombra', rapidez: 0 });
+    luta.emit({ t: 'portalAbre', x: x0, y: y0 }); luta.emit({ t: 'portalAbre', x: p.x, y: p.y });
+    let t = 0, fase = 0;
+    luta.add({ tipo: 'portalSombra', dueno: l, vivo: true, x0, y0, x1: p.x, y1: p.y, update: dt => {
+      t += dt;
+      if (l.ko) { l.salto = 0; return false; }
+      if (fase === 0 && t >= 0.18) { fase = 1; l.x = p.x; l.y = p.y; delete l.est.vuelo; l.ponerEstado('flutua', ar); l.ponerEstado('invul', 0.2); luta.emit({ t: 'portalSai', l }); }
+      if (fase === 1) {
+        l.salto = Math.round(26 + Math.sin(t * 6) * 4);
+        if (t >= 0.18 + ar) { fase = 2; luta.emit({ t: 'portalAbre', x: l.x, y: l.y }); l.ponerEstado('vuelo', 0.2, { oculto: true, modo: 'sombra', rapidez: 0 }); }
+      }
+      if (fase === 2 && t >= 0.38 + ar) { l.salto = 0; delete l.est.vuelo; delete l.est.flutua; l.x = x0; l.y = y0; l.vx = l.vy = 0; luta.emit({ t: 'portalSai', l }); return false; }
+      return true;
+    } });
+  },
+
+  // ---------------------------------------------------------------- corte em X de folhas (Sceptile): só depois do dash em meia-lua
+  xFolha(l, h, extra) {
+    const luta = this.luta;
+    if (!l.xListo) { if (l.humano) l.avisar('xFolha', () => l.texto('DASH FIRST', '#86efac')); return false; }
+    l.xListo = false;
+    const R = h.alcance ?? 120, a = mirar(l, R + 40, 1.2), abre = Math.PI * 1.2;
+    l.animar(h.anim ?? 'Attack', 0.35); l.angulo = a;
+    l.accion = { hasta: luta.t + 0.25, lento: 0.3, angulo: a };
+    luta.programar(0.08, () => {
+      if (l.ko) return;
+      luta.emit({ t: 'corteXFolha', l, x: l.x + Math.cos(a) * R * 0.45, y: l.y - l.alto * 0.5 + Math.sin(a) * R * 0.3, ang: a, r: R * 0.75 });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+        if (d < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2) atingir(l, b, pacote(h, extra, a, { empuje: 130, pesado: true, aturde: h.aturde ?? 0.25, dirX: dx / d, dirY: dy / d }));
+      }
+      luta.emit({ t: 'temblor', f: 0.008 }); luta.hitstop(80);
+    });
   },
 });

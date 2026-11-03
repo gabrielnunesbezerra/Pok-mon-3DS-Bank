@@ -126,6 +126,8 @@ export class Proyectil {
     if (v) { if (v.golpe) g.tick = true; else v.golpe = true; }
     if (this.extra.clon) g.tick = true;
     if (alvo) {
+      // Shadow Ball do Gengar: acertar quem está dormindo libera a skill de novo na hora
+      if (h.resetSono && alvo.est?.dormido && this.extra.slot) luta.programar(0, () => { dueno.cd[this.extra.slot] = 0; dueno.texto('AGAIN!', '#e9d5ff'); });
       if (h.explosion) this.explotar(h.explosion.radio, g);
       else {
         const res = atingir(dueno, alvo, g);

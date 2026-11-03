@@ -26,7 +26,7 @@
   "retrato": [
    "CHUNSOFT",
    "<@!276175146304405514>",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -66,7 +66,7 @@
   "dex": "0006-0001",
   "sprite": [
    "Kevin0itachi",
-   "G〜",
+   "G\u301c",
    "Kevin"
   ],
   "retrato": [
@@ -232,7 +232,7 @@
   "retrato": [
    "CHUNSOFT",
    "Deeshura",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -251,7 +251,7 @@
   ],
   "retrato": [
    "Emmuffin",
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "baronessfaron"
   ]
  },
@@ -301,7 +301,7 @@
   ],
   "retrato": [
    "Emboarger",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -443,7 +443,7 @@
    "Emmuffin"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "Magu"
   ]
  },
@@ -612,7 +612,7 @@
   "retrato": [
    "Emmuffin",
    "Deeshura",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -630,7 +630,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "NOLASMOR",
    "JustAGunk"
   ]
@@ -850,7 +850,7 @@
    "FlowerSnek"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -859,7 +859,7 @@
    "FlowerSnek"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -986,7 +986,7 @@
   "retrato": [
    "Ichor",
    "Emmuffin",
-   "◥θ┴θ◤"
+   "\u25e5\u03b8\u2534\u03b8\u25e4"
   ]
  },
  {
@@ -1058,7 +1058,7 @@
   "retrato": [
    "CHUNSOFT",
    "Fable",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1070,7 +1070,7 @@
   "retrato": [
    "Prismatic",
    "Fable",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1087,7 +1087,7 @@
  {
   "dex": "0884s",
   "sprite": [
-   "G〜"
+   "G\u301c"
   ],
   "retrato": [
    "Caitemis",
@@ -1201,7 +1201,7 @@
    "Soulja"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1210,7 +1210,7 @@
    "Emmuffin"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1219,7 +1219,7 @@
    "Soulja"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1247,7 +1247,7 @@
   ],
   "retrato": [
    "Emboarger",
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1287,7 +1287,7 @@
   ],
   "retrato": [
    "ShyStarryRain",
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "brookriver"
   ]
  },
@@ -1326,7 +1326,7 @@
    "ShyStarryRain"
   ],
   "retrato": [
-   "◥θ┴θ◤",
+   "\u25e5\u03b8\u2534\u03b8\u25e4",
    "baronessfaron"
   ]
  },
@@ -1337,7 +1337,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "NOLASMOR",
    "Top_Kec"
   ]
@@ -1348,7 +1348,7 @@
    "Caitemis"
   ],
   "retrato": [
-   "G〜",
+   "G\u301c",
    "Deeshura",
    "Top_Kec"
   ]
@@ -1579,7 +1579,7 @@
    "baronessfaron"
   ],
   "retrato": [
-   "G〜"
+   "G\u301c"
   ]
  },
  {
@@ -1727,5 +1727,21 @@
   "retrato": [
    "Deeshura"
   ]
+ },
+ {
+  "dex": "0003-0001",
+  "sprite": [
+   "academico95"
+  ],
+  "retrato": [
+   "academico95"
+  ]
+ },
+ {
+  "dex": "0009-0001",
+  "sprite": [
+   "(sprite enviado pelo jogador)"
+  ],
+  "retrato": []
  }
 ]

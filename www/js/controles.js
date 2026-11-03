@@ -230,7 +230,7 @@ export class PanelTactil {
     const sobre = id === 'lmb' && l && l.luta && l.luta.t < l.sobrecargaHasta;
     const sinEn = !!h && !esUlti && id !== 'lmb' && l.energia < (h.coste ?? h.energia ?? 0);
     const ultiOk = esUlti ? l?.ultiLista : true;
-    const semSono = h?.forma === 'teleSono' && l?.luta && !temDormindo(l.luta, l, h.alcance);
+    const semSono = (h?.forma === 'teleSono' && l?.luta && !temDormindo(l.luta, l, h.alcance)) || (h?.forma === 'xFolha' && !l?.xListo) || (h?.requierePlasma && (l?.plasma ?? 0) < 100);
     const lista = !sobre && !sinEn && ultiOk && !semSono && !(cd > 0 && cdMax > 1.2);
     const tipo = h?.tipo ?? 'NORMAL';
     let col = id === 'mega' ? (l?.puedeMega ? '#ffd23c' : '#46d6a0') : hex(TIPOS[tipo] ?? 0xa8a878);

@@ -41,7 +41,7 @@ const AREAS = new Set(['pulso', 'explosion', 'plantaFeroz', 'caparazon', 'erupci
 const MELES = new Set(['tajo', 'rafaga', 'golpe', 'patada', 'salto', 'linguada']);
 const BUFFS = new Set(['potenciar', 'crecimiento', 'recuperar', 'descanso', 'arraigo', 'chapoteo', 'curaAnillo', 'torreta']);
 const DEFESAS = new Set(['escudo', 'humo', 'clones', 'espejo', 'caparazon', 'burbuja']);
-const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil', 'teleSono']);
+const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil', 'teleSono', 'cortesFolha', 'telecinese', 'surfar']);
 
 // alcance da skill para quem só quer saber "dá para usar daqui?"
 // nos níveis fáceis a CPU bate mais fraco e aguenta menos (como o "ventaja" do site); só contra a CPU, nunca online
@@ -94,7 +94,7 @@ function perfil(h, slot, d) {
       P.alcance = Math.min((h.alcance ?? 170) * 0.85, (h.n * 2 * (RADIO + (h.radio ?? 5))) / (2 * Math.PI));
       P.retardo = (h.lanzar ?? 0.2) + d / (h.vel ?? 250);
       break;
-    case 'chorro': case 'helice': case 'lineaVeneno':
+    case 'chorro': case 'helice': case 'lineaVeneno': case 'raioSolar': case 'canhaoAncorado':
       P.alcance = h.largo * 0.9; P.ancho = (h.ancho ?? 20) / 2; P.retardo = h.carga ?? 0.3; P.sigue = h.giro ? 0.6 : 0.3;
       break;
     case 'tumbaArena': P.alcance = h.alcance; P.ancho = h.ancho ?? 24; P.retardo = (h.carga ?? 0.15) + d / (h.vel ?? 400); break;
@@ -156,6 +156,10 @@ function perfil(h, slot, d) {
     case 'linguada': P.tipo = 'mele'; P.alcance = h.alcance + 14; break;
     case 'cortesFolha': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) + 30; P.retardo = 0.05; break;
     case 'laminaSolar': P.tipo = 'mele'; P.alcance = h.alcance ?? 130; P.retardo = h.carga ?? 0.5; break;
+    case 'arraigoOnda': P.tipo = 'area'; P.alcance = (h.onda?.radio ?? 95) * 0.9; P.retardo = 0.12; break;
+    case 'cascoSalto': P.tipo = 'mele'; P.alcance = (h.salto ?? 120) + 20; P.retardo = 0.3; break;
+    case 'hipnoseToque': P.tipo = 'mele'; P.alcance = h.alcance ?? 110; P.retardo = 0.15; break;
+    case 'xFolha': P.tipo = 'mele'; P.alcance = h.alcance ?? 120; P.retardo = 0.08; break;
     case 'kamehaDraco': P.alcance = h.alcance ?? 300; P.ancho = (h.largura ?? 16) * 0.6; P.retardo = (h.carga ?? 0.22) + d / (h.vel ?? 520); break;
     case 'bolaPesadelo': P.tipo = 'area'; P.alcance = h.alcance ?? 380; P.retardo = (h.carga ?? 0.85) + d / (h.vel ?? 300); break;
     case 'jaulaTrovao': P.tipo = 'area'; P.alcance = h.alcance ?? 300; P.retardo = 0.3; break;
@@ -430,7 +434,7 @@ export class IA {
     const listo = sl => {
       const h = kit[sl];
       // Archaludon: virou ponte, fica ponte até acabar (desfazer não desvia de nada)
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.forma === 'teleSono' && !temDormindo(this.luta, yo, h.alcance)) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'lmb' && yo.def.fervor && yo.fervor > 80) && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.forma === 'teleSono' && !temDormindo(this.luta, yo, h.alcance)) && !(h.forma === 'xFolha' && !yo.xListo) && !(h.requierePlasma && (yo.plasma ?? 0) < 100) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'lmb' && yo.def.fervor && yo.fervor > 80) && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);

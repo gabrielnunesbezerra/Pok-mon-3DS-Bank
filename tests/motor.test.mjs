@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['kamehaDraco', 'bolaPesadelo', 'jaulaTrovao', 'cortesFolha', 'laminaSolar', 'caudaMissil', 'linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
+const FORMAS = ['arraigoOnda', 'raioSolar', 'cascoSalto', 'canhaoAncorado', 'hipnoseToque', 'portalSombra', 'xFolha', 'surfar', 'telecinese', 'kamehaDraco', 'bolaPesadelo', 'jaulaTrovao', 'cortesFolha', 'laminaSolar', 'caudaMissil', 'linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
 
 test('o roster tem os 28 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora', 'sceptile']);
@@ -162,6 +162,9 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
         // a ult do Golem só sai rolando
         // o dash do Gengar só sai com o rival dormindo
         if (a.kit[slot].forma === 'teleSono') b.ponerEstado('dormido', 2, {});
+        if (a.kit[slot].forma === 'hipnoseToque') b.x = a.x + 80;
+        if (a.kit[slot].forma === 'xFolha') a.xListo = true;
+        if (a.kit[slot].requierePlasma) a.plasma = 100;
         if (a.kit[slot].requiereRodar) a.ponerEstado('rodando', 3, { vel: 1.7, dano: 5, empuje: 100, golpes: new Map() });
         if (a.kit[slot].requiereTormenta) l.add({ tipo: 'tormenta', dueno: a, vivo: true, x: a.x, y: a.y, radio: 80, dur: 5, t: 0, update: () => true });
         a.fervor = 60;
@@ -650,54 +653,55 @@ test('Tyranitar: só na tempestade, a onda de areia corre em linha e volta arras
 });
 
 test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, filhote e gancho da Kangaskhan, cometa do Rayquaza e Darkrai nas costas', () => {
-  // Gengar: lambidas marcam e paralisam; o dash só sai com o rival dormindo e aparece nas costas; a ult mergulha e sobe com dano
+  // Gengar: lambidas paralisam; Hypnosis de perto pega garantido; Shadow Ball em quem dorme volta na hora; portal leva e traz
   let l = nuevaLuta('gastly', 'munchlax', { etapas: [2, 0] }), [a, b] = l.luchadores;
   a.x = 200; a.y = 222; b.x = 250; b.y = 222; a.ax = b.x; a.ay = b.y; b.inmortal = true;
   for (let i = 0; i < 4; i++) { a.cd.lmb = 0; a.accion = null; a.calor = 0; assert.equal(l.habilidades.usar(a, 'lmb'), true); correr(l, 0.15, [null, null]); }
   assert.ok(b.est.aturdido && b.est.paralizado, 'quatro lambidas paralisam');
-  correr(l, 1.5, [null, null]);
-  a.accion = null; assert.equal(l.habilidades.usar(a, 'esp'), false, 'sem ninguém dormindo o dash não sai');
-  b.x = 330; b.y = 222; a.energia = 100; a.ax = b.x; a.ay = b.y; a.accion = null;
-  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 1, [null, null]);
-  assert.ok(b.est.dormido, 'Hypnosis fez dormir');
-  a.accion = null; assert.equal(l.habilidades.usar(a, 'esp'), true);
-  assert.ok(a.est.emboscada && Math.hypot(a.x - b.x, a.y - b.y) < 40, 'apareceu nas costas');
-  correr(l, 0.5, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; const hb = b.hp;
+  correr(l, 1.5, [null, null]); b.est = {};
+  b.x = a.x + 300; a.accion = null; a.energia = 100; assert.equal(l.habilidades.usar(a, 'q'), false, 'Hypnosis só de perto');
+  b.x = a.x + 80; assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.3, [null, null]);
+  assert.ok(b.est.dormido, 'dormiu garantido'); assert.ok(a.cd.q > 10, 'recarga longa');
+  a.accion = null; a.energia = 100; a.cd.rmb = 0; a.ax = b.x; a.ay = b.y;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 0.6, [null, null]);
+  assert.equal(a.cd.rmb, 0, 'Shadow Ball em quem dormia volta na hora');
+  const x0 = a.x; a.accion = null; a.vx = a.vy = 0; a.ax = a.x - 200; a.ay = a.y;
+  assert.equal(l.habilidades.usar(a, 'esp'), true); correr(l, 0.5, [null, null]);
+  assert.ok(Math.abs(a.x - x0) > 100 && a.salto > 10, 'saiu do outro portal no ar');
+  correr(l, 1.8, [null, null]); assert.ok(Math.abs(a.x - x0) < 2 && a.salto === 0, 'voltou para onde estava');
+  correr(l, 0.5, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; b.est = {}; b.x = a.x + 50; b.y = a.y; const hb = b.hp;
   assert.equal(l.habilidades.usar(a, 'e'), true); assert.ok(a.est.vuelo, 'mergulhou');
   correr(l, 3, [null, null]); assert.ok(!a.est.vuelo && b.hp < hb, 'subiu com dano');
-  // Mega Gengar: duas chamas roxas que seguem e a boca fantasma que morde
-  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.energia = 100; a.cd.rmb = 0; b.est = {}; b.x = a.x + 150; b.y = a.y;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true);
-  assert.equal(l.entidades.filter(e => e.tipo === 'chamaRoxa').length, 2);
-  correr(l, 1, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; b.est = {}; const hm = b.hp;
-  assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 1.6, [null, null]);
-  assert.ok(b.hp < hm, 'a boca mordeu');
-  // Sceptile: o dash em meia-lua sai duas vezes e guarda o X gigante; o Dragon Pulse só explode se acertar
+  // Mega Gengar: a bomba cega quem está na escuridão e explode
+  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.ulti = 100; b.hp = b.hpMax; b.est = {}; b.x = a.x + 150; b.y = a.y; const hm = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true); assert.ok(b.est.cego, 'cego dentro da escuridão');
+  correr(l, 2, [null, null]); assert.ok(b.hp < hm, 'a bomba explodiu');
+  // Sceptile: o X só sai depois do dash em meia-lua, que dá para usar duas vezes
   l = nuevaLuta('sceptile', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 280; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  a.x = 200; a.y = 222; b.x = 270; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), false, 'X sem dash não sai');
+  assert.equal(l.habilidades.usar(a, 'esp'), true); correr(l, 0.4, [null, null]);
+  a.accion = null; assert.equal(l.habilidades.usar(a, 'esp'), true, 'segundo dash'); correr(l, 0.4, [null, null]);
+  assert.ok(a.cd.esp > 2, 'depois do segundo entra na recarga');
+  b.x = a.x + 90; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; b.hp = b.hpMax; const hx = b.hp;
+  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.3, [null, null]);
+  assert.ok(b.hp < hx && !a.xListo, 'o X acertou');
+  // Mega Venusaur: vinhas arremessam; Ingrain solta a onda de veneno
+  l = nuevaLuta('bulbasaur', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
+  a.mega = true; a.kit = a.kitActual(); a.x = 300; a.y = 222; b.x = 360; b.y = 222; a.ax = 300; a.ay = 80; a.energia = 100; b.inmortal = true;
+  const yb = b.y; assert.equal(l.habilidades.usar(a, 'esp'), true); correr(l, 1.2, [null, null]);
+  assert.ok(b.y < yb - 60, 'as vinhas jogaram para onde mirou');
+  b.x = a.x + 60; b.y = a.y; b.est = {}; a.accion = null; a.energia = 100;
   assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.4, [null, null]);
-  assert.ok(a.xListo, 'o dash guardou o X');
-  const e0 = a.energia; a.accion = null; assert.equal(l.habilidades.usar(a, 'q'), true, 'segundo dash');
-  assert.equal(a.energia, e0, 'o segundo dash é de graça'); correr(l, 0.4, [null, null]);
-  assert.ok(a.cd.q > 2, 'depois do segundo entra na recarga');
-  b.x = a.x + 90; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; a.cd.lmb = 0; b.hp = b.hpMax; const hx = b.hp;
-  assert.equal(l.habilidades.usar(a, 'lmb'), true); correr(l, 0.3, [null, null]);
-  assert.ok(b.hp < hx && !a.xListo, 'o X gigante alcançou longe');
-  a.accion = null; a.energia = 100; a.ax = a.x; a.ay = a.y - 200; b.x = a.x + 500; b.y = a.y;
-  let explodiu = false; const tomar = l.tomarEventos.bind(l); l.tomarEventos = () => { const evs = tomar(); if (evs.some(e => e.t === 'explodeDraco')) explodiu = true; return evs; };
-  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 1.2, [null, null]);
-  assert.ok(!explodiu, 'longe demais: o raio acaba sem explodir');
-  b.x = a.x + 200; b.y = a.y; b.hp = b.hpMax; a.accion = null; a.energia = 100; a.cd.rmb = 0; const hd = b.hp;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 1, [null, null]);
-  assert.ok(explodiu && b.hp < hd, 'o raio foi até o alvo e explodiu');
-  // Mega Sceptile: trava a mira e a cauda-míssil persegue e explode
-  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.ulti = 100; b.hp = b.hpMax; b.est = {}; b.x = a.x + 220; b.y = a.y + 40; const hmis = b.hp;
-  assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 0.7, [null, null]);
-  assert.ok(l.entidades.some(e => e.tipo === 'caudaMissil'), 'a cauda saiu voando');
-  correr(l, 1.5, [null, null]); assert.ok(b.hp < hmis, 'o míssil explodiu no alvo');
-  // Mega Zeraora: jaula de raios prende o rival e o raio final joga longe
+  assert.ok(b.est.veneno && Math.hypot(b.x - a.x, b.y - a.y) > 70, 'a onda envenenou e empurrou');
+  // Mega Blastoise: o casco joga para o alto antes de girar
+  l = nuevaLuta('squirtle', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
+  a.mega = true; a.kit = a.kitActual(); a.x = 300; a.y = 222; b.x = 400; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), true); let alto = 0; for (let i = 0; i < 40; i++) { correr(l, 1 / 60, [null, null]); alto = Math.max(alto, b.salto); }
+  assert.ok(alto > 20, 'jogou o rival para cima');
+  // Mega Zeraora: a ult só sai com o plasma cheio; a jaula prende o rival
   l = nuevaLuta('zeraora', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.mega = true; a.kit = a.kitActual(); a.x = 200; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100; b.inmortal = true; const hz = b.hp;
+  a.mega = true; a.kit = a.kitActual(); a.ulti = 100; assert.equal(l.habilidades.usar(a, 'e'), false, 'sem plasma não sai'); a.plasma = 100; a.x = 200; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100; b.inmortal = true; const hz = b.hp;
   assert.equal(l.habilidades.usar(a, 'e'), true);
   const cx = b.x; b.empX = 400; correr(l, 1, [null, null]);
   assert.ok(Math.abs(b.x - cx) < 80 && b.hp < hz, 'preso na jaula levando raio');

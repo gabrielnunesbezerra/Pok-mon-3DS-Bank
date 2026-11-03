@@ -66,6 +66,7 @@ export class Habilidades {
     // rolando (Rollout): só dá para parar de rolar ou soltar a ult
     if (l.est.rodando && slot !== 'esp' && slot !== 'e' && !h.usaRodando) return false;
     if (h.requiereTormenta && !this.enTormenta(l)) { if (l.humano) l.avisar('tormenta', () => l.texto('SANDSTORM FIRST!', '#e8d29a')); return false; }
+    if (h.requierePlasma && (l.plasma ?? 0) < 100) { if (l.humano) l.avisar('plasma', () => l.texto('PLASMA FULL FIRST', '#fde047')); return false; }
     if (h.requiereRodar && !l.est.rodando) { if (l.humano) l.avisar('rodar', () => l.texto('ROLL FIRST!', '#e8d8b0')); return false; }
     if (slot === 'e' && !l.ultiLista) {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
@@ -89,6 +90,7 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
+    if (h.requierePlasma) l.plasma = 0;
     // Houndoom: golpes de fogo esquentam
     if (l.def.fervor && h.calienta) l.calentar(h.calienta);
     if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida' && h.forma !== 'cortesFolha') l.cd[slot] = h.cd;
