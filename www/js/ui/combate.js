@@ -18,6 +18,7 @@ import { luzTiros } from '../render/tirosPB.js';
 import { luzCortes } from '../render/cortesPB.js';
 import { rastroDashPB, ondaFrente, cascaAgua, luzDash } from '../render/dashPB.js';
 import { luzRaios } from '../render/raiosPB.js';
+import { luzMeteoro } from '../render/areaPB.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
@@ -353,6 +354,7 @@ export class Combate {
     luzCortes(g, fx, cam, sx * z, sy * z);
     luzDash(g, luta, cam, sx * z, sy * z);
     luzRaios(g, luta, cam, sx * z, sy * z, this.t);
+    luzMeteoro(g, luta, cam, sx * z, sy * z);
     this.pb.dibujar(g, cam, sx * z, sy * z, ANCHO, ALTO);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));

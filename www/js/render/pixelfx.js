@@ -181,6 +181,8 @@ export function hoja(L, verde = ['#1f6a28', '#4caf38', '#8be04e', '#d7ffa0']) {
 export function chispa(tam, color = '#fffdf4') {
   return guardado(`chispa${tam}-${color}`, tam * 2 + 3, tam * 2 + 3, (g, W) => {
     const c = Math.floor(W / 2);
+    // pequena: um "+" de luz sem contorno (com contorno ela vira um quadradinho escuro)
+    if (tam <= 2) { g.fillStyle = color; g.fillRect(c, c - tam, 1, tam * 2 + 1); g.fillRect(c - tam, c, tam * 2 + 1, 1); g.fillStyle = '#fffdf4'; g.fillRect(c, c, 1, 1); return; }
     g.fillStyle = CONTORNO;
     g.fillRect(c - 1, c - tam - 1, 3, tam * 2 + 3); g.fillRect(c - tam - 1, c - 1, tam * 2 + 3, 3);
     g.fillStyle = color;

@@ -1166,10 +1166,12 @@ export function dibujarTorbellino(g, e, t, fx) {
     return;
   }
   g.globalAlpha = 0.35 * k; PX.elipsePix(g, px(e.x), px(e.y), base * 0.8, base * 0.35, '#2f5a1e'); g.globalAlpha = k;
-  for (let i = 0; i < 5; i++) {
-    const f = i / 4, y = e.y - f * alto, r = base * (0.35 + f * 0.75), gira = t * 14 + i;
-    PX.arcoPix(g, e.x, y, r, gira, gira + 2.6, '#04102c', 5, r * 0.35);
-    PX.arcoPix(g, e.x, y, r, gira + 0.05, gira + 2.55, i % 2 ? '#b6f07a' : '#5fae3a', 3, r * 0.35);
+  // Leaf Tornado no formato do PB: mais voltas, grossas, com fio claro por dentro
+  for (let i = 0; i < 7; i++) {
+    const f = i / 6, y = e.y - f * alto, r = base * (0.35 + f * 0.75), gira = t * 14 + i;
+    PX.arcoPix(g, e.x, y, r, gira, gira + 2.6, '#04102c', 7, r * 0.35);
+    PX.arcoPix(g, e.x, y, r, gira + 0.05, gira + 2.55, i % 2 ? '#b6f07a' : '#5fae3a', 5, r * 0.35);
+    PX.arcoPix(g, e.x, y, r, gira + 0.4, gira + 2.2, '#eaffd0', 1, r * 0.35);
     PX.arcoPix(g, e.x, y, r, gira + 3.2, gira + 4.6, '#3f7a26', 2, r * 0.35);
   }
   for (let i = 0; i < 18; i++) {
