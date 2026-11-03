@@ -220,6 +220,7 @@ export class Efectos {
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad':
           if (e.slot === 'e') {
+            this.heroes.push({ k: 'ultAura', l: e.l, cor: colorTipo(e.h.tipo), t: 0, life: 0.8, hue: this.hue });
             this.banner(`${e.h.nombre}!`, e.h.tipo);
             if (e.h.forma === 'plantaFeroz') this.heroes.push({ k: e.h.estilo === 'sonido' ? 'pauta' : 'vinas', l: e.l, x: e.l.x, y: e.l.y, radio: e.h.ondas.at(-1) + 12, tipo: e.h.tipo, t: 0, life: (e.h.carga ?? 0.3) + e.h.ondas.length * e.h.cada + 0.45, hue: this.hue });
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);

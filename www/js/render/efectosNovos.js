@@ -990,3 +990,18 @@ Object.assign(EVENTOS_NOVOS, {
 Object.assign(HEROES_NOVOS, {
   bloom(g, h, k) { g.save(); g.globalCompositeOperation = 'lighter'; const R = h.r * (0.6 + k * 0.6), gr = g.createRadialGradient(h.x, h.y - 8, 0, h.x, h.y - 8, R); gr.addColorStop(0, `rgba(255,255,255,${0.75 * (1 - k)})`); gr.addColorStop(0.35, h.cor + Math.round(140 * (1 - k)).toString(16).padStart(2, '0')); gr.addColorStop(1, h.cor + '00'); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y - 8, R, 0, 7); g.fill(); g.restore(); },
 });
+
+// entrada de toda ultimate: pilar de luz na cor do tipo, brilho no chão e faíscas subindo em espiral
+Object.assign(HEROES_NOVOS, {
+  ultAura(g, h, k, t) {
+    const l = h.l; if (!l || l.ko) return;
+    const x = l.x, y = l.y, al = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8, H = 150, W = 26 + 18 * Math.sin(k * Math.PI);
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const gr = g.createLinearGradient(0, y - H, 0, y); gr.addColorStop(0, h.cor + '00'); gr.addColorStop(0.6, h.cor + '66'); gr.addColorStop(1, '#ffffffaa');
+    g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.moveTo(x - W * 0.35, y - H); g.lineTo(x + W * 0.35, y - H); g.lineTo(x + W, y); g.lineTo(x - W, y); g.fill();
+    const ch = g.createRadialGradient(x, y, 0, x, y, 60); ch.addColorStop(0, h.cor + 'aa'); ch.addColorStop(1, h.cor + '00');
+    g.save(); g.translate(x, y); g.scale(1, 0.4); g.fillStyle = ch; g.beginPath(); g.arc(0, 0, 60, 0, 7); g.fill(); g.restore();
+    for (let i = 0; i < 10; i++) { const u = (t * 1.6 + i / 10) % 1, a = i * 2.4 + t * 8, r = 22 * (1 - u) + 6; g.globalAlpha = al * (1 - u); g.fillStyle = i % 3 ? h.cor : '#ffffff'; g.fillRect(Math.round(x + Math.cos(a) * r), Math.round(y - u * H * 0.8 + Math.sin(a) * r * 0.3), 3, 3); }
+    g.restore();
+  },
+});
