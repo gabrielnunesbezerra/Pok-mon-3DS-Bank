@@ -272,6 +272,8 @@ export class Efectos {
     for (let i = 0; i < (e.fuerte ? 8 : 4); i++) { const a = ale() * Math.PI * 2, s = entre(420, 620); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 6, size: e.fuerte ? 2 : 1, life: 0.12, color: i % 2 ? '#ffffff' : mezcla(c, 0.5), forma: 'raya' }); }
     this.rafaga(e.x, e.y, e.tipo, e.fuerte ? 10 : 6, e.fuerte ? 200 : 140);
     this.anillo(e.x, e.y, 2, e.fuerte ? 22 : 14, c, 0.22, 1);
+    // estrela de golpe: brilho de quatro pontas na cor do tipo, que abre e some rápido (vale para todo acerto)
+    this.heroes.push({ k: 'estrelaGolpe', x: e.x, y: e.y, c, fuerte: !!e.fuerte, a: ale() * 0.8, t: 0, life: e.fuerte ? 0.2 : 0.14, hue: this.hue });
     switch (e.tipo) {
       case 'WATER': this.gotas(e.x, e.y, e.fuerte ? 12 : 7); break;
       case 'FIRE': this.brasas(e.x, e.y, e.fuerte ? 10 : 6); break;

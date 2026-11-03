@@ -494,7 +494,7 @@ Object.assign(ENTIDADES_NOVAS, {
     g.fillStyle = '#5b21b6'; g.beginPath(); g.moveTo(x, y - 16 * pul); g.quadraticCurveTo(x + 9, y - 4, x + 6, y + 5); g.quadraticCurveTo(x, y + 8, x - 6, y + 5); g.quadraticCurveTo(x - 9, y - 4, x, y - 16 * pul); g.fill();
     g.fillStyle = '#c084fc'; g.beginPath(); g.moveTo(x, y - 10 * pul); g.quadraticCurveTo(x + 5, y - 2, x + 3, y + 4); g.quadraticCurveTo(x, y + 5, x - 3, y + 4); g.quadraticCurveTo(x - 5, y - 2, x, y - 10 * pul); g.fill();
     g.fillStyle = '#fdf4ff'; g.beginPath(); g.ellipse(x, y + 1, 2, 3, 0, 0, 7); g.fill();
-    for (let i = 0; i < 2; i++) fx.add({ x: x + entre(-4, 4), y: y + entre(-4, 6), vx: entre(-25, 25), vy: -entre(20, 50), size: 3.5, grow: 2, life: 0.4, forma: 'llama', rampa: CHAMA_ROXA });
+    if (ale() < 0.55) fx.add({ x: x + entre(-3, 3), y: y + entre(-2, 5), vx: entre(-20, 20), vy: -entre(20, 45), size: 3, grow: 1.5, life: 0.28, forma: 'llama', rampa: CHAMA_ROXA });
   },
 });
 
@@ -630,6 +630,19 @@ Object.assign(ENTIDADES_NOVAS, {
     g.globalAlpha = al;
     for (let i = 0; i < n; i++) { const [x, y] = pts[i], [x2, y2] = pts[(i + 1) % n]; raio(g, x, y - 34, x2, y2 - 34, s + i, '#fde047', 1, 4); }
     for (const [x, y] of pts) { raio(g, x, y, x, y - 46, s * 3 + x, '#fef08a', 2, 4); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y - 46, 2.5, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  },
+});
+
+// ---------------------------------------------------------------- estrela de golpe (todo acerto)
+Object.assign(HEROES_NOVOS, {
+  estrelaGolpe(g, h, k) {
+    const R = (h.fuerte ? 24 : 15) * (0.55 + k * 0.7), al = 1 - k * k;
+    for (const [c, f] of [[h.c, 1], ['#ffffff', 0.55]]) {
+      g.globalAlpha = al * (f < 1 ? 1 : 0.85); g.fillStyle = c; g.beginPath();
+      for (let i = 0; i < 8; i++) { const a = h.a + (i * Math.PI) / 4, r = (i % 2 ? R * 0.18 : i % 4 ? R * 0.7 : R) * f; const x = h.x + Math.cos(a) * r, y = h.y + Math.sin(a) * r * 0.85; if (i) g.lineTo(x, y); else g.moveTo(x, y); }
+      g.closePath(); g.fill();
+    }
     g.globalAlpha = 1;
   },
 });
