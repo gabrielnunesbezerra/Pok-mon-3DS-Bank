@@ -5,7 +5,7 @@ import { hex } from '../config.js';
 import { aleatorio as azar } from '../engine/util.js';
 import { sfx } from '../audio.js';
 import * as PX from './pixelfx.js';
-import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS } from './efectosNovos.js';
+import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque } from './efectosNovos.js';
 
 const ale = () => Math.random();
 const R = Math.round;
@@ -92,7 +92,6 @@ export class Efectos {
         case 'impacto': this.impacto(e); break;
         case 'anillo': this.anillo(e.x, e.y, 4, e.r ?? 22, e.color, 0.35); break;
         case 'explosion':
-          this.heroes.push({ k: 'bloom', x: e.x, y: e.y, r: Math.max(24, e.radio * 1.6), cor: colorTipo(e.tipo), t: 0, life: 0.32, hue: this.hue });
           if (e.estilo === 'meteoro') { this.impactoMeteoro(e); break; }
           if (e.estilo === 'erupcion') { this.impactoErupcion(e); break; }
           this.add({ x: e.x, y: e.y, size: Math.max(12, e.radio * 0.8), life: 0.34, color: '#ffffff', brillo: mezcla(colorTipo(e.tipo), 0.3), forma: 'estouro' });
@@ -103,7 +102,6 @@ export class Efectos {
           break;
         case 'area': this.anillo(e.x, e.y, 2, e.radio, colorTipo(e.tipo), 0.22, 2); break;
         case 'pulso':
-          this.heroes.push({ k: 'bloom', x: e.x, y: e.y, r: Math.max(24, e.radio * 1.3), cor: colorTipo(e.tipo), t: 0, life: 0.28, hue: this.hue });
           if (e.estilo === 'hielo') { for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, s = entre(80, 170); this.add({ x: e.x, y: e.y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 60, g: 260, size: entre(2, 3.4), life: entre(0.4, 0.7), color: ['#ffffff', '#bfe9ff', '#7ad8ff'][i % 3], forma: 'chispa' }); } this.anillo(e.x, e.y, 6, e.radio, '#bfe9ff', 0.45, 3); this.humo(e.x, e.y, 5, 'rgba(220,244,255,0.7)', 9); }
           if (e.estilo === 'tierra') this.anillo(e.x, e.y, 6, e.radio * 0.8, '#b08a50', 0.3, 1); else
           this.anillo(e.x, e.y, 6, e.radio, colorTipo(e.tipo), 0.4, 3);
@@ -116,7 +114,7 @@ export class Efectos {
           if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.08); this.flashColor = '#fff6e0'; }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
-        case 'tajo': this.heroes.push({ k: 'bloom', x: e.l.x + Math.cos(e.ang) * e.alcance * 0.6, y: e.l.y - e.l.alto * 0.3 + Math.sin(e.ang) * e.alcance * 0.4, r: e.alcance * (e.final ? 0.9 : 0.6), cor: colorTipo(e.tipo), t: 0, life: e.final ? 0.22 : 0.15, hue: this.hue }); this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
+        case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); if (e.estilo === 'sonido') for (let i = 0; i < 8; i++) { const a = e.ang + (ale() - 0.5) * (e.angulo * Math.PI / 180) * 0.8, s = entre(120, 220); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.8 - 20, drag: 1.5, size: entre(5, 7), life: e.alcance / 200, color: ['#ffffff', '#ff9ad8', '#bfe0ff'][i % 3], forma: 'nota' }); } break;
         case 'burbujaRompe': {
           // Barrier estourando: anel que abre e cacos de luz
@@ -219,8 +217,8 @@ export class Efectos {
         case 'tiempo': this.anuncio('TIME!', { color: '#ffd23c', tam: 32, dur: 1.2 }); break;
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad':
+          saidaAtaque(this, e);
           if (e.slot === 'e') {
-            this.heroes.push({ k: 'ultAura', l: e.l, cor: colorTipo(e.h.tipo), t: 0, life: 0.8, hue: this.hue });
             this.banner(`${e.h.nombre}!`, e.h.tipo);
             if (e.h.forma === 'plantaFeroz') this.heroes.push({ k: e.h.estilo === 'sonido' ? 'pauta' : 'vinas', l: e.l, x: e.l.x, y: e.l.y, radio: e.h.ondas.at(-1) + 12, tipo: e.h.tipo, t: 0, life: (e.h.carga ?? 0.3) + e.h.ondas.length * e.h.cada + 0.45, hue: this.hue });
           } else if (e.slot !== 'lmb') this.globo(e.l, `${e.h.nombre}!`, e.h.tipo);
@@ -1350,7 +1348,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
   // raios e cones por cima do chão
   for (const e of luta.entidades) {
     if (hueShiny(e.dueno) !== hue) continue;
-    if (e.tipo === 'chorro') { if (e.activo) brilhoFeixe(g, e, t); dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
+    if (e.tipo === 'chorro') { dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
     else if (e.tipo === 'cono') dibujarCono(g, e, t, fx);
   }
 }
@@ -1698,11 +1696,6 @@ export function dibujarProyectil(g, p, t) {
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
-  // brilho e cometa de luz em todos os tiros (somando luz), na cor do tipo
-  const Rg = (p.radio ?? 4) * Math.min(2.4, p.escala ?? 1) * 2.4 + 6, br = brilhoTiro(colorTipo(p.tipoAtq));
-  g.save(); g.globalCompositeOperation = 'lighter';
-  for (let i = 3; i >= 0; i--) { const k = i / 4, r = Rg * (1 - k * 0.55); g.globalAlpha = 0.55 * (1 - k); g.drawImage(br, p.x - ux * i * Rg * 0.55 - r, p.y - p.alt - uy * i * Rg * 0.45 - r, r * 2, r * 2); }
-  g.restore();
   g.globalAlpha = 1;
   f(g, p, t);
 }

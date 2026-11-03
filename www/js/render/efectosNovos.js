@@ -1005,3 +1005,26 @@ Object.assign(HEROES_NOVOS, {
     g.restore();
   },
 });
+
+// ---------------------------------------------------------------- saída do ataque: ao atacar, o Pokémon solta partículas do tipo do golpe
+// para a frente (folhas, brasas, gotas, faíscas...), pouca coisa no básico e mais nas skills e na ult
+const SAIDA = {
+  GRASS: { forma: 'hoja', cores: ['#4ade80', '#16a34a', '#86efac'], g: 60 }, BUG: { forma: 'hoja', cores: ['#a3e635', '#65a30d'], g: 60 },
+  FIRE: { forma: 'llama', rampa: ['#3b0a0a', '#ea580c', '#fbbf24', '#fff3b0'], g: -40 }, WATER: { forma: 'gota', cores: ['#38bdf8', '#7dd3fc', '#e0f2fe'], g: 300 },
+  ELECTRIC: { forma: 'chispa', cores: ['#fde047', '#fef9c3', '#facc15'], g: 0 }, ICE: { forma: 'chispa', cores: ['#bae6fd', '#e0f2fe', '#ffffff'], g: 80 },
+  POISON: { forma: 'burbuja', cores: ['#c084fc', '#a855f7', '#e9d5ff'], g: -30 }, GHOST: { forma: 'llama', rampa: ['#12041f', '#5b21b6', '#a855f7', '#f5d0fe'], g: -30 },
+  PSYCHIC: { forma: 'chispa', cores: ['#f9a8d4', '#f0abfc', '#ffffff'], g: 0 }, DRAGON: { forma: 'chispa', cores: ['#818cf8', '#c4b5fd', '#5eead4'], g: 0 },
+  ROCK: { forma: 'roca', cores: ['#a8a29e', '#78716c', '#d6d3d1'], g: 420 }, GROUND: { forma: 'roca', cores: ['#b08a50', '#d6b77a', '#8a6a3a'], g: 420 },
+  FIGHTING: { forma: 'chispa', cores: ['#fca5a5', '#ffffff', '#fdba74'], g: 0 }, FLYING: { forma: 'hoja', cores: ['#e0f2fe', '#ffffff', '#bae6fd'], g: 40 },
+  FAIRY: { forma: 'corazon', cores: ['#f9a8d4', '#fbcfe8', '#ffffff'], g: -20 }, STEEL: { forma: 'chispa', cores: ['#e2e8f0', '#94a3b8', '#ffffff'], g: 200 },
+  DARK: { forma: 'humo', cores: ['rgba(30,20,40,0.7)', 'rgba(60,40,80,0.6)'], g: -20 }, NORMAL: { forma: 'humo', cores: ['rgba(230,225,215,0.6)', 'rgba(200,195,185,0.5)'], g: -10 },
+};
+export function saidaAtaque(fx, e) {
+  const l = e.l, h = e.h; if (!l || !h) return;
+  const s = SAIDA[h.tipo] ?? SAIDA.NORMAL, n = e.slot === 'lmb' ? 3 : e.slot === 'e' ? 10 : 6, a0 = l.angulo ?? 0;
+  const x = l.x + Math.cos(a0) * 12, y = l.y - l.alto * 0.55 + Math.sin(a0) * 6;
+  for (let i = 0; i < n; i++) {
+    const a = a0 + (ale() - 0.5) * 1.1, v = entre(60, e.slot === 'e' ? 200 : 150);
+    fx.add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - entre(0, 40), g: s.g, drag: 2.2, size: entre(2, s.forma === 'humo' ? 5 : 3.2), grow: s.forma === 'humo' || s.forma === 'llama' ? 1.5 : 0, life: entre(0.35, 0.6), color: s.cores ? s.cores[i % s.cores.length] : undefined, rampa: s.rampa, forma: s.forma, vr: entre(-10, 10) });
+  }
+}
