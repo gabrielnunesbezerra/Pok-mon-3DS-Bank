@@ -559,7 +559,8 @@ export class Efectos {
       g.globalAlpha = a;
       const col = p.pal ? passo(p.pal, p.i0, kv) : p.color;
       g.fillStyle = col;
-      const s = Math.max(0.6, p.size);
+      // quadradinhos encolhem enquanto morrem, para sumirem no lugar em vez de ficarem parados
+      const s = Math.max(0.6, p.size) * (p.forma === 'sq' ? 1 - kv * 0.6 : 1);
       const al = Math.max(0, a);
       switch (p.forma) {
         // chama deitada no sentido do voo, com a ponta para trás (jato do Flamethrower)
@@ -568,7 +569,8 @@ export class Efectos {
         case 'llama': PX.carimbar(g, PX.llama(Math.floor(p.t * 14 + p.rot), tamSprite(s), p.rampa ?? PX.RAMPA_FOGO), p.x, p.y, 0, 1, 1); break;
         case 'gota': PX.carimbar(g, PX.gota(Math.max(5, Math.round(s * 3.2)), p.rampa), p.x, p.y, Math.atan2(p.vy, p.vx), 1, al); break;
         case 'hoja': PX.carimbar(g, PX.hoja(Math.max(6, Math.round(s * 3.4))), p.x, p.y, p.rot, 1, al); break;
-        case 'chispa': PX.carimbar(g, PX.chispa(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#fffdf4'), p.x, p.y, 0, 1, 1); break;
+        // faísca cintila e encolhe enquanto morre (3, 2, 1 pixel) em vez de ficar parada no ar
+        case 'chispa': { const tam = Math.round(Math.max(1, s) * (1 - kv * 0.75)); if (tam < 1) break; PX.carimbar(g, PX.chispa(Math.max(1, tam), /^#/.test(col) ? col : '#fffdf4'), p.x, p.y, 0, 1, 1); break; }
         case 'burbuja': PX.carimbar(g, PX.burbuja(Math.max(2, Math.round(s)), /^#/.test(p.color) ? p.color : '#bfe9ff'), p.x, p.y, 0, 1, 1); break;
         case 'salpicadura': PX.carimbar(g, PX.salpicadura(Math.floor((p.t / p.life) * 4), Math.max(7, Math.round(p.size))), p.x, p.y - 2, 0, 1, 1); break;
         case 'estouro': PX.carimbar(g, PX.estouro(Math.floor((p.t / p.life) * 4), Math.max(6, Math.round(p.size)), p.color, p.brillo ?? '#ffd23c'), p.x, p.y, 0, 1, 1); break;
