@@ -1671,6 +1671,12 @@ export function dibujarBolaGigante(g, e, t, fx) {
   else if (Math.random() < 0.8) fx.add({ x, y, vx: -e.vx * 0.3 + entre(-30, 30), vy: -e.vy * 0.3 + entre(-30, 30), size: entre(2, 3.5), life: 0.4, color: '#e9b6ff', forma: 'chispa' });
 }
 
+const brilhos = new Map();
+function brilhoTiro(cor) {
+  let c = brilhos.get(cor);
+  if (!c) { c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, comAlfa(cor, 0.9)); gr.addColorStop(0.35, comAlfa(cor, 0.45)); gr.addColorStop(1, comAlfa(cor, 0)); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); brilhos.set(cor, c); }
+  return c;
+}
 export function dibujarProyectil(g, p, t) {
   const f = ESTILOS_PROJ[p.estilo] ?? ESTILOS_PROJ.bola;
   sombra(g, p.x, p.y, 3 * p.escala);
@@ -1678,6 +1684,11 @@ export function dibujarProyectil(g, p, t) {
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
+  // brilho e cometa de luz em todos os tiros (somando luz), na cor do tipo
+  const Rg = (p.radio ?? 4) * Math.min(2.4, p.escala ?? 1) * 2.4 + 6, br = brilhoTiro(colorTipo(p.tipoAtq));
+  g.save(); g.globalCompositeOperation = 'lighter';
+  for (let i = 3; i >= 0; i--) { const k = i / 4, r = Rg * (1 - k * 0.55); g.globalAlpha = 0.55 * (1 - k); g.drawImage(br, p.x - ux * i * Rg * 0.55 - r, p.y - p.alt - uy * i * Rg * 0.45 - r, r * 2, r * 2); }
+  g.restore();
   g.globalAlpha = 1;
   f(g, p, t);
 }
