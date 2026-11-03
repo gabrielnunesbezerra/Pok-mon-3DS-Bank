@@ -337,6 +337,7 @@ export class Combate {
     const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
     // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
     if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : { 0: tk, 1: CONTROLES.teclado2 });
+    else if (!this.pausado && luta.fase !== 'fin') this.hud.barraSkills(g, luta, this.humanos, this.t, { 0: tk }, true);
     if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
     if (luta.entreno) this.dibujarEntreno(g, luta);

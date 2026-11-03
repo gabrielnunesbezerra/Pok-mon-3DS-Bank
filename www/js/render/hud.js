@@ -4,6 +4,7 @@ import { temDormindo } from '../engine/formasNovas.js';
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, FUENTE, hex } from '../config.js';
 import { REGLAS, TIPOS, ESTADOS_TIPO } from '../data/regras.js';
 import { rect, texto, medir } from './pixel.js';
+import { icono, tono } from './iconos.js';
 
 const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80', '#facc15'];
 const COLOR_TIME = ['#4a9fff', '#ff5a5a'];
@@ -142,50 +143,59 @@ export class Hud {
 
   // faixa de baixo com as 5 skills de quem joga. `lados` = índices dos lutadores humanos.
   // Um humano: 5 espaços largos no centro. Dois: um bloco compacto em cada canto.
-  barraSkills(g, luta, lados, t, teclas) {
+  // barra de skills embaixo: um cartão por skill com o ícone na cor do tipo, nome, tecla, custo, recarga e ult.
+  // no celular aparece só a do jogador, menor, no meio entre o analógico e os botões
+  barraSkills(g, luta, lados, t, teclas, celular = false) {
     this.teclas = teclas;
-    rect(g, 0, BARRA_Y, ANCHO, ALTO - BARRA_Y, 'rgba(4,8,20,0.6)');
-    const compacta = lados.length === 2;
-    for (const i of lados) {
-      const l = luta.luchadores[i], w = compacta ? 56 : 118, gap = compacta ? 2 : 3, total = 5 * w + 4 * gap;
-      const x0 = compacta ? (i === 0 ? 6 : ANCHO - 6 - total) : Math.round((ANCHO - total) / 2), y = BARRA_Y + 3;
-      RANURAS.forEach((slot, k) => this.ranura(g, l, slot, x0 + k * (w + gap), y, w, compacta, t, i));
+    if (!celular) { const gr = g.createLinearGradient(0, BARRA_Y - 4, 0, ALTO); gr.addColorStop(0, 'rgba(4,8,20,0)'); gr.addColorStop(0.35, 'rgba(4,8,20,0.75)'); gr.addColorStop(1, 'rgba(4,8,20,0.9)'); g.fillStyle = gr; g.fillRect(0, BARRA_Y - 4, ANCHO, ALTO - BARRA_Y + 4); }
+    const compacta = !celular && lados.length === 2;
+    for (const i of (celular ? lados.slice(0, 1) : lados)) {
+      const l = luta.luchadores[i];
+      let w, gap, x0, y, h;
+      if (celular) { const esq = 122, dir = ANCHO - 186; gap = 3; w = Math.min(70, Math.floor((dir - esq - 4 * gap) / 5)); h = 22; x0 = Math.round((esq + dir) / 2 - (5 * w + 4 * gap) / 2); y = ALTO - h - 4; }
+      else { w = compacta ? 60 : 120; gap = 3; h = 24; const total = 5 * w + 4 * gap; x0 = compacta ? (i === 0 ? 6 : ANCHO - 6 - total) : Math.round((ANCHO - total) / 2); y = BARRA_Y + 1; }
+      RANURAS.forEach((slot, k) => this.cartao(g, l, slot, x0 + k * (w + gap), y, w, h, compacta || celular, t, celular));
     }
   }
 
-  ranura(g, l, slot, x, y, w, compacta, t, lado) {
-    const h = l.kit[slot], parpadeo = Math.floor(t * 4) % 2 === 0;
-    rect(g, x, y, w, 23, '#0e1018');
-    const borde = slot === 'e' ? '#8a6a1c' : compacta ? COLOR_EQUIPO[lado] : '#3a3a5a';
-    g.strokeStyle = borde; g.lineWidth = 1; g.globalAlpha = slot === 'e' || !compacta ? 1 : 0.6;
-    g.strokeRect(x + 0.5, y + 0.5, w - 1, 22); g.globalAlpha = 1;
-    rect(g, x + 1, y + 1, 2, 21, hex(TIPOS[h?.tipo] ?? 0x555566));
-    texto(g, this.teclaDe(l, slot), x + 6, y + 1, { tam: 8, color: '#d6a63a', max: compacta ? w - 8 : 28 });
-    if (!h) return;
-    const cd = l.cd[slot], sobre = slot === 'lmb' && t < l.sobrecargaHasta;
+  cartao(g, l, slot, x, y, w, h, mini, t, celular) {
+    const kit = l.kit[slot]; if (!kit) return;
+    const corT = hex(TIPOS[kit.tipo] ?? 0x8888aa), ult = slot === 'e', cd = l.cd[slot] ?? 0, sobre = slot === 'lmb' && t < l.sobrecargaHasta;
+    const semEn = !ult && slot !== 'lmb' && l.energia < (kit.coste ?? 0), travada = (kit.forma === 'teleSono' && l.luta && !temDormindo(l.luta, l, kit.alcance)) || (kit.forma === 'xFolha' && !l.xListo) || (kit.requierePlasma && (l.plasma ?? 0) < 100);
+    const pronta = ult ? l.ultiLista && !kit.sinUlti : !sobre && !semEn && !travada && !(cd > 0.05 && (kit.cd ?? 0) > 1.2);
+    // fundo arredondado
+    const r = 4;
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+    const fg = g.createLinearGradient(0, y, 0, y + h); fg.addColorStop(0, pronta ? '#222b44' : '#171b28'); fg.addColorStop(1, '#0a0d16'); g.fillStyle = fg; g.fill();
+    g.strokeStyle = ult ? (pronta ? '#ffd166' : '#8a6a1c') : pronta ? corT : '#2c3348'; g.lineWidth = 1; g.stroke();
+    // ícone na cor do tipo, com a recarga escurecendo de cima para baixo
+    const s = h - 4, ix = x + 2, iy = y + 2;
+    const ig = g.createLinearGradient(0, iy, 0, iy + s); ig.addColorStop(0, corT); ig.addColorStop(1, tono(corT, -0.45)); g.fillStyle = ig; g.fillRect(ix, iy, s, s);
+    icono(g, ult && !kit.forma ? 'ulti' : kit.forma ?? 'basico', ix + s / 2, iy + s / 2, s * 0.36, '#ffffff');
+    if (!ult && cd > 0 && kit.cd) { g.fillStyle = 'rgba(0,0,0,0.62)'; g.fillRect(ix, iy, s, Math.round(s * Math.min(1, cd / kit.cd))); if (cd >= 1) texto(g, String(Math.ceil(cd)), ix + s / 2, iy + s / 2 - 4, { tam: 8, align: 'center', color: '#ffffff' }); }
+    if (ult && !pronta) { g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(ix, iy, s, Math.round(s * (1 - Math.min(1, l.ulti / REGLAS.ultiMax)))); }
+    if (travada || semEn) { g.fillStyle = 'rgba(0,0,0,0.5)'; g.fillRect(ix, iy, s, s); }
+    if (!celular) { const tc = this.teclaDe(l, slot); g.fillStyle = 'rgba(0,0,0,0.75)'; g.fillRect(ix, iy + s - 7, Math.min(s, 4 + tc.length * 4), 7); texto(g, tc, ix + 1, iy + s - 8, { tam: 6, color: '#ffd166' }); }
+    // nome e estado
+    const tx = ix + s + 3, tw = w - s - 6;
+    if (tw < 14) return;
+    texto(g, kit.nombre ?? '', tx, y + 2, { tam: mini ? 6 : 8, color: pronta ? '#ffffff' : '#9aa3b8', max: tw });
     let st, cs;
-    if (slot === 'e' && h.sinUlti) { st = 'EVOLVE'; cs = '#6b7280'; }
-    else if (slot === 'e') {
-      if (l.ultiLista) { st = parpadeo ? 'READY' : 'ULT!'; cs = '#ffd166'; } else { st = `${Math.floor(l.ulti)}%`; cs = '#a855f7'; }
-      rect(g, x + 3, y + 1, Math.round((w - 4) * l.ulti / REGLAS.ultiMax), 21, l.ultiLista ? 'rgba(255,209,102,0.25)' : 'rgba(168,85,247,0.18)');
-    } else {
-      if (sobre) { st = 'OVRLD'; cs = '#ff5a2a'; }
-      else if (cd > 0) { st = cd >= 1 ? `${Math.ceil(cd)}s` : 'HEAT'; cs = '#ff9d2e'; }
-      else if (l.energia < (h.coste ?? 0)) { st = 'NO EN'; cs = '#9aa0b4'; }
-      else if (h.forma === 'teleSono' && l.luta && !temDormindo(l.luta, l, h.alcance)) { st = 'SLEEP'; cs = '#a78bfa'; }
-      else if (h.forma === 'xFolha' && !l.xListo) { st = 'DASH'; cs = '#86efac'; }
-      else { st = 'READY'; cs = '#3ccf4e'; }
-      if (cd > 0 && h.cd) rect(g, x + 3, y + 1, Math.round((w - 4) * cd / h.cd), 21, 'rgba(0,0,0,0.45)');
-      if (slot === 'lmb') {
-        const kc = Math.min(1, l.calor / REGLAS.calorMax);
-        rect(g, x + 3, y + 21, w - 4, 2, '#2a1d1d');
-        rect(g, x + 3, y + 21, Math.round((w - 4) * kc), 2, sobre ? '#ff2a2a' : kc > 0.7 ? '#ff6a3a' : '#ffc23a');
-      }
-    }
-    if (compacta) { texto(g, st, x + 6, y + 11, { tam: 8, color: cs, max: w - 8 }); return; }
-    const valor = slot === 'e' ? '' : h.coste ? String(h.coste) : h.dano ? String(h.dano) : '';
-    texto(g, valor, x + 34, y + 1, { tam: 8, color: h.coste ? '#f59e0b' : '#ffe14d' });
-    texto(g, st, x + w - 4, y + 1, { tam: 8, align: 'right', color: cs });
-    texto(g, h.nombre, x + 6, y + 11, { tam: 8, color: '#ffffff', max: w - 10 });
+    if (kit.sinUlti && ult) { st = 'EVOLVE'; cs = '#6b7280'; }
+    else if (ult) { st = pronta ? 'READY' : `${Math.floor(l.ulti)}%`; cs = pronta ? '#ffd166' : '#c084fc'; }
+    else if (sobre) { st = 'OVERLOAD'; cs = '#ff5a2a'; }
+    else if (travada) { st = kit.forma === 'xFolha' ? 'DASH 1ST' : kit.requierePlasma ? 'PLASMA' : 'SLEEP'; cs = '#a78bfa'; }
+    else if (semEn) { st = 'NO EN'; cs = '#9aa3b8'; }
+    else if (cd > 0.05 && (kit.cd ?? 0) > 1.2) { st = `${cd.toFixed(cd < 3 ? 1 : 0)}s`; cs = '#ff9d2e'; }
+    else { st = 'READY'; cs = '#3ccf4e'; }
+    const ly = y + h - (mini ? 9 : 11);
+    texto(g, st, tx, ly, { tam: mini ? 6 : 8, color: cs, max: tw * 0.6 });
+    if (!mini && kit.coste && !ult) { const cw = 8 + String(kit.coste).length * 5; g.fillStyle = l.energia >= kit.coste ? '#b45309' : '#3f3f46'; g.fillRect(x + w - cw - 3, ly + 1, cw, 9); texto(g, String(kit.coste), x + w - 3 - cw / 2, ly, { tam: 8, align: 'center', color: '#fff7d6' }); }
+    // barra fina embaixo: ult enchendo, ou o calor do básico
+    if (ult) { g.fillStyle = '#2a2235'; g.fillRect(x + 2, y + h - 2, w - 4, 1); g.fillStyle = pronta ? '#ffd166' : '#a855f7'; g.fillRect(x + 2, y + h - 2, Math.round((w - 4) * Math.min(1, l.ulti / REGLAS.ultiMax)), 1); }
+    else if (slot === 'lmb') { const kc = Math.min(1, l.calor / REGLAS.calorMax); g.fillStyle = sobre ? '#ff2a2a' : kc > 0.7 ? '#ff6a3a' : '#ffc23a'; g.fillRect(x + 2, y + h - 2, Math.round((w - 4) * kc), 1); }
   }
+
+  // (antigo) mantido para quem ainda chama
+  ranura(g, l, slot, x, y, w, compacta, t) { this.cartao(g, l, slot, x, y, w, 23, compacta, t, false); }
 }

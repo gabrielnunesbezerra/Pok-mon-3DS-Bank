@@ -1392,7 +1392,9 @@ function dibujarPunta(g, e, t) {
   if (!e.activo || e.largoVis < 6) return;
   const b = e.origenVis(), alt = e.dueno.alto * 0.55;
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
-  const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
+  // raios de ult: começam grossos e vão afinando até sumir
+  const fUlt = e.extra?.slot === 'e' ? Math.max(0.04, 1.2 * Math.pow(k, 0.85)) : 0.6 + 0.4 * k;
+  const w = Math.max(e.extra?.slot === 'e' ? 1 : 3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * fUlt));
   const x2 = px(b.x + Math.cos(e.ang) * e.largoVis), y2 = px(b.y + Math.sin(e.ang) * e.largoVis - alt);
   const rampa = RAMPAS_PUNTA[e.h.paleta] ?? (e.tipoAtq === 'FIRE' ? PX.RAMPA_FOGO : e.tipoAtq === 'WATER' ? PX.RAMPA_AGUA : rampaTipo(e.tipoAtq));
   const R = Math.max(3, w * 0.55 * (1 + 0.15 * Math.sin(t * 40)));
@@ -1444,7 +1446,9 @@ function dibujarChorro(g, e, t, fx) {
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
   if (e.largoVis < 2) return;
   const x2 = b.x + Math.cos(e.ang) * e.largoVis, y2 = b.y + Math.sin(e.ang) * e.largoVis - alt;
-  const w = Math.max(3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * (0.6 + 0.4 * k)));
+  // raios de ult: começam grossos e vão afinando até sumir
+  const fUlt = e.extra?.slot === 'e' ? Math.max(0.04, 1.2 * Math.pow(k, 0.85)) : 0.6 + 0.4 * k;
+  const w = Math.max(e.extra?.slot === 'e' ? 1 : 3, Math.round(ancho * (0.5 + 0.5 * Math.min(1, (e.t - e.carga) / 0.12)) * fUlt));
   const largoTotal = Math.hypot(px(x2) - ox, px(y2) - oy), ux = (px(x2) - ox) / (largoTotal || 1), uy = (px(y2) - oy) / (largoTotal || 1), nxp = -uy, nyp = ux;
   const paletaH = e.h.paleta;
   if (paletaH === 'aura') {

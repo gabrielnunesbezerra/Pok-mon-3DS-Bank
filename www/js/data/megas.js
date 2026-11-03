@@ -107,6 +107,6 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Sleep Sludge', dano: 13, duerme: 1.2, radio: 26 },
     esp: { nombre: 'Vine Throw', forma: 'telecinese', vinha: true, tipo: 'GRASS', dano: 8, alcance: 170, lanza: 190, cd: 7, anim: 'Charge' },
     q: { nombre: 'Ingrain + Sludge Wave', forma: 'arraigoOnda', onda: { radio: 95, dano: 9, empuje: 150, veneno: { dps: 3, dur: 3 } }, coste: 30, cd: 13 },
-    e: { nombre: 'Mega Solar Beam', forma: 'raioSolar', tipo: 'GRASS', dano: 30, carga: 0.95, largo: 320, ancho: 22, anchoVisual: 36, dur: 1.2, empuje: 90 },
+    e: { nombre: 'Mega Solar Beam', forma: 'raioSolar', tipo: 'GRASS', dano: 30, carga: 0.95, largo: 340, ancho: 30, anchoVisual: 92, dur: 2.4, empuje: 90 },
   },
 };
