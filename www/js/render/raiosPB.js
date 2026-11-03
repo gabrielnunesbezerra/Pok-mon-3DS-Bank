@@ -34,6 +34,19 @@ export function jatoAgua(g, o, t) {
     }
     g.globalAlpha = 1;
   }
+  coluna(g, o, t, P);
+}
+
+// paletas das colunas de energia das ults (5 tons, do núcleo à borda, como em paletas.js)
+export const PALETA_COLUNA = {
+  hiper: ['#fff8e0', '#ffd890', '#ffa24a', '#d0581a', '#5a2008'],
+  solar: ['#fffbe0', '#fff29a', '#ffd23c', '#c8960e', '#5a420a'],
+  matcha: ['#f6fbe6', '#d2eaa0', '#8bc34a', '#4f7a22', '#22380e'],
+};
+
+// coluna grossa que ondula, em camadas da borda ao núcleo branco, com brilhos correndo e estouro pedaçudo na ponta
+export function coluna(g, o, t, P) {
+  const w = o.w;
   if (o.L < 3) return;
   // coluna em camadas: borda, sombra, base, claro e núcleo branco; a borda ondula como água correndo
   const onda = (f, i, k) => 1 + k * Math.sin(f * 22 - t * 34 + i * 0.3) + k * 0.6 * Math.sin(f * 9 + t * 21);
@@ -48,7 +61,7 @@ export function jatoAgua(g, o, t) {
     const f = (i / 6 + t * 2.6) % 1, lado = (i % 2 ? 1 : -1) * w * 0.26 * (0.85 + 0.25 * f), d0 = o.L * f, d1 = Math.min(o.L, d0 + 6 + w * 0.3);
     PX.lineaPix(g, o.x + o.ux * d0 + o.nx * lado, o.y + o.uy * d0 + o.ny * lado, o.x + o.ux * d1 + o.nx * lado, o.y + o.uy * d1 + o.ny * lado, i % 3 ? P[0] : IMPACTO[0], i % 3 ? 1 : 2);
   }
-  // espuma pedaçuda na ponta e na boca
+  // pedaços na ponta (espuma na água, estouro de energia no resto) e esfera na boca
   const xp = o.x + o.ux * o.L, yp = o.y + o.uy * o.L, fr = Math.floor(t * 18);
   for (let i = 0; i < 6; i++) { const a = i * 1.047 + fr * 0.4, r = w * (0.32 + 0.16 * fixo(i, fr)), d = w * 0.38; PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r + 1, P[4]); PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r, i % 2 ? P[1] : P[0]); }
   PX.disco(g, px(xp), px(yp), w * 0.42, IMPACTO[0]);

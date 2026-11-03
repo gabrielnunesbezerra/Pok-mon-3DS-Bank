@@ -85,8 +85,8 @@ export class UltPB {
       const gr = g.createRadialGradient(x, y, 0, x, y, R);
       gr.addColorStop(0, comAlfa(IMPACTO[0], 0.5 * (1 - k))); gr.addColorStop(0.35, comAlfa(p[1], 0.32 * (1 - k))); gr.addColorStop(1, comAlfa(p[2], 0));
       g.globalAlpha = 1; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill();
-      g.lineWidth = 2;
-      for (let i = 0; i < 3; i++) { const u = (k * 1.6 + i / 3) % 1, rr = (1 - u) * 80 * z + 6; g.strokeStyle = comAlfa(i % 2 ? p[1] : IMPACTO[0], 0.8 * (1 - u)); g.beginPath(); g.ellipse(x, y, rr, rr * 0.7, 0, 0, 7); g.stroke(); }
+      g.lineWidth = 1.5;
+      for (let i = 0; i < 2; i++) { const u = (k * 1.6 + i / 2) % 1, rr = (1 - u) * 50 * z + 6; g.strokeStyle = comAlfa(i % 2 ? p[1] : IMPACTO[0], 0.4 * (1 - u)); g.beginPath(); g.ellipse(x, y, rr, rr * 0.7, 0, 0, 7); g.stroke(); }
     }
     // anel fino que abre no acerto
     for (const a of this.aneis) {

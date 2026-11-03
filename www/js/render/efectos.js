@@ -9,7 +9,7 @@ import { PALETAS, BASE, SOMBRA, CLARO, NUCLEO, BRANCO, IMPACTO, FUMACA, pal, deC
 import { assinatura, golpeAssinado, aterrissagem, HEROES_ASSINATURA } from './assinaturas.js';
 import { ESTILOS_PB } from './tirosPB.js';
 import { golpeChato } from './cortesPB.js';
-import { jatoAgua, bolasFogo } from './raiosPB.js';
+import { jatoAgua, bolasFogo, coluna, PALETA_COLUNA } from './raiosPB.js';
 import { ondaSom, fumacaAnel, fogoAnel } from './areaPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
@@ -1439,8 +1439,8 @@ const IMG_MEGA = typeof Image !== 'undefined' ? Object.assign(new Image(), { src
 const RAMPAS_PUNTA = { aura: ['#1f4fb8', '#6fb0ff', '#cfe8ff', '#fffdf4'], psiquico: ['#5a1f8a', '#b05ae8', '#f0d0ff', '#fffdf4'], acero: ['#4a5a6a', '#a8b8c8', '#e6eef6', '#fffdf4'], glitch: ['#c81e5a', '#ff4a8a', '#7df9ff', '#fffdf4'], solar: ['#c88a10', '#ffd23c', '#fff6b0', '#fffdf4'] };
 function dibujarPunta(g, e, t) {
   if (!e.activo || e.largoVis < 6) return;
-  // o jato d'água já desenha espuma na ponta e esfera na boca (raiosPB.jatoAgua)
-  if (e.tipoAtq === 'WATER' && !e.h.paleta) return;
+  // a coluna (água, Hyper Beam, Solar Beam...) já desenha ponta e boca (raiosPB.coluna)
+  if (!e.h.paleta || ['hiper', 'solar', 'matcha'].includes(e.h.paleta)) return;
   const b = e.origenVis(), alt = e.dueno.alto * 0.55;
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
   // raios de ult: começam grossos e vão afinando até sumir
@@ -1532,16 +1532,17 @@ function dibujarChorro(g, e, t, fx) {
     const ponto = (i, sgn) => { const f = i / N, d = largoTotal * f, env = 0.35 + 0.65 * Math.min(1, f * 3); const fase = d / 9 - t * 22, off = Math.sin(fase) * amp * sgn * env; return [ox + ux * d + nxp * off, oy + uy * d + nyp * off, Math.cos(fase) * sgn]; };
     // primeiro os trechos que estão "atrás", depois os da frente
     for (const frente of [false, true]) for (const [sgn, [c0, c1, c2]] of fitas) {
-      for (let i = 0; i < N; i++) {
-        const [x1, y1, z] = ponto(i, sgn), [x2b, y2b] = ponto(i + 1, sgn);
-        if ((z > 0) !== frente) continue;
-        g.globalAlpha = frente ? 1 : 0.75;
-        g.globalAlpha *= 0.35; PX.lineaPix(g, x1, y1, x2b, y2b, c1, 11); g.globalAlpha = frente ? 1 : 0.75; PX.lineaPix(g, x1, y1, x2b, y2b, c0, 7); PX.lineaPix(g, x1, y1, x2b, y2b, c1, 5); PX.lineaPix(g, x1, y1, x2b, y2b, c2, frente ? 2 : 1);
+      // tubo liso de discos, uma camada por vez (linhas grossas viram degraus quadrados)
+      for (const [r, cor, al] of [[7, c1, 0.3], [5, c0, 1], [3.5, c1, 1], [frente ? 1.5 : 1, c2, 1]]) {
+        g.globalAlpha = (frente ? 1 : 0.75) * al;
+        for (let i = 0; i < N; i++) { const [x1, y1, z] = ponto(i, sgn); if ((z > 0) === frente) PX.disco(g, x1, y1, r, cor); }
       }
     }
     g.globalAlpha = 1;
     for (let i = 0; i < N; i += 4) { const f = i / N; if (Math.abs(Math.sin(largoTotal * f / 9 - t * 22)) < 0.3) PX.carimbar(g, PX.chispa(3, '#fffdf4'), ox + ux * largoTotal * f, oy + uy * largoTotal * f, 0, 1, 1); }
     PX.esfera(g, ox, oy, Math.max(3, w * 0.3), rampaFuego(col));
+    // bolas de fogo pedaçudas rolando na ponta, como no site
+    if (largoTotal > 30) bolasFogo(g, { x: ox, y: oy, ux, uy, nx: nxp, ny: nyp, L: largoTotal, abre: 0.12 }, t, 'FIRE');
     PX.anilloPix(g, px(x2), px(y2), 6 + Math.sin(t * 40) * 2, 5, '#bfe4ff', 1, 3, Math.floor(t * 30));
     if (ale() < 0.6) fx.add({ x: px(x2) + entre(-4, 4), y: px(y2) + entre(-4, 4), vx: entre(-80, 80), vy: entre(-80, 40), size: 2.2, life: 0.35, color: ale() < 0.5 ? '#ffd23c' : '#8fc4ff', forma: 'chispa' });
     return;
@@ -1552,9 +1553,6 @@ function dibujarChorro(g, e, t, fx) {
     if (ale() < 0.9) fx.add({ x: px(x2), y: px(y2), vx: entre(-110, 110), vy: entre(-140, -30), g: 300, size: 2.2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
     return;
   }
-  // o raio é uma corrente de trechos curtos com largura que ondula, para as bordas parecerem energia e não um cano
-  const nTr = Math.max(2, Math.ceil(largoTotal / 9));
-  const solar = paletaH === 'solar';
   if (paletaH === 'psiquico') {
     // Psybeam: raio roxo com anéis psíquicos que correm por ele
     for (const [cor, k] of [['rgba(192,132,252,0.35)', 1.25], ['#5a1f8a', 0.75], ['#b05ae8', 0.55], ['#f0d0ff', 0.28], ['#fffdf4', 0.1]]) PX.lineaPix(g, ox, oy, px(x2), px(y2), cor, Math.max(1, Math.round(w * k)));
@@ -1595,28 +1593,8 @@ function dibujarChorro(g, e, t, fx) {
     PX.esfera(g, ox, oy, Math.max(3, w * 0.35), ['#8a5a00', '#ffc21a', '#fff29a', '#fffdf4']);
     return;
   }
-  const hiper = paletaH === 'hiper', matcha = paletaH === 'matcha';
-  const cA = solar ? '#b8860b' : hiper ? '#e0520a' : matcha ? '#3f6b1e' : c3, cB = solar ? '#ffd23c' : hiper ? '#ffb347' : matcha ? '#8bc34a' : c2, cC = solar ? '#fff29a' : hiper ? '#fff6d0' : matcha ? '#eef8d0' : c1;
-  const capas = [[4, '#04102c', 0.92, 1], [0, cA, 1, 1], [0, cB, 1, 0.74], [0, cC, 1, 0.46], [0, '#fffdf4', 1, 0.2]];
-  for (const [extra, color, alfa, f] of capas) {
-    g.globalAlpha = alfa;
-    for (let i = 0; i < nTr; i++) {
-      const u0 = i / nTr, u1 = (i + 1) / nTr + 0.02, onda = 0.9 + 0.1 * Math.sin(t * 22 + i * 1.4) + (i % 3 === 0 ? 0.04 : 0);
-      const gro = Math.max(1, Math.round((w * f + (f === 1 ? extra : 0)) * onda * (i === 0 ? 0.8 : 1)));
-      PX.lineaPix(g, ox + (px(x2) - ox) * u0, oy + (px(y2) - oy) * u0, ox + (px(x2) - ox) * u1, oy + (px(y2) - oy) * u1, color, gro);
-    }
-  }
-  g.globalAlpha = 1;
-  if (col === 'WATER') for (let i = 0; i < 12; i++) { const f = ((i / 12) + t * 2.2) % 1, lado = (i % 2 ? 1 : -1) * w * 0.5; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, 1.8, '#fffdf4'); }
-  // nós de energia que correm pelo raio
-  const nx = Math.cos(e.ang), ny = Math.sin(e.ang), n = Math.floor(e.largo / 14);
-  for (let i = 0; i < n; i++) {
-    const f = (((i / n) + t * 2.4) % 1), cx = ox + (px(x2) - ox) * f, cy = oy + (px(y2) - oy) * f;
-    const lado = Math.sin(t * 30 + i * 1.7) * w * 0.3;
-    PX.disco(g, cx - ny * lado, cy + nx * lado, i % 3 === 0 ? 2 : 1, i % 2 ? c0 : '#fffdf4');
-  }
-  // boca e ponta
-  PX.esfera(g, ox, oy, Math.max(3, w * 0.45), rampa);
+  // Hyper Beam, Solar Beam e os raios sem estilo próprio: coluna de energia no formato do PB (raiosPB.js)
+  coluna(g, { x: ox, y: oy, ux, uy, nx: nxp, ny: nyp, L: largoTotal, w }, t, PALETA_COLUNA[paletaH] ?? pal(col));
   if (BRILLA.has(col) && ale() < 0.6) fx.chispas(x2 + (ale() - 0.5) * 8, y2 + (ale() - 0.5) * 8, c1, 1, 100);
   if (ale() < 0.5) fx.rafaga(x2, y2 + alt, col, 1, 80, { size: 2 });
 }
