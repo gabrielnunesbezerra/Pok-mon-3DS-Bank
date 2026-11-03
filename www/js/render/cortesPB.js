@@ -37,7 +37,8 @@ export function luzCortes(g, fx, cam, ox, oy) {
   g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
   const z = cam.z;
   for (const a of fx.tajos) {
-    const k = a.t / a.life, rr = a.r * 0.9, P = pal(a.tipo), al = 1 - k;
+    // 0.55: intensidade geral da luz (o usuário pediu menos claridade)
+    const k = a.t / a.life, rr = a.r * 0.9, P = pal(a.tipo), al = (1 - k) * 0.55;
     const fxx = a.x + Math.cos(a.ang) * rr * 0.85, fyy = a.y + Math.sin(a.ang) * rr * 0.85 * 0.8;
     const q = cam.aPantalla(fxx, fyy), sx = q.x + ox, sy = q.y + oy;
     const plano = ehChato(a) || a.tipo === 'BUG' || a.tipo === 'DARK' || (a.tipo === 'FIGHTING' && a.estilo !== 'hueso');
@@ -48,7 +49,7 @@ export function luzCortes(g, fx, cam, ox, oy) {
       gr.addColorStop(0, rgba(IMPACTO[0], 0.9 * al)); gr.addColorStop(0.3, rgba(cor, 0.55 * al)); gr.addColorStop(1, rgba(cor, 0));
       g.fillStyle = gr; g.beginPath(); g.arc(sx, sy, R, 0, 7); g.fill();
       // clarão branco curto quando a mordida fecha
-      if ((a.tipo === 'DARK' || a.tipo === 'BUG') && k > 0.35 && k < 0.55) { g.fillStyle = rgba(IMPACTO[0], 0.7); g.beginPath(); g.arc(sx, sy, rr * 0.25 * z, 0, 7); g.fill(); }
+      if ((a.tipo === 'DARK' || a.tipo === 'BUG') && k > 0.35 && k < 0.55) { g.fillStyle = rgba(IMPACTO[0], 0.4); g.beginPath(); g.arc(sx, sy, rr * 0.25 * z, 0, 7); g.fill(); }
       continue;
     }
     // corte em meia-lua: mesma varredura do desenho no mundo (ease-out na frente, recolhe atrás)

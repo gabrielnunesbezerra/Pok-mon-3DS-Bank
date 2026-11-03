@@ -16,6 +16,7 @@ import { Hud, corDe } from '../render/hud.js';
 import { UltPB } from '../render/ultPB.js';
 import { luzTiros } from '../render/tirosPB.js';
 import { luzCortes } from '../render/cortesPB.js';
+import { rastroDashPB, ondaFrente, cascaAgua, luzDash } from '../render/dashPB.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
@@ -38,16 +39,6 @@ function pokebolaMini(g, x, y, R, rot, abre, al = 1) {
   g.fillStyle = '#111'; g.fillRect(-R, -1, R * 2, 2);
   g.fillStyle = '#f8fafc'; g.beginPath(); g.arc(0, 0, R * 0.32, 0, 7); g.fill(); g.stroke();
   g.restore();
-}
-// rastro de todo dash, em pixel art: faixa larga e transparente (brilho), riscos da cor do tipo (corpo) e o fio quase
-// branco no meio (núcleo), cada camada mais curta que a de fora; nada de degradê
-function rastroDash(g, l) {
-  const d = l.dash, v = d.vel ?? Math.hypot(l.vx, l.vy), ux = Math.cos(d.ang), uy = Math.sin(d.ang) * 0.7, L = Math.min(70, 18 + v * 0.07), y = l.y - l.alto * 0.45 - (l.salto ?? 0);
-  const p = pal(d.def.tipo), larg = Math.max(4, Math.round(l.alto * 0.55)), a0 = g.globalAlpha;
-  g.globalAlpha = a0 * 0.3; PX.lineaPix(g, l.x, y, l.x - ux * L, y - uy * L, p[BASE], larg);
-  g.globalAlpha = a0 * 0.55; PX.lineaPix(g, l.x, y, l.x - ux * L * 0.75, y - uy * L * 0.75, p[CLARO], Math.max(3, Math.round(larg * 0.5)));
-  g.globalAlpha = a0;
-  for (const o of [-0.32, 0, 0.32]) { const nx = -uy * o * l.alto, ny = ux * o * l.alto, k = o ? 0.6 : 0.85; PX.lineaPix(g, l.x + nx, y + ny, l.x - ux * L * k + nx, y - uy * L * k + ny, o ? p[CLARO] : p[NUCLEO], 1); }
 }
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
@@ -359,6 +350,7 @@ export class Combate {
     // luz do estilo PB (estrelas, anéis, carga da ult e quadro de impacto) na resolução do aparelho, por cima do mundo
     luzTiros(g, luta, cam, sx * z, sy * z, this.t);
     luzCortes(g, fx, cam, sx * z, sy * z);
+    luzDash(g, luta, cam, sx * z, sy * z);
     this.pb.dibujar(g, cam, sx * z, sy * z, ANCHO, ALTO);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
@@ -509,6 +501,8 @@ export class Combate {
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
     const fila = filaDesdeAngulo(l.est.girando ? t * 22 : l.angulo);
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
+    // cauda de cometa do dash (dashPB.js), atrás do sprite e das imagens que ficam para trás
+    if (l.dash && !l.dash.def.teleport) rastroDashPB(g, l, this.t);
     // imagens que ficam para trás: em todo dash (mais fortes no Shadow Sneak) e quando está acelerado andando
     if (l.dash && !l.dash.def.teleport) { const sombra = l.dash.def.estilo === 'sombra', paso = Math.min(14, l.dash.vel * 0.016); for (let k = 4; k >= 1; k--) bank.dibujar(g, l.dex, l.dash.def.anim ?? 'Walk', t, l.x - Math.cos(l.dash.ang) * k * paso, l.y - Math.sin(l.dash.ang) * k * paso * 0.7 - l.salto, sc, { fila, bucle: true, alpha: (sombra ? 0.32 : 0.24) - k * 0.05 }); }
     else if (l.est.rapido && l.moviendo) { const v = Math.hypot(l.vx, l.vy) || 1; for (let k = 2; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - (l.vx / v) * k * 8, l.y - (l.vy / v) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.2 - k * 0.06 }); if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * 14, y: l.y - l.alto * Math.random(), vx: -l.vx * 0.8, vy: -l.vy * 0.8, size: 1, life: 0.15, color: '#bfe9ff', forma: 'raya' }); }
@@ -545,7 +539,7 @@ export class Combate {
     const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor + ox, l.y - alto + oy, sc * (0.25 + 0.75 * (1 - (1 - kSai) ** 3)), { fila, bucle, flash: Math.max(flash, luzSai), alpha: parpadeo, sx, sy, rot });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - alto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
-    if (l.dash) { if (!l.dash.def.teleport) rastroDash(g, l); this.dibujarDash(g, l); }
+    if (l.dash) this.dibujarDash(g, l);
     // estados visíveis
     const esE = l.est.escudo?.estilo;
     if ((esE === 'barrera' && (l.est.escudo || l.escudo > 0)) || l.burbuja?.vivo) {
@@ -666,15 +660,15 @@ export class Combate {
   dibujarDash(g, l) {
     const d = l.dash, e = d.def.estilo, t = this.t, cx = l.x, cy = l.y - l.alto * 0.5 - l.salto, fx = this.fx, a = d.ang;
     const girar = (r, cols, grosor, n) => { for (let k = 0; k < n; k++) { const a0 = t * 24 + (k / n) * Math.PI * 2; PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, '#04102c', grosor + 2, r * 0.8); PX.arcoPix(g, cx, cy, r, a0, a0 + 1.3, cols[0], grosor, r * 0.8); PX.arcoPix(g, cx, cy, r, a0 + 0.2, a0 + 1.1, cols[1], Math.max(1, grosor - 2), r * 0.8); } };
-    if (e === 'agua') { girar(l.alto * 0.62, ['#4aa3f0', '#ffffff'], 4, 3); if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 16, y: cy + (Math.random() - 0.5) * 16, vx: -Math.cos(a) * 50 + (Math.random() - 0.5) * 80, vy: -Math.sin(a) * 30 - 40, g: 260, size: 1.8, life: 0.45, color: '#cfeeff', forma: 'gota', rampa: PX.RAMPA_AGUA }); }
+    if (e === 'agua') { cascaAgua(g, l, t); if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 16, y: cy + (Math.random() - 0.5) * 16, vx: -Math.cos(a) * 50 + (Math.random() - 0.5) * 80, vy: -Math.sin(a) * 30 - 40, g: 260, size: 1.8, life: 0.45, color: '#cfeeff', forma: 'gota', rampa: PX.RAMPA_AGUA }); }
     else if (e === 'veneno') { for (let k = 0; k < 5; k++) { const off = (k - 2) * 4, ln = 16 + (k % 3) * 8; PX.lineaPix(g, cx - Math.sin(a) * off, cy + Math.cos(a) * off, cx - Math.cos(a) * ln - Math.sin(a) * off, cy - Math.sin(a) * ln + Math.cos(a) * off, k % 2 ? '#e070ff' : '#8a2bb8', 2); } if (Math.random() < 0.7) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 10, vx: -Math.cos(a) * 60, vy: -Math.sin(a) * 60, size: 2.4, life: 0.35, color: '#d68cf0', forma: 'burbuja' }); }
     else if (e === 'nube') { if (Math.random() < 0.9) fx.add({ x: l.x - Math.cos(a) * 10 + (Math.random() - 0.5) * 10, y: l.y - 4 + (Math.random() - 0.5) * 6, vx: -Math.cos(a) * 30, vy: -10, size: 5, life: 0.5, color: 'rgba(240,244,255,0.8)', forma: 'circulo' }); }
     else if (e === 'matcha') { g.globalAlpha = 0.85; PX.elipsePix(g, l.x, l.y + 1, 18, 7, '#3f6b1e'); PX.elipsePix(g, l.x, l.y, 15, 5, '#8bc34a'); PX.anilloPix(g, l.x, l.y, 16, 6, '#eef8d0', 1, 5, Math.floor(t * 20)); g.globalAlpha = 1; for (let k = 0; k < 2; k++) fx.add({ x: l.x - Math.cos(a) * 12 + (Math.random() - 0.5) * 14, y: l.y + (Math.random() - 0.5) * 6, vx: -Math.cos(a) * 40 + (Math.random() - 0.5) * 60, vy: -40 - Math.random() * 50, g: 260, size: 2.4, life: 0.5, color: '#a8d060', forma: 'gota', rampa: ['#2a4a12', '#5f8f2a', '#a8d060', '#eef8d0'] }); fx.add({ x: l.x - Math.cos(a) * 16, y: l.y + 1, size: 6, life: 0.7, color: 'rgba(139,195,74,0.55)', forma: 'circulo' }); }
     else if (e === 'electrico') { for (let k = 0; k < 3; k++) { const off = (k - 1) * 6, ln = 14 + k * 6; PX.lineaPix(g, cx - Math.sin(a) * off, cy + Math.cos(a) * off, cx - Math.cos(a) * ln - Math.sin(a) * (off + (k % 2 ? 3 : -3)), cy - Math.sin(a) * ln + Math.cos(a) * off, k === 1 ? '#ffffff' : '#ffd23c', 2); } if (Math.random() < 0.8) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 12, vx: (Math.random() - 0.5) * 120, vy: (Math.random() - 0.5) * 120, size: 2.4, life: 0.2, color: '#fff6a8', forma: 'chispa' }); }
-    else if (e === 'rodar') { girar(l.alto * 0.5, ['#a0783c', '#e8c890'], 3, 2); if (Math.random() < 0.6) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 5); }
+    else if (e === 'rodar') { girar(l.alto * 0.52, ['#a0783c', '#e8c890'], 5, 2); if (Math.random() < 0.6) fx.humo(l.x - Math.cos(a) * 10, l.y, 1, 'rgba(184,180,198,0.6)', 7); }
     else if (e === 'acero') { girar(l.alto * 0.62, ['#9aa8bc', '#ffffff'], 4, 3); if (Math.random() < 0.6) fx.chispas(cx + (Math.random() - 0.5) * 20, cy + 6, '#ffe9a8', 1, 160); }
-    else if (e === 'rapido') for (let k = 0; k < 4; k++) { const off = (k - 1.5) * 5, ln = 18 + k * 5; PX.lineaPix(g, cx - Math.cos(a) * 8 - Math.sin(a) * off, cy - Math.sin(a) * 6 + Math.cos(a) * off * 0.8, cx - Math.cos(a) * (8 + ln), cy - Math.sin(a) * (6 + ln * 0.8) + Math.cos(a) * off * 0.8, k % 2 ? '#ffffff' : '#bfe9ff', 1); }
-    else if (e === 'golpe') { if (Math.random() < 0.7) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 6); if (Math.random() < 0.4) fx.chispas(cx + Math.cos(a) * 14, cy, '#ffe9a8', 1, 200); PX.carimbar(g, PX.estouro(Math.floor(t * 20) % 4, 8, '#ffffff', '#ffd23c'), cx + Math.cos(a) * 16, cy + Math.sin(a) * 9); }
+    else if (e === 'rapido') { ondaFrente(g, l, t); for (let k = 0; k < 4; k++) { const off = (k - 1.5) * 5, ln = 18 + k * 5; PX.lineaPix(g, cx - Math.cos(a) * 8 - Math.sin(a) * off, cy - Math.sin(a) * 6 + Math.cos(a) * off * 0.8, cx - Math.cos(a) * (8 + ln), cy - Math.sin(a) * (6 + ln * 0.8) + Math.cos(a) * off * 0.8, k % 2 ? '#ffffff' : '#bfe9ff', 1); } }
+    else if (e === 'golpe') { ondaFrente(g, l, t); if (Math.random() < 0.7) fx.polvo(l.x - Math.cos(a) * 8, l.y, 1, 6); if (Math.random() < 0.4) fx.chispas(cx + Math.cos(a) * 14, cy, '#ffe9a8', 1, 200); PX.carimbar(g, PX.estouro(Math.floor(t * 20) % 4, 8, '#ffffff', '#ffd23c'), cx + Math.cos(a) * 16, cy + Math.sin(a) * 9); }
     else if (e === 'sombra') { if (Math.random() < 0.7) fx.add({ x: cx + (Math.random() - 0.5) * 14, y: cy + (Math.random() - 0.5) * 18, vy: -20, size: 2, life: 0.4, color: '#a46ee0', forma: 'chispa' }); }
     else if (e === 'hoja' && d.def.latigo) {
       // chicote de vinha: curva verde com folha na ponta, aparece no meio do dash

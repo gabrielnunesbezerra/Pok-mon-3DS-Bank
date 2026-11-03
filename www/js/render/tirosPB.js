@@ -111,6 +111,8 @@ export const ESTILOS_PB = {
 // ---------------------------------------------------------------- luz na tela
 // quanto cada estilo brilha: [raio do brilho em pixels do mundo, força, núcleo branco?, riscos de velocidade?]
 const LUZ = { brasa: [10, 0.75, 1, 1], fuego: [16, 0.9, 1, 1], chorrito: [10, 0.55, 1, 1], pulsoAgua: [13, 0.6, 1, 0], hoja: [8, 0.4, 0, 1], semilla: [6, 0.3, 0, 1], roca: [0, 0, 0, 1], psico: [12, 0.7, 1, 0], bola: [8, 0.4, 0, 0] };
+// intensidade geral da luz (o usuário pediu menos claridade)
+const FORCA = 0.55;
 const halos = new Map();
 const rgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 // brilho radial pronto (um canvas por cor), carimbado com 'lighter': barato até no celular
@@ -134,7 +136,7 @@ export function luzTiros(g, luta, cam, ox, oy, t) {
     const L = LUZ[p.estilo];
     if (!L) continue;
     const q = cam.aPantalla(p.x, p.y - p.alt), x = q.x + ox, y = q.y + oy, P = pal(p.tipoAtq), esc = Math.min(2.2, p.escala ?? 1);
-    const nasce = Math.min(1, (p.edad ?? 1) / 0.06), tremor = 1 + 0.08 * Math.sin(t * 40 + p.x);
+    const nasce = FORCA * Math.min(1, (p.edad ?? 1) / 0.06), tremor = 1 + 0.08 * Math.sin(t * 40 + p.x);
     if (L[0]) {
       const R = L[0] * esc * z * tremor;
       g.globalAlpha = L[1] * nasce; g.drawImage(halo(P[1]), x - R, y - R, R * 2, R * 2);

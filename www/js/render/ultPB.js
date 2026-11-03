@@ -38,7 +38,7 @@ export class UltPB {
         // todo acerto ganha estrela, anel e fumaça (maiores quanto mais forte); a ult e o golpe muito forte param a tela
         const u = e.fuente && this.ult.get(e.fuente), naUlt = u && luta.t <= u.ate, dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), tipo = naUlt ? u.tipo : e.tipo;
         this.ultimoDano = null;
-        const forca = naUlt ? (u.acertos === 0 ? 1.3 : 0.8) : Math.min(1.1, 0.45 + dano / 22);
+        const forca = naUlt ? (u.acertos === 0 ? 1.3 : 0.8) : Math.min(0.9, 0.35 + dano / 26);
         if (naUlt) u.acertos++;
         if ((naUlt && u.acertos === 1) || dano >= 20) this.corte(e.x, e.y, 2);
         const quem = e.fuente ?? this, ultima = this.ultEstrela?.get(quem) ?? -9;
@@ -83,7 +83,7 @@ export class UltPB {
     for (const a of this.auras) {
       const k = a.t / a.life, l = a.l, [x, y] = tela(l.x, l.y - (l.alto ?? 30) * 0.5), p = pal(a.tipo), R = (a.mega ? 70 : 52) * z * (0.7 + 0.5 * Math.sin(k * Math.PI));
       const gr = g.createRadialGradient(x, y, 0, x, y, R);
-      gr.addColorStop(0, comAlfa(IMPACTO[0], 0.75 * (1 - k))); gr.addColorStop(0.35, comAlfa(p[1], 0.5 * (1 - k))); gr.addColorStop(1, comAlfa(p[2], 0));
+      gr.addColorStop(0, comAlfa(IMPACTO[0], 0.5 * (1 - k))); gr.addColorStop(0.35, comAlfa(p[1], 0.32 * (1 - k))); gr.addColorStop(1, comAlfa(p[2], 0));
       g.globalAlpha = 1; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill();
       g.lineWidth = 2;
       for (let i = 0; i < 3; i++) { const u = (k * 1.6 + i / 3) % 1, rr = (1 - u) * 80 * z + 6; g.strokeStyle = comAlfa(i % 2 ? p[1] : IMPACTO[0], 0.8 * (1 - u)); g.beginPath(); g.ellipse(x, y, rr, rr * 0.7, 0, 0, 7); g.stroke(); }
@@ -92,15 +92,15 @@ export class UltPB {
     for (const a of this.aneis) {
       if (a.t < 0) continue;
       const k = a.t / a.life, [x, y] = tela(a.x, a.y), p = pal(a.tipo), r = (10 + a.r * (1 - (1 - k) ** 3)) * z;
-      g.lineWidth = Math.max(0.5, 3 * (1 - k)); g.strokeStyle = comAlfa(IMPACTO[0], 1 - k); g.beginPath(); g.ellipse(x, y, r, r * 0.75, 0, 0, 7); g.stroke();
-      g.lineWidth = Math.max(0.5, 5 * (1 - k)); g.strokeStyle = comAlfa(p[1], 0.6 * (1 - k)); g.beginPath(); g.ellipse(x, y, r * 0.86, r * 0.64, 0, 0, 7); g.stroke();
+      g.lineWidth = Math.max(0.5, 3 * (1 - k)); g.strokeStyle = comAlfa(IMPACTO[0], 0.6 * (1 - k)); g.beginPath(); g.ellipse(x, y, r, r * 0.75, 0, 0, 7); g.stroke();
+      g.lineWidth = Math.max(0.5, 5 * (1 - k)); g.strokeStyle = comAlfa(p[1], 0.35 * (1 - k)); g.beginPath(); g.ellipse(x, y, r * 0.86, r * 0.64, 0, 0, 7); g.stroke();
     }
     // estrela de quatro pontas amarelo-branca com brilho: abre num pulo e some
     for (const s of this.estrelas) {
       const k = s.t / s.life, [x, y] = tela(s.x, s.y), pop = k < 0.25 ? 0.4 + (k / 0.25) * 0.9 : 1.3 - (k - 0.25) * 0.8, R = 26 * s.esc * pop * z, al = k < 0.6 ? 1 : (1 - k) / 0.4, p = pal(s.tipo);
-      const gr = g.createRadialGradient(x, y, 0, x, y, R * 1.8);
-      gr.addColorStop(0, comAlfa(IMPACTO[1], 0.9 * al)); gr.addColorStop(0.4, comAlfa(p[1], 0.45 * al)); gr.addColorStop(1, comAlfa(p[2], 0));
-      g.globalAlpha = 1; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R * 1.8, 0, 7); g.fill();
+      const gr = g.createRadialGradient(x, y, 0, x, y, R * 1.4);
+      gr.addColorStop(0, comAlfa(IMPACTO[1], 0.55 * al)); gr.addColorStop(0.4, comAlfa(p[1], 0.28 * al)); gr.addColorStop(1, comAlfa(p[2], 0));
+      g.globalAlpha = 1; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R * 1.4, 0, 7); g.fill();
       const ponta = (k2, cor) => { g.fillStyle = cor; g.beginPath(); for (let i = 0; i < 8; i++) { const a = s.rot + (i * Math.PI) / 4, rr = (i % 2 ? R * 0.22 : R) * k2; i ? g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr) : g.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); };
       ponta(1, comAlfa(IMPACTO[2], al)); ponta(0.62, comAlfa(IMPACTO[1], al)); ponta(0.3, comAlfa(IMPACTO[0], al));
     }
