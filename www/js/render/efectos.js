@@ -9,6 +9,7 @@ import { PALETAS, BASE, SOMBRA, CLARO, NUCLEO, BRANCO, IMPACTO, FUMACA, pal, deC
 import { assinatura, golpeAssinado, aterrissagem, HEROES_ASSINATURA } from './assinaturas.js';
 import { ESTILOS_PB } from './tirosPB.js';
 import { golpeChato } from './cortesPB.js';
+import { jatoAgua, bolasFogo } from './raiosPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
 const ale = () => Math.random();
@@ -1446,6 +1447,8 @@ const IMG_MEGA = typeof Image !== 'undefined' ? Object.assign(new Image(), { src
 const RAMPAS_PUNTA = { aura: ['#1f4fb8', '#6fb0ff', '#cfe8ff', '#fffdf4'], psiquico: ['#5a1f8a', '#b05ae8', '#f0d0ff', '#fffdf4'], acero: ['#4a5a6a', '#a8b8c8', '#e6eef6', '#fffdf4'], glitch: ['#c81e5a', '#ff4a8a', '#7df9ff', '#fffdf4'], solar: ['#c88a10', '#ffd23c', '#fff6b0', '#fffdf4'] };
 function dibujarPunta(g, e, t) {
   if (!e.activo || e.largoVis < 6) return;
+  // o jato d'água já desenha espuma na ponta e esfera na boca (raiosPB.jatoAgua)
+  if (e.tipoAtq === 'WATER' && !e.h.paleta) return;
   const b = e.origenVis(), alt = e.dueno.alto * 0.55;
   const k = clampK(1 - (e.t - e.carga) / e.dur), ancho = e.h.anchoVisual ?? e.ancho * 1.4;
   // raios de ult: começam grossos e vão afinando até sumir
@@ -1552,15 +1555,8 @@ function dibujarChorro(g, e, t, fx) {
     return;
   }
   if (col === 'WATER') {
-    // Hydro Pump / Hydro Cannon como no site: blocos grossos de água e espuma que crescem até a ponta
-    const N = Math.max(10, Math.floor(largoTotal / 7)), tonos = [['#123f9c', '#2f7fe0', '#8fd0ff'], ['#1f5ec4', '#5aa8f5', '#fffdf4']];
-    for (let i = N - 1; i >= 0; i--) {
-      const f = ((i / N) + t * 2.2) % 1, d = largoTotal * f, lado = Math.sin(i * 2.3 + t * 9) * w * 0.28 * (0.4 + f);
-      const tam = Math.min(20, Math.round(5 + f * w * 0.75 + (i % 3)));
-      PX.carimbar(g, PX.humo(tam, tonos[i % 2]), ox + ux * d + nxp * lado, oy + uy * d + nyp * lado, 0, 1, Math.min(1, f * 8, (1 - f) * 5 + 0.6));
-    }
-    for (let i = 0; i < 18; i++) { const f = ((i / 18) + t * 2.8) % 1, lado = Math.sin(i * 4.1 + t * 12) * w * 0.6 * f; PX.disco(g, ox + ux * f * largoTotal + nxp * lado, oy + uy * f * largoTotal + nyp * lado, i % 3 ? 1 : 2, '#fffdf4'); }
-    PX.esfera(g, ox, oy, Math.max(3, w * 0.36), PX.RAMPA_AGUA);
+    // Hydro Pump / Hydro Cannon: coluna grossa de água no formato do PB (raiosPB.js)
+    jatoAgua(g, { x: ox, y: oy, ux, uy, nx: nxp, ny: nyp, L: largoTotal, w, desde: e.t - e.carga }, t);
     if (ale() < 0.9) fx.add({ x: px(x2), y: px(y2), vx: entre(-110, 110), vy: entre(-140, -30), g: 300, size: 2.2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
     return;
   }
@@ -1666,6 +1662,8 @@ function dibujarCono(g, e, t, fx) {
       for (let i2 = baixo.length - 1; i2 >= 0; i2--) g.lineTo(px(baixo[i2][0]), px(baixo[i2][1]));
       g.closePath(); g.fill();
     }
+    g.globalAlpha = aIn;
+    if (L > 20) bolasFogo(g, { x: ox, y: oy, ux: ca, uy: sa, nx, ny, L, abre: Math.tan(abre) * 1.6 }, t, tipo);
     g.globalAlpha = 1;
     for (let i2 = 0; i2 < 2; i2++) {
       const f = ale(), d = L * f, lado = (ale() - 0.5) * 2 * (3 + d * Math.tan(abre) * 1.6), sp = entre(140, 200);
