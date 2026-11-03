@@ -1,8 +1,8 @@
 // Biblioteca de pixel art para os efeitos: primitivas que desenham pixel a pixel (círculos, anéis, linhas, esferas
 // sombreadas) e geradores de sprites pequenos (chama, gota, folha, faísca, fumaça, bolha, rocha, coração, shuriken).
 // Os sprites são desenhados uma vez em canvas pequenos e guardados; o resto do jogo só os carimba na tela.
+import { RAMPA_FOGO, RAMPA_AGUA, CONTORNO, deCor } from './paletas.js';
 const R = Math.round;
-const CONTORNO = '#04102c';
 const memo = new Map();
 export const limparMemo = () => memo.clear();
 
@@ -78,9 +78,30 @@ function mezclar(c, k) {
   return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
 }
 // rampa de 4 tons a partir de uma cor base
-export const rampaDe = c => [mezclar(c, -0.45), c, mezclar(c, 0.45), mezclar(c, 0.85)];
-export const RAMPA_FOGO = ['#a01c14', '#ff6a1a', '#ffb52e', '#fff3b0'];
-export const RAMPA_AGUA = ['#1f5ec4', '#4aa3f0', '#9fdcff', '#ffffff'];
+export const rampaDe = c => { const p = deCor(c); return p ? [p[3], p[2], p[1], p[0]] : [mezclar(c, -0.45), c, mezclar(c, 0.45), mezclar(c, 0.85)]; };
+export { RAMPA_FOGO, RAMPA_AGUA };
+
+// brilho em degraus (no lugar do degradê radial): discos concêntricos de 3 tons da paleta, cada um mais transparente
+// que o de dentro; rampa = [núcleo, claro, base, ...]
+export function brilhoDegrau(g, cx, cy, r, rampa, alfa = 1, ry = r) {
+  const a0 = g.globalAlpha;
+  for (const [k, i, al] of [[1, 2, 0.22], [0.66, 1, 0.38], [0.36, 0, 0.6]]) {
+    g.globalAlpha = a0 * alfa * al;
+    elipsePix(g, cx, cy, Math.max(1, r * k), Math.max(1, ry * k), rampa[Math.min(i, rampa.length - 1)]);
+  }
+  g.globalAlpha = a0;
+}
+// faixa em degraus (no lugar do degradê linear): n listras de uma ponta (cores[0]) à outra, retângulo de x,y,w,h
+export function faixaDegrau(g, x, y, w, h, cores, alfas, vertical = true) {
+  const a0 = g.globalAlpha, n = cores.length;
+  for (let i = 0; i < n; i++) {
+    g.globalAlpha = a0 * (alfas?.[i] ?? 1);
+    g.fillStyle = cores[i];
+    if (vertical) { const y0 = Math.round(y + (h * i) / n), y1 = Math.round(y + (h * (i + 1)) / n); g.fillRect(Math.round(x), y0, Math.round(w), y1 - y0); }
+    else { const x0 = Math.round(x + (w * i) / n), x1 = Math.round(x + (w * (i + 1)) / n); g.fillRect(x0, Math.round(y), x1 - x0, Math.round(h)); }
+  }
+  g.globalAlpha = a0;
+}
 
 // ---------------------------------------------------------------- sprites
 // chama de 4 quadros, apontando para cima, com camadas (borda, miolo, centro, núcleo)
@@ -151,14 +172,14 @@ export function hoja(L, verde = ['#1f6a28', '#4caf38', '#8be04e', '#d7ffa0']) {
 }
 
 // faísca de quatro pontas
-export function chispa(tam, color = '#ffffff') {
+export function chispa(tam, color = '#fffdf4') {
   return guardado(`chispa${tam}-${color}`, tam * 2 + 3, tam * 2 + 3, (g, W) => {
     const c = Math.floor(W / 2);
     g.fillStyle = CONTORNO;
     g.fillRect(c - 1, c - tam - 1, 3, tam * 2 + 3); g.fillRect(c - tam - 1, c - 1, tam * 2 + 3, 3);
     g.fillStyle = color;
     for (let i = 0; i <= tam; i++) { const w = i < tam * 0.5 ? 1 : 0; g.fillRect(c - w, c - tam + i, w * 2 + 1, 1); g.fillRect(c - w, c + tam - i, w * 2 + 1, 1); g.fillRect(c - tam + i, c - w, 1, w * 2 + 1); g.fillRect(c + tam - i, c - w, 1, w * 2 + 1); }
-    g.fillStyle = '#ffffff'; g.fillRect(c, c, 1, 1);
+    g.fillStyle = '#fffdf4'; g.fillRect(c, c, 1, 1);
   });
 }
 
@@ -176,8 +197,8 @@ export function burbuja(r, color = '#bfe9ff') {
     const c = Math.floor(W / 2);
     anilloPix(g, c, c, r + 1, r + 1, CONTORNO, 2);
     anilloPix(g, c, c, r, r, color, 1);
-    g.fillStyle = 'rgba(255,255,255,0.22)'; disco(g, c, c, r - 1, 'rgba(160,220,255,0.2)');
-    g.fillStyle = '#ffffff'; g.fillRect(c - Math.round(r * 0.55), c - Math.round(r * 0.45), Math.max(1, Math.round(r * 0.3)), 1); g.fillRect(c - Math.round(r * 0.55), c - Math.round(r * 0.45), 1, Math.max(1, Math.round(r * 0.3)));
+    g.fillStyle = 'rgba(255,253,244,0.22)'; disco(g, c, c, r - 1, 'rgba(160,220,255,0.2)');
+    g.fillStyle = '#fffdf4'; g.fillRect(c - Math.round(r * 0.55), c - Math.round(r * 0.45), Math.max(1, Math.round(r * 0.3)), 1); g.fillRect(c - Math.round(r * 0.55), c - Math.round(r * 0.45), 1, Math.max(1, Math.round(r * 0.3)));
     g.fillRect(c + Math.round(r * 0.35), c + Math.round(r * 0.35), 1, 1);
   });
 }
@@ -190,13 +211,13 @@ export function burbujaLlena(r) {
     disco(g, c, c, r, '#2f7fe0');
     disco(g, c - r * 0.15, c - r * 0.15, r * 0.78, '#5aa8f5');
     disco(g, c - r * 0.3, c - r * 0.3, r * 0.45, '#9fd6ff');
-    disco(g, c - r * 0.4, c - r * 0.42, Math.max(1, r * 0.2), '#ffffff');
+    disco(g, c - r * 0.4, c - r * 0.42, Math.max(1, r * 0.2), '#fffdf4');
     g.fillStyle = '#cfeaff'; g.fillRect(c + Math.round(r * 0.35), c + Math.round(r * 0.3), 1, 1);
   });
 }
 
 // nota musical (Sing, Perish Song): cabeça oval, haste e bandeirinha, com contorno escuro
-export function nota(tam = 6, color = '#ffffff') {
+export function nota(tam = 6, color = '#fffdf4') {
   return guardado(`nota${tam}-${color}`, tam * 2 + 6, tam * 3 + 6, (g, W, H) => {
     const cx = Math.floor(W / 2) - 1, base = H - 4;
     for (const [c, k] of [[CONTORNO, 1], [color, 0]]) {
@@ -205,7 +226,7 @@ export function nota(tam = 6, color = '#ffffff') {
       g.fillRect(cx + Math.round(tam * 0.35) - k, base - tam * 2.4 - k, 2 + k * 2, tam * 2.3 + k);
       g.fillRect(cx + Math.round(tam * 0.35) - k, base - tam * 2.4 - k, Math.round(tam * 0.9) + k * 2, 2 + k * 2);
     }
-    g.fillStyle = 'rgba(255,255,255,0.6)'; g.fillRect(cx - 2, base - 2, 1, 1);
+    g.fillStyle = 'rgba(255,253,244,0.6)'; g.fillRect(cx - 2, base - 2, 1, 1);
   });
 }
 // triângulo de energia (Tri Attack): uma ponta para cada tipo
@@ -271,7 +292,7 @@ export function shuriken(r, rampa = ['#1f5ec4', '#4aa3f0', '#cfeeff']) {
 }
 
 // estouro de impacto: raios que crescem e somem em 4 quadros
-export function estouro(frame, r, color = '#ffffff', brillo = '#ffd23c') {
+export function estouro(frame, r, color = '#fffdf4', brillo = '#ffd23c') {
   return guardado(`estouro${frame}-${r}-${color}-${brillo}`, r * 2 + 6, r * 2 + 6, (g, W) => {
     const c = W / 2, k = [0.55, 0.85, 1, 0.8][frame % 4], n = 8;
     for (let i = 0; i < n; i++) {
@@ -315,7 +336,7 @@ export function anilloAire(r) {
       anilloPix(g, c + dx, c, r * 0.42, r, 'rgba(120,170,255,0.9)', 2);
       anilloPix(g, c + dx, c, r * 0.42, r, '#f4fbff', 1);
     }
-    g.fillStyle = '#ffffff'; g.fillRect(c - 1, c - r - 1, 2, 2); g.fillRect(c - 1, c + r - 1, 2, 2);
+    g.fillStyle = '#fffdf4'; g.fillRect(c - 1, c - r - 1, 2, 2); g.fillRect(c - 1, c + r - 1, 2, 2);
   });
 }
 
@@ -367,12 +388,12 @@ export function ola(tam, fase = 0) {
       const a = Math.round(alto(x) + Math.sin((x + fase * 5) * 0.8) * 0.8);
       for (let y = 0; y <= a; y++) {
         const prof = y / Math.max(1, a);
-        g.fillStyle = prof < 0.18 ? '#ffffff' : prof < 0.4 ? '#bfe9ff' : prof < 0.75 ? '#4aa3f0' : '#1f5ec4';
+        g.fillStyle = prof < 0.18 ? '#fffdf4' : prof < 0.4 ? '#bfe9ff' : prof < 0.75 ? '#4aa3f0' : '#1f5ec4';
         g.fillRect(3 + x, base - y, 1, 1);
       }
       g.fillStyle = CONTORNO; g.fillRect(3 + x, base - a - 1, 1, 1);
     }
-    for (let i = 0; i < 4; i++) { g.fillStyle = '#ffffff'; g.fillRect(3 + Math.round(ancho * (0.25 + i * 0.2)) + (fase % 2), base - Math.round(alto(ancho * (0.25 + i * 0.2))) - 2 - (i % 2), 2, 1); }
+    for (let i = 0; i < 4; i++) { g.fillStyle = '#fffdf4'; g.fillRect(3 + Math.round(ancho * (0.25 + i * 0.2)) + (fase % 2), base - Math.round(alto(ancho * (0.25 + i * 0.2))) - 2 - (i % 2), 2, 1); }
     g.fillStyle = CONTORNO; g.fillRect(2, base, ancho + 2, 1);
   });
 }

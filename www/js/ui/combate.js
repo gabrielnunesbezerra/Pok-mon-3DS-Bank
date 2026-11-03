@@ -16,6 +16,7 @@ import { Hud, corDe } from '../render/hud.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
+import { pal, BASE, CLARO, NUCLEO } from '../render/paletas.js';
 import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
 const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
@@ -35,15 +36,15 @@ function pokebolaMini(g, x, y, R, rot, abre, al = 1) {
   g.fillStyle = '#f8fafc'; g.beginPath(); g.arc(0, 0, R * 0.32, 0, 7); g.fill(); g.stroke();
   g.restore();
 }
-const colorTipoHex = t => '#' + (TIPOS[t] ?? 0xffffff).toString(16).padStart(6, '0');
-function brilhoDash(g, l) {
-  const v = Math.hypot(l.vx + l.empX, l.vy + l.empY) || 1, ux = (l.vx + l.empX) / v, uy = (l.vy + l.empY) / v, L = Math.min(90, 30 + v * 0.12), y = l.y - l.alto * 0.45 - (l.salto ?? 0);
-  const c = colorTipoHex(l.dash.def.tipo), gr = g.createLinearGradient(l.x, y, l.x - ux * L, y - uy * L);
-  gr.addColorStop(0, c + 'cc'); gr.addColorStop(1, c + '00');
-  g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = gr; g.lineCap = 'round';
-  g.lineWidth = l.alto * 0.7; g.globalAlpha = 0.35; g.beginPath(); g.moveTo(l.x, y); g.lineTo(l.x - ux * L, y - uy * L); g.stroke();
-  g.lineWidth = 3; g.globalAlpha = 0.9; for (const o of [-0.3, 0, 0.3]) { g.beginPath(); g.moveTo(l.x - uy * o * l.alto, y + ux * o * l.alto); g.lineTo(l.x - ux * L * 0.8 - uy * o * l.alto, y - uy * L * 0.8 + ux * o * l.alto); g.stroke(); }
-  g.restore();
+// rastro de todo dash, em pixel art: faixa larga e transparente (brilho), riscos da cor do tipo (corpo) e o fio quase
+// branco no meio (núcleo), cada camada mais curta que a de fora; nada de degradê
+function rastroDash(g, l) {
+  const d = l.dash, v = d.vel ?? Math.hypot(l.vx, l.vy), ux = Math.cos(d.ang), uy = Math.sin(d.ang) * 0.7, L = Math.min(70, 18 + v * 0.07), y = l.y - l.alto * 0.45 - (l.salto ?? 0);
+  const p = pal(d.def.tipo), larg = Math.max(4, Math.round(l.alto * 0.55)), a0 = g.globalAlpha;
+  g.globalAlpha = a0 * 0.3; PX.lineaPix(g, l.x, y, l.x - ux * L, y - uy * L, p[BASE], larg);
+  g.globalAlpha = a0 * 0.55; PX.lineaPix(g, l.x, y, l.x - ux * L * 0.75, y - uy * L * 0.75, p[CLARO], Math.max(3, Math.round(larg * 0.5)));
+  g.globalAlpha = a0;
+  for (const o of [-0.32, 0, 0.32]) { const nx = -uy * o * l.alto, ny = ux * o * l.alto, k = o ? 0.6 : 0.85; PX.lineaPix(g, l.x + nx, y + ny, l.x - ux * L * k + nx, y - uy * L * k + ny, o ? p[CLARO] : p[NUCLEO], 1); }
 }
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
@@ -259,7 +260,8 @@ export class Combate {
       if (e.t === 'evolucion' && e.l.humano) this.marcar('mega');
     }
     if (this.rivalFuera && !this.saliendo) { this.saliendo = true; setTimeout(() => this.salirOnline(), 2200); }
-    if (!this.pausado) this.fx.update(dt);
+    // no hit stop da luta os efeitos congelam junto com os lutadores (o golpe "segura" um instante); só a tremida anda
+    if (!this.pausado) { if (luta.pausaGolpe > 0) this.fx.temblor = Math.max(0, this.fx.temblor - dt * 24); else this.fx.update(dt); }
     const vivos = luta.luchadores.filter(l => !l.ko);
     this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, !this.app.tactil.activo);
     if (this._faseAnt === 'intro' && luta.fase === 'lucha' && !luta.rapido) {
@@ -305,10 +307,19 @@ export class Combate {
       return;
     }
     const luta = this.luta, fx = this.fx, t = luta.t, bank = this.app.bank;
-    const sh = fx.temblor, sx = sh ? (Math.random() - 0.5) * sh * 2 : 0, sy = sh ? (Math.random() - 0.5) * sh * 2 : 0;
-    g.save();
-    g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
-    this.camara.aplicar(g, sx, sy, 1 + (this.fx.punch ?? 0));
+    // tremida em pixels inteiros do mundo (nunca meio pixel)
+    const sh = fx.temblor, sx = sh ? Math.round((Math.random() - 0.5) * sh * 2) : 0, sy = sh ? Math.round((Math.random() - 0.5) * sh * 2) : 0;
+    // pixel perfect: o mundo (arena, lutadores e efeitos) é desenhado 1:1 num canvas próprio, um pixel do mundo para cada
+    // pixel de arte, com posições inteiras; depois a imagem inteira é ampliada pela câmera sem suavização. Assim efeito
+    // e sprite ficam sempre na mesma resolução e nada sai borrado.
+    const cam = this.camara, z = cam.z * (1 + (fx.punch ?? 0)), borda = 8;
+    const vw = Math.ceil(ANCHO / z) + borda * 2, vh = Math.ceil(ALTO / z) + borda * 2;
+    const x0 = Math.floor(cam.x - ANCHO / 2 / z) - borda, y0 = Math.floor(cam.y - cam.centroY / z) - borda;
+    const lienzo = this.lienzoMundo(vw, vh), gMundo = g;
+    g = lienzo.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.imageSmoothingEnabled = false; g.globalCompositeOperation = 'source-over';
+    g.fillStyle = '#07060c'; g.fillRect(0, 0, vw, vh);
+    g.setTransform(1, 0, 0, 1, -x0, -y0);
     if (this.fondoGen !== this.app.geracaoGrafica) { this.fondo = crearArena(this.datos.arena); this.fondoGen = this.app.geracaoGrafica; }
     g.drawImage(this.fondo.bm ?? this.fondo, -MARGEM.x, -MARGEM.y);
     ambienteArena(g, this.datos.arena, this.t);
@@ -333,6 +344,14 @@ export class Combate {
     cosas.sort((a, b) => a.y - b.y).forEach(c => c.f());
     fx.dibujar(g);
     componer(g);
+    // o mundo pronto vai para a tela, ampliado pela câmera sem suavização; a tremida desloca a imagem inteira
+    g = gMundo;
+    g.save();
+    g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
+    g.imageSmoothingEnabled = false;
+    g.drawImage(lienzo, 0, 0, vw, vh, ANCHO / 2 + (x0 - cam.x + sx) * z, cam.centroY + (y0 - cam.y + sy) * z, vw * z, vh * z);
+    // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
+    cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
     // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
     if (this.app.ajustes.mira !== false) this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
@@ -368,9 +387,18 @@ export class Combate {
       texto(g, a.txt, 0, 0, { tam: a.tam, color: a.color, borde: 6, align: 'center', base: 'middle', peso: 700 });
       g.restore();
     }
-    if (fx.flash > 0) { g.globalAlpha = Math.min(1, fx.flash); g.fillStyle = fx.flashColor; g.fillRect(0, 0, ANCHO, ALTO); g.globalAlpha = 1; }
+    // clarão da tela em degraus de 25% (forte, médio, fraco), nunca sumindo suave
+    if (fx.flash > 0.04) { g.globalAlpha = Math.min(1, Math.ceil(fx.flash * 4) / 4) * 0.85; g.fillStyle = fx.flashColor; g.fillRect(0, 0, ANCHO, ALTO); g.globalAlpha = 1; }
     if (luta.fase === 'fin' && this.resultado) this.dibujarResultado(g);
     if (this.pausado) this.dibujarPausa(g);
+  }
+
+  // canvas do mundo em pixels de arte: só cresce (a câmera muda o zoom o tempo todo e recriar a cada quadro custa caro)
+  lienzoMundo(w, h) {
+    let c = this._lienzo;
+    if (!c) { c = document.createElement('canvas'); c._mundo = true; this._lienzo = c; }
+    if (c.width < w || c.height < h) { c.width = Math.max(c.width, w); c.height = Math.max(c.height, h); }
+    return c;
   }
 
   // sombra, aro da equipe e sprite
@@ -460,7 +488,8 @@ export class Combate {
     else if (l.anim && t < l.animHasta) { nombre = l.anim; tt = t - l.animInicio; bucle = false; }
     else if (l.dash) { nombre = l.dash.def.anim ?? 'Walk'; }
     else if (l.moviendo) nombre = 'Walk';
-    const flash = l.flash && t - l.flash < 0.1 ? 1 - (t - l.flash) / 0.1 : 0;
+    // acerto: o alvo fica branco por exatamente 2 quadros (o tempo da luta para no hit stop, então o branco segura junto)
+    const flash = l.flash && t - l.flash < 2 / 60 + 1e-6 ? 1 : 0;
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
     const fila = filaDesdeAngulo(l.est.girando ? t * 22 : l.angulo);
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
@@ -480,6 +509,12 @@ export class Combate {
     if (l._saltoAnt > 2 && alto <= 0) l._cae = t;
     l._saltoAnt = alto;
     if (l._cae && t - l._cae < 0.14) { const k = 1 - (t - l._cae) / 0.14; sx = 1 + 0.14 * k; sy = 1 - 0.14 * k; }
+    // smear: muito rápido (dash, investida), o sprite estica no sentido do movimento e afina no outro
+    const vSmear = l.dash && !l.dash.def.teleport ? (l.dash.vel ?? 0) : Math.hypot(l.vx + (l.empX ?? 0), l.vy + (l.empY ?? 0));
+    if (vSmear > 240) {
+      const s = Math.min(0.42, (vSmear - 240) / 760), ang = l.dash ? l.dash.ang : Math.atan2(l.vy, l.vx);
+      if (Math.abs(Math.cos(ang)) >= Math.abs(Math.sin(ang))) { sx *= 1 + s; sy *= 1 - s * 0.35; } else { sy *= 1 + s * 0.8; sx *= 1 - s * 0.3; }
+    }
     if (t < l.dolorHasta) tremor = (Math.floor(t * 60) % 2 ? 1 : -1);
     // movimento vivo: inclina para onde anda, balança no passo, avança o corpo no golpe e dá um tranco ao apanhar
     const v = Math.hypot(l.vx, l.vy), velN = Math.min(1, v / Math.max(60, l.velBase ?? 120));
@@ -494,7 +529,7 @@ export class Combate {
     const ok = bank.dibujar(g, l.dex, nombre, tt, l.x + tremor + ox, l.y - alto + oy, sc * (0.25 + 0.75 * (1 - (1 - kSai) ** 3)), { fila, bucle, flash: Math.max(flash, luzSai), alpha: parpadeo, sx, sy, rot });
     if (!ok) bank.dibujar(g, l.dex, 'Idle', t, l.x, l.y - alto, sc, { fila, flash });
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, true);
-    if (l.dash) this.dibujarDash(g, l);
+    if (l.dash) { if (!l.dash.def.teleport) rastroDash(g, l); this.dibujarDash(g, l); }
     // estados visíveis
     const esE = l.est.escudo?.estilo;
     if ((esE === 'barrera' && (l.est.escudo || l.escudo > 0)) || l.burbuja?.vivo) {
