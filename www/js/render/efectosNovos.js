@@ -668,7 +668,8 @@ function laminaLente(g, x0, y0, x1, y1, w, camadas) {
   const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
   for (const [c, f, al] of camadas) { g.globalAlpha *= al; g.fillStyle = c; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx + nx * w * f, my + ny * w * f, x1, y1); g.quadraticCurveTo(mx - nx * w * f, my - ny * w * f, x0, y0); g.fill(); g.globalAlpha /= al; }
 }
-function brilho(g, x, y, R, c, al = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, R); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill(); g.globalAlpha = 1; }
+function brilho() {} // sem halos de brilho em volta (pedido do jogador)
+function brilhoAntigo(g, x, y, R, c, al = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, R); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill(); g.globalAlpha = 1; }
 function estrela(g, x, y, R, c, al = 1, rot = 0) { g.globalAlpha = al; g.fillStyle = c; g.beginPath(); for (let i = 0; i < 8; i++) { const a = rot + (i * Math.PI) / 4, r = i % 2 ? R * 0.16 : i % 4 ? R * 0.6 : R; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); g.fill(); g.globalAlpha = 1; }
 
 Object.assign(ESTILOS_NOVOS, {

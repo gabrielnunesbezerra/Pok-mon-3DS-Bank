@@ -66,6 +66,9 @@ export class Combate {
       bank.retrato(dex);
     }
     this.defs = defs;
+    // baixa e decodifica já todas as animações de todas as formas (evoluções, Mega e shiny) dos lutadores,
+    // para nenhuma travadinha aparecer na primeira vez que um golpe ou a Mega acontece
+    for (const def of defs) for (const f of [def, ...(def.evoluciones ?? [])]) for (const dex of [f.dex, f.mega?.dex].filter(Boolean)) for (const d of [dex, dex + 's']) { const m = bank.medidas(d); bank.precargar(d, Object.keys(m.anims ?? {})); }
     this.camara = new Camara();
     this.fx = new Efectos();
     this.hud = new Hud(bank);

@@ -38,7 +38,7 @@ export class Efectos {
     this.ondas = []; this.banners = []; this.cruces = []; this.espinas = []; this.zonas = []; this.grietas = []; this.rayos = []; this.relampagos = []; this.trazos = []; this.simbolos = []; this.colas = []; this.heroes = [];
   }
 
-  add(p) { if (this.parts.length > 900) this.parts.splice(0, 80); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, hue: this.hue || 0, ...p }); }
+  add(p) { if (this.parts.length > 600) this.parts.splice(0, 60); this.parts.push({ vx: 0, vy: 0, g: 0, size: 2, life: 0.5, t: 0, drag: 0, grow: 0, forma: 'sq', rot: ale() * 6, vr: 0, hue: this.hue || 0, ...p }); }
 
   rafaga(x, y, tipo, n = 10, vel = 120, op = {}) {
     const pal = paleta(tipo);
@@ -381,12 +381,8 @@ export class Efectos {
       const k = a.t / a.dur, ek = 1 - (1 - k) ** 3, r = Math.max(2, a.r0 + (a.r1 - a.r0) * ek), al = (1 - k) ** 1.4;
       const banda = Math.min(14, Math.max(1.5, r * 0.11 + a.w)) * (1 - k * 0.55);
       g.save(); g.translate(a.x, a.y); g.scale(1, 0.6);
-      const gr = g.createRadialGradient(0, 0, Math.max(0, r - banda * 3), 0, 0, r);
-      gr.addColorStop(0, comAlfa(a.color, 0)); gr.addColorStop(0.7, comAlfa(a.color, 0.14 * al)); gr.addColorStop(1, comAlfa(a.color, 0.4 * al));
-      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
       g.strokeStyle = a.color;
-      g.globalAlpha = al * 0.28; g.lineWidth = banda * 2.4; g.beginPath(); g.arc(0, 0, Math.max(1, r - banda * 0.6), 0, 7); g.stroke();
-      g.globalAlpha = al * 0.85; g.lineWidth = banda; g.stroke();
+      g.globalAlpha = al * 0.85; g.lineWidth = banda; g.beginPath(); g.arc(0, 0, Math.max(1, r - banda * 0.6), 0, 7); g.stroke();
       g.globalAlpha = al; g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(1, banda * 0.32); g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke();
       g.restore();
     }
@@ -1692,10 +1688,11 @@ function brilhoTiro(cor) {
 export function dibujarProyectil(g, p, t) {
   const f = ESTILOS_PROJ[p.estilo] ?? ESTILOS_PROJ.bola;
   sombra(g, p.x, p.y, 3 * p.escala);
-  if (p.escala >= 1.6) { g.globalAlpha = 0.22; PX.disco(g, px(p.x), px(p.y - p.alt), (p.radio ?? 4) * p.escala * 0.9 + 3, mezcla(colorTipo(p.tipoAtq), 0.55)); g.globalAlpha = 1; }
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // rastro de luz atrás do tiro, na cor do tipo
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, cor = mezcla(colorTipo(p.tipoAtq), 0.45), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
+  // rastro sólido (sem brilho): três pedacinhos na cor do tipo ficando para trás
+  for (let i = 1; i <= 3; i++) { g.globalAlpha = 0.55 - i * 0.14; PX.disco(g, px(p.x - ux * i * R0 * 2.4), px(p.y - p.alt - uy * i * R0 * 1.8), Math.max(1, R0 * (1 - i * 0.22)), cor); }
   g.globalAlpha = 1;
   f(g, p, t);
 }
