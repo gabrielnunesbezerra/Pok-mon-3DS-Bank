@@ -1,10 +1,11 @@
 // Linguagem das ultimates e da Mega Evolução no estilo do PB Battlegrounds: luz aditiva suave na resolução do aparelho
 // (não em pixels de arte), por cima do mundo. Vale para toda ultimate e toda Mega, lendo só os eventos da luta:
 // - ao soltar a ult: brilho quente em volta de quem usa e anéis finos fechando (carga);
-// - no primeiro acerto da ult: quadro de impacto (a tela fica preta por 2 quadros com linhas de velocidade brancas
-//   saindo do golpe, como mangá), estrela de quatro pontas amarelo-branca com brilho, anel fino abrindo e fumaça cinza;
-// - nos acertos seguintes da mesma ult: estrela e anel (sem piscar a tela de novo);
-// - na Mega Evolução: carga com anéis e, ao virar Mega, quadro de impacto, estrela e anéis na cor do tipo.
+// - no acerto da ult: estrela de quatro pontas amarelo-branca com brilho, anel fino abrindo e fumaça cinza (o quadro
+//   de impacto que piscava a tela saiu dos golpes a pedido do usuário; fica só na Mega Evolução);
+// - no ataque básico (LMB): só uma estrela pequena, sem anel nem fumaça;
+// - na Mega Evolução: carga com anéis e, ao virar Mega, quadro de impacto, estrela e anéis na cor do tipo (o único
+//   momento em que a tela ainda pisca).
 // Só desenho: nada aqui muda a luta.
 import { pal, IMPACTO, FUMACA } from './paletas.js';
 
@@ -35,15 +36,14 @@ export class UltPB {
       } else if (e.t === 'numero') {
         this.ultimoDano = e.dano;
       } else if (e.t === 'impacto') {
-        // todo acerto ganha estrela, anel e fumaça (maiores quanto mais forte); a ult e o golpe muito forte param a tela
+        // todo acerto ganha estrela, anel e fumaça (maiores quanto mais forte); o ataque básico ganha só a estrela, pequena
         const u = e.fuente && this.ult.get(e.fuente), naUlt = u && luta.t <= u.ate, dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), tipo = naUlt ? u.tipo : e.tipo;
         this.ultimoDano = null;
-        const forca = naUlt ? (u.acertos === 0 ? 1.3 : 0.8) : Math.min(0.9, 0.35 + dano / 26);
+        const basico = e.slot === 'lmb' && !naUlt, forca = naUlt ? (u.acertos === 0 ? 1.3 : 0.8) : basico ? 0.3 : Math.min(0.9, 0.35 + dano / 26);
         if (naUlt) u.acertos++;
-        if ((naUlt && u.acertos === 1) || dano >= 20) this.corte(e.x, e.y, 2);
         const quem = e.fuente ?? this, ultima = this.ultEstrela?.get(quem) ?? -9;
-        if (luta.t - ultima > 0.08) { (this.ultEstrela ??= new Map()).set(quem, luta.t); this.estrela(e.x, e.y, tipo, forca); fumaca(fx, e.x, e.y + 6, Math.round(forca * 4)); }
-        this.aneis.push({ x: e.x, y: e.y, tipo, t: 0, life: 0.36, r: 25 + forca * 40 });
+        if (luta.t - ultima > 0.08) { (this.ultEstrela ??= new Map()).set(quem, luta.t); this.estrela(e.x, e.y, tipo, forca); if (!basico) fumaca(fx, e.x, e.y + 6, Math.round(forca * 4)); }
+        if (!basico) this.aneis.push({ x: e.x, y: e.y, tipo, t: 0, life: 0.36, r: 25 + forca * 40 });
       }
     }
   }

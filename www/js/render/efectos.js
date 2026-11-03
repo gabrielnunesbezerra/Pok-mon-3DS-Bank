@@ -232,7 +232,7 @@ export class Efectos {
           for (let i = 0; i < 5; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 30, 4, (e.mega ? ['#2f7fe0', '#5fd08a', '#8fd8f0', '#a8e070', '#e6f8ff'] : ['#ff6fd8', '#ffd23c', '#8be09a', '#6fd0ff', '#b07aff'])[i], 0.4 + i * 0.05, 2);
           this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, e.mega ? 'WATER' : 'FAIRY', 30, 220, { life: 0.8 });
           if (e.mega) this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, 'GRASS', 20, 200, { life: 0.8 });
-          this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#fffdf4'; this.temblor = Math.max(this.temblor, 6);
+          this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#fffdf4'; this.flashTela = true; this.temblor = Math.max(this.temblor, 6);
           break;
         case 'evoInicio': sfx('evoCarga'); this.temblor = Math.max(this.temblor, 2); break;
         case 'megaInicio': {
@@ -243,7 +243,7 @@ export class Efectos {
           this.simbolos.push({ x: e.l.x, y: e.l.y - e.l.alto - 20, t: 0, life: 1.4 });
           break;
         }
-        case 'ko': this.flash = 0.5; this.flashColor = '#fffdf4'; this.temblor = Math.max(this.temblor, 10); this.anuncio('K.O!', { color: '#ff4040', tam: 32, dur: 1.3 }); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#fffdf4', 16, 420); break;
+        case 'ko': this.flash = 0.5; this.flashColor = '#fffdf4'; this.flashTela = true; this.temblor = Math.max(this.temblor, 10); this.anuncio('K.O!', { color: '#ff4040', tam: 32, dur: 1.3 }); this.chispas(e.l.x, e.l.y - e.l.alto * 0.5, '#fffdf4', 16, 420); break;
         case 'tiempo': this.anuncio('TIME!', { color: '#ffd23c', tam: 32, dur: 1.2 }); break;
         case 'anuncio': this.anuncio(e.txt, { color: e.color, tam: e.tam, dur: e.dur, quien: e.quien }); break;
         case 'habilidad':
@@ -303,22 +303,21 @@ export class Efectos {
     if (e.estilo === 'rayo') { this.relampagos.push({ x: e.x, y: e.y, t: 0, life: 0.22, semilla: Math.floor(ale() * 999) }); this.rayos.push({ x: e.x, y: e.y - 4, radio: 40, t: 0, life: 0.25, semilla: Math.floor(ale() * 999) }); this.flash = Math.max(this.flash, 0.18); this.flashColor = '#fff6a8'; this.temblor = Math.max(this.temblor, 3); }
     const c = colorTipo(e.tipo), p = pal(e.tipo);
     // a força do golpe vem do dano: a tremida é curta e proporcional (1 a 6 pixels), o golpe forte ganha soquinho de zoom
-    const dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), k = Math.min(1, dano / 16);
+    // ataque básico (LMB): acerto enxuto, com menos riscos e matéria e sem anel nem estrela extra
+    const dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), k = Math.min(1, dano / 16), basico = e.slot === 'lmb';
     this.ultimoDano = null;
     this.temblor = Math.max(this.temblor, 1 + k * 5);
     if (e.fuerte) this.punch = Math.max(this.punch ?? 0, 0.035);
     // direção do golpe: de quem bateu para quem apanhou (a explosão sai para o lado de lá)
     const f = e.fuente, dir = f && f.x !== undefined && (f.x !== e.x || f.y !== e.y) ? Math.atan2(e.y - (f.y - (f.alto ?? 0) * 0.5), e.x - f.x) : ale() * Math.PI * 2;
-    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : 10, life: e.fuerte ? 0.28 : 0.22, fija: true, color: p[NUCLEO], brillo: p[CLARO], forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
+    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : basico ? 6 : 10, life: e.fuerte ? 0.28 : 0.22, fija: true, color: p[NUCLEO], brillo: p[CLARO], forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
     // riscos que saem na direção do golpe, rápidos e freando
-    for (let i = 0; i < 6 + Math.round(k * 8); i++) { const a = dir + entre(-0.55, 0.55), s = entre(380, 640) * (0.7 + k * 0.5); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 7, size: i % 3 ? 1 : 2, life: 0.16, color: i % 2 ? p[NUCLEO] : p[CLARO], forma: 'raya' }); }
+    for (let i = 0; i < (basico ? 3 : 6 + Math.round(k * 8)); i++) { const a = dir + entre(-0.55, 0.55), s = entre(380, 640) * (0.7 + k * 0.5); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 7, size: i % 3 ? 1 : 2, life: 0.16, color: i % 2 ? p[NUCLEO] : p[CLARO], forma: 'raya' }); }
     // matéria do tipo jogada para o lado de lá, e um pouco espirrando de volta
-    this.rafagaDir(e.x, e.y, e.tipo, 6 + Math.round(k * 10), 160 + k * 160, dir, 0.7);
-    this.rafagaDir(e.x, e.y, e.tipo, 2 + Math.round(k * 3), 90, dir + Math.PI, 0.9);
-    this.chispas(e.x, e.y, p[NUCLEO], 3 + Math.round(k * 4), 200 + k * 160);
-    this.anillo(e.x, e.y, 2, 12 + k * 14, c, 0.26, 1);
+    this.rafagaDir(e.x, e.y, e.tipo, basico ? 3 : 6 + Math.round(k * 10), 160 + k * 160, dir, 0.7);
+    if (!basico) { this.rafagaDir(e.x, e.y, e.tipo, 2 + Math.round(k * 3), 90, dir + Math.PI, 0.9); this.chispas(e.x, e.y, p[NUCLEO], 3 + Math.round(k * 4), 200 + k * 160); this.anillo(e.x, e.y, 2, 12 + k * 14, c, 0.26, 1); }
     // estrela de golpe: brilho de quatro pontas na cor do tipo, que abre e some rápido (vale para todo acerto)
-    this.heroes.push({ k: 'estrelaGolpe', x: e.x, y: e.y, c, fuerte: !!e.fuerte, a: ale() * 0.8, t: 0, life: e.fuerte ? 0.2 : 0.14, hue: this.hue });
+    if (!basico) this.heroes.push({ k: 'estrelaGolpe', x: e.x, y: e.y, c, fuerte: !!e.fuerte, a: ale() * 0.8, t: 0, life: e.fuerte ? 0.2 : 0.14, hue: this.hue });
     switch (e.tipo) {
       case 'WATER': this.gotas(e.x, e.y, e.fuerte ? 12 : 7); break;
       case 'FIRE': this.brasas(e.x, e.y, e.fuerte ? 10 : 6); break;
@@ -391,6 +390,7 @@ export class Efectos {
     this.temblor = Math.max(0, this.temblor - dt * 24);
     this.punch = Math.max(0, (this.punch ?? 0) - dt * 0.25);
     this.flash = Math.max(0, this.flash - dt * 3);
+    if (!this.flash) this.flashTela = false;
   }
 
   // marcas no chão (área da Frenzy Plant): aparecem antes das raízes, para dar para fugir

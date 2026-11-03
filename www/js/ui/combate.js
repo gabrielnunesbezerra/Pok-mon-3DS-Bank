@@ -394,7 +394,8 @@ export class Combate {
       g.restore();
     }
     // clarão da tela em degraus de 25% (forte, médio, fraco), nunca sumindo suave
-    if (fx.flash > 0.04) { g.globalAlpha = Math.min(1, Math.ceil(fx.flash * 4) / 4) * 0.85; g.fillStyle = fx.flashColor; g.fillRect(0, 0, ANCHO, ALTO); g.globalAlpha = 1; }
+    // a tela inteira só pisca na evolução e no K.O.; os golpes não piscam mais a tela (pedido do usuário)
+    if (fx.flash > 0.04 && fx.flashTela) { g.globalAlpha = Math.min(1, Math.ceil(fx.flash * 4) / 4) * 0.85; g.fillStyle = fx.flashColor; g.fillRect(0, 0, ANCHO, ALTO); g.globalAlpha = 1; }
     if (luta.fase === 'fin' && this.resultado) this.dibujarResultado(g);
     if (this.pausado) this.dibujarPausa(g);
   }

@@ -1,6 +1,6 @@
 // Golpes corpo a corpo no formato do PB Battlegrounds.
 // - golpeChato (no mundo, pixel art): Tackle, Pound, Lick e os outros golpes de contato viram um estouro redondo na
-//   frente (núcleo branco, anel da cor do tipo, raios grossos), riscos de velocidade e um anel fino abrindo;
+//   frente (núcleo branco, anel da cor do tipo, raios grossos) e riscos de velocidade, enxuto como ataque básico;
 // - luzCortes (na tela, resolução do aparelho): luz aditiva por cima de todo corte, mordida, soco e asa.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
@@ -17,11 +17,9 @@ export function golpeChato(g, a, k, rr, fx, fy) {
     PX.lineaPix(g, fx - ca * c0 - sa * o, fy - sa * c0 + ca * o, fx - ca * c1 - sa * o, fy - sa * c1 + ca * o, i ? P[1] : IMPACTO[0], i ? 1 : 2);
   }
   // estouro: raios grossos e núcleo branco, que crescem rápido e encolhem
-  const r = Math.max(6, Math.round(rr * 0.34 * (k < 0.4 ? 0.7 + cresce * 0.5 : 1.2 - (k - 0.4))));
+  const r = Math.max(5, Math.round(rr * 0.24 * (k < 0.4 ? 0.7 + cresce * 0.5 : 1.2 - (k - 0.4))));
   if (k < 0.75) PX.carimbar(g, PX.estouro(Math.floor(k * 8), r, IMPACTO[0], P[1]), fx, fy);
   if (k < 0.45) { const rn = r * 0.55 * (1 - k); PX.disco(g, px(fx), px(fy), rn + 1, CONTORNO); PX.disco(g, px(fx), px(fy), rn, P[1]); PX.disco(g, px(fx), px(fy), rn * 0.6, IMPACTO[0]); }
-  // anel fino abrindo
-  if (k > 0.15) { const ra = r * (0.6 + (k - 0.15) * 1.8); PX.anilloPix(g, fx, fy, ra, ra * 0.75, k < 0.6 ? IMPACTO[0] : P[0], 1, k > 0.5 ? 3 : 0, Math.floor(k * 20)); }
 }
 
 // ---------------------------------------------------------------- luz na tela
@@ -43,13 +41,11 @@ export function luzCortes(g, fx, cam, ox, oy) {
     const q = cam.aPantalla(fxx, fyy), sx = q.x + ox, sy = q.y + oy;
     const plano = ehChato(a) || a.tipo === 'BUG' || a.tipo === 'DARK' || (a.tipo === 'FIGHTING' && a.estilo !== 'hueso');
     if (plano || a.tipo === 'FLYING') {
-      // brilho redondo no ponto do golpe: quente nos socos, roxo-escuro na mordida, cor do tipo no resto
+      // brilho redondo e pequeno no ponto do golpe: quente nos socos, roxo-escuro na mordida, cor do tipo no resto
       const cor = a.tipo === 'DARK' || a.tipo === 'BUG' ? '#b08cff' : a.tipo === 'FIGHTING' ? IMPACTO[2] : P[1];
-      const R = rr * (0.55 + 0.3 * Math.min(1, k * 3)) * z, gr = g.createRadialGradient(sx, sy, 0, sx, sy, R);
+      const R = rr * (ehChato(a) ? 0.35 : 0.38 + 0.17 * Math.min(1, k * 3)) * z, gr = g.createRadialGradient(sx, sy, 0, sx, sy, R);
       gr.addColorStop(0, rgba(IMPACTO[0], 0.9 * al)); gr.addColorStop(0.3, rgba(cor, 0.55 * al)); gr.addColorStop(1, rgba(cor, 0));
       g.fillStyle = gr; g.beginPath(); g.arc(sx, sy, R, 0, 7); g.fill();
-      // clarão branco curto quando a mordida fecha
-      if ((a.tipo === 'DARK' || a.tipo === 'BUG') && k > 0.35 && k < 0.55) { g.fillStyle = rgba(IMPACTO[0], 0.4); g.beginPath(); g.arc(sx, sy, rr * 0.25 * z, 0, 7); g.fill(); }
       continue;
     }
     // corte em meia-lua: mesma varredura do desenho no mundo (ease-out na frente, recolhe atrás)
