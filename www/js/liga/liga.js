@@ -11,11 +11,10 @@ export const LIGA = {
     { id: 'c2', nombre: 'EARTH CIRCUIT', arena: 'ruinas', cor: '#86efac', rivales: ['abra', 'riolu', 'geodude', 'froakie'] },
     { id: 'c3', nombre: 'VOLCANO CIRCUIT', arena: 'crater', cor: '#fb923c', rivales: ['magikarp', 'onix', 'munchlax', 'swablu'] },
     { id: 'c4', nombre: 'LEGEND CIRCUIT', arena: 'neon', cor: '#c084fc', rivales: ['duraludon', 'porygon', 'veluza', 'mewtwo'] },
-    { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'halloween', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler', 'ralts'] },
-    { id: 'c6', nombre: 'BEACH CIRCUIT', arena: 'praia', cor: '#fde68a', rivales: ['skrelp', 'feebas', 'larvitar', 'kangaskhan'] },
+    { id: 'c5', nombre: 'SPIRIT CIRCUIT', arena: 'halloween', cor: '#c084fc', rivales: ['basculegion', 'basculegionf', 'sneasler'] },
+    { id: 'c6', nombre: 'BEACH CIRCUIT', arena: 'praia', cor: '#fde68a', rivales: ['skrelp', 'feebas', 'larvitar'] },
     { id: 'c7', nombre: 'HAUNTED CIRCUIT', arena: 'halloween', cor: '#fb923c', rivales: ['poltchageist', 'dreepy', 'houndour', 'gastly'] },
-    { id: 'c8', nombre: 'MYTHIC CIRCUIT', arena: 'neon', cor: '#fde047', rivales: ['rayquaza', 'zeraora', 'darkrai', 'lapras'] },
-    { id: 'c9', nombre: 'PHANTOM CIRCUIT', arena: 'halloween', cor: '#a78bfa', rivales: ['mimikyu', 'rowlet', 'charcadet'] },
+    { id: 'c8', nombre: 'MYTHIC CIRCUIT', arena: 'neon', cor: '#fde047', rivales: ['zeraora', 'sceptile'] },
   ],
 };
 export const NIVEL_POR_VITORIA = ['facil', 'normal', 'dificil'];

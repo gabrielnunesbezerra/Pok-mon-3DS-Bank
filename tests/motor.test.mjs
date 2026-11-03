@@ -14,7 +14,7 @@ const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i
 const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
 
 test('o roster tem os 28 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'ralts', 'kangaskhan', 'rayquaza', 'zeraora', 'darkrai', 'mimikyu', 'rowlet', 'charcadet', 'lapras']);
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -658,29 +658,4 @@ test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, fi
   b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; a.energia = 100;
   assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.6, [null, null]);
   assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 50 && b.est.maldito, 'a língua puxou e amaldiçoou');
-  // Gardevoir: ergue e arremessa
-  l = nuevaLuta('ralts', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 380; b.y = 222; a.ax = 300; a.ay = 100; a.energia = 100; b.inmortal = true;
-  const yb = b.y; assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 1.2, [null, null]);
-  assert.ok(b.y < yb - 40, 'foi jogado para onde ela mirou');
-  // Kangaskhan: o soco abre o gancho, que joga para o alto
-  l = nuevaLuta('kangaskhan', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 300; a.y = 222; b.x = 340; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 0.4, [null, null]);
-  b.x = a.x + 40; b.y = a.y; a.accion = null; a.cd.rmb = 0;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 0.2, [null, null]);
-  assert.ok(b.salto > 0, 'gancho jogou para o alto');
-  correr(l, 1, [null, null]); a.accion = null; a.energia = 100; b.x = a.x + 100; b.y = a.y; a.ax = b.x; a.ay = b.y;
-  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.6, [null, null]);
-  assert.ok(l.entidades.some(e => e.tipo === 'filhoteGrudado'), 'o filhote grudou');
-  // Rayquaza: o cometa atravessa e deixa rastro
-  l = nuevaLuta('rayquaza', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 380; b.y = 222; a.ax = b.x; a.ay = b.y; a.ulti = 100; b.inmortal = true;
-  const hb = b.hp; assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 0.8, [null, null]);
-  assert.ok(b.hp < hb && l.entidades.some(e => e.tipo === 'ventoVerde'));
-  // Darkrai: aparece nas costas e o próximo golpe sai mais forte
-  l = nuevaLuta('darkrai', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 330; b.y = 222;
-  assert.equal(l.habilidades.usar(a, 'esp'), true);
-  assert.ok(a.x > b.x && a.est.emboscada, 'nas costas');
 });

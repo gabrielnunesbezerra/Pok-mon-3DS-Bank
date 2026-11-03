@@ -13,8 +13,8 @@ import { centrada } from './centrar.js';
 const MENUS = {
   principal: [
     { id: 'jugar', txt: 'PLAY', sub: 'CPU · DOUBLES · ARENA', menu: 'jugar', ico: 'pokeball', cor: '#ffd23c', arte: ['0006', '0448'], x: 103, y: 134, w: 140, h: 68 },
-    { id: 'online', txt: 'ONLINE', sub: 'ROOMS · FRIENDS · 2V2', escena: 'online', ico: 'dos', cor: '#4ade80', arte: ['0094', '0282'], x: 250, y: 134, w: 140, h: 68 },
-    { id: 'liga', txt: 'LEAGUE', sub: 'UNLOCK EVERY POKÉMON', escena: 'liga', ico: 'pokeball', cor: '#c084fc', arte: ['0384'], x: 397, y: 134, w: 140, h: 68 },
+    { id: 'online', txt: 'ONLINE', sub: 'ROOMS · FRIENDS · 2V2', escena: 'online', ico: 'dos', cor: '#4ade80', arte: ['0094', '0254-0001'], x: 250, y: 134, w: 140, h: 68 },
+    { id: 'liga', txt: 'LEAGUE', sub: 'UNLOCK EVERY POKÉMON', escena: 'liga', ico: 'pokeball', cor: '#c084fc', arte: ['0254'], x: 397, y: 134, w: 140, h: 68 },
     { id: 'pokedex', txt: 'POKÉDEX', escena: 'pokedex', ico: 'libro', cor: '#7dd3fc', x: 103, y: 212, w: 84, h: 24 },
     { id: 'perfil', txt: 'PROFILE', escena: 'perfil', ico: 'personas', cor: '#7dd3fc', x: 191, y: 212, w: 84, h: 24 },
     { id: 'tutorial', txt: 'TUTORIAL', escena: 'combate', datos: { modo: 'tutorial' }, ico: 'ayuda', cor: '#7dd3fc', x: 279, y: 212, w: 84, h: 24 },
@@ -23,9 +23,9 @@ const MENUS = {
   ],
   jugar: [
     { id: 'cpu', txt: 'VS CPU', sub: '1 VS 1', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot', cor: '#ffd23c', arte: ['0448'], x: 103, y: 134, w: 106, h: 68 },
-    { id: 'duplas', txt: 'DOUBLES', sub: 'YOU + CPU ALLY', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos', cor: '#4ade80', arte: ['0807', '0491'], x: 213, y: 134, w: 106, h: 68 },
+    { id: 'duplas', txt: 'DOUBLES', sub: 'YOU + CPU ALLY', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos', cor: '#4ade80', arte: ['0807', '0094-0001'], x: 213, y: 134, w: 106, h: 68 },
     { id: 'arena', txt: 'ARENA', sub: '3 FIGHTERS', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas', cor: '#fb923c', arte: ['0006', '0009'], x: 323, y: 134, w: 106, h: 68 },
-    { id: 'entreno', txt: 'TRAINING', sub: 'TEST MOVES', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana', cor: '#7dd3fc', arte: ['0115'], x: 433, y: 134, w: 104, h: 68 },
+    { id: 'entreno', txt: 'TRAINING', sub: 'TEST MOVES', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana', cor: '#7dd3fc', arte: ['0253'], x: 433, y: 134, w: 104, h: 68 },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true, cor: '#9aa0b4', x: 270, y: 212, w: 100, h: 24 },
   ],
   ajustes: [

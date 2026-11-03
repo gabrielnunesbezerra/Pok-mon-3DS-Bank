@@ -1602,191 +1602,6 @@
   ]
  },
  {
-  "dex": "0115",
-  "sprite": [
-   "CHUNSOFT"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0115-0001",
-  "sprite": [
-   "Deeshura"
-  ],
-  "retrato": []
- },
- {
-  "dex": "0115-0001s",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": []
- },
- {
-  "dex": "0115s",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "Lovi",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0280",
-  "sprite": [
-   "CHUNSOFT",
-   "JFain",
-   "NeroIntruder"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0280s",
-  "sprite": [
-   "Moo",
-   "Morei"
-  ],
-  "retrato": [
-   "Morei"
-  ]
- },
- {
-  "dex": "0281",
-  "sprite": [
-   "CHUNSOFT",
-   "JFain"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "PhillipsYoung"
-  ]
- },
- {
-  "dex": "0281s",
-  "sprite": [
-   "JFain",
-   "Morei"
-  ],
-  "retrato": [
-   "PhillipsYoung"
-  ]
- },
- {
-  "dex": "0282",
-  "sprite": [
-   "CHUNSOFT"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0282-0001",
-  "sprite": [
-   "baronessfaron"
-  ],
-  "retrato": [
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0282-0001s",
-  "sprite": [
-   "baronessfaron"
-  ],
-  "retrato": [
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0282s",
-  "sprite": [
-   "Morei"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0384",
-  "sprite": [
-   "CHUNSOFT"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0384-0001",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0384-0001s",
-  "sprite": [
-   "Top_Kec"
-  ],
-  "retrato": [
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0384s",
-  "sprite": [
-   "lokatts"
-  ],
-  "retrato": [
-   "Audino",
-   "CamusZekeSirius",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0491",
-  "sprite": [
-   "CHUNSOFT",
-   "baronessfaron"
-  ],
-  "retrato": [
-   "CHUNSOFT",
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0491-0002",
-  "sprite": [
-   "Johanne2"
-  ],
-  "retrato": [
-   "Deeshura"
-  ]
- },
- {
-  "dex": "0491s",
-  "sprite": [
-   "Chi",
-   "baronessfaron"
-  ],
-  "retrato": [
-   "Prismatic",
-   "Emboarger",
-   "baronessfaron"
-  ]
- },
- {
   "dex": "0807",
   "sprite": [
    "Emmuffin",
@@ -1828,141 +1643,89 @@
   ]
  },
  {
-  "dex": "0131",
+  "dex": "0252",
   "sprite": [
    "CHUNSOFT"
   ],
   "retrato": [
-   "CHUNSOFT",
-   "C_Pariah",
-   "silverfox88"
+   "CHUNSOFT"
   ]
  },
  {
-  "dex": "0131s",
+  "dex": "0252s",
   "sprite": [
-   "RaoKurai"
+   "YoukaiMinori",
+   "Morei"
   ],
   "retrato": [
    "RaoKurai",
+   "Morei"
+  ]
+ },
+ {
+  "dex": "0253",
+  "sprite": [
+   "CHUNSOFT",
+   "Deeshura",
+   "JFain"
+  ],
+  "retrato": [
+   "CHUNSOFT",
+   "baronessfaron"
+  ]
+ },
+ {
+  "dex": "0253s",
+  "sprite": [
+   "YoukaiMinori",
+   "Morei",
+   "Deeshura"
+  ],
+  "retrato": [
+   "SuperFabbioGuy",
    "silverfox88",
    "Deeshura"
   ]
  },
  {
-  "dex": "0722",
+  "dex": "0254",
   "sprite": [
-   "Reimu\\_needs\\_$$$",
-   "Emmuffin"
+   "CHUNSOFT"
   ],
   "retrato": [
-   "Emmuffin"
+   "CHUNSOFT",
+   "0palite",
+   "baronessfaron"
   ]
  },
  {
-  "dex": "0722s",
+  "dex": "0254-0001",
   "sprite": [
-   "XModxGodX",
    "Emmuffin"
   ],
   "retrato": [
-   "Emmuffin"
+   "0palite",
+   "Soulja"
   ]
  },
  {
-  "dex": "0723",
+  "dex": "0254-0001s",
   "sprite": [
-   "Reimu\\_needs\\_$$$"
+   "Emmuffin"
   ],
   "retrato": [
-   "◥θ┴θ◤",
+   "Morei",
    "JustAGunk"
   ]
  },
  {
-  "dex": "0723s",
+  "dex": "0254s",
   "sprite": [
-   "XModxGodX",
-   "baronessfaron"
-  ],
-  "retrato": [
-   "◥θ┴θ◤",
-   "JustAGunk"
-  ]
- },
- {
-  "dex": "0724",
-  "sprite": [
-   "Reimu\\_needs\\_$$$",
-   "Audino"
-  ],
-  "retrato": [
-   "baronessfaron",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0724s",
-  "sprite": [
-   "◥θ┴θ◤"
-  ],
-  "retrato": [
-   "Emmuffin",
-   "Top_Kec"
-  ]
- },
- {
-  "dex": "0778",
-  "sprite": [
-   "baronessfaron"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0778s",
-  "sprite": [
-   "ShyStarryRain"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0935",
-  "sprite": [
+   "Lovi",
    "Emmuffin"
   ],
   "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0935s",
-  "sprite": [
-   "Emmuffin"
-  ],
-  "retrato": [
-   "Emmuffin"
-  ]
- },
- {
-  "dex": "0937",
-  "sprite": [
-   "baronessfaron"
-  ],
-  "retrato": [
-   "baronessfaron"
-  ]
- },
- {
-  "dex": "0937s",
-  "sprite": [
-   "baronessfaron"
-  ],
-  "retrato": [
-   "◥θ┴θ◤"
+   "Deeshura"
   ]
  }
 ]
