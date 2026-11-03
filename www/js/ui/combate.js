@@ -21,6 +21,7 @@ const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
 const oscuro = (c, k) => mezcla(c, -k);
 const claro = (c, k) => mezcla(c, k);
 import { filaDesdeAngulo } from '../render/sprites.js';
+const SEM_INCLINAR = new Set(['0003-0001', '0003-0001s']);
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
 import { vencer as vencerLiga } from '../liga/liga.js';
@@ -440,7 +441,8 @@ export class Combate {
     if (t < l.dolorHasta) tremor = (Math.floor(t * 60) % 2 ? 1 : -1);
     // movimento vivo: inclina para onde anda, balança no passo, avança o corpo no golpe e dá um tranco ao apanhar
     const v = Math.hypot(l.vx, l.vy), velN = Math.min(1, v / Math.max(60, l.velBase ?? 120));
-    const lean = l.moviendo && !l.dash ? (l.vx / (v || 1)) * velN * 0.14 : 0;
+    // sprites feitos à mão (Mega Venusaur) não inclinam ao andar
+    const lean = l.moviendo && !l.dash && !SEM_INCLINAR.has(l.dex) ? (l.vx / (v || 1)) * velN * 0.14 : 0;
     l._lean = (l._lean ?? 0) + (lean - (l._lean ?? 0)) * 0.2;
     let rot = l._lean, ox = 0, oy = 0;
     if (l.moviendo && !l.dash && alto <= 0) { const ph = this.t * 15; sy *= 1 + Math.sin(ph * 2) * 0.03; oy -= Math.abs(Math.sin(ph)) * 1.6 * velN; if (Math.random() < 0.06 * velN && !this.app.ajustes.graficosBajos) this.fx.polvo(l.x - (l.vx / (v || 1)) * 6, l.y, 1, 3); }

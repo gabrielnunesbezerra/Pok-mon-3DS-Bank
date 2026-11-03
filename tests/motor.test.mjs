@@ -694,9 +694,9 @@ test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, fi
   b.x = a.x + 60; b.y = a.y; b.est = {}; a.accion = null; a.energia = 100;
   assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.4, [null, null]);
   assert.ok(b.est.veneno && Math.hypot(b.x - a.x, b.y - a.y) > 70, 'a onda envenenou e empurrou');
-  // Mega Blastoise: o casco joga para o alto antes de girar
+  // Blastoise: o casco joga para o alto antes de girar
   l = nuevaLuta('squirtle', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
-  a.mega = true; a.kit = a.kitActual(); a.x = 300; a.y = 222; b.x = 400; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  a.x = 300; a.y = 222; b.x = 400; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
   assert.equal(l.habilidades.usar(a, 'q'), true); let alto = 0; for (let i = 0; i < 40; i++) { correr(l, 1 / 60, [null, null]); alto = Math.max(alto, b.salto); }
   assert.ok(alto > 20, 'jogou o rival para cima');
   // Mega Zeraora: a ult só sai com o plasma cheio; a jaula prende o rival

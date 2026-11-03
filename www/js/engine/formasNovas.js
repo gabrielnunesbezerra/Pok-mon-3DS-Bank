@@ -586,7 +586,7 @@ Object.assign(formasNovas, {
         for (const b of luta.blancos(l)) {
           if (ja.has(b) || b.oculto || Math.hypot(b.x - e.x, b.y - e.y) > RADIO + 12) continue;
           ja.add(b);
-          atingir(l, b, pacote(h, extra, Math.atan2(b.y - e.y, b.x - e.x), { empuje: 50 }));
+          atingir(l, b, pacote(h, extra, Math.atan2(b.y - e.y, b.x - e.x), { empuje: 50, ...(h.dividir ? { dano: h.dano / 2 } : {}) }));
         }
         return k < 1;
       } };
@@ -1225,19 +1225,22 @@ Object.assign(formasNovas, {
     const x0 = l.x, y0 = l.y, p = fijarCampo(l.x + Math.cos(a) * (h.dist ?? 150), l.y + Math.sin(a) * (h.dist ?? 150)), ar = h.ar ?? 1.6;
     l.cortarAccion(); l.vx = l.vy = 0;
     l.ponerEstado('vuelo', 0.18, { oculto: true, modo: 'sombra', rapidez: 0 });
-    luta.emit({ t: 'portalAbre', x: x0, y: y0 }); luta.emit({ t: 'portalAbre', x: p.x, y: p.y });
+    luta.emit({ t: 'portalSai', l });
     let t = 0, fase = 0;
-    luta.add({ tipo: 'portalSombra', dueno: l, vivo: true, x0, y0, x1: p.x, y1: p.y, update: dt => {
+    const ent = { tipo: 'portalSombra', dueno: l, vivo: true, x: x0, y: y0, x0, y0, x1: p.x, y1: p.y, t: 0, fim: 0.38 + ar, update: dt => {
+      ent.t = t;
       t += dt;
       if (l.ko) { l.salto = 0; return false; }
       if (fase === 0 && t >= 0.18) { fase = 1; l.x = p.x; l.y = p.y; delete l.est.vuelo; l.ponerEstado('flutua', ar); l.ponerEstado('invul', 0.2); luta.emit({ t: 'portalSai', l }); }
       if (fase === 1) {
         l.salto = Math.round(26 + Math.sin(t * 6) * 4);
-        if (t >= 0.18 + ar) { fase = 2; luta.emit({ t: 'portalAbre', x: l.x, y: l.y }); l.ponerEstado('vuelo', 0.2, { oculto: true, modo: 'sombra', rapidez: 0 }); }
+        l.x = p.x; l.y = p.y; l.vx = l.vy = 0;
+        if (t >= 0.18 + ar) { fase = 2; l.ponerEstado('vuelo', 0.2, { oculto: true, modo: 'sombra', rapidez: 0 }); }
       }
       if (fase === 2 && t >= 0.38 + ar) { l.salto = 0; delete l.est.vuelo; delete l.est.flutua; l.x = x0; l.y = y0; l.vx = l.vy = 0; luta.emit({ t: 'portalSai', l }); return false; }
       return true;
-    } });
+    } };
+    luta.add(ent);
   },
 
   // ---------------------------------------------------------------- corte em X de folhas (Sceptile): só depois do dash em meia-lua

@@ -951,3 +951,31 @@ Object.assign(ENTIDADES_NOVAS, {
     brilho(g, tx, ty, 16, 'rgba(192,132,252,0.7)', sai);
   },
 });
+
+// ================================================================ portais do Gengar abertos até ele voltar; fantasmão saindo do chão
+Object.assign(ENTIDADES_NOVAS, {
+  portalSombra(g, e, t) {
+    const abre = Math.min(1, e.t / 0.15), fecha = Math.min(1, Math.max(0, (e.fim - e.t) / 0.15)), s = Math.min(abre, fecha);
+    for (const [x, y] of [[e.x0, e.y0], [e.x1, e.y1]]) {
+      const R = 26 * s; if (R < 1) continue;
+      g.save(); g.translate(x, y); g.scale(1, 0.4);
+      const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, '#000000'); gr.addColorStop(0.7, '#1e0b3a'); gr.addColorStop(1, '#7c3aed');
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+      g.strokeStyle = '#d8b4fe'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; g.beginPath(); g.arc(0, 0, R * 0.92, a, a + 1.2); g.stroke(); }
+      g.restore();
+    }
+  },
+});
+Object.assign(HEROES_NOVOS, {
+  // o fantasma gigante sobe de dentro do chão: só aparece a parte acima da fenda, ri e afunda de novo
+  fantasmaGigante(g, h, k, t) {
+    const R = h.radio * 0.85, sobe = 1 - (1 - Math.min(1, t / 0.35)) ** 3, desce = k > 0.75 ? (k - 0.75) / 0.25 : 0;
+    const base = h.y + 2, y = base + R * 1.9 - (R * 2.8) * sobe + R * 2.2 * desce * desce, al = 0.7 * (1 - desce * 0.6);
+    g.globalAlpha = 0.85; g.fillStyle = '#0b0418'; g.beginPath(); g.ellipse(h.x, base, R * 1.15 * Math.min(1, t / 0.12), R * 0.38 * Math.min(1, t / 0.12), 0, 0, 7); g.fill();
+    g.strokeStyle = '#7c3aed'; g.lineWidth = 3; g.stroke(); g.globalAlpha = 1;
+    g.save(); g.beginPath(); g.rect(h.x - R * 2, base - R * 4, R * 4, R * 4); g.ellipse(h.x, base, R * 1.15, R * 0.38, 0, 0, Math.PI); g.clip();
+    gengarGigante(g, h.x, y, R, al, 0.6 + 0.4 * Math.abs(Math.sin(t * 9)));
+    g.restore();
+    if (t < 0.4) for (let i = 0; i < 6; i++) { const a = i * 1.05 + t * 3; g.fillStyle = '#4c1d95'; g.fillRect(Math.round(h.x + Math.cos(a) * R), Math.round(base - Math.abs(Math.sin(a)) * 14 * (1 - t / 0.4)), 4, 4); }
+  },
+});

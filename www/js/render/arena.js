@@ -46,12 +46,15 @@ function texturaGrama(g, R, escuro, claro, tufo) {
 }
 
 // torcida: fileiras de pessoinhas seguindo elipses em volta da mureta, com corredores de escada
+const SOBE = 3.2; // quanto cada fileira da arquibancada sobe
 function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 10, roupas = ['#a8424a', '#3a5fa8', '#b89a4a', '#b8b8b8', '#3f8a54', '#7a4a9a', '#a8643a', '#2a2f3e', '#3a3f4e', '#4a3a3a'] } = {}) {
   const pele = ['#f2c9a0', '#d9a273', '#a86c45', '#7a4a2e'], cabelo = ['#2a1a10', '#5a3a1a', '#d8b050', '#1a1a1a', '#8a2a1a'];
   const angEscada = Array.from({ length: escadas }, (_, i) => (i / escadas) * Math.PI * 2 + 0.31);
   for (let f = filas - 1; f >= 0; f--) {
-    const rx = MURETA.rout.rx + 6 + f * 13, ry = MURETA.rout.ry + 5 + f * 9.5;
-    g.fillStyle = fundo[f % 2]; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.fill();
+    const rx = MURETA.rout.rx + 6 + f * 13, ry = MURETA.rout.ry + 5 + f * 9.5, cy = OVALO.cy - SOBE * (f + 1);
+    // espelho do degrau (a parte em pé), mais escuro, e o piso da fileira por cima
+    g.fillStyle = 'rgba(0,0,0,0.45)'; g.beginPath(); g.ellipse(OVALO.cx, cy + SOBE, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = fundo[f % 2]; g.beginPath(); g.ellipse(OVALO.cx, cy, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.05)'; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rx + 13, ry + 9.5, 0, 0, Math.PI * 2); g.ellipse(OVALO.cx, OVALO.cy, rx + 11, ry + 8, 0, 0, Math.PI * 2); g.fill('evenodd');
   }
   if (graficosBajos) return; // gráficos baixos: só as fileiras, sem as pessoinhas (milhares de desenhos a menos)
@@ -60,7 +63,7 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 1
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + f * 0.11;
       if (angEscada.some(e => Math.abs(((a - e + Math.PI * 3) % (Math.PI * 2)) - Math.PI) < 0.035 + 6 / rx)) continue;
-      const [x, y] = ptE(rx, ry, a);
+      const [x, y0] = ptE(rx, ry, a), y = y0 - SOBE * (f + 1);
       if (foraDaArte(x, y)) continue;
       if (R() < 0.08) continue;
       const X = Math.round(x), Y = Math.round(y);
@@ -77,7 +80,7 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 1
   g.fillStyle = somb; g.fillRect(...TODO);
   // escadas: degraus cinza do muro até a borda
   for (const e of angEscada) for (let f = 0; f < filas; f++) {
-    const rx = MURETA.rout.rx + 10 + f * 13, ry = MURETA.rout.ry + 7 + f * 9.5, [x, y] = ptE(rx, ry, e);
+    const rx = MURETA.rout.rx + 10 + f * 13, ry = MURETA.rout.ry + 7 + f * 9.5, [x, y0] = ptE(rx, ry, e), y = y0 - SOBE * (f + 1);
     if (foraDaArte(x, y, 10)) continue;
     g.fillStyle = '#4a5160'; g.fillRect(Math.round(x) - 6, Math.round(y) - 2, 12, 5);
     g.fillStyle = '#6d7586'; g.fillRect(Math.round(x) - 6, Math.round(y) - 2, 12, 1);
@@ -87,26 +90,33 @@ function torcida(g, R, { fundo = ['#22283a', '#1c2232'], filas = 62, escadas = 1
 
 // mureta acolchoada em segmentos, com postes cinza entre eles
 function mureta(g, cores, poste = ['#5d6575', '#9aa3b2', '#3a404c'], n = 44) {
-  const { rin, rout } = MURETA;
-  for (let i = 0; i < n; i++) {
-    const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, [c, cl, cs] = cores[i % cores.length];
-    const P = (r, a) => ptE(r.rx, r.ry, a);
-    quad(g, [P(rin, a0), P(rin, a1), P(rout, a1), P(rout, a0)], c);
-    // brilho na borda de cima (voltada para o campo) e sombra na de baixo
-    const mid = { rx: rin.rx + 4, ry: rin.ry + 3 };
-    quad(g, [P(rin, a0), P(rin, a1), P(mid, a1), P(mid, a0)], cl);
-    const mid2 = { rx: rout.rx - 4, ry: rout.ry - 3 };
-    quad(g, [P(mid2, a0), P(mid2, a1), P(rout, a1), P(rout, a0)], cs);
-    // costura do acolchoado
-    g.fillStyle = 'rgba(0,0,0,0.18)'; const [sx, sy] = ptE((rin.rx + rout.rx) / 2, (rin.ry + rout.ry) / 2, (a0 + a1) / 2); g.fillRect(Math.round(sx), Math.round(sy), 1, 1);
+  const { rin, rout } = MURETA, HM = 13;
+  const P = (r, a, dy = 0) => { const [x, y] = ptE(r.rx, r.ry, a); return [x, y - dy]; };
+  const escurece = (c, k) => { const v = parseInt(c.slice(1), 16), f = x => Math.round(x * k); return `rgb(${f(v >> 16)},${f((v >> 8) & 255)},${f(v & 255)})`; };
+  // sombra do muro no campo (lado de dentro do fundo)
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy + 3, rin.rx - 2, rin.ry - 1, 0, Math.PI, Math.PI * 2); g.ellipse(OVALO.cx, OVALO.cy + 3, rin.rx - 14, rin.ry - 10, 0, Math.PI * 2, Math.PI, true); g.fill();
+  const seg = [];
+  for (let i = 0; i < n; i++) seg.push(i);
+  // desenha do fundo para a frente (os de baixo da tela por último)
+  seg.sort((a, b) => Math.sin(((a + 0.5) / n) * Math.PI * 2) - Math.sin(((b + 0.5) / n) * Math.PI * 2));
+  for (const i of seg) {
+    const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2, am = (a0 + a1) / 2, [c, cl, cs] = cores[i % cores.length], fundo = Math.sin(am) < 0;
+    // face de fora (só aparece na frente) e face de dentro (só no fundo)
+    if (!fundo) quad(g, [P(rout, a0, HM), P(rout, a1, HM), P(rout, a1), P(rout, a0)], escurece(cs, 0.7));
+    else quad(g, [P(rin, a0), P(rin, a1), P(rin, a1, HM), P(rin, a0, HM)], escurece(c, 0.78 + 0.22 * Math.abs(Math.cos(am))));
+    if (fundo) { const mid = { rx: rin.rx, ry: rin.ry }; quad(g, [P(mid, a0, 3), P(mid, a1, 3), P(mid, a1, 0), P(mid, a0, 0)], 'rgba(0,0,0,0.25)'); }
+    // topo acolchoado
+    quad(g, [P(rin, a0, HM), P(rin, a1, HM), P(rout, a1, HM), P(rout, a0, HM)], c);
+    const midT = { rx: rin.rx + 4, ry: rin.ry + 3 };
+    quad(g, [P(rin, a0, HM), P(rin, a1, HM), P(midT, a1, HM), P(midT, a0, HM)], cl);
     // poste
-    const da = 0.011, ext = { rx: rout.rx + 2, ry: rout.ry + 2 }, inn = { rx: rin.rx - 1, ry: rin.ry - 1 };
-    quad(g, [P(inn, a0 - da * 1.3), P(inn, a0 + da * 1.3), P(ext, a0 + da * 1.3), P(ext, a0 - da * 1.3)], poste[2]);
-    quad(g, [P(inn, a0 - da), P(inn, a0 + da), P(ext, a0 + da), P(ext, a0 - da)], poste[0]);
-    quad(g, [P(inn, a0 - da), P(inn, a0 - da * 0.2), P(ext, a0 - da * 0.2), P(ext, a0 - da)], poste[1]);
+    const da = 0.011;
+    quad(g, [P(rin, a0 - da, HM + 3), P(rin, a0 + da, HM + 3), P(rout, a0 + da, HM + 3), P(rout, a0 - da, HM + 3)], poste[1]);
+    if (!fundo) quad(g, [P(rout, a0 - da, HM + 3), P(rout, a0 + da, HM + 3), P(rout, a0 + da), P(rout, a0 - da)], poste[2]);
+    else quad(g, [P(rin, a0 - da), P(rin, a0 + da), P(rin, a0 + da, HM + 3), P(rin, a0 - da, HM + 3)], poste[0]);
   }
-  // linha escura entre mureta e campo
-  g.strokeStyle = 'rgba(10,20,10,0.55)'; g.lineWidth = 2; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rin.rx, rin.ry, 0, 0, Math.PI * 2); g.stroke();
+  // linha de luz no alto do muro
+  g.strokeStyle = 'rgba(255,255,255,0.22)'; g.lineWidth = 1; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy - HM, rin.rx, rin.ry, 0, 0, Math.PI * 2); g.stroke();
 }
 
 // refletor nos cantos de cima: poste, painel com lâmpadas e brilho
@@ -546,7 +556,6 @@ export function crearArena(id) {
   g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
-  barreira3D(g, COR_BARREIRA[id] ?? '#7dd3fc');
   // profundidade: o fundo da arena fica mais escuro e enevoado, a frente mais clara
   const prof = g.createLinearGradient(0, -MARGEM.y, 0, MUNDO.h + MARGEM.y);
   const yc = v => (v + MARGEM.y) / (MUNDO.h + MARGEM.y * 2);
