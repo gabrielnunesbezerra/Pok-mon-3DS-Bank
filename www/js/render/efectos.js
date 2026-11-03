@@ -1734,6 +1734,15 @@ export function dibujarBomba(g, p) {
     for (let i = 1; i <= 2; i++) PX.disco(g, px(p.x + (i % 2 ? 2 : -2)), px(y + r + i * 3), 1, i % 2 ? '#9b3fbf' : '#5ac8f0');
     return;
   }
-  PX.esfera(g, px(p.x), px(y), r, ['#4a1a62', '#9b3fbf', '#d68cf0', '#f6d6ff']);
-  PX.disco(g, px(p.x + 2), px(y + r + 1), 1, '#9b3fbf');
+  // bomba de lodo: bolha de veneno que treme no ar, com bolhinhas na superfície e um rastro de gotas pingando
+  const R = Math.max(r, Math.round(7 * (p.escala ?? 1))), tt = (p._t = (p._t ?? 0) + 1 / 60), tr = (p._tr ??= []);
+  tr.push([p.x, y]); if (tr.length > 7) tr.shift();
+  tr.forEach(([x0, y0], i) => { if (i % 2) return; g.globalAlpha = 0.25 + i * 0.08; PX.disco(g, px(x0), px(y0 + (7 - i) * 1.5), Math.max(1, R * 0.18 * (i / 7 + 0.4)), '#9b3fbf'); });
+  g.globalAlpha = 1;
+  const sx = 1 + Math.sin(tt * 22) * 0.08, sy = 1 - Math.sin(tt * 22) * 0.08;
+  g.save(); g.translate(px(p.x), px(y)); g.scale(sx, sy);
+  PX.esfera(g, 0, 0, R, ['#3b0a52', '#8b2fbf', '#d68cf0', '#f6d6ff']);
+  g.restore();
+  for (let i = 0; i < 3; i++) { const a = tt * 4 + i * 2.1; PX.disco(g, px(p.x + Math.cos(a) * R * 0.55), px(y + Math.sin(a) * R * 0.45), Math.max(1, R * 0.16), '#f0abfc'); }
+  PX.disco(g, px(p.x + 2), px(y + R + 2 + (tt * 30) % 4), 1, '#9b3fbf');
 }
