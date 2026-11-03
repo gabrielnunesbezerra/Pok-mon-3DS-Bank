@@ -442,7 +442,7 @@ public sealed class ArenaPage : ContentPage, IPadHandler, IPadReleaseHandler, IO
             _endTime += dt;
         }
 
-        renderer.Absorb(battle.TakeEffects());
+        renderer.Absorb(battle.TakeEffects(), battle);
         renderer.Update(dt, battle);
         var championLabel = _event is null ? "Champion" : $"@{_event.ChampionName} · {battle.Champion.Spec.Nickname}";
         renderer.Draw(canvas, view, battle, championLabel, density);
