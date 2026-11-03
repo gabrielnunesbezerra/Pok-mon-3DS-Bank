@@ -918,9 +918,10 @@ Object.assign(formasNovas, {
   // dá para usar duas vezes seguidas (a segunda curva para o outro lado) e cada uma guarda o X gigante no próximo básico
   cortesFolha(l, h, extra) {
     const luta = this.luta, slot = extra.slot, segundo = l.folhaHasta > luta.t, alc = h.alcance ?? 95;
-    const r = maisPerto(luta, l, alc + 50);
-    const ang = r ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l);
-    const d = r ? Math.min(alc, Math.hypot(r.x - l.x, r.y - l.y) + 22) : alc;
+    // vai para onde o analógico aponta (parado, para onde mira)
+    const mx = l.intento?.mx ?? 0, my = l.intento?.my ?? 0, anda = Math.hypot(mx, my) > 0.2;
+    const ang = anda ? Math.atan2(my, mx) : Math.hypot(l.vx, l.vy) > 5 ? Math.atan2(l.vy, l.vx) : angApunte(l);
+    const d = alc;
     const lado = segundo ? -1 : 1, x0 = l.x, y0 = l.y, x1 = x0 + Math.cos(ang) * d, y1 = y0 + Math.sin(ang) * d;
     const nx = -Math.sin(ang) * lado, ny = Math.cos(ang) * lado, curva = d * 0.5, dur = h.dur ?? 0.22;
     const pos = k => fijarCampo(x0 + (x1 - x0) * k + nx * curva * Math.sin(k * Math.PI), y0 + (y1 - y0) * k + ny * curva * Math.sin(k * Math.PI));
