@@ -1019,9 +1019,15 @@ const SAIDA = {
   FAIRY: { forma: 'corazon', cores: ['#f9a8d4', '#fbcfe8', '#ffffff'], g: -20 }, STEEL: { forma: 'chispa', cores: ['#e2e8f0', '#94a3b8', '#ffffff'], g: 200 },
   DARK: { forma: 'humo', cores: ['rgba(30,20,40,0.7)', 'rgba(60,40,80,0.6)'], g: -20 }, NORMAL: { forma: 'humo', cores: ['rgba(230,225,215,0.6)', 'rgba(200,195,185,0.5)'], g: -10 },
 };
+const BUFF_FORMAS = new Set(['potenciar', 'crecimiento', 'escudo', 'arraigo', 'recuperar', 'curaAnillo', 'descanso', 'espejo', 'chapoteo', 'almas', 'levitar', 'aeronave']);
 export function saidaAtaque(fx, e) {
   const l = e.l, h = e.h; if (!l || !h) return;
   const s = SAIDA[h.tipo] ?? SAIDA.NORMAL, n = e.slot === 'lmb' ? 3 : e.slot === 'e' ? 10 : 6, a0 = l.angulo ?? 0;
+  // buffs e defesas: as partículas sobem em volta do corpo em vez de sair para a frente
+  if (BUFF_FORMAS.has(h.forma)) {
+    for (let i = 0; i < 12; i++) { const ang = (i / 12) * Math.PI * 2; fx.add({ x: l.x + Math.cos(ang) * 14, y: l.y + Math.sin(ang) * 6, vx: Math.cos(ang) * 10, vy: -entre(50, 110), g: 0, drag: 1, size: entre(2, 3.2), grow: s.forma === 'humo' || s.forma === 'llama' ? 1.2 : 0, life: entre(0.5, 0.8), color: s.cores ? s.cores[i % s.cores.length] : undefined, rampa: s.rampa, forma: s.forma, vr: entre(-6, 6) }); }
+    return;
+  }
   const x = l.x + Math.cos(a0) * 12, y = l.y - l.alto * 0.55 + Math.sin(a0) * 6;
   for (let i = 0; i < n; i++) {
     const a = a0 + (ale() - 0.5) * 1.1, v = entre(60, e.slot === 'e' ? 200 : 150);
