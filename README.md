@@ -2,26 +2,17 @@
 
 Batalha 1 contra 1 de Pokémon em tempo real numa arena oval. Projeto de fã, sem fins lucrativos, no estilo do Poké Arena 2D (a análise e a arquitetura estão em `PLAN.md`).
 
-## O que tem
+## Versão 1.0
 
-- **9 linhas de Pokémon**, com evolução em tempo real durante a luta: Bulbasaur, Charmander (com Mega Charizard X), Squirtle, Froakie (até Greninja), Onix (com Mega Steelix), Riolu (com Mega Lucario), Zubat, Buneary (com Mega Lopunny) e Munchlax (até Snorlax).
-- **5 skills por Pokémon**: ataque básico (LMB), skill (RMB), esquiva/dash (SPC), utilitária (Q) e ultimate (E). Energia, calor do ataque básico (sobrecarga), barra de ultimate e experiência de evolução.
-- **Melhor de 3 rounds de 99 segundos**, arenas ovais (Stadium, Neon, Crater e Ruins), câmera com zoom, hit stop e efeitos em pixel art.
-- **Modos**: VS CPU (easy, normal, hard), 2 PLAYERS no mesmo teclado, TRAINING (boneco que não morre) e TUTORIAL.
-- **Controles**: teclado e mouse, teclado do jogador 2, controle (gamepad) e toque no celular.
-- Pokédex com os estágios, Megas e as 5 skills de cada um.
-- **Celular em primeiro lugar**: a tela do jogo se estica até preencher o aparelho (de 16:9 até 25:9, sem faixas pretas), analógico flutuante à esquerda, botões redondos em arco à direita, cada um com o símbolo da skill, a cor do tipo, anel de recarga e custo de energia. Botão de EVO/MEGA aparece quando a evolução está pronta.
-- **Evolução com cena**: a forma antiga brilha até virar silhueta, uma coluna de luz sobe e a forma nova aparece (a Mega tem uma cena dourada mais longa). Linhas de uma só evolução evoluem uma vez.
-- **Arena de 3**: o modo ARENA (3 FIGHTERS) é todos contra todos (você contra 2 CPUs). A rodada acaba quando só sobra um de pé; vence quem ganhar 2 rodadas.
-- **Online**: tela ONLINE com sala por código (2 ou 3 jogadores) e P2P sem servidor (troca de dois códigos). Veja "Jogar online" abaixo.
-- **Megas de verdade**: cada Mega ganha versões novas das 5 skills (mais golpes, alcance, explosões, tipo Dragão no Charizard X), não só mais dano.
+Primeira versão completa (saiu do alpha).
 
-## Novidades da versão 2.3
-
-- **Abra > Kadabra > Alakazam > Mega Alakazam**: Confusion, Psybeam, Psycho Cut, Teleport (some e reaparece na hora), Reflect, Future Sight e a ultimate Psychic Lasso, que prende o rival, puxa e arremessa para onde você mira.
-- **Magikarp** (Gyarados) e **Seedot** (Nuzleaf, Shiftry), com os golpes do site: Splash, Dragon Dance, Hyper Beam com recarga, Grass Knot, Harden, Explosion e Leaf Tornado.
-- **Shiny secreto**: na tela de escolha, toque 20 vezes seguidas no mesmo Pokémon. Os sprites shiny são do PMD SpriteCollab.
-- **AIM GUIDE** em SETTINGS e na pausa: liga ou desliga a marcação do alvo e a linha de mira.
+- **31 linhas de Pokémon** com evolução durante a luta e Megas, cada uma com 5 skills próprias: básico, skill, dash, utilitária e ultimate. A primeira forma não tem ult; ela chega com a evolução.
+- **Megas com kits novos de verdade**, entre elas Mega Gengar (Nightmare Bomb, que cega quem está na escuridão), Mega Sceptile (cauda-míssil teleguiada), Mega Zeraora (Thunder Cage, só com o plasma cheio) e Mega Venusaur (vinhas que arremessam, onda de veneno e Solar Beam gigante).
+- **Seis arenas com mecânicas próprias**: estádio livre, ruínas com pedras que bloqueiam o caminho e os tiros, praia com um rio no meio e duas pontes, cratera com lava que queima, halloween com lápides e neon com placas de impulso. Muro e arquibancada em 3D.
+- **Modos**: VS CPU (easy, normal, hard), Liga com desbloqueio por vitórias, duplas 2x2 (com CPU completando), arena de 3, online por código (P2P, sem servidor), treino e tutorial.
+- **Celular em primeiro lugar**: tela que preenche o aparelho, analógico flutuante, botões em arco e a barra de skills embaixo com recarga, custo e ult.
+- **Efeitos em pixel art**: cada ataque solta partículas do tipo ao sair do Pokémon, golpes com efeitos próprios, ondas de choque e raios de ult que afinam até sumir.
+- Pokédex, perfil, shiny secreto e créditos dos sprites (PMD SpriteCollab e sprites enviados pela comunidade).
 
 ## Controles
 

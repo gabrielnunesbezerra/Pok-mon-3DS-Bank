@@ -72,6 +72,14 @@ export function icono(g, forma, x, y, r, color = '#ffffff') {
   g.restore();
 }
 
+// formas novas usam o símbolo do golpe mais parecido
+const APELIDOS = {
+  linguada: 'tajo', teleSono: 'dash', portalSombra: 'dash', mergulhoFantasma: 'vuelo', bocaFantasma: 'explosion', bolaPesadelo: 'explosion', hipnoseToque: 'espejo',
+  kamehaDraco: 'chorro', cortesFolha: 'jabLuna', xFolha: 'cortesSuelo', laminaSolar: 'tajo', caudaMissil: 'proyectil', jaulaTrovao: 'pulso', voltSwitch: 'proyectil', cadenaRayo: 'rafaga', blitzPlasma: 'embestidas',
+  arraigoOnda: 'arraigo', raioSolar: 'chorro', cascoSalto: 'caparazon', canhaoAncorado: 'chorro', surfar: 'dash', telecinese: 'laco', pesadeloDuplo: 'proyectil',
+  bolaSombra: 'bombaLodo', saltoSombra: 'dash', lambida: 'laco', maosSombra: 'trampa', posesion: 'humo', reinoSombras: 'escudo', vinculo: 'curaAnillo', teleporte: 'dash', campoFada: 'escudo', contraataque: 'espejo', deltaStream: 'viento', nocheEterna: 'humo',
+};
+for (const [k, v] of Object.entries(APELIDOS)) if (!GLIFOS[k] && GLIFOS[v]) GLIFOS[k] = GLIFOS[v];
 export const hayIcono = forma => forma in GLIFOS;
 
 // mistura de cores '#rrggbb' com branco (k > 0) ou preto (k < 0)
