@@ -86,7 +86,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Lick', dano: 5.8, stacks: 3, paralisa: 0.9, alcance: 80 },
     rmb: { nombre: 'Mega Shadow Ball', forma: 'pesadeloDuplo', entidade: 'chamaRoxa', dano: 9.5, dur: 0.5, coste: 25, cd: 5, anim: 'Charge' },
     esp: { nombre: 'Mega Shadow Sneak', bonus: 1.7, alcance: 380 },
-    e: { nombre: 'Phantom Feast', forma: 'bocaFantasma', dano: 42, radio: 90, espera: 0.55, golpes: 2, contraSono: 1.5, alcance: 320, anim: 'Charge' },
+    e: { nombre: 'Nightmare Bomb', forma: 'bolaPesadelo', dano: 46, radio: 100, carga: 0.85, vel: 300, alcance: 380, contraSono: 1.4, aturde: 0.7, anim: 'Charge' },
   },
   zeraora: {
     lmb: { nombre: 'Mega Plasma Fists', dano: 5.8, raioFinal: 6 },
@@ -97,7 +97,7 @@ export const MEGA_KITS = {
   },
   sceptile: {
     lmb: { nombre: 'Mega Leaf Blade', dano: 5.4, xGrande: 2.6, danoX: 8 },
-    rmb: { nombre: 'Mega Dragon Pulse', dano: 17, escala: 2.6, vel: 420, explosion: { radio: 62 } },
+    rmb: { nombre: 'Mega Dragon Pulse', dano: 17, largura: 22, alcance: 340, vel: 600, explosion: { radio: 66 } },
     esp: { nombre: 'Mega Agility', dano: 6, dist: 160 },
     q: { nombre: 'Mega Leaf Hurricane', dano: 11, alcance: 115 },
     e: { nombre: 'Tail Missile', forma: 'caudaMissil', tipo: 'GRASS', dano: 38, radio: 72, trava: 0.6, vel: 440, alcance: 420, aturde: 0.6, anim: 'Charge' },

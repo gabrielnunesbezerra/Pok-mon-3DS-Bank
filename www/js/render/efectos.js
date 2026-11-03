@@ -58,7 +58,12 @@ export class Efectos {
     for (let i = 0; i < n; i++) this.add({ x: x + (ale() - 0.5) * size, y: y + (ale() - 0.5) * size * 0.4, vx: (ale() - 0.5) * 30, vy: -14 - ale() * 22, drag: 1.4, size: size * (0.6 + ale() * 0.5), grow: size * 1.2, life: 0.7 + ale() * 0.5, color, forma: 'circulo' });
   }
   polvo(x, y, n = 3, size = 4) { this.humo(x, y, n, 'rgba(214,200,160,0.5)', size); }
-  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { if (this.semAnel) return; this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 }); }
+  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) {
+    if (this.semAnel) return;
+    this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 });
+    // onda grande: faíscas e poeira correndo junto com a borda
+    if (r1 > 36 && r1 > r0) { const n = Math.min(18, Math.round(r1 / 5)), v = ((r1 - r0) / dur) * 1.6; for (let i = 0; i < n; i++) { const an = (i / n) * Math.PI * 2 + ale() * 0.3; this.add({ x: x + Math.cos(an) * r0, y: y + Math.sin(an) * r0 * 0.6, vx: Math.cos(an) * v, vy: Math.sin(an) * v * 0.6, drag: 4.2, size: i % 3 ? 1.6 : 2.4, life: dur * 1.1, color: i % 3 ? color : '#ffffff', forma: 'chispa' }); } }
+  }
   texto(x, y, txt, color = '#ffffff', op = {}) { this.textos.push({ x, y, txt, color, t: 0, life: op.dur ?? 0.9, vy: -(op.sube ?? 22), tam: op.tam ?? 8 }); }
   numero(x, y, dano, mult) { this.nums.push({ x: x + (ale() - 0.5) * 10, y, dano, mult, t: 0, life: 0.8 }); }
   globo(l, txt, tipo = 'NORMAL') { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, tipo, t: 0, life: 1.1 }); }
@@ -368,14 +373,21 @@ export class Efectos {
         }
       }
     }
-    // arcos de choque: abrem rápido e desaceleram (ease-out), com miolo claro e um véu da cor por dentro
+    // arcos de choque: onda que abre rápido e desacelera; banda grossa da cor com brilho, borda branca na frente
+    // e um véu em degradê por dentro (deitado no chão, em perspectiva)
     for (const a of this.anillos) {
       const g = a.hue ? capa(gB, a.hue) : gB;
-      const k = a.t / a.dur, ek = 1 - (1 - k) ** 3, r = Math.max(1, a.r0 + (a.r1 - a.r0) * ek), al = 1 - k;
-      g.beginPath(); g.ellipse(a.x, a.y, r, r * 0.6, 0, 0, 7);
-      g.globalAlpha = al * 0.16; g.fillStyle = a.color; g.fill();
-      g.globalAlpha = al * 0.95; g.strokeStyle = a.color; g.lineWidth = Math.max(1, a.w * (1.8 - k)); g.stroke();
-      g.globalAlpha = al * 0.7; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.ellipse(a.x, a.y, r * 0.93, r * 0.56, 0, 0, 7); g.stroke();
+      const k = a.t / a.dur, ek = 1 - (1 - k) ** 3, r = Math.max(2, a.r0 + (a.r1 - a.r0) * ek), al = (1 - k) ** 1.4;
+      const banda = Math.min(14, Math.max(1.5, r * 0.11 + a.w)) * (1 - k * 0.55);
+      g.save(); g.translate(a.x, a.y); g.scale(1, 0.6);
+      const gr = g.createRadialGradient(0, 0, Math.max(0, r - banda * 3), 0, 0, r);
+      gr.addColorStop(0, comAlfa(a.color, 0)); gr.addColorStop(0.7, comAlfa(a.color, 0.14 * al)); gr.addColorStop(1, comAlfa(a.color, 0.4 * al));
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, 7); g.fill();
+      g.strokeStyle = a.color;
+      g.globalAlpha = al * 0.28; g.lineWidth = banda * 2.4; g.beginPath(); g.arc(0, 0, Math.max(1, r - banda * 0.6), 0, 7); g.stroke();
+      g.globalAlpha = al * 0.85; g.lineWidth = banda; g.stroke();
+      g.globalAlpha = al; g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(1, banda * 0.32); g.beginPath(); g.arc(0, 0, r, 0, 7); g.stroke();
+      g.restore();
     }
     g.globalAlpha = 1;
     for (const z of this.zonas) {
@@ -1174,7 +1186,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         break;
       }
       case 'tormenta': dibujarTormenta(g, e, t); break;
-      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': case 'salaTruque': case 'orbitaEspadas': case 'onda': case 'chamaRoxa': case 'caudaMissil': case 'jaulaTrovao': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
+      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': case 'salaTruque': case 'orbitaEspadas': case 'onda': case 'chamaRoxa': case 'caudaMissil': case 'jaulaTrovao': case 'kamehaDraco': case 'bolaPesadelo': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
       case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
       case 'espinho': if (e.t < e.aviso) dibujarEspinho(g, e, t); break;
       case 'hueso': {
@@ -1346,6 +1358,12 @@ import { SHINY_HUE } from '../data/shiny.js';
 export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[String(l.dex).replace(/s$/, '')] ?? 0 : 0);
 // O filtro de cor é caro se aplicado em cada partícula. Então tudo de um shiny é desenhado numa camada
 // só dele e a camada inteira entra na tela uma vez por quadro, já com a cor girada.
+// cor '#rrggbb' (ou '#rgb') com transparência
+function comAlfa(c, a) {
+  if (typeof c !== 'string' || c[0] !== '#') return `rgba(255,255,255,${a})`;
+  const h = c.length === 4 ? c.slice(1).split('').map(x => x + x).join('') : c.slice(1, 7);
+  return `rgba(${parseInt(h.slice(0, 2), 16)},${parseInt(h.slice(2, 4), 16)},${parseInt(h.slice(4, 6), 16)},${a})`;
+}
 const SEM_ANEL = new Set(['aquaRing', 'endurecer', 'espejo', 'potenciar', 'recuperar', 'reflejo', 'megaInicio', 'evolucion', 'evoInicio', 'habilidad', 'burbujaRompe', 'cargaExplosion', 'auraFantasma', 'curaAnillo']);
 const capas = new Map();
 export const limparCapas = () => capas.clear();

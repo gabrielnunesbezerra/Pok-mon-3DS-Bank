@@ -1058,3 +1058,89 @@ Object.assign(formasNovas, {
     luta.add(e);
   },
 });
+
+// ================================================================ Dragon Pulse em raio contínuo (Sceptile) e Nightmare Bomb (Mega Gengar)
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Dragon Pulse (Sceptile): assopra uma rajada dracônica rente ao chão que vai
+  // avançando até chegar no alvo (segue um pouco para onde ele anda) e explode nele
+  kamehaDraco(l, h, extra) {
+    const luta = this.luta, alc = h.alcance ?? 300, vel = h.vel ?? 520, larg = h.largura ?? 16, carga = h.carga ?? 0.22;
+    const r = maisPerto(luta, l, alc + 40);
+    const ang0 = r ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l);
+    l.cortarAccion();
+    l.animar(h.anim ?? 'Shoot', carga + alc / vel + 0.3);
+    l.accion = { hasta: luta.t + carga + alc / vel + 0.2, bloquea: true, lento: 0, angulo: ang0 };
+    luta.emit({ t: 'kamehaCarga', l, ang: ang0, dur: carga });
+    const e = { tipo: 'kamehaDraco', dueno: l, vivo: true, x: l.x, y: l.y, ang: ang0, largo: 0, t: -carga, larg, alc, fim: null, update: dt => {
+      e.t += dt; e.x = l.x; e.y = l.y;
+      if (l.ko) return false;
+      if (e.t < 0) return true;
+      if (e.fim === null) {
+        if (r && !r.ko && !r.oculto) e.ang += Math.max(-1.3 * dt, Math.min(1.3 * dt, dAng(Math.atan2(r.y - l.y, r.x - l.x), e.ang)));
+        l.angulo = e.ang; if (l.accion) l.accion.angulo = e.ang;
+        e.largo = Math.min(alc, e.largo + vel * dt);
+        const ca = Math.cos(e.ang), sa = Math.sin(e.ang);
+        let alvo = null, melhor = Infinity;
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || b.est?.vuelo) continue;
+          const dx = b.x - l.x, dy = b.y - l.y, lon = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca);
+          if (lon > 0 && lon < e.largo + RADIO && lat < RADIO + larg * 0.6 && lon < melhor) { melhor = lon; alvo = b; }
+        }
+        if (alvo) {
+          e.largo = Math.max(10, melhor); e.fim = e.t;
+          const R = h.explosion?.radio ?? 50;
+          areaCirculo(luta, l, alvo.x, alvo.y, R, pacote(h, extra, e.ang, { dirX: ca, dirY: sa, empuje: 120, pesado: true, aturde: h.aturde ?? 0.3 }));
+          luta.emit({ t: 'explodeDraco', x: alvo.x, y: alvo.y, radio: R, ang: e.ang });
+          luta.emit({ t: 'temblor', f: 0.009 }); luta.hitstop(80);
+        } else if (e.largo >= alc) { e.fim = e.t; luta.emit({ t: 'kamehaFim', x: l.x + ca * alc, y: l.y + sa * alc }); }
+      }
+      return e.fim === null || e.t - e.fim < 0.3;
+    } };
+    luta.add(e);
+  },
+
+  // ---------------------------------------------------------------- Nightmare Bomb (ult da Mega Gengar): escurece tudo em volta, junta uma
+  // Shadow Ball gigante acima da cabeça e arremessa no rival; explode numa onda de fantasmas (quem dorme leva mais)
+  bolaPesadelo(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.85, R = h.radio ?? 100;
+    const r = maisPerto(luta, l, h.alcance ?? 380) ?? (l.rival && !l.rival.ko ? l.rival : null);
+    l.cortarAccion();
+    l.animar('Charge', carga + 0.2);
+    l.accion = { hasta: luta.t + carga + 0.15, bloquea: true, lento: 0 };
+    l.ponerEstado('blindaje', carga, { reduce: 0.5 });
+    l.texto('NIGHTMARE BOMB!', '#e9d5ff');
+    luta.emit({ t: 'pesadeloCarga', l, dur: carga, radio: R });
+    const explodir = (x, y) => {
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || !dentroElipse(b, x, y, R)) continue;
+        const sono = b.est.dormido ? (h.contraSono ?? 1.4) : 1;
+        atingir(l, b, pacote(h, extra, Math.atan2(b.y - y, b.x - x), { dano: h.dano * sono, empuje: 170, aturde: h.aturde ?? 0.7, pesado: true }));
+      }
+      luta.emit({ t: 'pesadeloExplode', x, y, radio: R });
+      luta.emit({ t: 'temblor', f: 0.016 }); luta.hitstop(120);
+    };
+    const bola = { tipo: 'bolaPesadelo', dueno: l, vivo: true, x: l.x, y: l.y, alt: 70, t: 0, carga, tam: 0, voando: false, update: dt => {
+      bola.t += dt;
+      if (!bola.voando) {
+        if (l.ko) return false;
+        bola.x = l.x; bola.y = l.y; bola.alt = l.alto + 34; bola.tam = Math.min(1, bola.t / carga);
+        if (bola.t >= carga) {
+          bola.voando = true; bola.alvo = r && !r.ko ? r : null;
+          bola.tx = bola.alvo ? bola.alvo.x : l.ax; bola.ty = bola.alvo ? bola.alvo.y : l.ay;
+          bola.d0 = Math.max(1, Math.hypot(bola.tx - bola.x, bola.ty - bola.y)); bola.alt0 = bola.alt;
+          l.animar('Shoot', 0.4);
+          luta.emit({ t: 'pesadeloLanca', l });
+        }
+        return true;
+      }
+      const a = bola.alvo;
+      if (a && !a.ko && !a.oculto) { bola.tx = a.x; bola.ty = a.y; }
+      const dx = bola.tx - bola.x, dy = bola.ty - bola.y, d = Math.hypot(dx, dy), v = (h.vel ?? 300) * dt;
+      bola.alt = Math.max(8, bola.alt0 * Math.min(1, d / bola.d0));
+      if (d <= v + 10 || bola.t > carga + 2.5) { explodir(bola.tx, bola.ty); return false; }
+      bola.x += (dx / d) * v; bola.y += (dy / d) * v;
+      return true;
+    } };
+    luta.add(bola);
+  },
+});

@@ -646,3 +646,209 @@ Object.assign(HEROES_NOVOS, {
     g.globalAlpha = 1;
   },
 });
+
+// ================================================================ versão caprichada: Dragon Pulse em raio, Nightmare Bomb, Hypnosis grande,
+// Solar Blade e o X de folhas (estas definições substituem as anteriores de mesmo nome)
+const lerp = (a, b, k) => a + (b - a) * k;
+// meia-lua afinando nas pontas, cheia com degradê (borda clara por fora)
+function crescente(g, x, y, R, a0, a1, esp, sy, cores) {
+  if (a1 - a0 < 0.01) return;
+  g.save(); g.translate(x, y); g.scale(1, sy);
+  const n = 28; g.beginPath();
+  for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); g.lineTo(Math.cos(a) * R, Math.sin(a) * R); }
+  for (let i = n; i >= 0; i--) { const u = i / n, a = lerp(a0, a1, u), th = esp * Math.pow(Math.sin(u * Math.PI), 0.7); g.lineTo(Math.cos(a) * (R - th), Math.sin(a) * (R - th)); }
+  g.closePath();
+  const gr = g.createRadialGradient(0, 0, Math.max(0, R - esp), 0, 0, R);
+  cores.forEach((c, i) => gr.addColorStop(i / (cores.length - 1), c));
+  g.fillStyle = gr; g.fill();
+  g.restore();
+}
+// lâmina reta em forma de folha (lente), em camadas
+function laminaLente(g, x0, y0, x1, y1, w, camadas) {
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L;
+  for (const [c, f, al] of camadas) { g.globalAlpha *= al; g.fillStyle = c; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx + nx * w * f, my + ny * w * f, x1, y1); g.quadraticCurveTo(mx - nx * w * f, my - ny * w * f, x0, y0); g.fill(); g.globalAlpha /= al; }
+}
+function brilho(g, x, y, R, c, al = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, R); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill(); g.globalAlpha = 1; }
+function estrela(g, x, y, R, c, al = 1, rot = 0) { g.globalAlpha = al; g.fillStyle = c; g.beginPath(); for (let i = 0; i < 8; i++) { const a = rot + (i * Math.PI) / 4, r = i % 2 ? R * 0.16 : i % 4 ? R * 0.6 : R; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); g.fill(); g.globalAlpha = 1; }
+
+Object.assign(ESTILOS_NOVOS, {
+  // Hypnosis grande: ondas hipnóticas abrindo do centro, espiral girando e um olho; deixa ecos para trás
+  hipnose(g, p, t) {
+    const x = p.x, y = p.y - p.alt, R = 5 * (p.escala ?? 1);
+    for (let i = 1; i <= 2; i++) { const bx = x - Math.cos(p.ang) * i * R * 0.9, by = y - Math.sin(p.ang) * i * R * 0.7; g.globalAlpha = 0.22 / i; g.strokeStyle = '#e879f9'; g.lineWidth = 2; g.beginPath(); g.ellipse(bx, by, R * (1 - i * 0.15), R * 0.75 * (1 - i * 0.15), 0, 0, 7); g.stroke(); }
+    brilho(g, x, y, R * 1.6, 'rgba(232,121,249,0.45)');
+    for (let i = 0; i < 3; i++) { const f = (t * 1.6 + i / 3) % 1, rr = R * (0.3 + f * 0.9); g.globalAlpha = (1 - f) * 0.9; g.strokeStyle = i % 2 ? '#f0abfc' : '#a855f7'; g.lineWidth = 2.5 - f * 1.5; g.beginPath(); g.ellipse(x, y, rr, rr * 0.78, 0, 0, 7); g.stroke(); }
+    g.globalAlpha = 0.95; g.strokeStyle = '#fdf4ff'; g.lineWidth = 2; g.beginPath();
+    for (let i = 0; i <= 40; i++) { const u = i / 40, a = t * 7 + u * Math.PI * 4, rr = u * R; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.78); }
+    g.stroke();
+    g.globalAlpha = 1; g.fillStyle = '#fdf4ff'; g.beginPath(); g.ellipse(x, y, R * 0.32, R * 0.2, 0, 0, 7); g.fill(); g.fillStyle = '#7e22ce'; g.beginPath(); g.arc(x, y, R * 0.12, 0, 7); g.fill();
+  },
+});
+
+Object.assign(EVENTOS_NOVOS, {
+  kamehaCarga(fx, e) { fx.heroes.push({ k: 'kamehaCarga', l: e.l, ang: e.ang, t: 0, life: e.dur + 0.05, hue: fx.hue }); },
+  kamehaFim(fx, e) { fx.chispas(e.x, e.y - 4, '#5eead4', 8, 140); fx.polvo(e.x, e.y, 2, 6); },
+  explodeDraco(fx, e) {
+    fx.heroes.push({ k: 'explosaoDraco', x: e.x, y: e.y, radio: e.radio, ang: e.ang, t: 0, life: 0.55, hue: fx.hue });
+    fx.anillo(e.x, e.y, 6, e.radio * 1.3, '#2dd4bf', 0.42, 4); fx.anillo(e.x, e.y, 4, e.radio * 0.85, '#bbf7d0', 0.3, 2);
+    for (let i = 0; i < 16; i++) { const a = e.ang + (ale() - 0.5) * 2.2, s = entre(160, 320); fx.add({ x: e.x, y: e.y - 8, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 3.5, size: 2, life: 0.45, color: i % 3 ? '#5eead4' : '#ffffff', forma: 'chispa' }); }
+    folhas(fx, e.x, e.y - 10, 10, 220);
+    fx.flash = Math.max(fx.flash, 0.14); fx.flashColor = '#ccfbf1'; fx.punch = Math.max(fx.punch ?? 0, 0.06);
+  },
+  pesadeloCarga(fx, e) { fx.heroes.push({ k: 'escuridao', l: e.l, x: e.l.x, y: e.l.y, t: 0, life: e.dur + 1.6, dur: e.dur, hue: fx.hue }); },
+  pesadeloLanca(fx, e) { fx.chispas(e.l.x, e.l.y - e.l.alto - 30, '#f0abfc', 10, 160); },
+  pesadeloExplode(fx, e) {
+    fx.heroes.push({ k: 'explosaoPesadelo', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.9, hue: fx.hue });
+    for (let i = 0; i < 3; i++) fx.anillo(e.x, e.y, 6 + i * 10, e.radio * (1.05 + i * 0.3), i === 1 ? '#f0abfc' : '#a855f7', 0.45 + i * 0.12, 4 - i);
+    for (let i = 0; i < 9; i++) { const a = (i / 9) * 6.28 + ale() * 0.3; fx.heroes.push({ k: 'fantasminha', x: e.x, y: e.y - 10, vx: Math.cos(a) * entre(90, 150), vy: Math.sin(a) * entre(50, 90) - 30, t: 0, life: entre(0.8, 1.1), s: entre(0.8, 1.3), hue: fx.hue }); }
+    for (let i = 0; i < 20; i++) { const a = ale() * 6.28, s = entre(120, 300); fx.add({ x: e.x, y: e.y - 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 40, drag: 3, size: 2.2, life: 0.6, color: i % 2 ? '#f0abfc' : '#ffffff', forma: 'chispa' }); }
+    fx.flash = Math.max(fx.flash, 0.3); fx.flashColor = '#f5d0fe'; fx.punch = Math.max(fx.punch ?? 0, 0.1);
+    fx.heroes.push({ k: 'quemado', x: e.x, y: e.y, radio: e.radio * 0.8, semilla: 9, cores: ['#0b0418', '#2e1065', '#6d28d9', '#c084fc'], t: 0, life: 2, hue: fx.hue });
+  },
+  solarCarga(fx, e) { fx.heroes.push({ k: 'solarCarga', l: e.l, t: 0, life: e.dur + 0.1, dur: e.dur, hue: fx.hue }); },
+  solarCorte(fx, e) {
+    fx.heroes.push({ k: 'solarCorte', l: e.l, x: e.l.x, y: e.l.y - e.l.alto * 0.35, ang: e.ang, alcance: e.alcance, angulo: e.angulo, t: 0, life: 0.6, hue: fx.hue });
+    for (let i = 0; i < 26; i++) { const a = e.ang + (ale() - 0.5) * e.angulo, s = entre(160, 340), r0 = e.alcance * entre(0.5, 1); fx.add({ x: e.l.x + Math.cos(a) * r0, y: e.l.y - 10 + Math.sin(a) * r0 * 0.6, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, drag: 3.2, size: i % 3 ? 1.8 : 2.8, life: 0.55, color: i % 3 ? '#fde68a' : '#ffffff', forma: 'chispa' }); }
+    folhas(fx, e.l.x + Math.cos(e.ang) * e.alcance * 0.7, e.l.y - 10 + Math.sin(e.ang) * e.alcance * 0.4, 18, 260);
+    fx.flash = Math.max(fx.flash, 0.28); fx.flashColor = '#fef9c3'; fx.punch = Math.max(fx.punch ?? 0, 0.08);
+  },
+});
+
+Object.assign(HEROES_NOVOS, {
+  // energia dracônica se juntando na boca do Sceptile
+  kamehaCarga(g, h, k, t) {
+    const l = h.l; if (!l || l.ko) return;
+    const x = l.x + Math.cos(h.ang) * 12, y = l.y - l.alto * 0.55, R = 4 + k * 9;
+    brilho(g, x, y, R * 3, 'rgba(45,212,191,0.55)');
+    for (let i = 0; i < 6; i++) { const a = t * 9 + i * 1.05, rr = 26 * (1 - k) + R; g.globalAlpha = 0.9; g.fillStyle = i % 2 ? '#99f6e4' : '#4ade80'; g.fillRect(px(x + Math.cos(a) * rr), px(y + Math.sin(a) * rr * 0.7), 2, 2); }
+    g.globalAlpha = 1; g.fillStyle = '#f0fdfa'; g.beginPath(); g.arc(x, y, R * 0.6, 0, 7); g.fill();
+  },
+  explosaoDraco(g, h, k) {
+    const R = h.radio * (0.4 + k * 0.9), al = (1 - k) ** 1.3;
+    brilho(g, h.x, h.y - 8, R * 1.6, 'rgba(94,234,212,0.9)', al);
+    brilho(g, h.x, h.y - 8, R * 0.8, 'rgba(255,255,255,0.95)', al);
+    // labaredas em forma de chama de dragão saindo para a frente
+    for (let i = 0; i < 5; i++) { const a = h.ang + (i - 2) * 0.45, L = R * (1.2 - Math.abs(i - 2) * 0.15); g.globalAlpha = al * 0.85; laminaLente(g, h.x, h.y - 8, h.x + Math.cos(a) * L, h.y - 8 + Math.sin(a) * L * 0.65, 7 * (1 - k), [['#0d9488', 1, 0.8], ['#5eead4', 0.6, 1], ['#ffffff', 0.25, 1]]); }
+    g.globalAlpha = 1;
+  },
+  // escuridão em volta da Mega Gengar enquanto a bomba existe
+  escuridao(g, h, k, t) {
+    const entra = Math.min(1, t / 0.3), sai = h.life - t < 0.5 ? (h.life - t) / 0.5 : 1, al = 0.5 * entra * sai, R = 330;
+    const gr = g.createRadialGradient(h.x, h.y, R * 0.15, h.x, h.y, R);
+    gr.addColorStop(0, `rgba(10,2,24,${al * 0.9})`); gr.addColorStop(0.7, `rgba(20,4,40,${al * 0.75})`); gr.addColorStop(1, 'rgba(20,4,40,0)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(h.x, h.y, R, R * 0.7, 0, 0, 7); g.fill();
+  },
+  fantasminha(g, h, k, t) {
+    const x = h.x + h.vx * t, y = h.y + h.vy * t - t * t * 20, s = h.s * (0.8 + k * 0.4), al = (1 - k) * 0.95;
+    g.globalAlpha = al; g.fillStyle = '#c084fc';
+    g.beginPath(); g.moveTo(x - 7 * s, y + 6 * s); g.lineTo(x - 7 * s, y - 1 * s); g.arc(x, y - 1 * s, 7 * s, Math.PI, 0); g.lineTo(x + 7 * s, y + 6 * s);
+    for (let i = 0; i < 4; i++) g.lineTo(x + 7 * s - (i + 0.5) * 3.5 * s, y + (i % 2 ? 6 : 3) * s + Math.sin(t * 20 + i) * s);
+    g.closePath(); g.fill();
+    g.fillStyle = '#fecaca'; g.fillRect(px(x - 4 * s), px(y - 3 * s), Math.max(1, px(2 * s)), Math.max(1, px(2 * s))); g.fillRect(px(x + 2 * s), px(y - 3 * s), Math.max(1, px(2 * s)), Math.max(1, px(2 * s)));
+    g.fillStyle = '#1a0010'; g.beginPath(); g.ellipse(x, y + 2 * s, 3.5 * s, 1.5 * s, 0, 0, Math.PI); g.fill();
+    g.globalAlpha = 1;
+  },
+  explosaoPesadelo(g, h, k) {
+    const R = h.radio * (0.3 + k * 0.9), al = (1 - k) ** 1.2;
+    brilho(g, h.x, h.y - 14, R * 1.5, 'rgba(168,85,247,0.95)', al);
+    brilho(g, h.x, h.y - 14, R * 0.7, 'rgba(253,244,255,1)', al * (1 - k));
+    g.save(); g.translate(h.x, h.y - 14); g.scale(1, 0.62); g.globalAlpha = al; g.strokeStyle = '#f5d0fe'; g.lineWidth = 3 * (1 - k) + 1;
+    for (let i = 0; i < 10; i++) { const a = i * 0.628 + k * 1.5; g.beginPath(); g.arc(0, 0, R * 0.9, a, a + 0.35); g.stroke(); }
+    g.restore(); g.globalAlpha = 1;
+  },
+  // sol: raios de luz descendo do céu e convergindo, halo dourado no chão, folhas das lâminas acendendo
+  solarCarga(g, h, k, t) {
+    const l = h.l; if (!l || l.ko) return;
+    const x = l.x, y = l.y, top = y - 240;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 5; i++) {
+      const off = (i - 2) * 46 * (1 - k * 0.85), w = (5 + 3 * Math.sin(t * 25 + i * 2)) * (0.5 + k);
+      const gr = g.createLinearGradient(x + off, top, x, y - l.alto * 0.5); gr.addColorStop(0, 'rgba(253,230,138,0)'); gr.addColorStop(1, `rgba(253,230,138,${0.25 + 0.35 * k})`);
+      g.fillStyle = gr; g.beginPath(); g.moveTo(x + off - w, top); g.lineTo(x + off + w, top); g.lineTo(x + 3, y - l.alto * 0.5); g.lineTo(x - 3, y - l.alto * 0.5); g.fill();
+    }
+    const halo = g.createRadialGradient(x, y, 0, x, y, 46 + k * 20); halo.addColorStop(0, `rgba(254,240,138,${0.5 * k + 0.15})`); halo.addColorStop(1, 'rgba(254,240,138,0)');
+    g.save(); g.translate(x, y); g.scale(1, 0.5); g.translate(-x, -y); g.fillStyle = halo; g.beginPath(); g.arc(x, y, 46 + k * 20, 0, 7); g.fill(); g.restore();
+    for (let i = 0; i < 8; i++) { const a = t * 5 + i * 0.785, rr = 50 * (1 - k) + 8; g.fillStyle = i % 2 ? '#fef9c3' : '#86efac'; g.fillRect(px(x + Math.cos(a) * rr), px(y - l.alto * 0.5 + Math.sin(a) * rr * 0.55 - k * 6), 2, 2); }
+    g.restore();
+    if (k > 0.75) estrela(g, x + Math.cos(l.angulo ?? 0) * 10, y - l.alto * 0.6, 10 + 14 * (k - 0.75) * 4, '#ffffff', 0.9, t * 3);
+  },
+  // corte solar: meia-lua dourada e verde enorme varrendo, com rastros atrás e brilho
+  solarCorte(g, h, k, t) {
+    const span = h.angulo, a0 = h.ang - span / 2, sweep = Math.min(1, t / 0.14), ek = 1 - (1 - sweep) ** 2;
+    const al = t < 0.14 ? 1 : Math.max(0, 1 - (t - 0.14) / (h.life - 0.14)), R = h.alcance * (1 + Math.max(0, t - 0.14) * 0.25);
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (let i = 3; i >= 1; i--) { g.globalAlpha = al * 0.18 * (4 - i); crescente(g, h.x, h.y, R * (1 - i * 0.07), a0, a0 + span * ek, h.alcance * 0.3, 0.6, ['rgba(34,197,94,0)', 'rgba(250,204,21,0.8)', 'rgba(255,255,255,0.9)']); }
+    g.restore();
+    g.globalAlpha = al; crescente(g, h.x, h.y, R, a0, a0 + span * ek, h.alcance * 0.36, 0.6, ['rgba(21,128,61,0)', '#22c55e', '#facc15', '#fffbeb']);
+    g.globalAlpha = al * 0.9; crescente(g, h.x, h.y, R * 0.98, a0 + span * 0.05, a0 + span * ek * 0.95, h.alcance * 0.08, 0.6, ['rgba(255,255,255,0)', '#ffffff']);
+    // linhas de luz saindo da lâmina
+    g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = '#fef08a'; g.lineCap = 'round';
+    for (let i = 0; i < 9; i++) { const a = a0 + span * ek * (i + 0.5) / 9, r1 = R * (1.02 + 0.1 * Math.sin(i * 7)), r2 = r1 + 18 + 30 * (1 - al); g.globalAlpha = al * 0.8; g.lineWidth = 2; g.beginPath(); g.moveTo(h.x + Math.cos(a) * r1, h.y + Math.sin(a) * r1 * 0.6); g.lineTo(h.x + Math.cos(a) * r2, h.y + Math.sin(a) * r2 * 0.6); g.stroke(); }
+    g.restore(); g.lineCap = 'butt';
+    const pa = a0 + span * ek; estrela(g, h.x + Math.cos(pa) * R * 0.85, h.y + Math.sin(pa) * R * 0.85 * 0.6, 16 * al + 4, '#ffffff', al, t * 6);
+    g.globalAlpha = 1;
+  },
+  // X gigante: duas lâminas de folha em forma de lente abrindo do centro, com brilho
+  corteXFolha(g, h, k) {
+    const ab = 1 - (1 - Math.min(1, k * 4)) ** 2, al = k < 0.3 ? 1 : 1 - (k - 0.3) / 0.7, R = h.r * (0.9 + ab * 0.15);
+    brilho(g, h.x, h.y, R * 0.9, 'rgba(134,239,172,0.6)', al);
+    for (const s of [-1, 1]) {
+      const a = h.ang + s * 0.8, ca = Math.cos(a), sa = Math.sin(a) * 0.7, L = R * ab;
+      g.globalAlpha = al;
+      laminaLente(g, h.x - ca * L, h.y - sa * L, h.x + ca * L, h.y + sa * L, 12 * (1 - k * 0.5), [['#14532d', 1, 0.9], ['#22c55e', 0.7, 1], ['#bbf7d0', 0.35, 1], ['#ffffff', 0.12, 1]]);
+    }
+    estrela(g, h.x, h.y, 22 * al + 6, '#ffffff', al, k * 2);
+    g.globalAlpha = 1;
+  },
+});
+
+Object.assign(ENTIDADES_NOVAS, {
+  // Dragon Pulse: rajada saindo da boca, descendo até o chão e correndo rente a ele até a ponta, com espiral de dragão em volta
+  kamehaDraco(g, e, t, fx) {
+    const l = e.dueno; if (!l || e.t < 0 || e.largo < 2) return;
+    const ca = Math.cos(e.ang), sa = Math.sin(e.ang), sai = e.fim === null ? 1 : Math.max(0, 1 - (e.t - e.fim) / 0.3), W = e.larg * (0.4 + 0.6 * sai) * (1 + 0.08 * Math.sin(t * 40));
+    const mx = l.x + ca * 12, my = l.y - l.alto * 0.55, chao = Math.min(e.largo, 34), gx = l.x + ca * chao, gy = l.y + sa * chao * 0.85 - 4;
+    const tx = l.x + ca * e.largo, ty = l.y + sa * e.largo - 4;
+    // sulco queimado no chão
+    g.globalAlpha = 0.35 * sai; g.strokeStyle = '#134e4a'; g.lineWidth = W * 0.9; g.lineCap = 'round'; g.beginPath(); g.moveTo(gx, gy + 5); g.lineTo(tx, ty + 5); g.stroke();
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const [c, f, al] of [['#0d9488', 2.4, 0.35], ['#14b8a6', 1.5, 0.7], ['#5eead4', 0.95, 0.9], ['#f0fdfa', 0.42, 1]]) {
+      g.globalAlpha = al * sai; g.strokeStyle = c; g.lineWidth = W * f; g.beginPath(); g.moveTo(mx, my); g.quadraticCurveTo(gx, gy - 6, gx + ca * 6, gy); g.lineTo(tx, ty); g.stroke();
+    }
+    // espiral de dragão (duas hélices)
+    const n = Math.max(6, Math.floor((e.largo - chao) / 8));
+    for (const [cor, fase] of [['#4ade80', 0], ['#a7f3d0', Math.PI]]) {
+      g.globalAlpha = 0.85 * sai; g.strokeStyle = cor; g.lineWidth = 2; g.beginPath();
+      for (let i = 0; i <= n; i++) { const u = i / n, d = chao + (e.largo - chao) * u, off = Math.sin(u * 14 - t * 28 + fase) * W * 0.75; g.lineTo(l.x + ca * d - sa * off, l.y + sa * d - 4 + ca * off * 0.6); }
+      g.stroke();
+    }
+    g.restore(); g.lineCap = 'butt';
+    // ponta: bola brilhante com cabeça de dragão
+    brilho(g, tx, ty, W * 2.6, 'rgba(94,234,212,0.8)', sai);
+    g.save(); g.translate(tx, ty); g.rotate(e.ang); g.globalAlpha = sai; const s = W / 14;
+    g.fillStyle = '#0f766e'; g.beginPath(); g.moveTo(16 * s, 0); g.lineTo(4 * s, -9 * s); g.lineTo(-6 * s, -12 * s); g.lineTo(-2 * s, -4 * s); g.lineTo(-8 * s, 0); g.lineTo(-2 * s, 4 * s); g.lineTo(-6 * s, 12 * s); g.lineTo(4 * s, 9 * s); g.closePath(); g.fill();
+    g.fillStyle = '#5eead4'; g.beginPath(); g.moveTo(13 * s, 0); g.lineTo(2 * s, -5 * s); g.lineTo(-3 * s, 0); g.lineTo(2 * s, 5 * s); g.closePath(); g.fill();
+    g.fillStyle = '#fef08a'; g.fillRect(4 * s, -4 * s, 2.5 * s, 2.5 * s); g.fillRect(4 * s, 1.5 * s, 2.5 * s, 2.5 * s);
+    g.restore(); g.globalAlpha = 1;
+    // poeira e faíscas onde a rajada corre o chão
+    if (e.fim === null) { if (ale() < 0.7) fx.add({ x: tx + entre(-6, 6), y: ty + 4, vx: -ca * 60 + entre(-50, 50), vy: -entre(30, 90), g: 200, size: entre(2, 3.5), life: 0.45, color: ale() < 0.5 ? 'rgba(214,200,160,0.7)' : '#5eead4', forma: ale() < 0.5 ? 'humo' : 'chispa' }); if (ale() < 0.4) fx.add({ x: tx, y: ty, vx: entre(-40, 40) - ca * 40, vy: -entre(20, 70), drag: 2, size: 2.5, life: 0.5, color: '#4ade80', forma: 'hoja', vr: entre(-10, 10) }); }
+  },
+  // Shadow Ball gigante da Mega Gengar
+  bolaPesadelo(g, e, t, fx) {
+    const R = 6 + e.tam * 28, x = e.x, y = e.y - e.alt;
+    g.globalAlpha = 0.35; g.fillStyle = '#000'; g.beginPath(); g.ellipse(e.x, e.y, R * 0.9, R * 0.35, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    brilho(g, x, y, R * 2, 'rgba(168,85,247,0.6)');
+    const gr = g.createRadialGradient(x - R * 0.3, y - R * 0.35, R * 0.1, x, y, R);
+    gr.addColorStop(0, '#f5d0fe'); gr.addColorStop(0.25, '#a855f7'); gr.addColorStop(0.7, '#3b0764'); gr.addColorStop(1, '#0b0418');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill();
+    g.strokeStyle = '#e9d5ff'; g.lineWidth = 2; g.globalAlpha = 0.8;
+    for (let i = 0; i < 2; i++) { const a = t * 4 * (i ? -1 : 1); g.beginPath(); g.ellipse(x, y, R * 1.25, R * 0.42, a * 0.4 + i * 1.2, t * 6 + i, t * 6 + i + 3.6); g.stroke(); }
+    g.globalAlpha = 1;
+    // sorriso de Gengar dentro da bola
+    g.fillStyle = 'rgba(254,202,202,0.9)'; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(x + s * R * 0.12, y - R * 0.2); g.lineTo(x + s * R * 0.48, y - R * 0.32); g.lineTo(x + s * R * 0.4, y - R * 0.08); g.fill(); }
+    g.strokeStyle = 'rgba(254,202,202,0.9)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y - R * 0.05, R * 0.42, 0.35, Math.PI - 0.35); g.stroke();
+    // almas sendo sugadas enquanto carrega
+    if (!e.voando && ale() < 0.8) { const a = ale() * 6.28, d = entre(70, 120); fx.add({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6, vx: -Math.cos(a) * d * 2.2, vy: -Math.sin(a) * d * 1.3, size: 2.4, life: 0.42, color: ale() < 0.5 ? '#c084fc' : '#f5d0fe', forma: 'chispa' }); }
+    if (e.voando) for (let i = 0; i < 2; i++) fx.add({ x: x + entre(-R, R) * 0.6, y: y + entre(-R, R) * 0.6, vx: entre(-20, 20), vy: entre(-30, 10), drag: 2, size: entre(2, 4), grow: -2, life: 0.45, color: ale() < 0.5 ? '#a855f7' : '#f0abfc', forma: 'circulo' });
+  },
+});
