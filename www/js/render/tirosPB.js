@@ -1,7 +1,6 @@
-// Tiros básicos no formato do PB Battlegrounds. Duas camadas por tiro:
-// - no mundo (pixel art 1:1): formas grossas e grandes com contorno, núcleo branco-quente e rastro de pedaços que desce
-//   a paleta do tipo (Water Gun, Water Pulse, Ember, Fire Blast, Razor Leaf, Bullet Seed, Rock Throw, Confusion, Acid);
-// - na tela (resolução do aparelho): luz suave e aditiva da cor do tipo por cima, núcleo branco e riscos de velocidade.
+// Tiros básicos em pixel art (no mundo, 1:1): formas grossas com contorno, núcleo claro e rastro de pedaços que desce
+// a paleta do tipo (Water Gun, Water Pulse, Ember, Fire Blast, Razor Leaf, Bullet Seed, Rock Throw, Confusion, Acid).
+// Sem luz por cima: o usuário quer os golpes quase sem brilho.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
 import { pal, IMPACTO, FUMACA } from './paletas.js';
@@ -107,50 +106,3 @@ export const ESTILOS_PB = {
     g.fillStyle = IMPACTO[0]; g.fillRect(px(x - r * 0.45), px(y - r * 0.5), 1, 1);
   },
 };
-
-// ---------------------------------------------------------------- luz na tela
-// quanto cada estilo brilha: [raio do brilho em pixels do mundo, força, núcleo branco?, riscos de velocidade?]
-const LUZ = { brasa: [10, 0.75, 1, 1], fuego: [16, 0.9, 1, 1], chorrito: [10, 0.55, 1, 1], pulsoAgua: [13, 0.6, 1, 0], hoja: [8, 0.4, 0, 1], semilla: [6, 0.3, 0, 1], roca: [0, 0, 0, 1], psico: [12, 0.7, 1, 0], bola: [8, 0.4, 0, 0] };
-// intensidade geral da luz (o usuário pediu menos claridade)
-const FORCA = 0.55;
-const halos = new Map();
-const rgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-// brilho radial pronto (um canvas por cor), carimbado com 'lighter': barato até no celular
-function halo(cor) {
-  let c = halos.get(cor);
-  if (!c) {
-    c = document.createElement('canvas'); c.width = c.height = 64;
-    const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32), [r, gg, b] = rgb(cor);
-    gr.addColorStop(0, `rgba(${r},${gg},${b},1)`); gr.addColorStop(0.3, `rgba(${r},${gg},${b},0.5)`); gr.addColorStop(0.65, `rgba(${r},${gg},${b},0.14)`); gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
-    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); halos.set(cor, c);
-  }
-  return c;
-}
-
-export function luzTiros(g, luta, cam, ox, oy, t) {
-  g.save();
-  g.globalCompositeOperation = 'lighter';
-  const z = cam.z;
-  for (const p of luta.entidades) {
-    if (p.tipo !== 'proj' || p.vivo === false) continue;
-    const L = LUZ[p.estilo];
-    if (!L) continue;
-    const q = cam.aPantalla(p.x, p.y - p.alt), x = q.x + ox, y = q.y + oy, P = pal(p.tipoAtq), esc = Math.min(2.2, p.escala ?? 1);
-    const nasce = FORCA * Math.min(1, (p.edad ?? 1) / 0.06), tremor = 1 + 0.08 * Math.sin(t * 40 + p.x);
-    if (L[0]) {
-      const R = L[0] * esc * z * tremor;
-      g.globalAlpha = L[1] * nasce; g.drawImage(halo(P[1]), x - R, y - R, R * 2, R * 2);
-    }
-    if (L[3]) {
-      // riscos de velocidade: linhas finas claras saindo para trás do tiro
-      const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, nx = -uy, ny = ux, comp = Math.min(60, v * 0.09) * z;
-      g.lineWidth = Math.max(1, z * 0.6); g.lineCap = 'round';
-      for (let i = 0; i < 3; i++) {
-        const o = (i - 1) * 3.2 * esc * z + Math.sin(t * 30 + i * 2) * z, c0 = (4 + i * 3) * esc * z, c1 = c0 + comp * (1 - Math.abs(i - 1) * 0.4);
-        g.globalAlpha = (i === 1 ? 0.55 : 0.3) * nasce; g.strokeStyle = i === 1 ? IMPACTO[0] : P[0];
-        g.beginPath(); g.moveTo(x - ux * c0 + nx * o, y - uy * c0 + ny * o); g.lineTo(x - ux * c1 + nx * o, y - uy * c1 + ny * o); g.stroke();
-      }
-    }
-  }
-  g.restore();
-}

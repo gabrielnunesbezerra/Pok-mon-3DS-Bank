@@ -1,9 +1,8 @@
-// Raios e cones no formato do PB Battlegrounds.
+// Raios e cones em pixel art.
 // - jatoAgua (no mundo): Hydro Pump / Hydro Cannon como uma coluna grossa de água que ondula, em camadas do azul
 //   escuro ao núcleo branco, com brilhos brancos varrendo, espuma pedaçuda na ponta e cristais de água subindo em leque
 //   em volta de quem usa quando o jato sai;
-// - bolasFogo (no mundo): bolas de fogo pedaçudas rolando na ponta e nas bordas do Flamethrower;
-// - luzRaios (na tela): luz suave ao longo de todo raio e cone.
+// - bolasFogo (no mundo): bolas de fogo pedaçudas rolando na ponta e nas bordas do Flamethrower.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
 import { pal, IMPACTO } from './paletas.js';
@@ -79,25 +78,4 @@ export function bolasFogo(g, o, t, tipo) {
     PX.disco(g, px(x + o.ux * r * 0.2), px(y - r * 0.2), r * 0.62, P[1]);
     if (f < 0.85) PX.disco(g, px(x + o.ux * r * 0.25), px(y - r * 0.3), Math.max(0.5, r * 0.28), IMPACTO[0]);
   }
-}
-
-// ---------------------------------------------------------------- luz na tela
-const rgba = (h, al) => { const n = parseInt(h.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${al})`; };
-export function luzRaios(g, luta, cam, ox, oy, t) {
-  g.save();
-  g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-  const z = cam.z;
-  for (const e of luta.entidades) {
-    let x0, y0, x1, y1, W, cor;
-    if (e.tipo === 'chorro' && e.activo && e.largoVis > 4) {
-      const b = e.origenVis(), alt = e.dueno.alto * 0.55, ca = Math.cos(e.ang), sa = Math.sin(e.ang);
-      x0 = b.x; y0 = b.y - alt; x1 = b.x + ca * e.largoVis; y1 = b.y - alt + sa * e.largoVis; W = (e.h.anchoVisual ?? e.ancho * 1.4) * 1.6; cor = pal(e.tipoAtq)[1];
-    } else if (e.tipo === 'cono' && e.dueno) {
-      const d = e.dueno, alt = d.alto * 0.5, L = Math.min(e.h.alcance, e.t * 650), ca = Math.cos(e.ang), sa = Math.sin(e.ang);
-      x0 = d.x + ca * 10; y0 = d.y + sa * 6 - alt; x1 = x0 + ca * L; y1 = y0 + sa * L; W = Math.max(10, L * Math.tan((e.h.angulo * Math.PI) / 720) * 2.4); cor = pal(e.h.tipo)[1];
-    } else continue;
-    const a = cam.aPantalla(x0, y0), b = cam.aPantalla(x1, y1), pul = 1 + 0.06 * Math.sin(t * 36);
-    g.strokeStyle = rgba(cor, 0.1); g.lineWidth = W * z * pul; g.beginPath(); g.moveTo(a.x + ox, a.y + oy); g.lineTo(b.x + ox, b.y + oy); g.stroke();
-  }
-  g.restore();
 }

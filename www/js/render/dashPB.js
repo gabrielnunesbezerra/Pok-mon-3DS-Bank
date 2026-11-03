@@ -1,8 +1,7 @@
-// Dashes no formato do PB Battlegrounds.
+// Dashes em pixel art.
 // - rastroDashPB (no mundo, pixel art): cauda de cometa grossa nas cores do tipo, larga no corpo e afinando até a ponta,
 //   com fio branco no meio e riscos de velocidade tracejados por fora;
 // - frenteDash: onda de ar em "V" na frente (rápido, golpe) e casca de água em volta do corpo (água);
-// - luzDash (na tela): brilho fraco ao longo da cauda.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
 import { pal, IMPACTO } from './paletas.js';
@@ -47,17 +46,4 @@ export function cascaAgua(g, l, t) {
     PX.arcoPix(g, cx, cy, r, b + 0.25, b + 1.2, P[1], 2, r * 0.8);
     g.fillStyle = IMPACTO[0]; g.fillRect(px(cx + Math.cos(b + 1.3) * r), px(cy + Math.sin(b + 1.3) * r * 0.8), 2, 2);
   }
-}
-
-// ---------------------------------------------------------------- luz na tela
-export function luzDash(g, luta, cam, ox, oy) {
-  g.save();
-  g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
-  for (const l of luta.luchadores) {
-    if (!l.dash || l.dash.def.teleport || l.ko) continue;
-    const { ux, uy, L, y, P } = geo(l), a = cam.aPantalla(l.x, y), b = cam.aPantalla(l.x - ux * L, y - uy * L), n = parseInt(P[1].slice(1), 16);
-    g.strokeStyle = `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},0.16)`; g.lineWidth = l.alto * 0.9 * cam.z;
-    g.beginPath(); g.moveTo(a.x + ox, a.y + oy); g.lineTo(b.x + ox, b.y + oy); g.stroke();
-  }
-  g.restore();
 }
