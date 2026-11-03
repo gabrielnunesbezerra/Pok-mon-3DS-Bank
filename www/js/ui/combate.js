@@ -13,6 +13,7 @@ import { Camara } from '../render/camara.js';
 import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud, corDe } from '../render/hud.js';
+import { UltPB } from '../render/ultPB.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
@@ -84,6 +85,7 @@ export class Combate {
     for (const def of defs) for (const f of [def, ...(def.evoluciones ?? [])]) for (const dex of [f.dex, f.mega?.dex].filter(Boolean)) for (const d of [dex, dex + 's']) { const m = bank.medidas(d); bank.precargar(d, Object.keys(m.anims ?? {})); }
     this.camara = new Camara();
     this.fx = new Efectos();
+    this.pb = new UltPB();
     this.hud = new Hud(bank);
     this.fondo = crearArena(d.arena);
     this.luta = null;
@@ -253,6 +255,7 @@ export class Combate {
     const luta = this.luta;
     const evs = luta.tomarEventos();
     this.fx.consumir(luta, evs, this.camara);
+    this.pb.consumir(luta, evs, this.fx);
     for (const e of evs) {
       if (e.t === 'fin') this.armarResultado(e.ganador);
       if (e.t === 'habilidad' && e.l.humano && e.slot === 'e') this.fx.temblor = Math.max(this.fx.temblor, 3);
@@ -261,6 +264,7 @@ export class Combate {
     }
     if (this.rivalFuera && !this.saliendo) { this.saliendo = true; setTimeout(() => this.salirOnline(), 2200); }
     // no hit stop da luta os efeitos congelam junto com os lutadores (o golpe "segura" um instante); só a tremida anda
+    if (!this.pausado) this.pb.update(dt);
     if (!this.pausado) { if (luta.pausaGolpe > 0) this.fx.temblor = Math.max(0, this.fx.temblor - dt * 24); else this.fx.update(dt); }
     const vivos = luta.luchadores.filter(l => !l.ko);
     this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, !this.app.tactil.activo);
@@ -350,6 +354,8 @@ export class Combate {
     g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
     g.imageSmoothingEnabled = false;
     g.drawImage(lienzo, 0, 0, vw, vh, ANCHO / 2 + (x0 - cam.x + sx) * z, cam.centroY + (y0 - cam.y + sy) * z, vw * z, vh * z);
+    // luz do estilo PB (estrelas, anéis, carga da ult e quadro de impacto) na resolução do aparelho, por cima do mundo
+    this.pb.dibujar(g, cam, sx * z, sy * z, ANCHO, ALTO);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
     // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
