@@ -577,7 +577,7 @@ Object.assign(formasNovas, {
     for (const lado of [-1, 1]) {
       const ctrl = { x: (l.x + tx) / 2 - Math.sin(a) * lado * 90, y: (l.y + ty) / 2 + Math.cos(a) * lado * 60 };
       const x0 = l.x, y0 = l.y, ja = new Set();
-      const e = { tipo: 'sombraGemea', dueno: l, vivo: true, x: x0, y: y0, t: 0, lado, update: dt => {
+      const e = { tipo: h.entidade ?? 'sombraGemea', dueno: l, vivo: true, x: x0, y: y0, t: 0, lado, update: dt => {
         e.t += dt; const k = Math.min(1, e.t / dur), u = 1 - k;
         const ex = alvo && !alvo.ko ? alvo.x : tx, ey = alvo && !alvo.ko ? alvo.y : ty;
         e.x = u * u * x0 + 2 * u * k * ctrl.x + k * k * ex; e.y = u * u * y0 + 2 * u * k * ctrl.y + k * k * ey;
@@ -789,3 +789,121 @@ export function ecoFilhote(hab, l, h, slot, extra) {
     else luta.add(new Proyectil(luta, l, { nombre: 'Joey', dano: h.dano * k, tipo: 'NORMAL', vel: 340, alcance: 190, radio: 4, escala: 1, estilo: 'eco' }, ang, { slot, desde: { x: ox, y: oy, alt: 10 } }));
   });
 }
+
+
+// ================================================================ Gengar (Gengar e Mega Gengar)
+// alvos de verdade (sem clones nem escondidos) que estão dormindo, do mais perto ao mais longe
+function dormindoPerto(luta, l, alcance) {
+  let m = null, dm = alcance;
+  for (const b of luta.blancos(l)) {
+    if (b.esClon || b.oculto || !b.est.dormido) continue;
+    const d = Math.hypot(b.x - l.x, b.y - l.y);
+    if (d < dm) { dm = d; m = b; }
+  }
+  return m;
+}
+export const temDormindo = (luta, l, alcance = 340) => !!dormindoPerto(luta, l, alcance);
+
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Lick (básico do Gengar): linguada curta em linha; cada lambida marca o
+  // rival com um fantasminha e, com a marca cheia, ele fica paralisado
+  linguada(l, h, extra) {
+    const luta = this.luta, alc = h.alcance ?? 72, a = mirar(l, alc + 40, 0.9), ca = Math.cos(a), sa = Math.sin(a);
+    l.animar(h.anim ?? 'Attack', 0.3); l.angulo = a;
+    let alvo = null, melhor = Infinity;
+    for (const b of luta.blancos(l)) {
+      if (b.oculto || b.est?.vuelo) continue;
+      const dx = b.x - l.x, dy = b.y - l.y, lon = dx * ca + dy * sa, lat = Math.abs(-dx * sa + dy * ca);
+      if (lon < -6 || lon > alc + RADIO || lat > RADIO + 8 || lon >= melhor) continue;
+      melhor = lon; alvo = b;
+    }
+    luta.emit({ t: 'lingua', l, ang: a, alcance: alvo ? Math.max(20, melhor) : alc, pegou: !!alvo, curta: true });
+    if (!alvo) return;
+    luta.programar(0.08, () => {
+      if (l.ko || alvo.ko) return;
+      const res = atingir(l, alvo, pacote(h, extra, a, { empuje: 18 }));
+      if (res !== 'golpe' || alvo.esClon) return;
+      const n = (alvo.est.marcaFantasma?.n ?? 0) + 1, max = h.stacks ?? 4;
+      if (n >= max) {
+        delete alvo.est.marcaFantasma;
+        alvo.ponerEstado('aturdido', h.paralisa ?? 0.8);
+        alvo.ponerEstado('paralizado', 2.5, {});
+        alvo.texto('PARALYZED!', '#e9d5ff');
+        luta.emit({ t: 'paralisiaFantasma', b: alvo, l });
+        luta.hitstop(70);
+      } else { alvo.est.marcaFantasma = { n, max, hasta: luta.t + 4 }; luta.emit({ t: 'marcaFantasma', b: alvo, n }); }
+    });
+  },
+
+  // ---------------------------------------------------------------- Shadow Sneak (Gengar): só com alguém dormindo; some e aparece nas costas
+  // dele, e o próximo golpe sai mais forte
+  teleSono(l, h) {
+    const luta = this.luta, b = dormindoPerto(luta, l, h.alcance ?? 340);
+    if (!b) { if (l.humano) l.avisar('teleSono', () => l.texto('TARGET MUST BE ASLEEP', '#c4b5fd')); return false; }
+    const x0 = l.x, y0 = l.y, costas = (b.angulo ?? 0) + Math.PI, p = fijarCampo(b.x + Math.cos(costas) * 26, b.y + Math.sin(costas) * 16);
+    l.cortarAccion();
+    l.x = p.x; l.y = p.y; l.vx = l.vy = 0; l.angulo = Math.atan2(b.y - l.y, b.x - l.x);
+    l.ponerEstado('invul', 0.25);
+    l.ponerEstado('emboscada', h.dur ?? 1.6, { f: h.bonus ?? 1.5 });
+    l.texto('BEHIND YOU', '#c4b5fd');
+    luta.emit({ t: 'passoSombra', l, x0, y0, x1: p.x, y1: p.y });
+  },
+
+  // ---------------------------------------------------------------- Phantom Force (ult do Gengar): mergulha na própria sombra e anda
+  // submerso; apertando de novo (ou no fim do tempo) sobe com um fantasma gigante atrás e dano em área
+  mergulhoFantasma(l, h, extra) {
+    const luta = this.luta, dur = h.dur ?? 2.4;
+    l.animar('Hop', 0.3);
+    l.cortarAccion();
+    l.ponerEstado('vuelo', dur + 0.2, { oculto: true, rapidez: h.rapidez ?? 1.7, modo: 'fantasma' });
+    luta.emit({ t: 'mergulhoFantasma', l });
+    let t = 0, solto = false, saiu = false;
+    const subir = () => {
+      if (saiu) return; saiu = true;
+      delete l.est.vuelo; l.salto = 0;
+      l.ponerEstado('invul', 0.5);
+      l.accion = { hasta: luta.t + 0.45, bloquea: true, lento: 0 };
+      l.animar('Attack', 0.5);
+      luta.emit({ t: 'fantasmaGigante', l, x: l.x, y: l.y, radio: h.radio ?? 80 });
+      luta.programar(0.22, () => {
+        if (l.ko) return;
+        areaCirculo(luta, l, l.x, l.y, h.radio ?? 80, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, pesado: true, aturde: h.aturde ?? 0.6, empuje: 110 }));
+        luta.emit({ t: 'impactoFantasma', x: l.x, y: l.y, radio: h.radio ?? 80 });
+        luta.emit({ t: 'temblor', f: 0.012 }); luta.hitstop(90);
+      });
+    };
+    luta.add({ tipo: 'vuelo', dueno: l, vivo: true, x: l.x, y: l.y, update: dt => {
+      t += dt;
+      if (l.ko) return false;
+      const pulsa = l.intento?.[extra.slot];
+      if (!pulsa) solto = true;
+      if (t >= dur || (t > 0.45 && pulsa && solto)) { subir(); return false; }
+      return true;
+    } });
+  },
+
+  // ---------------------------------------------------------------- Phantom Feast (ult da Mega Gengar): uma boca de fantasma gigante abre
+  // embaixo do rival, puxa todo mundo perto e morde duas vezes; quem está dormindo leva mais
+  bocaFantasma(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 320) ?? (l.rival && !l.rival.ko ? l.rival : null);
+    const x = r ? r.x : l.ax, y = r ? r.y : l.ay, R = h.radio ?? 90, espera = h.espera ?? 0.55, n = h.golpes ?? 2;
+    l.animar(h.anim ?? 'Charge', 0.7);
+    l.accion = { hasta: luta.t + 0.4, lento: 0.2 };
+    l.texto('PHANTOM FEAST!', '#e9d5ff');
+    luta.emit({ t: 'bocaFantasma', x, y, radio: R, espera, golpes: n });
+    // puxa para o centro enquanto a boca abre
+    luta.programar(espera * 0.4, () => {
+      for (const b of luta.blancos(l)) if (!b.esClon && !b.oculto && dentroElipse(b, x, y, R * 1.25)) arrastar(luta, b, x + (b.x - x) * 0.2, y + (b.y - y) * 0.2, espera * 0.5, 4);
+    });
+    for (let i = 0; i < n; i++) luta.programar(espera + i * 0.4, () => {
+      if (l.ko) return;
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || !dentroElipse(b, x, y, R)) continue;
+        const sono = b.est.dormido ? (h.contraSono ?? 1.5) : 1;
+        atingir(l, b, pacote(h, extra, Math.atan2(b.y - y, b.x - x), { dano: (h.dano / n) * sono, empuje: i === n - 1 ? 140 : 10, aturde: i === n - 1 ? 0.5 : 0.25, pesado: i === n - 1 }));
+      }
+      luta.emit({ t: 'mordidaFantasma', x, y, radio: R, ultima: i === n - 1 });
+      luta.emit({ t: 'temblor', f: 0.01 }); luta.hitstop(70);
+    });
+  },
+});

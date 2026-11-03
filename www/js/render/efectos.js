@@ -58,7 +58,7 @@ export class Efectos {
     for (let i = 0; i < n; i++) this.add({ x: x + (ale() - 0.5) * size, y: y + (ale() - 0.5) * size * 0.4, vx: (ale() - 0.5) * 30, vy: -14 - ale() * 22, drag: 1.4, size: size * (0.6 + ale() * 0.5), grow: size * 1.2, life: 0.7 + ale() * 0.5, color, forma: 'circulo' });
   }
   polvo(x, y, n = 3, size = 4) { this.humo(x, y, n, 'rgba(214,200,160,0.5)', size); }
-  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 }); }
+  anillo(x, y, r0, r1, color = '#ffffff', dur = 0.35, w = 2) { if (this.semAnel) return; this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 }); }
   texto(x, y, txt, color = '#ffffff', op = {}) { this.textos.push({ x, y, txt, color, t: 0, life: op.dur ?? 0.9, vy: -(op.sube ?? 22), tam: op.tam ?? 8 }); }
   numero(x, y, dano, mult) { this.nums.push({ x: x + (ale() - 0.5) * 10, y, dano, mult, t: 0, life: 0.8 }); }
   globo(l, txt, tipo = 'NORMAL') { this.globos = this.globos.filter(b => b.l !== l); this.globos.push({ l, txt, tipo, t: 0, life: 1.1 }); }
@@ -78,6 +78,8 @@ export class Efectos {
   consumir(luta, evs, camara) {
     for (const e of evs) {
       this.hue = hueShiny(e.l ?? e.dueno ?? e.quien);
+      // arcos de choque só em ataque: buff, cura, evolução e começo de skill não ganham anel
+      this.semAnel = SEM_ANEL.has(e.t);
       if (EVENTOS_NOVOS[e.t]) { EVENTOS_NOVOS[e.t](this, e); continue; }
       switch (e.t) {
         case 'texto': this.texto(e.x, e.y, e.txt, e.color, { dur: 0.95 }); break;
@@ -363,6 +365,15 @@ export class Efectos {
           x = nx; y = ny;
         }
       }
+    }
+    // arcos de choque: abrem rápido e desaceleram (ease-out), com miolo claro e um véu da cor por dentro
+    for (const a of this.anillos) {
+      const g = a.hue ? capa(gB, a.hue) : gB;
+      const k = a.t / a.dur, ek = 1 - (1 - k) ** 3, r = Math.max(1, a.r0 + (a.r1 - a.r0) * ek), al = 1 - k;
+      g.beginPath(); g.ellipse(a.x, a.y, r, r * 0.6, 0, 0, 7);
+      g.globalAlpha = al * 0.16; g.fillStyle = a.color; g.fill();
+      g.globalAlpha = al * 0.95; g.strokeStyle = a.color; g.lineWidth = Math.max(1, a.w * (1.8 - k)); g.stroke();
+      g.globalAlpha = al * 0.7; g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.beginPath(); g.ellipse(a.x, a.y, r * 0.93, r * 0.56, 0, 0, 7); g.stroke();
     }
     g.globalAlpha = 1;
     for (const z of this.zonas) {
@@ -1161,7 +1172,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         break;
       }
       case 'tormenta': dibujarTormenta(g, e, t); break;
-      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': case 'salaTruque': case 'orbitaEspadas': case 'onda': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
+      case 'reino': case 'campoFada': case 'delta': case 'sombraPoca': case 'ventoVerde': case 'sombraGemea': case 'filhoteGrudado': case 'salaTruque': case 'orbitaEspadas': case 'onda': case 'chamaRoxa': ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
       case 'arenaRoca': dibujarArenaRoca(g, e, t, false); break;
       case 'espinho': if (e.t < e.aviso) dibujarEspinho(g, e, t); break;
       case 'hueso': {
@@ -1333,6 +1344,7 @@ import { SHINY_HUE } from '../data/shiny.js';
 export const hueShiny = l => (l?.shiny && !l.esClon ? SHINY_HUE[String(l.dex).replace(/s$/, '')] ?? 0 : 0);
 // O filtro de cor é caro se aplicado em cada partícula. Então tudo de um shiny é desenhado numa camada
 // só dele e a camada inteira entra na tela uma vez por quadro, já com a cor girada.
+const SEM_ANEL = new Set(['aquaRing', 'endurecer', 'espejo', 'potenciar', 'recuperar', 'reflejo', 'megaInicio', 'evolucion', 'evoInicio', 'habilidad', 'burbujaRompe', 'cargaExplosion', 'auraFantasma', 'curaAnillo']);
 const capas = new Map();
 export const limparCapas = () => capas.clear();
 export function capa(g, hu) {

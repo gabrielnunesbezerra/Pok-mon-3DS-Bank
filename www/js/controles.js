@@ -1,4 +1,5 @@
 // Quem manda no lutador: teclado e mouse (jogador 1), teclado do jogador 2, controle (gamepad) e toque.
+import { temDormindo } from './engine/formasNovas.js';
 import { ANCHO, ALTO, HUD_ALTO, UI, hex } from './config.js';
 import { marco, rect, texto } from './render/pixel.js';
 import { icono, tono } from './render/iconos.js';
@@ -229,7 +230,8 @@ export class PanelTactil {
     const sobre = id === 'lmb' && l && l.luta && l.luta.t < l.sobrecargaHasta;
     const sinEn = !!h && !esUlti && id !== 'lmb' && l.energia < (h.coste ?? h.energia ?? 0);
     const ultiOk = esUlti ? l?.ultiLista : true;
-    const lista = !sobre && !sinEn && ultiOk && !(cd > 0 && cdMax > 1.2);
+    const semSono = h?.forma === 'teleSono' && l?.luta && !temDormindo(l.luta, l, h.alcance);
+    const lista = !sobre && !sinEn && ultiOk && !semSono && !(cd > 0 && cdMax > 1.2);
     const tipo = h?.tipo ?? 'NORMAL';
     let col = id === 'mega' ? (l?.puedeMega ? '#ffd23c' : '#46d6a0') : hex(TIPOS[tipo] ?? 0xa8a878);
     if (esUlti) col = '#ffcf4a';

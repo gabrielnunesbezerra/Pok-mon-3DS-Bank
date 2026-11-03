@@ -11,7 +11,7 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
+const FORMAS = ['linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
 
 test('o roster tem os 28 Pokémon pedidos', () => {
   assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora']);
@@ -160,6 +160,8 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
         a.energia = 100; a.ulti = 100; a.accion = null; a.dash = null; a.est = {}; a.calor = 0; for (const k in a.cd) a.cd[k] = 0;
         a.x = 380; a.y = 222; b.x = 520; b.y = 222; a.ax = b.x; a.ay = b.y;
         // a ult do Golem só sai rolando
+        // o dash do Gengar só sai com o rival dormindo
+        if (a.kit[slot].forma === 'teleSono') b.ponerEstado('dormido', 2, {});
         if (a.kit[slot].requiereRodar) a.ponerEstado('rodando', 3, { vel: 1.7, dano: 5, empuje: 100, golpes: new Map() });
         if (a.kit[slot].requiereTormenta) l.add({ tipo: 'tormenta', dueno: a, vivo: true, x: a.x, y: a.y, radio: 80, dur: 5, t: 0, update: () => true });
         a.fervor = 60;
@@ -441,7 +443,8 @@ test('o segundo estágio de mesma forma é Power Up e a Mega muda as skills de v
     const antes = JSON.stringify(a.kit);
     a.mega = true; a.kit = a.kitActual();
     const cambian = ['lmb', 'rmb', 'esp', 'q', 'e'].filter(s => JSON.stringify(a.kit[s]) !== JSON.stringify(JSON.parse(antes)[s]));
-    assert.equal(cambian.length, 5, `${p.id}: a Mega deve mexer nas 5 skills`);
+    // Mega Gengar mantém a Hypnosis de propósito
+    assert.equal(cambian.length, p.id === 'gastly' ? 4 : 5, `${p.id}: a Mega deve mexer nas 5 skills`);
     assert.notEqual(a.kit.lmb.nombre, JSON.parse(antes).lmb.nombre, `${p.id}: nome novo na Mega`);
   }
 });
@@ -647,15 +650,26 @@ test('Tyranitar: só na tempestade, a onda de areia corre em linha e volta arras
 });
 
 test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, filhote e gancho da Kangaskhan, cometa do Rayquaza e Darkrai nas costas', () => {
-  // Gengar: a bola deixa poça, o dash pula nela e a língua puxa
+  // Gengar: lambidas marcam e paralisam; o dash só sai com o rival dormindo e aparece nas costas; a ult mergulha e sobe com dano
   let l = nuevaLuta('gastly', 'munchlax', { etapas: [2, 0] }), [a, b] = l.luchadores;
-  a.x = 200; a.y = 222; b.x = 340; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
-  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 1, [null, null]);
-  const poca = l.entidades.find(e => e.tipo === 'sombraPoca');
-  assert.ok(poca, 'ficou uma poça de sombra');
-  a.accion = null; a.ax = poca.x; a.ay = poca.y; assert.equal(l.habilidades.usar(a, 'esp'), true);
-  assert.ok(Math.hypot(a.x - poca.x, a.y - poca.y) < 2, 'pulou na poça');
-  b.x = a.x + 120; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; a.energia = 100;
-  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.6, [null, null]);
-  assert.ok(Math.hypot(b.x - a.x, b.y - a.y) < 50 && b.est.maldito, 'a língua puxou e amaldiçoou');
+  a.x = 200; a.y = 222; b.x = 250; b.y = 222; a.ax = b.x; a.ay = b.y; b.inmortal = true;
+  for (let i = 0; i < 4; i++) { a.cd.lmb = 0; a.accion = null; a.calor = 0; assert.equal(l.habilidades.usar(a, 'lmb'), true); correr(l, 0.15, [null, null]); }
+  assert.ok(b.est.aturdido && b.est.paralizado, 'quatro lambidas paralisam');
+  correr(l, 1.5, [null, null]);
+  a.accion = null; assert.equal(l.habilidades.usar(a, 'esp'), false, 'sem ninguém dormindo o dash não sai');
+  b.x = 330; b.y = 222; a.energia = 100; a.ax = b.x; a.ay = b.y; a.accion = null;
+  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 1, [null, null]);
+  assert.ok(b.est.dormido, 'Hypnosis fez dormir');
+  a.accion = null; assert.equal(l.habilidades.usar(a, 'esp'), true);
+  assert.ok(a.est.emboscada && Math.hypot(a.x - b.x, a.y - b.y) < 40, 'apareceu nas costas');
+  correr(l, 0.5, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; const hb = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true); assert.ok(a.est.vuelo, 'mergulhou');
+  correr(l, 3, [null, null]); assert.ok(!a.est.vuelo && b.hp < hb, 'subiu com dano');
+  // Mega Gengar: duas chamas roxas que seguem e a boca fantasma que morde
+  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.energia = 100; a.cd.rmb = 0; b.est = {}; b.x = a.x + 150; b.y = a.y;
+  assert.equal(l.habilidades.usar(a, 'rmb'), true);
+  assert.equal(l.entidades.filter(e => e.tipo === 'chamaRoxa').length, 2);
+  correr(l, 1, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; b.est = {}; const hm = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 1.6, [null, null]);
+  assert.ok(b.hp < hm, 'a boca mordeu');
 });

@@ -83,11 +83,10 @@ export const MEGA_KITS = {
     e: { nombre: 'Mega Sky Uppercut', forma: 'patada', tipo: 'FAIRY', dano: 8.8, alcance: 150, radio: 34, cadena: 3, aturde: 0.4, blindaje: 0.4 },
   },
   gastly: {
-    lmb: { nombre: 'Mega Night Shade', dano: 4.4, rafaga: 2, cadaRafaga: 0.1, escala: 1.6 },
-    rmb: { nombre: 'Mega Shadow Ball', dano: 12, escala: 2.6, poca: 36, maxPocas: 4 },
-    esp: { nombre: 'Mega Phantom Force', dano: 8, radio: 40 },
-    q: { nombre: 'Mega Curse', dano: 12, alcance: 180, maldicion: { dur: 6, f: 1.25 } },
-    e: { nombre: 'Mega Poltergeist', dano: 22, radio: 54, prende: 1.1 },
+    lmb: { nombre: 'Mega Lick', dano: 5.2, stacks: 3, paralisa: 0.9, alcance: 80 },
+    rmb: { nombre: 'Mega Shadow Ball', forma: 'pesadeloDuplo', entidade: 'chamaRoxa', dano: 9.5, dur: 0.5, coste: 25, cd: 5, anim: 'Charge' },
+    esp: { nombre: 'Mega Shadow Sneak', bonus: 1.7, alcance: 380 },
+    e: { nombre: 'Phantom Feast', forma: 'bocaFantasma', dano: 42, radio: 90, espera: 0.55, golpes: 2, contraSono: 1.5, alcance: 320, anim: 'Charge' },
   },
   zeraora: {
     lmb: { nombre: 'Mega Plasma Fists', dano: 5.6 },

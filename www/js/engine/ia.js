@@ -2,6 +2,7 @@
 // de movimento (distância boa, rodeio, fuga das ameaças, borda) e escolhe skills pela chance de acertar e
 // pelo dano esperado. Também se defende (dash, escudo, espelho) quando vê algo forte vindo.
 // Três níveis: easy, normal, hard. Usa o aleatório com semente, então a luta continua repetível.
+import { temDormindo } from './formasNovas.js';
 import { RADIO, OVALO } from '../config.js';
 import { REGLAS, efectividad } from '../data/regras.js';
 import { difAng } from './util.js';
@@ -37,10 +38,10 @@ const CEREBRO = {
 const SLOTS = ['lmb', 'rmb', 'q', 'esp', 'e'];
 const RAYOS = new Set(['chorro', 'helice', 'cono']);
 const AREAS = new Set(['pulso', 'explosion', 'plantaFeroz', 'caparazon', 'erupcion', 'estallido']);
-const MELES = new Set(['tajo', 'rafaga', 'golpe', 'patada', 'salto']);
+const MELES = new Set(['tajo', 'rafaga', 'golpe', 'patada', 'salto', 'linguada', 'cortesFolha']);
 const BUFFS = new Set(['potenciar', 'crecimiento', 'recuperar', 'descanso', 'arraigo', 'chapoteo', 'curaAnillo', 'torreta']);
 const DEFESAS = new Set(['escudo', 'humo', 'clones', 'espejo', 'caparazon', 'burbuja']);
-const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil']);
+const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil', 'teleSono']);
 
 // alcance da skill para quem só quer saber "dá para usar daqui?"
 // nos níveis fáceis a CPU bate mais fraco e aguenta menos (como o "ventaja" do site); só contra a CPU, nunca online
@@ -56,6 +57,7 @@ export function rangoDe(h) {
     case 'mordidaLanza': return (h.dist ?? 100) + 20;
     case 'tumbaArena': return h.alcance;
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
+    case 'linguada': case 'cortesFolha': return h.alcance + 8;
     case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': return h.alcance;
     case 'ondaToxica': return h.ondas.at(-1);
     case 'overheat': return h.alcance;
@@ -151,6 +153,10 @@ function perfil(h, slot, d) {
     case 'reinoSombras': case 'campoFada': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.8; P.retardo = 0.3; break;
     case 'vinculo': P.tipo = 'buff'; break;
     case 'bolaSombra': case 'filhoteLanca': P.retardo += d / (h.vel ?? 250); break;
+    case 'linguada': P.tipo = 'mele'; P.alcance = h.alcance + 14; break;
+    case 'teleSono': P.tipo = 'mele'; P.alcance = h.alcance ?? 340; P.retardo = 0; break;
+    case 'mergulhoFantasma': P.tipo = 'area'; P.alcance = (h.radio ?? 80) + 30; P.retardo = 0.7; break;
+    case 'bocaFantasma': P.tipo = 'area'; P.alcance = h.alcance ?? 320; P.retardo = h.espera ?? 0.55; break;
     case 'lambida': P.alcance = h.alcance ?? 140; P.ancho = 14; P.retardo = 0.12; break;
     case 'maosSombra': P.tipo = 'area'; P.alcance = (h.radio ?? 40) + 20; P.retardo = h.carga ?? 0.4; break;
     case 'telecinese': case 'pesadeloDuplo': P.tipo = 'area'; P.alcance = h.alcance ?? 200; P.retardo = 0.2; break;
@@ -418,7 +424,7 @@ export class IA {
     const listo = sl => {
       const h = kit[sl];
       // Archaludon: virou ponte, fica ponte até acabar (desfazer não desvia de nada)
-      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'lmb' && yo.def.fervor && yo.fervor > 80) && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
+      return !!h && !h.sinUlti && h.forma !== 'ninguna' && !(h.forma === 'puente' && yo.est.puente) && !(h.requiereRodar && !yo.est.rodando) && !(h.forma === 'teleSono' && !temDormindo(this.luta, yo, h.alcance)) && !(h.requiereTormenta && !this.luta.habilidades.enTormenta(yo)) && !(yo.est.rodando && sl !== 'esp' && sl !== 'e' && !h.usaRodando) && yo.cd[sl] <= 0 && !(sl === 'lmb' && yo.def.fervor && yo.fervor > 80) && !(sl === 'esp' && yo.est.sinDash) && (sl === 'e' ? yo.ultiLista : yo.energia >= (h.coste ?? 0));
     };
     const perfiles = {};
     for (const sl of SLOTS) if (kit[sl]) perfiles[sl] = perfil(kit[sl], sl, d);

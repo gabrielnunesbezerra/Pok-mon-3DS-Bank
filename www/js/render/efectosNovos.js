@@ -221,7 +221,7 @@ Object.assign(EVENTOS_NOVOS, {
     fx.heroes.push({ k: 'emergeSombra', x: e.x1, y: e.y1, t: 0, life: 0.5, poca: e.poca, hue: fx.hue });
     if (e.poca) fx.heroes.push({ k: 'garraSombra', x: e.x1, y: e.y1, ang: 0, t: 0, life: 0.45, hue: fx.hue });
   },
-  lingua(fx, e) { fx.heroes.push({ k: 'lingua', l: e.l, ang: e.ang, alcance: e.alcance, t: 0, life: 0.38, hue: fx.hue }); },
+  lingua(fx, e) { fx.heroes.push({ k: 'lingua', l: e.l, ang: e.ang, alcance: e.alcance, t: 0, life: e.curta ? 0.24 : 0.38, hue: fx.hue }); },
   maoAviso(fx, e) { fx.heroes.push({ k: 'fendaSombra', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.45, hue: fx.hue }); },
   maoGigante(fx, e) { fx.heroes.push({ k: 'maoGigante', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.85, hue: fx.hue }); fumaca(fx, e.x, e.y, 10, ROXO, 90); fx.flash = Math.max(fx.flash, 0.06); fx.flashColor = '#4c1d95'; },
   telecinese(fx, e) { fx.heroes.push({ k: 'aura Psi', l: e.l, b: e.b, t: 0, life: e.dur + 0.3, hue: fx.hue }); },
@@ -395,4 +395,105 @@ Object.assign(ENTIDADES_NOVAS, {
   orbitaEspadas(g, e, t, fx, luta) { const l = e.dueno, n = l?.est.espadasGiram?.n ?? 3, R = l?.est.espadasGiram?.R ?? 36; if (!l || l.ko) return; for (let k = 0; k < n; k++) { const a = (l.luta.t * 5) + (k / n) * Math.PI * 2, x = l.x + Math.cos(a) * R, y = l.y + Math.sin(a) * R * 0.62 - 14; g.save(); g.translate(x, y); g.rotate(a + Math.PI / 2); g.fillStyle = '#93c5fd'; g.beginPath(); g.moveTo(-3, 6); g.lineTo(0, -14); g.lineTo(3, 6); g.fill(); g.fillStyle = '#e0f2fe'; g.fillRect(-0.5, -10, 1, 14); g.restore(); if (Math.random() < 0.3) fx.add({ x, y, vy: -20, size: 2.5, grow: 2, life: 0.3, forma: 'llama', rampa: FOGO_FANTASMA }); } void luta; },
   // onda do Surf: crista de água curva em volta da Lapras, com espuma
   onda(g, e, t, fx) { const l = e.dueno; if (!l || l.ko) return; const al = Math.min(1, e.t * 5, (e.dur - e.t) / 0.4), a = e.ang, ca = Math.cos(a), sa = Math.sin(a); g.globalAlpha = al * 0.5; g.fillStyle = '#1d4ed8'; g.beginPath(); g.ellipse(l.x, l.y, 34, 18, 0, 0, 7); g.fill(); g.globalAlpha = al; for (const [c, k] of [['#2563eb', 1], ['#60a5fa', 0.75], ['#e0f2fe', 0.4]]) { g.strokeStyle = c; g.lineWidth = 6 * k + 1; g.lineCap = 'round'; g.beginPath(); g.ellipse(l.x + ca * 8, l.y + sa * 5 - 6, 30 * k + 6, 18 * k + 6, 0, a - 1.4, a + 1.4); g.stroke(); } g.lineCap = 'butt'; g.globalAlpha = 1; if (Math.random() < 0.7) fx.add({ x: l.x + ca * 28 + (Math.random() - 0.5) * 20, y: l.y + sa * 16 - 8, vx: ca * 60 + (Math.random() - 0.5) * 60, vy: -60, g: 300, size: 2, life: 0.5, forma: 'gota', rampa: PX.RAMPA_AGUA }); },
+});
+
+// ---------------------------------------------------------------- Gengar
+const CHAMA_ROXA = ['#12041f', '#5b21b6', '#a855f7', '#f5d0fe'];
+// fantasma gigante: corpo redondo com espinhos nas costas, olhos vermelhos e o sorriso cheio de dentes
+function gengarGigante(g, x, y, R, al, boca = 1) {
+  g.globalAlpha = al;
+  g.fillStyle = '#2e1065'; g.beginPath(); g.moveTo(x - R, y);
+  for (let i = 0; i <= 6; i++) { const a = Math.PI + (i / 6) * Math.PI, rr = R * (i % 2 ? 1.18 : 0.98); g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.95); }
+  g.lineTo(x + R, y); g.quadraticCurveTo(x + R * 0.9, y + R * 0.7, x, y + R * 0.75); g.quadraticCurveTo(x - R * 0.9, y + R * 0.7, x - R, y); g.fill();
+  g.fillStyle = '#5b21b6'; g.beginPath(); g.ellipse(x, y - R * 0.1, R * 0.82, R * 0.7, 0, 0, 7); g.fill();
+  // orelhas
+  for (const s of [-1, 1]) { g.fillStyle = '#2e1065'; g.beginPath(); g.moveTo(x + s * R * 0.45, y - R * 0.75); g.lineTo(x + s * R * 0.8, y - R * 1.35); g.lineTo(x + s * R * 0.85, y - R * 0.55); g.fill(); }
+  // olhos
+  for (const s of [-1, 1]) { g.fillStyle = '#fecaca'; g.beginPath(); g.moveTo(x + s * R * 0.12, y - R * 0.38); g.lineTo(x + s * R * 0.55, y - R * 0.5); g.lineTo(x + s * R * 0.45, y - R * 0.22); g.fill(); g.fillStyle = '#dc2626'; g.beginPath(); g.arc(x + s * R * 0.36, y - R * 0.36, R * 0.07, 0, 7); g.fill(); }
+  // boca com dentes
+  const bh = R * 0.32 * boca;
+  g.fillStyle = '#1a0010'; g.beginPath(); g.moveTo(x - R * 0.6, y); g.quadraticCurveTo(x, y + bh * 2.2, x + R * 0.6, y); g.quadraticCurveTo(x, y + bh * 0.6, x - R * 0.6, y); g.fill();
+  g.fillStyle = '#ffffff';
+  for (let i = 0; i < 7; i++) { const u = (i + 0.5) / 7, tx = x - R * 0.6 + u * R * 1.2, ty = y + Math.sin(u * Math.PI) * bh * 0.6; g.beginPath(); g.moveTo(tx - R * 0.05, ty); g.lineTo(tx + R * 0.05, ty); g.lineTo(tx, ty + R * 0.09 * boca + 1); g.fill(); }
+  g.globalAlpha = 1;
+}
+Object.assign(ESTILOS_NOVOS, {
+  // Shadow Ball: esfera grande com fumaça girando em volta e rastro roxo
+  sombraBola(g, p, t) {
+    const x = p.x, y = p.y - p.alt, r = 3.2 * (p.escala ?? 1);
+    for (let i = 1; i <= 5; i++) { g.globalAlpha = 0.3 - i * 0.05; PX.disco(g, px(x - Math.cos(p.ang) * i * 6), px(y - Math.sin(p.ang) * i * 4.5), r * (1 - i * 0.12), '#7c3aed'); }
+    g.globalAlpha = 0.25; PX.disco(g, px(x), px(y), r + 5, '#a855f7'); g.globalAlpha = 1;
+    PX.esfera(g, px(x), px(y), r, ['#0b0418', '#3b0764', '#9333ea', '#f0abfc']);
+    g.strokeStyle = '#e9d5ff'; g.lineWidth = 1.2; g.globalAlpha = 0.8;
+    for (let i = 0; i < 2; i++) { const a = t * 9 + i * Math.PI; g.beginPath(); g.ellipse(x, y, r + 2, (r + 2) * 0.45, a * 0.3, a, a + 2.2); g.stroke(); }
+    g.globalAlpha = 1;
+    g.fillStyle = '#ffffff'; g.fillRect(px(x - r * 0.4), px(y - r * 0.45), 2, 2);
+  },
+  // Hypnosis: espiral rosa e roxa girando, com um olho no meio
+  hipnose(g, p, t) {
+    const x = p.x, y = p.y - p.alt, r = 5 * (p.escala ?? 1);
+    for (let i = 3; i >= 1; i--) { const rr = r * i / 3 + Math.sin(t * 10 - i) * 1.2; g.globalAlpha = 0.35 + 0.2 * (3 - i); g.strokeStyle = i % 2 ? '#f0abfc' : '#a855f7'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, rr, rr * 0.8, t * 4 * (i % 2 ? 1 : -1), 0, Math.PI * 1.6); g.stroke(); }
+    g.globalAlpha = 1; g.fillStyle = '#fdf4ff'; g.beginPath(); g.ellipse(x, y, 3, 2, 0, 0, 7); g.fill(); g.fillStyle = '#7e22ce'; g.fillRect(px(x - 1), px(y - 1), 2, 2);
+  },
+});
+Object.assign(EVENTOS_NOVOS, {
+  marcaFantasma(fx, e) { const b = e.b; for (let i = 0; i < 4; i++) fx.add({ x: b.x + entre(-6, 6), y: b.y - b.alto * 0.6, vx: entre(-20, 20), vy: -entre(30, 60), size: 3, grow: 2, life: 0.4, forma: 'llama', rampa: CHAMA_ROXA }); },
+  paralisiaFantasma(fx, e) {
+    const b = e.b; fx.heroes.push({ k: 'garraSombra', x: b.x, y: b.y, t: 0, life: 0.6, hue: fx.hue });
+    fx.chispas(b.x, b.y - b.alto * 0.5, '#e9d5ff', 10, 220); fx.chispas(b.x, b.y - b.alto * 0.5, '#fde047', 6, 160);
+    fx.anillo(b.x, b.y, 4, 34, '#a855f7', 0.35, 2);
+    fx.flash = Math.max(fx.flash, 0.08); fx.flashColor = '#c084fc';
+  },
+  mergulhoFantasma(fx, e) {
+    const l = e.l; fx.heroes.push({ k: 'pocaMergulho', x: l.x, y: l.y, t: 0, life: 0.7, hue: fx.hue });
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * 6.28; fx.add({ x: l.x, y: l.y - 4, vx: Math.cos(a) * entre(40, 110), vy: Math.sin(a) * 30 - entre(60, 140), g: 260, size: 3, grow: 1.5, life: 0.55, forma: 'llama', rampa: CHAMA_ROXA }); }
+  },
+  fantasmaGigante(fx, e) { fx.heroes.push({ k: 'fantasmaGigante', x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.15, hue: fx.hue }); fx.flash = Math.max(fx.flash, 0.1); fx.flashColor = '#1e0b3a'; },
+  impactoFantasma(fx, e) {
+    fx.anillo(e.x, e.y, 6, e.radio * 1.1, '#a855f7', 0.45, 4); fx.anillo(e.x, e.y, 2, e.radio * 0.75, '#f5d0fe', 0.35, 2);
+    for (let i = 0; i < 26; i++) { const a = (i / 26) * 6.28; fx.add({ x: e.x, y: e.y - 4, vx: Math.cos(a) * entre(110, 220), vy: Math.sin(a) * entre(60, 120) - 30, drag: 2.4, size: 4, grow: 2.5, life: 0.6, forma: 'llama', rampa: CHAMA_ROXA }); }
+    fx.punch = Math.max(fx.punch ?? 0, 0.06);
+  },
+  bocaFantasma(fx, e) { fx.heroes.push({ k: 'bocaFantasma', x: e.x, y: e.y, radio: e.radio, espera: e.espera, golpes: e.golpes, t: 0, life: e.espera + e.golpes * 0.4 + 0.35, hue: fx.hue }); },
+  mordidaFantasma(fx, e) {
+    fx.anillo(e.x, e.y, 4, e.radio, e.ultima ? '#f0abfc' : '#a855f7', 0.3, e.ultima ? 4 : 2);
+    for (let i = 0; i < (e.ultima ? 22 : 12); i++) fx.add({ x: e.x + entre(-e.radio, e.radio) * 0.7, y: e.y + entre(-8, 8), vx: entre(-60, 60), vy: -entre(80, 200), g: 200, size: 3.5, grow: 2, life: 0.6, forma: 'llama', rampa: CHAMA_ROXA });
+    fx.flash = Math.max(fx.flash, e.ultima ? 0.16 : 0.08); fx.flashColor = '#f5d0fe'; fx.punch = Math.max(fx.punch ?? 0, e.ultima ? 0.07 : 0.04);
+  },
+});
+Object.assign(HEROES_NOVOS, {
+  // poça de sombra onde ele mergulha: abre e fecha
+  pocaMergulho(g, h, k) { const s = Math.sin(Math.min(1, k * 1.4) * Math.PI); g.globalAlpha = 0.85 * s; g.fillStyle = '#12041f'; g.beginPath(); g.ellipse(h.x, h.y, 24 * s, 9 * s, 0, 0, 7); g.fill(); g.strokeStyle = '#a855f7'; g.lineWidth = 2; g.stroke(); g.globalAlpha = 1; },
+  // o fantasma gigante sobe atrás dele, ri e some
+  fantasmaGigante(g, h, k, t) {
+    const R = h.radio * 0.85, sobe = Math.min(1, t / 0.25), y = h.y - R * 0.9 - 30 * (1 - sobe) ** 2, al = (k < 0.7 ? 0.62 : 0.62 * (1 - (k - 0.7) / 0.3)) * sobe;
+    g.globalAlpha = al * 0.5; g.fillStyle = '#12041f'; g.beginPath(); g.ellipse(h.x, h.y, h.radio, h.radio * 0.6, 0, 0, 7); g.fill();
+    gengarGigante(g, h.x, y, R, al, 0.6 + 0.4 * Math.abs(Math.sin(t * 9)));
+  },
+  // boca fantasma gigante: sombra no chão, olhos acima e as mandíbulas fechando a cada mordida
+  bocaFantasma(g, h, k, t) {
+    const R = h.radio, abre = Math.min(1, t / h.espera), fim = h.life - t < 0.35 ? (h.life - t) / 0.35 : 1;
+    let boca = abre;
+    if (t > h.espera) { const u = ((t - h.espera) % 0.4) / 0.4; boca = u < 0.25 ? 1 - u / 0.25 : Math.min(1, (u - 0.25) / 0.5); }
+    g.globalAlpha = 0.75 * fim; g.fillStyle = '#12041f'; g.beginPath(); g.ellipse(h.x, h.y, R * abre, R * 0.6 * abre * Math.max(0.12, boca), 0, 0, 7); g.fill();
+    g.globalAlpha = fim; g.fillStyle = '#ffffff';
+    for (let i = 0; i < 9; i++) for (const s of [-1, 1]) {
+      const u = (i + 0.5) / 9, a = Math.PI * u, tx = h.x - Math.cos(a) * R * abre * 0.95, ty = h.y + s * Math.sin(a) * R * 0.58 * abre * Math.max(0.12, boca);
+      g.beginPath(); g.moveTo(tx - 4, ty); g.lineTo(tx + 4, ty); g.lineTo(tx, ty - s * 9 * abre); g.fill();
+    }
+    g.strokeStyle = '#a855f7'; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y, R * abre, R * 0.6 * abre * Math.max(0.12, boca), 0, 0, 7); g.stroke();
+    for (const s of [-1, 1]) { const ex = h.x + s * R * 0.35, ey = h.y - R * 0.95 - Math.sin(t * 4) * 3; g.globalAlpha = fim * abre; g.fillStyle = '#fecaca'; g.beginPath(); g.moveTo(ex - s * 10, ey + 4); g.lineTo(ex + s * 14, ey - 6); g.lineTo(ex + s * 8, ey + 8); g.fill(); g.fillStyle = '#dc2626'; g.beginPath(); g.arc(ex + s * 4, ey + 1, 3, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  },
+});
+Object.assign(ENTIDADES_NOVAS, {
+  // chama roxa teleguiada da Mega Gengar
+  chamaRoxa(g, e, t, fx) {
+    const x = e.x, y = e.y - 14, pul = 1 + Math.sin(t * 20 + e.lado) * 0.12;
+    g.globalAlpha = 0.35; PX.disco(g, px(x), px(y), 11 * pul, '#a855f7'); g.globalAlpha = 1;
+    g.fillStyle = '#5b21b6'; g.beginPath(); g.moveTo(x, y - 16 * pul); g.quadraticCurveTo(x + 9, y - 4, x + 6, y + 5); g.quadraticCurveTo(x, y + 8, x - 6, y + 5); g.quadraticCurveTo(x - 9, y - 4, x, y - 16 * pul); g.fill();
+    g.fillStyle = '#c084fc'; g.beginPath(); g.moveTo(x, y - 10 * pul); g.quadraticCurveTo(x + 5, y - 2, x + 3, y + 4); g.quadraticCurveTo(x, y + 5, x - 3, y + 4); g.quadraticCurveTo(x - 5, y - 2, x, y - 10 * pul); g.fill();
+    g.fillStyle = '#fdf4ff'; g.beginPath(); g.ellipse(x, y + 1, 2, 3, 0, 0, 7); g.fill();
+    for (let i = 0; i < 2; i++) fx.add({ x: x + entre(-4, 4), y: y + entre(-4, 6), vx: entre(-25, 25), vy: -entre(20, 50), size: 3.5, grow: 2, life: 0.4, forma: 'llama', rampa: CHAMA_ROXA });
+  },
 });

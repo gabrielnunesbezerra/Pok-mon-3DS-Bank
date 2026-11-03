@@ -1,5 +1,6 @@
 // HUD do combate: painel de cada lutador no alto (retrato, nome, tipos, vida, evolução, energia, ultimate e estados),
 // relógio e rounds no centro, e a faixa de skills embaixo com recarga, custo e nome de cada espaço.
+import { temDormindo } from '../engine/formasNovas.js';
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, FUENTE, hex } from '../config.js';
 import { REGLAS, TIPOS, ESTADOS_TIPO } from '../data/regras.js';
 import { rect, texto, medir } from './pixel.js';
@@ -171,6 +172,7 @@ export class Hud {
       if (sobre) { st = 'OVRLD'; cs = '#ff5a2a'; }
       else if (cd > 0) { st = cd >= 1 ? `${Math.ceil(cd)}s` : 'HEAT'; cs = '#ff9d2e'; }
       else if (l.energia < (h.coste ?? 0)) { st = 'NO EN'; cs = '#9aa0b4'; }
+      else if (h.forma === 'teleSono' && l.luta && !temDormindo(l.luta, l, h.alcance)) { st = 'SLEEP'; cs = '#a78bfa'; }
       else { st = 'READY'; cs = '#3ccf4e'; }
       if (cd > 0 && h.cd) rect(g, x + 3, y + 1, Math.round((w - 4) * cd / h.cd), 21, 'rgba(0,0,0,0.45)');
       if (slot === 'lmb') {
