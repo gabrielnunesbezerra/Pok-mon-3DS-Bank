@@ -55,6 +55,7 @@ export const REGLAS = {
  "giroCarga": 8,
  "escalaPorEtapa": 0.12,
  "escalaMega": 0.06,
+ "danoMega": 0.85,
  "danoGlobal": 1.3,
  "basicosNeutros": true,
  "estadoGolpes": 3,

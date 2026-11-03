@@ -300,6 +300,8 @@ export class Lutador {
       if (fuente?.est.furia) d *= fuente.est.furia.mult;
       if (fuente?.est.potencia?.mult) d *= 1 + fuente.est.potencia.mult;
       if (fuente?.est.quemado) d *= ESTADOS_TIPO.FIRE.dano;
+      // Megas batem um pouco menos (estavam dando dano demais)
+      if (fuente?.mega && fuente !== this) d *= REGLAS.danoMega ?? 0.85;
       if (fuente?.est.emboscada && g.slot) { d *= fuente.est.emboscada.f; delete fuente.est.emboscada; }
       if (this.est.defBaja) d *= 1.2;
       // maldição (Gengar), pesadelo (Darkrai) e Hex: dano a mais

@@ -969,7 +969,7 @@ Object.assign(ENTIDADES_NOVAS, {
 Object.assign(HEROES_NOVOS, {
   // o fantasma gigante sobe de dentro do chão: só aparece a parte acima da fenda, ri e afunda de novo
   fantasmaGigante(g, h, k, t) {
-    const R = h.radio * 0.85, sobe = 1 - (1 - Math.min(1, t / 0.35)) ** 3, desce = k > 0.75 ? (k - 0.75) / 0.25 : 0;
+    const R = h.radio * 0.5, sobe = 1 - (1 - Math.min(1, t / 0.35)) ** 3, desce = k > 0.75 ? (k - 0.75) / 0.25 : 0;
     const base = h.y + 2, y = base + R * 1.9 - (R * 2.8) * sobe + R * 2.2 * desce * desce, al = 0.7 * (1 - desce * 0.6);
     g.globalAlpha = 0.85; g.fillStyle = '#0b0418'; g.beginPath(); g.ellipse(h.x, base, R * 1.15 * Math.min(1, t / 0.12), R * 0.38 * Math.min(1, t / 0.12), 0, 0, 7); g.fill();
     g.strokeStyle = '#7c3aed'; g.lineWidth = 3; g.stroke(); g.globalAlpha = 1;

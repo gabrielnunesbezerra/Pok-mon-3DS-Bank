@@ -1805,7 +1805,7 @@ export class Habilidades {
           luta.emit({ t: 'temblor', f: 0.008 });
           const n = h.gotas ?? 9;
           for (let i = 0; i < n; i++) {
-            const a = (i / n) * Math.PI * 2 + aleatorio() * 0.5, rr = (h.areaMin ?? 20) + aleatorio() * (h.area ?? 85);
+            const a = (i / n) * Math.PI * 2 + aleatorio() * 0.5, rr = i < 2 ? i * 12 : (h.areaMin ?? 20) + aleatorio() * (h.area ?? 85); // as primeiras caem em cima do alvo
             const p = fijarCampo(alvo.x + Math.cos(a) * rr, alvo.y + Math.sin(a) * rr * 0.62);
             this.lanzarBomba(l, h, mid.x, mid.y, altura, p, 0.4 + aleatorio() * 0.15, 20, () => {
               areaCirculo(luta, l, p.x, p.y, h.radio, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 10 }));

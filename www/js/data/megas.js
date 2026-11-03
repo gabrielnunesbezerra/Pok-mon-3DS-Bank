@@ -6,7 +6,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Mega Sludge Bomb', rebote: true, dano: 13, radio: 38, charco: { radio: 38, dur: 8, ralentiza: 0.4 } },
     esp: { nombre: 'Mega Dive', dano: 8, radio: 46, rapidez: 1.8, charcoEntraSale: { radio: 26, dur: 7, veneno: { dps: 3, dur: 2 } } },
     q: { nombre: 'Mega Venoshock', carga: 0.55, dano: 10, largo: 240, ancho: 20, contraVeneno: 2.2, rastro: { radio: 16, dur: 6 } },
-    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 9, areaMin: 40, area: 150, alto: 110, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
+    e: { nombre: 'Mega Acid Downpour', forma: 'bombaAcida', tipo: 'POISON', dano: 9, radio: 22, gotas: 9, areaMin: 30, area: 95, alto: 110, vuelo: 0.45, lanzar: 0.3, charco: { radio: 24, dur: 7, ralentiza: 0.3 }, veneno: { dps: 4, dur: 3 } },
   },
   houndour: {
     lmb: { nombre: 'Mega Burning Jealousy', rafaga: 2, cadaRafaga: 0.06, abanico: 0.12, dano: 3.4 },
@@ -42,7 +42,7 @@ export const MEGA_KITS = {
   },
   riolu: {
     lmb: { nombre: 'Mega Bone Rush', dano: 5.4, alcance: 70 },
-    rmb: { nombre: 'Mega Aura Sphere', dano: 12.0, rafaga: 2, cadaRafaga: 0.16, escala: 2.4, teledirigido: 3.5, explosion: { radio: 30 } },
+    rmb: { nombre: 'Mega Aura Sphere', dano: 8.5, rafaga: 2, cadaRafaga: 0.16, escala: 2.4, teledirigido: 3.5, explosion: { radio: 30 } },
     esp: { nombre: 'Mega Detect', dano: 7.2, dist: 165 },
     q: { nombre: 'Mega Drain Punch', dano: 17.6, golpes: 9, dur: 1, alcance: 60 },
     e: { nombre: 'Mega Bonemerang', forma: 'hueso', tipo: 'FIGHTING', dano: 27.2, vel: 340, dur: 3, rebotes: 4, aturde: 0.6 },
@@ -51,12 +51,12 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Psyshock', dano: 2.6, rafaga: 4, cadaRafaga: 0.06, abanico: 0.07, escala: 1.6, teledirigido: 1.2 },
     rmb: { nombre: 'Mega Psycho Cut', dano: 12.8, escala: 2, radio: 8, explosion: { radio: 34 }, confunde: 0.8 },
     esp: { nombre: 'Mega Psycho Shift', dist: 165, cd: 6, dano: 4.8, radio: 40 },
-    q: { nombre: 'Mega Future Sight', n: 3, area: 46, cada: 0.22, dano: 8.8 },
+    q: { nombre: 'Mega Future Sight', n: 3, area: 46, cada: 0.22, dano: 6.2 },
     e: { nombre: 'Mega Psychic', forma: 'levitar', tipo: 'PSYCHIC', dano: 26.4, alcance: 260, golpes: 3, aturde: 0.5 },
   },
   tynamo: {
     lmb: { nombre: 'Mega Thunder Punch', dano: 5.6, alcance: 66, combo: 4, remate: { dano: 4.0, empuje: 150, aturde: 0.35 } },
-    rmb: { nombre: 'Mega Zap Cannon', dano: 12.0, rafaga: 2, cadaRafaga: 0.18, escala: 2.6, explosion: { radio: 40 }, aturde: 0.3 },
+    rmb: { nombre: 'Mega Zap Cannon', dano: 8.5, rafaga: 2, cadaRafaga: 0.18, escala: 2.6, explosion: { radio: 40 }, aturde: 0.3 },
     esp: { nombre: 'Mega Supercell Slam', dano: 7.2, dist: 160, empuje: 70 },
     q: { nombre: 'Mega Electroweb', dano: 7.2, radio: 104, ralentiza: 0.6, ralentizaDur: 2.5 },
     e: { nombre: 'Mega Bind', forma: 'enrollar', tipo: 'ELECTRIC', dano: 24, dist: 180, golpes: 4, aturde: 0.3 },
@@ -92,7 +92,7 @@ export const MEGA_KITS = {
     lmb: { nombre: 'Mega Plasma Fists', dano: 5.8, raioFinal: 6 },
     rmb: { nombre: 'Mega Volt Switch', dano: 11, danoChegada: 9, raioChegada: 48, cadeiaChegada: 7 },
     esp: { nombre: 'Mega Wild Charge', dano: 7, dist: 170, aturde: 0.35 },
-    q: { nombre: 'Mega Discharge', dano: 7.5, saltos: 5, decai: 0.8, aturde: 0.4 },
+    q: { nombre: 'Mega Discharge', dano: 5.5, saltos: 5, decai: 0.8, aturde: 0.4 },
     e: { nombre: 'Thunder Cage', requierePlasma: true, forma: 'jaulaTrovao', dano: 44, radio: 72, dur: 2.2, cada: 0.3, alcance: 300, anim: 'Attack' },
   },
   sceptile: {
