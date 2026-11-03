@@ -10,6 +10,7 @@ import { assinatura, golpeAssinado, aterrissagem, HEROES_ASSINATURA } from './as
 import { ESTILOS_PB } from './tirosPB.js';
 import { golpeChato } from './cortesPB.js';
 import { jatoAgua, bolasFogo } from './raiosPB.js';
+import { ondaSom, fumacaAnel, fogoAnel } from './areaPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
 const ale = () => Math.random();
@@ -138,7 +139,8 @@ export class Efectos {
           if (e.estilo === 'electrico') { this.flash = Math.max(this.flash, 0.2); this.flashColor = '#fff6a8'; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 + ale() * 0.3, r = e.radio * (0.5 + ale() * 0.45); this.add({ x: e.x + Math.cos(a) * r, y: e.y - 6 + Math.sin(a) * r * 0.6, vx: Math.cos(a) * 60, vy: Math.sin(a) * 40, size: 3, life: 0.3, color: '#ffe066', forma: 'chispa' }); } this.rayos.push({ x: e.x, y: e.y - 6, radio: e.radio, t: 0, life: 0.35, semilla: Math.floor(ale() * 999) }); }
           // Fire Spin como no site: um anel de chamas em volta, que sobe e gira devagar
           if (e.estilo === 'fuego') for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 + ale() * 0.1, r = e.radio * 0.85; this.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: -Math.sin(a) * 40, vy: Math.cos(a) * 24 - 20, g: -30, size: 3.2 + ale() * 1.2, grow: 0.8, life: 0.36 + ale() * 0.12, forma: 'llama', rampa: ['#e0400a', '#ff9a1a', '#ffe066', '#fffdf4'] }); }
-          if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); }
+          if (e.estilo === 'tierra' || e.estilo === 'aterrizaje') { this.polvo(e.x, e.y, 6, 8); this.debris(e.x, e.y, 'ROCK', 8); fumacaAnel(this, e.x, e.y, e.radio); }
+          if (e.estilo === 'fuego') fogoAnel(this, e.x, e.y, e.radio);
           if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.08); this.flashColor = '#fff6e0'; }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
@@ -485,18 +487,8 @@ export class Efectos {
       const k = o.t / o.life, c = colorTipo(o.tipo);
       g.globalAlpha = Math.min(1, (1 - k) * 1.6);
       if (o.estilo === 'sonido') {
-        // ondas sonoras: anéis finos e claros que saem da boca e vão abrindo
-        for (let i = 0; i < 4; i++) {
-          const f = Math.min(1, k * 1.25 - i * 0.12); if (f <= 0) continue;
-          const d = o.alcance * f, rx = 3 + f * 5, ry = Math.tan(o.ang2) * d * 0.9 + 3;
-          const cx = o.x + Math.cos(o.ang) * d, cy = o.y + Math.sin(o.ang) * d * 0.9;
-          const ca = Math.cos(o.ang), sa = Math.sin(o.ang);
-          for (let j = 0; j < 22; j++) {
-            if (j % 3 === 2) continue;
-            const u = (j / 21 - 0.5) * 2, px_ = cx + (-sa) * u * ry + ca * (1 - u * u) * rx, py_ = cy + ca * u * ry + sa * (1 - u * u) * rx * 0.9;
-            g.fillStyle = j % 2 ? '#fffdf4' : '#bfe0ff'; g.fillRect(R(px_), R(py_), 2, 2);
-          }
-        }
+        // ondas sonoras: arcos grossos abrindo, no formato do PB (areaPB.js)
+        ondaSom(g, o, k);
       } else for (let i = 0; i < 3; i++) {
         const r = o.alcance * (0.35 + 0.65 * k) * (0.7 + i * 0.15), a2 = o.ang2 * (0.8 + i * 0.1);
         PX.arcoPix(g, o.x, o.y, r, o.ang - a2, o.ang + a2, '#04102c', 4);
