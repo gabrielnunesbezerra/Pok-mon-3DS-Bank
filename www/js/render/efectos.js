@@ -7,6 +7,7 @@ import { sfx } from '../audio.js';
 import * as PX from './pixelfx.js';
 import { PALETAS, BASE, SOMBRA, CLARO, NUCLEO, BRANCO, IMPACTO, FUMACA, pal, deCor, clara, rampa as rampaPal, passo, alfaDegrau } from './paletas.js';
 import { assinatura, golpeAssinado, aterrissagem, HEROES_ASSINATURA } from './assinaturas.js';
+import { ESTILOS_PB } from './tirosPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
 const ale = () => Math.random();
@@ -1757,6 +1758,8 @@ function brilhoTiro(cor) {
 export function dibujarProyectil(g, p, t) {
   const f = ESTILOS_PROJ[p.estilo] ?? ESTILOS_PROJ.bola;
   sombra(g, p.x, p.y, 3 * p.escala);
+  // tiros básicos refeitos no formato do PB (forma, rastro e núcleo próprios; a luz vem por cima, em tirosPB.luzTiros)
+  if (ESTILOS_PB[p.estilo]) return ESTILOS_PB[p.estilo](g, p, t);
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
   // três camadas em todo tiro: brilho em degraus em volta (o de fora mais transparente), cauda pixelada que desce a
   // paleta do tipo (claro perto do tiro, escuro na ponta) e, por cima, o desenho do próprio tiro (o núcleo)

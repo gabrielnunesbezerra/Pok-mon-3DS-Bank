@@ -14,6 +14,7 @@ import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud, corDe } from '../render/hud.js';
 import { UltPB } from '../render/ultPB.js';
+import { luzTiros } from '../render/tirosPB.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
@@ -355,6 +356,7 @@ export class Combate {
     g.imageSmoothingEnabled = false;
     g.drawImage(lienzo, 0, 0, vw, vh, ANCHO / 2 + (x0 - cam.x + sx) * z, cam.centroY + (y0 - cam.y + sy) * z, vw * z, vh * z);
     // luz do estilo PB (estrelas, anéis, carga da ult e quadro de impacto) na resolução do aparelho, por cima do mundo
+    luzTiros(g, luta, cam, sx * z, sy * z, this.t);
     this.pb.dibujar(g, cam, sx * z, sy * z, ANCHO, ALTO);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
