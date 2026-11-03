@@ -8,6 +8,7 @@ import * as PX from './pixelfx.js';
 import { PALETAS, BASE, SOMBRA, CLARO, NUCLEO, BRANCO, IMPACTO, FUMACA, pal, deCor, clara, rampa as rampaPal, passo, alfaDegrau } from './paletas.js';
 import { assinatura, golpeAssinado, aterrissagem, HEROES_ASSINATURA } from './assinaturas.js';
 import { ESTILOS_PB } from './tirosPB.js';
+import { golpeChato } from './cortesPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
 const ale = () => Math.random();
@@ -617,11 +618,14 @@ export class Efectos {
       PX.brilhoDegrau(g, fx, fy, rr * 0.6 * (1 - k * 0.5), IMPACTO, 0.8);
       PX.carimbar(g, PX.estouro(Math.floor(k * 3), Math.max(9, Math.round(rr * 0.4)), IMPACTO[1], pt[1]), fx, fy);
       PX.anilloPix(g, fx, fy, 6 + k * 14, 5 + k * 11, pt[0], 1, 3, Math.floor(a.t * 40));
+    } else if (a.estilo === 'golpe') {
+      // golpes de contato (Tackle, Pound, Lick...): estouro redondo na frente, no formato do PB (cortesPB.js)
+      golpeChato(g, a, k, rr, fx, fy);
     } else {
       // corte liso em meia-lua: varre rápido (ease-out), a ponta de trás recolhe atrás da da frente e some;
       // contorno escuro, corpo na cor do tipo e fio branco por dentro (aço: prateado e mais largo)
       const aco = a.tipo === 'STEEL', span = aco ? 2.45 : 1.9, a0 = a.ang - span / 2, varre = 1 - (1 - Math.min(1, k * 3.2)) ** 3, recolhe = Math.max(0, (k - 0.3) / 0.7) ** 1.6;
-      const ini = a0 + span * recolhe * 0.85, fim = a0 + span * varre, esp = rr * (aco ? 0.42 : a.final ? 0.38 : 0.3) * (1 - recolhe * 0.5), R = rr * (1 + k * 0.08);
+      const ini = a0 + span * recolhe * 0.85, fim = a0 + span * varre, esp = rr * (aco ? 0.46 : a.final ? 0.46 : 0.36) * (1 - recolhe * 0.5), R = rr * (1 + k * 0.08);
       const corB = aco ? '#6f8296' : base, corC = aco ? '#d6e2ee' : claro;
       if (fim - ini > 0.04) {
         // brilho largo e transparente por fora (3ª camada), depois contorno, corpo e fio claro
