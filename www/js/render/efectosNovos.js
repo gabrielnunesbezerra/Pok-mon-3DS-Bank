@@ -1021,10 +1021,9 @@ const SAIDA = {
   DARK: { forma: 'humo', cores: ['rgba(30,20,40,0.7)', 'rgba(60,40,80,0.6)'], g: -20 }, NORMAL: { forma: 'humo', cores: ['rgba(230,225,215,0.6)', 'rgba(200,195,185,0.5)'], g: -10 },
 };
 const BUFF_FORMAS = new Set(['potenciar', 'crecimiento', 'escudo', 'arraigo', 'recuperar', 'curaAnillo', 'descanso', 'espejo', 'chapoteo', 'almas', 'levitar', 'aeronave']);
-// saída do ataque: poucas partículas pequenas na boca; o ataque básico não solta nada (como no Pokémon Arena 2D)
 export function saidaAtaque(fx, e) {
   const l = e.l, h = e.h; if (!l || !h) return;
-  const s = SAIDA[h.tipo] ?? SAIDA.NORMAL, n = e.slot === 'lmb' ? 0 : e.slot === 'e' ? 5 : 3, a0 = l.angulo ?? 0;
+  const s = SAIDA[h.tipo] ?? SAIDA.NORMAL, n = e.slot === 'lmb' ? 3 : e.slot === 'e' ? 10 : 6, a0 = l.angulo ?? 0;
   // buffs e defesas: as partículas sobem em volta do corpo em vez de sair para a frente
   if (BUFF_FORMAS.has(h.forma)) {
     for (let i = 0; i < 12; i++) { const ang = (i / 12) * Math.PI * 2; fx.add({ x: l.x + Math.cos(ang) * 14, y: l.y + Math.sin(ang) * 6, vx: Math.cos(ang) * 10, vy: -entre(50, 110), g: 0, drag: 1, size: entre(2, 3.2), grow: s.forma === 'humo' || s.forma === 'llama' ? 1.2 : 0, life: entre(0.5, 0.8), color: s.cores ? s.cores[i % s.cores.length] : undefined, rampa: s.rampa, forma: s.forma, vr: entre(-6, 6) }); }
@@ -1033,6 +1032,6 @@ export function saidaAtaque(fx, e) {
   const x = l.x + Math.cos(a0) * 12, y = l.y - l.alto * 0.55 + Math.sin(a0) * 6;
   for (let i = 0; i < n; i++) {
     const a = a0 + (ale() - 0.5) * 1.1, v = entre(60, e.slot === 'e' ? 200 : 150);
-    fx.add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - entre(0, 40), g: s.g, drag: 2.2, size: entre(2, s.forma === 'humo' ? 5 : 3.2), grow: s.forma === 'humo' || s.forma === 'llama' ? 0.4 : 0, life: entre(0.35, 0.6), color: s.cores ? s.cores[i % s.cores.length] : undefined, rampa: s.rampa, forma: s.forma, vr: entre(-10, 10) });
+    fx.add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7 - entre(0, 40), g: s.g, drag: 2.2, size: entre(2, s.forma === 'humo' ? 5 : 3.2), grow: s.forma === 'humo' || s.forma === 'llama' ? 1.5 : 0, life: entre(0.35, 0.6), color: s.cores ? s.cores[i % s.cores.length] : undefined, rampa: s.rampa, forma: s.forma, vr: entre(-10, 10) });
   }
 }

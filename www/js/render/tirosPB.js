@@ -1,6 +1,7 @@
-// Tiros básicos em pixel art (no mundo, 1:1): formas grossas com contorno, núcleo claro e rastro de pedaços que desce
-// a paleta do tipo (Water Gun, Water Pulse, Ember, Fire Blast, Razor Leaf, Bullet Seed, Rock Throw, Confusion, Acid).
-// Sem luz por cima: o usuário quer os golpes quase sem brilho.
+// Tiros básicos no formato do PB Battlegrounds. Duas camadas por tiro:
+// - no mundo (pixel art 1:1): formas grossas e grandes com contorno, núcleo branco-quente e rastro de pedaços que desce
+//   a paleta do tipo (Water Gun, Water Pulse, Ember, Fire Blast, Razor Leaf, Bullet Seed, Rock Throw, Confusion, Acid);
+// - na tela (resolução do aparelho): luz suave e aditiva da cor do tipo por cima, núcleo branco e riscos de velocidade.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
 import { pal, IMPACTO, FUMACA } from './paletas.js';
@@ -17,45 +18,24 @@ function rastro(p, n) {
 const fixo = (i, s = 0) => { const v = Math.sin(i * 12.9898 + s * 78.233) * 43758.5453; return v - Math.floor(v); };
 const raioDe = (p, base) => base * Math.min(2.2, p.escala ?? 1);
 
-// bola de fogo como no Pokémon Arena 2D: redonda e limpa, com contorno, borda vermelha, corpo laranja e miolo claro,
-// seguida só de duas chamas pequenas que tremulam
+// bola de fogo pedaçuda: cabeça redonda e pedaços que ficam para trás, sobem e escurecem
 function fogo(g, p, t, base) {
-  const P = pal(p.tipoAtq), R = raioDe(p, base), x = p.x, y = p.y - p.alt, ca = Math.cos(p.ang), sa = Math.sin(p.ang), f = Math.floor(t * 14 + p.x * 0.1) % 2;
-  for (const [d, k, cor] of [[1.9, 0.36, P[3]], [1.15, 0.58, P[2]]]) {
-    const o = (f ? 1 : -1) * R * 0.18 * k, qx = x - ca * R * d - sa * o, qy = y - sa * R * d + ca * o - R * 0.15;
-    PX.disco(g, px(qx), px(qy), R * k + 1, P[4]); PX.disco(g, px(qx), px(qy), R * k, cor);
+  const P = pal(p.tipoAtq), R = raioDe(p, base), x = p.x, y = p.y - p.alt, tr = rastro(p, 9);
+  for (let i = 0; i < tr.length - 1; i++) {
+    const k = 1 - i / (tr.length - 1), [qx, qy] = tr[i], j = fixo(i + Math.floor(p.edad * 10), 3) - 0.5;
+    const r = Math.max(1, R * (0.25 + 0.55 * (1 - k))), sobe = k * R * 1.4;
+    const cor = P[Math.min(4, 1 + Math.floor(k * 3.99))];
+    PX.disco(g, px(qx + j * R * 0.6), px(qy - sobe + j * 2), r + 1, P[4]);
+    PX.disco(g, px(qx + j * R * 0.6), px(qy - sobe + j * 2), r, cor);
   }
+  const ca = Math.cos(p.ang), sa = Math.sin(p.ang), f = Math.floor(t * 16 + p.x * 0.1) % 2;
+  // lobos de chama atrás da cabeça, que alternam e dão o recorte pedaçudo
+  for (let i = 0; i < 3; i++) { const a = p.ang + Math.PI + (i - 1) * 0.7, d = R * (0.7 + ((i + f) % 2) * 0.25); PX.disco(g, px(x + Math.cos(a) * d), px(y + Math.sin(a) * d - R * 0.2), R * 0.62 + 1, P[4]); PX.disco(g, px(x + Math.cos(a) * d), px(y + Math.sin(a) * d - R * 0.2), R * 0.62, P[3]); }
   PX.disco(g, px(x), px(y), R + 1, P[4]);
-  PX.disco(g, px(x), px(y), R, P[3]);
-  PX.disco(g, px(x + ca * R * 0.12), px(y + sa * R * 0.12), R * 0.8, P[2]);
-  PX.disco(g, px(x + ca * R * 0.22), px(y + sa * R * 0.22 - R * 0.08), R * 0.52, P[1]);
-  PX.disco(g, px(x + ca * R * 0.28), px(y + sa * R * 0.28 - R * 0.12), Math.max(0.5, R * 0.26), P[0]);
-}
-
-// raiozinho em zigue-zague de (x0,y0) a (x1,y1), com um degrau no meio
-function zigue(g, x0, y0, x1, y1, cor) {
-  const mx = (x0 + x1) / 2 + (y1 - y0) * 0.3, my = (y0 + y1) / 2 - (x1 - x0) * 0.3;
-  PX.lineaPix(g, x0, y0, mx, my, cor, 1); PX.lineaPix(g, mx, my, x1, y1, cor, 1);
-}
-
-// Shadow Ball como no vídeo: esfera roxa escura com borda lilás, redemoinhos escuros girando dentro e raiozinhos
-// brancos estalando na borda; sem halo
-function bolaSombra(g, p, t, base) {
-  const R = raioDe(p, base), x = px(p.x), y = px(p.y - p.alt), fr = Math.floor(t * 12);
-  PX.disco(g, x, y, R + 1, '#140820');
-  PX.disco(g, x, y, R, '#a68ae0');
-  PX.disco(g, x, y, R - 1.2, '#3a1866');
-  PX.disco(g, x + 0.5, y + 0.5, R * 0.62, '#26104a');
-  for (let i = 0; i < 2; i++) { const a = t * 7 + i * Math.PI; PX.arcoPix(g, x, y, R * 0.55, a, a + 1.6, '#120622', 2, R * 0.55); }
-  g.fillStyle = '#d8c8ff'; g.fillRect(px(x - R * 0.45), px(y - R * 0.5), 2, 1);
-  if (fr % 3 !== 2) for (let i = 0; i < 2; i++) { const a = fixo(fr, i) * Math.PI * 2, r0 = R + 0.5, r1 = R + 3 + fixo(fr, i + 2) * 2; zigue(g, x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a + 0.25) * r1, y + Math.sin(a + 0.25) * r1, '#f4eeff'); }
-}
-
-// bolinha elétrica com contorno e raios em zigue-zague estalando em volta (Thunder Shock, Charge Beam)
-function bolaEletrica(g, p, t, base, n) {
-  const P = pal('ELECTRIC'), R = raioDe(p, base), x = px(p.x), y = px(p.y - p.alt), fr = Math.floor(t * 20);
-  PX.disco(g, x, y, R + 1, P[4]); PX.disco(g, x, y, R, P[2]); PX.disco(g, x - R * 0.2, y - R * 0.2, R * 0.6, P[1]); PX.disco(g, x - R * 0.25, y - R * 0.25, Math.max(0.5, R * 0.28), P[0]);
-  for (let i = 0; i < n; i++) { const a = fixo(fr, i) * Math.PI * 2, r1 = R + 3 + fixo(fr, i + 5) * 3; zigue(g, x + Math.cos(a) * R, y + Math.sin(a) * R, x + Math.cos(a + 0.3) * r1, y + Math.sin(a + 0.3) * r1, i % 2 ? P[0] : P[1]); }
+  PX.disco(g, px(x), px(y), R, P[2]);
+  PX.disco(g, px(x + ca * R * 0.15), px(y + sa * R * 0.15 - R * 0.1), R * 0.72, P[1]);
+  PX.disco(g, px(x + ca * R * 0.3), px(y + sa * R * 0.3 - R * 0.15), R * 0.42, P[0]);
+  PX.disco(g, px(x + ca * R * 0.35), px(y + sa * R * 0.35 - R * 0.2), Math.max(0.5, R * 0.18), IMPACTO[0]);
 }
 
 // cápsula grossa ao longo do ângulo (o jato do Water Gun e as gotas)
@@ -65,19 +45,17 @@ function capsula(g, x, y, ang, L, r, cor) {
 }
 
 export const ESTILOS_PB = {
-  sombraBola(g, p, t) { bolaSombra(g, p, t, 4.4); },
-  rayito(g, p, t) { bolaEletrica(g, p, t, 2.6, 3); },
-  orbeElectrico(g, p, t) { bolaEletrica(g, p, t, 3.8, 4); },
   brasa(g, p, t) { fogo(g, p, t, 3.6); },
   fuego(g, p, t) { fogo(g, p, t, 5.6); },
-  // Water Gun: jato grosso em cápsula com contorno, miolo claro e uma gota solta atrás
+  // Water Gun: jato grosso em cápsula com risco branco e gotas soltas atrás
   chorrito(g, p, t) {
     const P = pal('WATER'), r = raioDe(p, 3), L = r * 4.2, x = p.x, y = p.y - p.alt, ca = Math.cos(p.ang), sa = Math.sin(p.ang);
-    for (let i = 0; i < 1; i++) { const d = L + 4 + i * r * 1.6 + fixo(i, 1) * 3, o = (fixo(i, 2) - 0.5) * r * 1.6 + Math.sin(t * 20 + i) * 0.8; const gx = x - ca * d - sa * o, gy = y - sa * d + ca * o, rr = Math.max(1, r * (0.55 - i * 0.12)); PX.disco(g, px(gx), px(gy), rr + 1, P[4]); PX.disco(g, px(gx), px(gy), rr, i ? P[2] : P[1]); }
+    for (let i = 0; i < 3; i++) { const d = L + 4 + i * r * 1.6 + fixo(i, 1) * 3, o = (fixo(i, 2) - 0.5) * r * 1.6 + Math.sin(t * 20 + i) * 0.8; const gx = x - ca * d - sa * o, gy = y - sa * d + ca * o, rr = Math.max(1, r * (0.55 - i * 0.12)); PX.disco(g, px(gx), px(gy), rr + 1, P[4]); PX.disco(g, px(gx), px(gy), rr, i ? P[2] : P[1]); }
     capsula(g, x, y, p.ang, L, r + 1, P[4]);
     capsula(g, x, y, p.ang, L, r, P[3]);
     capsula(g, x - sa * r * 0.15, y + ca * r * 0.15, p.ang, L * 0.92, r * 0.78, P[2]);
     capsula(g, x - sa * r * 0.3 + ca, y - r * 0.3 + sa, p.ang, L * 0.7, r * 0.42, P[1]);
+    const s = (t * 3 + p.x * 0.01) % 1; PX.lineaPix(g, x - ca * L * (0.1 + s * 0.4) - sa * r * 0.35, y - sa * L * (0.1 + s * 0.4) - r * 0.35, x - ca * L * (0.3 + s * 0.4) - sa * r * 0.35, y - sa * L * (0.3 + s * 0.4) - r * 0.35, IMPACTO[0], 1);
     PX.disco(g, px(x + ca * r * 0.2 - sa * r * 0.3), px(y + sa * r * 0.2 - r * 0.35), Math.max(0.5, r * 0.3), IMPACTO[0]);
   },
   // Water Pulse: esfera de água num anel grosso, com brilhos brancos varrendo em volta
@@ -117,11 +95,10 @@ export const ESTILOS_PB = {
     PX.esfera(g, x, y, r, [P[3], P[2], P[1], IMPACTO[0]], P[4]);
     PX.disco(g, x, y, Math.max(1, r * 0.35), IMPACTO[0]);
   },
-  // Shadow Ball (fantasma) ou Acid / Sludge / Toxic: bolha da cor do tipo com brilho e uma gota pingando atrás
+  // Acid / Sludge: bolha da cor do tipo com brilho e gotas pingando atrás
   bola(g, p, t) {
-    if (p.tipoAtq === 'GHOST') return bolaSombra(g, p, t, 4);
     const P = pal(p.tipoAtq), r = raioDe(p, 3.4), x = px(p.x), y = px(p.y - p.alt), tr = rastro(p, 8);
-    const q = tr.length > 6 && tr[3], rg = Math.max(1, r * 0.35); if (q) { PX.disco(g, px(q[0]), px(q[1] + 3), rg + 1, P[4]); PX.disco(g, px(q[0]), px(q[1] + 3), rg, P[2]); }
+    for (let i = 0; i < tr.length - 1; i += 3) { const k = 1 - i / (tr.length - 1), cai = k * 5; PX.disco(g, px(tr[i][0]), px(tr[i][1] + cai), Math.max(1, r * 0.45 * (1 - k * 0.5)) + 1, P[4]); PX.disco(g, px(tr[i][0]), px(tr[i][1] + cai), Math.max(1, r * 0.45 * (1 - k * 0.5)), P[2]); }
     const sq = Math.sin(t * 24) * 0.1;
     PX.elipsePix(g, x, y, r * (1 + sq) + 1, r * (1 - sq) + 1, P[4]);
     PX.elipsePix(g, x, y, r * (1 + sq), r * (1 - sq), P[3]);
@@ -130,3 +107,50 @@ export const ESTILOS_PB = {
     g.fillStyle = IMPACTO[0]; g.fillRect(px(x - r * 0.45), px(y - r * 0.5), 1, 1);
   },
 };
+
+// ---------------------------------------------------------------- luz na tela
+// quanto cada estilo brilha: [raio do brilho em pixels do mundo, força, núcleo branco?, riscos de velocidade?]
+const LUZ = { brasa: [10, 0.75, 1, 1], fuego: [16, 0.9, 1, 1], chorrito: [10, 0.55, 1, 1], pulsoAgua: [13, 0.6, 1, 0], hoja: [8, 0.4, 0, 1], semilla: [6, 0.3, 0, 1], roca: [0, 0, 0, 1], psico: [12, 0.7, 1, 0], bola: [8, 0.4, 0, 0] };
+// intensidade geral da luz (o usuário pediu menos claridade)
+const FORCA = 0.55;
+const halos = new Map();
+const rgb = h => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+// brilho radial pronto (um canvas por cor), carimbado com 'lighter': barato até no celular
+function halo(cor) {
+  let c = halos.get(cor);
+  if (!c) {
+    c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32), [r, gg, b] = rgb(cor);
+    gr.addColorStop(0, `rgba(${r},${gg},${b},1)`); gr.addColorStop(0.3, `rgba(${r},${gg},${b},0.5)`); gr.addColorStop(0.65, `rgba(${r},${gg},${b},0.14)`); gr.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); halos.set(cor, c);
+  }
+  return c;
+}
+
+export function luzTiros(g, luta, cam, ox, oy, t) {
+  g.save();
+  g.globalCompositeOperation = 'lighter';
+  const z = cam.z;
+  for (const p of luta.entidades) {
+    if (p.tipo !== 'proj' || p.vivo === false) continue;
+    const L = LUZ[p.estilo];
+    if (!L) continue;
+    const q = cam.aPantalla(p.x, p.y - p.alt), x = q.x + ox, y = q.y + oy, P = pal(p.tipoAtq), esc = Math.min(2.2, p.escala ?? 1);
+    const nasce = FORCA * Math.min(1, (p.edad ?? 1) / 0.06), tremor = 1 + 0.08 * Math.sin(t * 40 + p.x);
+    if (L[0]) {
+      const R = L[0] * esc * z * tremor;
+      g.globalAlpha = L[1] * nasce; g.drawImage(halo(P[1]), x - R, y - R, R * 2, R * 2);
+    }
+    if (L[3]) {
+      // riscos de velocidade: linhas finas claras saindo para trás do tiro
+      const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, nx = -uy, ny = ux, comp = Math.min(60, v * 0.09) * z;
+      g.lineWidth = Math.max(1, z * 0.6); g.lineCap = 'round';
+      for (let i = 0; i < 3; i++) {
+        const o = (i - 1) * 3.2 * esc * z + Math.sin(t * 30 + i * 2) * z, c0 = (4 + i * 3) * esc * z, c1 = c0 + comp * (1 - Math.abs(i - 1) * 0.4);
+        g.globalAlpha = (i === 1 ? 0.55 : 0.3) * nasce; g.strokeStyle = i === 1 ? IMPACTO[0] : P[0];
+        g.beginPath(); g.moveTo(x - ux * c0 + nx * o, y - uy * c0 + ny * o); g.lineTo(x - ux * c1 + nx * o, y - uy * c1 + ny * o); g.stroke();
+      }
+    }
+  }
+  g.restore();
+}

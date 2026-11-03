@@ -306,23 +306,25 @@ export class Efectos {
     if (e.estilo === 'rayo') { this.relampagos.push({ x: e.x, y: e.y, t: 0, life: 0.22, semilla: Math.floor(ale() * 999) }); this.rayos.push({ x: e.x, y: e.y - 4, radio: 40, t: 0, life: 0.25, semilla: Math.floor(ale() * 999) }); this.flash = Math.max(this.flash, 0.18); this.flashColor = '#fff6a8'; this.temblor = Math.max(this.temblor, 3); }
     const c = colorTipo(e.tipo), p = pal(e.tipo);
     // a força do golpe vem do dano: a tremida é curta e proporcional (1 a 6 pixels), o golpe forte ganha soquinho de zoom
-    // todo acerto é enxuto como no Pokémon Arena 2D: estalo pequeno, poucos riscos e a matéria do tipo, sem anel nem
-    // estrela (o usuário quer quase nenhum brilho); só o golpe forte ganha um estalo um pouco maior
-    const dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), k = Math.min(1, dano / 16);
+    // ataque básico (LMB): acerto enxuto, com menos riscos e matéria e sem anel nem estrela extra
+    const dano = this.ultimoDano ?? (e.fuerte ? 12 : 4), k = Math.min(1, dano / 16), basico = e.slot === 'lmb';
     this.ultimoDano = null;
     this.temblor = Math.max(this.temblor, 1 + k * 5);
     if (e.fuerte) this.punch = Math.max(this.punch ?? 0, 0.035);
     // direção do golpe: de quem bateu para quem apanhou (a explosão sai para o lado de lá)
     const f = e.fuente, dir = f && f.x !== undefined && (f.x !== e.x || f.y !== e.y) ? Math.atan2(e.y - (f.y - (f.alto ?? 0) * 0.5), e.x - f.x) : ale() * Math.PI * 2;
-    this.add({ x: e.x, y: e.y, size: e.fuerte ? 9 : 6, life: e.fuerte ? 0.28 : 0.22, fija: true, color: p[NUCLEO], brillo: p[CLARO], forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
+    this.add({ x: e.x, y: e.y, size: e.fuerte ? 15 : basico ? 6 : 10, life: e.fuerte ? 0.28 : 0.22, fija: true, color: p[NUCLEO], brillo: p[CLARO], forma: e.tipo === 'WATER' ? 'salpicadura' : 'estouro' });
     // riscos que saem na direção do golpe, rápidos e freando
-    for (let i = 0; i < 3; i++) { const a = dir + entre(-0.55, 0.55), s = entre(380, 640) * (0.7 + k * 0.5); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 7, size: i % 3 ? 1 : 2, life: 0.16, color: i % 2 ? p[NUCLEO] : p[CLARO], forma: 'raya' }); }
-    // um pouco da matéria do tipo jogada para o lado de lá
-    this.rafagaDir(e.x, e.y, e.tipo, 3, 160 + k * 160, dir, 0.7);
+    for (let i = 0; i < (basico ? 3 : 6 + Math.round(k * 8)); i++) { const a = dir + entre(-0.55, 0.55), s = entre(380, 640) * (0.7 + k * 0.5); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, drag: 7, size: i % 3 ? 1 : 2, life: 0.16, color: i % 2 ? p[NUCLEO] : p[CLARO], forma: 'raya' }); }
+    // matéria do tipo jogada para o lado de lá, e um pouco espirrando de volta
+    this.rafagaDir(e.x, e.y, e.tipo, basico ? 3 : 6 + Math.round(k * 10), 160 + k * 160, dir, 0.7);
+    if (!basico) { this.rafagaDir(e.x, e.y, e.tipo, 2 + Math.round(k * 3), 90, dir + Math.PI, 0.9); this.chispas(e.x, e.y, p[NUCLEO], 3 + Math.round(k * 4), 200 + k * 160); this.anillo(e.x, e.y, 2, 12 + k * 14, c, 0.26, 1); }
+    // estrela de golpe: brilho de quatro pontas na cor do tipo, que abre e some rápido (vale para todo acerto)
+    if (!basico) this.heroes.push({ k: 'estrelaGolpe', x: e.x, y: e.y, c, fuerte: !!e.fuerte, a: ale() * 0.8, t: 0, life: e.fuerte ? 0.2 : 0.14, hue: this.hue });
     switch (e.tipo) {
-      case 'WATER': this.gotas(e.x, e.y, e.fuerte ? 6 : 4); break;
-      case 'FIRE': this.brasas(e.x, e.y, e.fuerte ? 5 : 3); break;
-      case 'ROCK': case 'GROUND': this.debris(e.x, e.y, e.tipo, e.fuerte ? 5 : 3); break;
+      case 'WATER': this.gotas(e.x, e.y, e.fuerte ? 12 : 7); break;
+      case 'FIRE': this.brasas(e.x, e.y, e.fuerte ? 10 : 6); break;
+      case 'ROCK': case 'GROUND': this.debris(e.x, e.y, e.tipo, e.fuerte ? 9 : 5); this.polvo(e.x, e.y, 2, 6); break;
       case 'GRASS': case 'BUG': for (let i = 0; i < 5; i++) this.add({ x: e.x, y: e.y, vx: entre(-70, 70), vy: entre(-90, -20), g: 160, size: 2.5, life: 0.7, color: ['#8be04e', '#4caf38', '#2e7d32'][i % 3], forma: 'hoja', vr: 8 }); break;
       case 'ICE': this.debris(e.x, e.y, 'ICE', 7); break;
       case 'POISON': for (let i = 0; i < 6; i++) this.add({ x: e.x, y: e.y, vx: entre(-60, 60), vy: entre(-100, -30), g: 240, size: 2.2, life: 0.6, color: ['#c27ae0', '#9b3fbf'][i % 2], forma: 'circulo' }); break;
@@ -605,9 +607,11 @@ export class Efectos {
         PX.arcoPix(g, a.x, a.y, rad, a0 + 0.15, a1 - 0.15, '#fffdf4', 1, rad * 0.8);
       }
     } else if (a.tipo === 'BUG' || a.tipo === 'DARK') {
+      PX.brilhoDegrau(g, fx, fy, rr * 0.55 * (1 - k * 0.5), pt, 0.7);
       PX.carimbar(g, PX.mordida(k, Math.max(8, Math.round(rr * 0.45))), fx, fy, a.ang);
     } else if (a.tipo === 'FIGHTING' && a.estilo !== 'hueso') {
       // socos (Force Palm, Close Combat): estouro laranja na frente, como no site
+      PX.brilhoDegrau(g, fx, fy, rr * 0.6 * (1 - k * 0.5), IMPACTO, 0.8);
       PX.carimbar(g, PX.estouro(Math.floor(k * 3), Math.max(9, Math.round(rr * 0.4)), IMPACTO[1], pt[1]), fx, fy);
       PX.anilloPix(g, fx, fy, 6 + k * 14, 5 + k * 11, pt[0], 1, 3, Math.floor(a.t * 40));
     } else if (a.estilo === 'golpe') {
@@ -620,7 +624,8 @@ export class Efectos {
       const ini = a0 + span * recolhe * 0.85, fim = a0 + span * varre, esp = rr * (aco ? 0.46 : a.final ? 0.46 : 0.36) * (1 - recolhe * 0.5), R = rr * (1 + k * 0.08);
       const corB = aco ? '#6f8296' : base, corC = aco ? '#d6e2ee' : claro;
       if (fim - ini > 0.04) {
-        // contorno, corpo e fio claro (sem brilho por fora)
+        // brilho largo e transparente por fora (3ª camada), depois contorno, corpo e fio claro
+        g.globalAlpha = alf * 0.3; crescente(g, a.x, a.y, R + esp * 0.5, ini - 0.08, fim + 0.08, esp * 2, 0.8, ['rgba(0,0,0,0)', corB, corB]);
         g.globalAlpha = alf;
         crescente(g, a.x, a.y, R + 1.5, ini - 0.03, fim + 0.03, esp + 3, 0.8, ['rgba(4,16,44,0)', '#04102c', '#04102c']);
         crescente(g, a.x, a.y, R, ini, fim, esp, 0.8, ['rgba(0,0,0,0)', corB, corC, '#fffdf4']);
@@ -1155,13 +1160,10 @@ export function dibujarLaco(g, e, t) {
 export function dibujarTorbellino(g, e, t, fx) {
   const k = Math.min(1, e.t / 0.2, (e.vida - e.t) / 0.25), alto = 56, base = e.radio;
   if (e.estilo === 'agua') {
-    // Whirlpool como no Pokémon Arena 2D: disco de água azul-clara pontilhado de branco e uma espiral de linhas brancas
-    // finas girando por cima
-    g.globalAlpha = 0.45 * k; PX.elipsePix(g, px(e.x), px(e.y), base, base * 0.5, '#4f8fe0');
-    g.globalAlpha = 0.35 * k; PX.elipsePix(g, px(e.x), px(e.y), base * 0.7, base * 0.35, '#9fd2ff'); g.globalAlpha = k;
-    g.fillStyle = '#eaf8ff';
-    for (let i = 0; i < 22; i++) { const a = i * 2.39 - t * 3, r = base * ((i * 0.137) % 0.95); g.fillRect(px(e.x + Math.cos(a) * r), px(e.y + Math.sin(a) * r * 0.5), 1, 1); }
-    for (let i = 0; i < 4; i++) { const gira = -t * 7 + i * (Math.PI / 2); for (let j = 0; j < 3; j++) { const r = base * (0.3 + j * 0.25 + i * 0.04); PX.arcoPix(g, e.x, e.y, r, gira + j * 0.6, gira + j * 0.6 + 1.1, j === 1 ? '#fffdf4' : '#d8f0ff', 1, r * 0.5); } }
+    // Whirlpool Waltz: redemoinho de água azul que gira, com espuma e gotas subindo
+    g.globalAlpha = 0.4 * k; PX.elipsePix(g, px(e.x), px(e.y), base, base * 0.5, '#123f9c'); g.globalAlpha = k;
+    for (let i = 0; i < 4; i++) { const r = base * (1 - i * 0.22), gira = -t * (8 + i * 3) + i; PX.arcoPix(g, e.x, e.y - i * 3, r, gira, gira + 2.8, '#04102c', 5, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 0.05, gira + 2.75, i % 2 ? '#8fd0ff' : '#2f7fe0', 3, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 3.1, gira + 4.4, '#fffdf4', 1, r * 0.5); }
+    for (let i = 0; i < 6; i++) { const a = -t * 9 + i * 1.05, r = base * 0.8; PX.carimbar(g, PX.humo(3, ['#4aa3f0', '#bfe4ff', '#fffdf4']), e.x + Math.cos(a) * r, e.y + Math.sin(a) * r * 0.5 - 2, 0, 1, k); }
     g.globalAlpha = 1;
     if (ale() < 0.5) fx.add({ x: e.x + entre(-base, base) * 0.6, y: e.y, vy: -90 - ale() * 60, g: 260, size: 2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
     return;
@@ -1733,14 +1735,16 @@ function brilhoTiro(cor) {
 export function dibujarProyectil(g, p, t) {
   const f = ESTILOS_PROJ[p.estilo] ?? ESTILOS_PROJ.bola;
   sombra(g, p.x, p.y, 3 * p.escala);
-  // tiros básicos com forma, rastro e núcleo próprios (tirosPB.js)
+  // tiros básicos refeitos no formato do PB (forma, rastro e núcleo próprios; a luz vem por cima, em tirosPB.luzTiros)
   if (ESTILOS_PB[p.estilo]) return ESTILOS_PB[p.estilo](g, p, t);
   if (p.tipoAtq === 'ELECTRIC' && p.escala >= 1.6) { const R0 = (p.radio ?? 4) * p.escala * 0.7 + 4; for (let i = 0; i < 3; i++) { const a = Math.random() * 6.28, a2 = a + 0.6; PX.lineaPix(g, p.x + Math.cos(a) * R0 * 0.6, p.y - p.alt + Math.sin(a) * R0 * 0.6, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, '#fff6a8', 1); PX.lineaPix(g, p.x + Math.cos((a + a2) / 2) * R0 * 1.3, p.y - p.alt + Math.sin((a + a2) / 2) * R0 * 1.3, p.x + Math.cos(a2) * R0, p.y - p.alt + Math.sin(a2) * R0, '#ffe066', 1); } }
-  // duas camadas em todo tiro, sem brilho em volta: cauda pixelada que desce a paleta do tipo (claro perto do tiro,
-  // escuro na ponta) e, por cima, o desenho do próprio tiro (o núcleo)
+  // três camadas em todo tiro: brilho em degraus em volta (o de fora mais transparente), cauda pixelada que desce a
+  // paleta do tipo (claro perto do tiro, escuro na ponta) e, por cima, o desenho do próprio tiro (o núcleo)
   const v = Math.hypot(p.vx, p.vy) || 1, ux = p.vx / v, uy = p.vy / v, pl = pal(p.tipoAtq), R0 = Math.max(1.5, (p.radio ?? 4) * 0.7 * Math.min(2, p.escala));
-  for (let i = 3; i >= 1; i--) {
-    const k = i / 3, r = Math.max(1, R0 * (1 - k * 0.7));
+  const cx = px(p.x), cy = px(p.y - p.alt);
+  PX.brilhoDegrau(g, cx, cy, R0 * 2.6 + (Math.floor(t * 20 + p.x * 0.1) % 2), pl, 0.8);
+  for (let i = 5; i >= 1; i--) {
+    const k = i / 5, r = Math.max(1, R0 * (1 - k * 0.7));
     g.globalAlpha = k < 0.5 ? 0.9 : 0.6;
     PX.disco(g, px(p.x - ux * i * R0 * 1.9), px(p.y - p.alt - uy * i * R0 * 1.45), r, pl[Math.min(4, 1 + Math.floor(k * 3))]);
   }

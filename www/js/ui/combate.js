@@ -13,11 +13,17 @@ import { Camara } from '../render/camara.js';
 import { crearArena, ambienteArena, MARGEM } from '../render/arena.js';
 import { Efectos, dibujarEntidades, dibujarArenaRoca, dibujarEspinho, dibujarBolaGigante, dibujarProyectil, dibujarBomba, dibujarTorbellino, dibujarLaco, colorTipo } from '../render/efectos.js';
 import { Hud, corDe } from '../render/hud.js';
-import { rastroDashPB, ondaFrente, cascaAgua } from '../render/dashPB.js';
+import { UltPB } from '../render/ultPB.js';
+import { luzTiros } from '../render/tirosPB.js';
+import { luzCortes } from '../render/cortesPB.js';
+import { rastroDashPB, ondaFrente, cascaAgua, luzDash } from '../render/dashPB.js';
+import { luzRaios } from '../render/raiosPB.js';
+import { luzMeteoro } from '../render/areaPB.js';
 import { TIPOS } from '../data/regras.js';
 import { hex, OVALO } from '../config.js';
 import * as PX from '../render/pixelfx.js';
 import { pal, BASE, CLARO, NUCLEO } from '../render/paletas.js';
+import { medir } from '../render/pixel.js';
 import { mezcla } from '../render/efectos.js';
 const hexTipo = t => hex(TIPOS[t] ?? 0xa8a878);
 const oscuro = (c, k) => mezcla(c, -k);
@@ -74,6 +80,7 @@ export class Combate {
     for (const def of defs) for (const f of [def, ...(def.evoluciones ?? [])]) for (const dex of [f.dex, f.mega?.dex].filter(Boolean)) for (const d of [dex, dex + 's']) { const m = bank.medidas(d); bank.precargar(d, Object.keys(m.anims ?? {})); }
     this.camara = new Camara();
     this.fx = new Efectos();
+    this.pb = new UltPB();
     this.hud = new Hud(bank);
     this.fondo = crearArena(d.arena);
     this.luta = null;
@@ -243,6 +250,7 @@ export class Combate {
     const luta = this.luta;
     const evs = luta.tomarEventos();
     this.fx.consumir(luta, evs, this.camara);
+    this.pb.consumir(luta, evs);
     for (const e of evs) {
       if (e.t === 'fin') this.armarResultado(e.ganador);
       if (e.t === 'habilidad' && e.l.humano && e.slot === 'e') this.fx.temblor = Math.max(this.fx.temblor, 3);
@@ -251,6 +259,7 @@ export class Combate {
     }
     if (this.rivalFuera && !this.saliendo) { this.saliendo = true; setTimeout(() => this.salirOnline(), 2200); }
     // no hit stop da luta os efeitos congelam junto com os lutadores (o golpe "segura" um instante); só a tremida anda
+    if (!this.pausado) this.pb.update(dt);
     if (!this.pausado) { if (luta.pausaGolpe > 0) this.fx.temblor = Math.max(0, this.fx.temblor - dt * 24); else this.fx.update(dt); }
     const vivos = luta.luchadores.filter(l => !l.ko);
     this.camara.actualizar(dt, vivos.length ? vivos : luta.luchadores, !this.app.tactil.activo);
@@ -340,12 +349,20 @@ export class Combate {
     g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
     g.imageSmoothingEnabled = false;
     g.drawImage(lienzo, 0, 0, vw, vh, ANCHO / 2 + (x0 - cam.x + sx) * z, cam.centroY + (y0 - cam.y + sy) * z, vw * z, vh * z);
+    // luz do estilo PB (estrelas e carga da ult) na resolução do aparelho, por cima do mundo
+    luzTiros(g, luta, cam, sx * z, sy * z, this.t);
+    luzCortes(g, fx, cam, sx * z, sy * z);
+    luzDash(g, luta, cam, sx * z, sy * z);
+    luzRaios(g, luta, cam, sx * z, sy * z, this.t);
+    luzMeteoro(g, luta, cam, sx * z, sy * z);
+    this.pb.dibujar(g, cam, sx * z, sy * z);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
     // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
     if (this.app.ajustes.mira !== false) this.dibujarFijado(g, luta);
     this.barrasMundo(g, luta);
     fx.dibujarTextos(g, FUENTE);
+    for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
     // cego pela Mega Gengar: a tela escurece e só se enxerga em volta de si
     const eu = luta.luchadores[this.lado];
@@ -358,8 +375,6 @@ export class Combate {
     this.dibujarNoche(g, luta);
 
     // HUD
-    // o nome do golpe usado aparece no painel do HUD (e não mais num balão em cima do Pokémon)
-    this.hud.globos = fx.globos;
     this.hud.dibujar(g, luta, this.t);
     const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
     // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
@@ -675,6 +690,15 @@ export class Combate {
     g.globalAlpha = 0.65;
     g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(c.x, c.y, 8, 3.5, 0, 0, 7); g.fill();
     bank.dibujar(g, l.dex, l.moviendo ? 'Walk' : 'Idle', this.luta.t, c.x, c.y, l.escala, { fila: filaDesdeAngulo(l.angulo) });
+    g.globalAlpha = 1;
+  }
+  // nome da skill num balão com a cor do tipo (como no site)
+  dibujarGlobo(g, b) {
+    const l = b.l, k = b.t / b.life;
+    g.globalAlpha = Math.min(1, (1 - k) * 3);
+    const col = hexTipo(b.tipo), w = Math.ceil(medir(g, b.txt, 7, 700)) + 8, x = Math.round(l.x - w / 2), y = Math.round(l.y - l.alto - 30 - k * 5);
+    rect(g, x - 1, y - 1, w + 2, 14, oscuro(col, 0.55)); rect(g, x, y, w, 12, col); rect(g, x, y, w, 1, 'rgba(255,255,255,0.35)');
+    texto(g, b.txt, l.x, y + 6.5, { tam: 7, color: '#ffffff', align: 'center', base: 'middle', peso: 700, sombra: true });
     g.globalAlpha = 1;
   }
   // faixa da ultimate: desliza da esquerda, escurece a cena e some

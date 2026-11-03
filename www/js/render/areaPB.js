@@ -1,4 +1,4 @@
-// Golpes de área em pixel art.
+// Golpes de área no formato do PB Battlegrounds.
 // - ondaSom (no mundo): Supersonic, Sing, Screech e Scary Face como arcos grossos ")))" abrindo, com contorno escuro,
 //   corpo claro e fio branco, mais grossos no meio e finos nas pontas;
 // - fogoAnel: bolas de fogo pedaçudas subindo em volta no Fire Spin.
@@ -31,4 +31,25 @@ export function fogoAnel(fx, x, y, r) {
     const a = (i / 12) * Math.PI * 2 + entre(-0.1, 0.1), rr = r * entre(0.7, 0.95);
     fx.add({ x: x + Math.cos(a) * rr, y: y + Math.sin(a) * rr * 0.62, vx: -Math.sin(a) * 30, vy: Math.cos(a) * 18 - entre(40, 70), drag: 1.4, size: entre(3.5, 5.5), grow: -3, life: entre(0.45, 0.65), color: P[1 + (i % 3)], forma: 'circulo' });
   }
+}
+
+// queda do meteoro (Heavy Slam, Pulverizing Pancake, Sky Uppercut, Thunder Crash), na tela: riscos de velocidade
+// descendo e uma coluna de luz sobre a marca enquanto o lutador cai
+export function luzMeteoro(g, luta, cam, ox, oy) {
+  g.save();
+  g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  const z = cam.z;
+  for (const e of luta.entidades) {
+    if (e.tipo !== 'meteoro' || (e.fase !== 'baja' && e.fase !== 'fija') || e.tipoAtq === 'FLYING') continue;
+    const forte = e.fase === 'baja', p = cam.aPantalla(e.x, e.y), x = p.x + ox, y = p.y + oy, R = e.radio * z, P = pal(e.tipoAtq);
+    const gr = g.createLinearGradient(x, y - 240 * z, x, y);
+    gr.addColorStop(0, 'rgba(255,253,244,0)'); gr.addColorStop(1, forte ? 'rgba(255,253,244,0.3)' : 'rgba(255,253,244,0.1)');
+    g.fillStyle = gr; g.fillRect(x - R * 0.45, y - 240 * z, R * 0.9, 240 * z);
+    for (let i = 0; i < 9; i++) {
+      const v = Math.sin(i * 91.7 + Math.floor(luta.t * 30)) * 0.5, dx = (i / 8 - 0.5) * R * 1.2 + v * 6 * z, comp = (60 + (i % 3) * 30) * z, y1 = y - (20 + (i % 4) * 14) * z;
+      g.strokeStyle = i % 3 ? `rgba(255,253,244,${forte ? 0.45 : 0.2})` : `${P[0]}${forte ? '99' : '44'}`; g.lineWidth = Math.max(1, (i % 2 ? 1.2 : 2) * z);
+      g.beginPath(); g.moveTo(x + dx, y1 - comp); g.lineTo(x + dx, y1); g.stroke();
+    }
+  }
+  g.restore();
 }
