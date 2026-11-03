@@ -140,7 +140,6 @@ export function luzTiros(g, luta, cam, ox, oy, t) {
     if (L[0]) {
       const R = L[0] * esc * z * tremor;
       g.globalAlpha = L[1] * nasce; g.drawImage(halo(P[1]), x - R, y - R, R * 2, R * 2);
-      if (L[2]) { const r2 = R * 0.42; g.globalAlpha = 0.85 * nasce; g.drawImage(halo(IMPACTO[0]), x - r2, y - r2, r2 * 2, r2 * 2); }
     }
     if (L[3]) {
       // riscos de velocidade: linhas finas claras saindo para trás do tiro

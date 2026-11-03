@@ -44,7 +44,7 @@ export function luzCortes(g, fx, cam, ox, oy) {
       // brilho redondo e pequeno no ponto do golpe: quente nos socos, roxo-escuro na mordida, cor do tipo no resto
       const cor = a.tipo === 'DARK' || a.tipo === 'BUG' ? '#b08cff' : a.tipo === 'FIGHTING' ? IMPACTO[2] : P[1];
       const R = rr * (ehChato(a) ? 0.35 : 0.38 + 0.17 * Math.min(1, k * 3)) * z, gr = g.createRadialGradient(sx, sy, 0, sx, sy, R);
-      gr.addColorStop(0, rgba(IMPACTO[0], 0.9 * al)); gr.addColorStop(0.3, rgba(cor, 0.55 * al)); gr.addColorStop(1, rgba(cor, 0));
+      gr.addColorStop(0, rgba(cor, 0.6 * al)); gr.addColorStop(0.3, rgba(cor, 0.4 * al)); gr.addColorStop(1, rgba(cor, 0));
       g.fillStyle = gr; g.beginPath(); g.arc(sx, sy, R, 0, 7); g.fill();
       continue;
     }

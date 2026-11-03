@@ -98,7 +98,6 @@ export function luzRaios(g, luta, cam, ox, oy, t) {
     } else continue;
     const a = cam.aPantalla(x0, y0), b = cam.aPantalla(x1, y1), pul = 1 + 0.06 * Math.sin(t * 36);
     g.strokeStyle = rgba(cor, 0.1); g.lineWidth = W * z * pul; g.beginPath(); g.moveTo(a.x + ox, a.y + oy); g.lineTo(b.x + ox, b.y + oy); g.stroke();
-    g.strokeStyle = rgba(IMPACTO[0], 0.1); g.lineWidth = W * 0.35 * z; g.beginPath(); g.moveTo(a.x + ox, a.y + oy); g.lineTo(b.x + ox, b.y + oy); g.stroke();
   }
   g.restore();
 }

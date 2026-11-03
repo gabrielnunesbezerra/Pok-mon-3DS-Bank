@@ -38,6 +38,8 @@ export const paleta = t => clara(t);
 const BRILLA = new Set(['FIRE', 'ELECTRIC', 'PSYCHIC', 'FAIRY', 'DRAGON', 'GHOST', 'ICE']);
 
 const PX_CONTORNO = '#04102c';
+// cor clara demais (os três canais acima de 215), em #rgb, #rrggbb ou rgba()
+const quaseBranco = c => { const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c ?? ''); let v; if (m) { const h = m[1].length === 3 ? [...m[1]].map(x => x + x).join('') : m[1]; v = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); } else { const r = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c ?? ''); if (!r) return false; v = r.slice(1, 4).map(Number); } return v.every(x => x > 215); };
 const MATCHA = ['#2a4a12', '#5f8f2a', '#a8d060', '#eef8d0'];
 export class Efectos {
   constructor() {
@@ -85,7 +87,8 @@ export class Efectos {
   }
   polvo(x, y, n = 3, size = 4) { this.humo(x, y, n, 'rgba(214,200,160,0.5)', size); }
   anillo(x, y, r0, r1, color = '#fffdf4', dur = 0.35, w = 2) {
-    if (this.semAnel) return;
+    // anéis brancos ou quase brancos saíram de todos os efeitos (o usuário achou exagero); os coloridos ficam
+    if (this.semAnel || quaseBranco(color)) return;
     this.anillos.push({ x, y, r0, r1, color, dur, t: 0, w, hue: this.hue || 0 });
     // onda grande: faíscas e poeira correndo junto com a borda
     if (r1 > 36 && r1 > r0) { const n = Math.min(18, Math.round(r1 / 5)), v = ((r1 - r0) / dur) * 1.6; for (let i = 0; i < n; i++) { const an = (i / n) * Math.PI * 2 + ale() * 0.3; this.add({ x: x + Math.cos(an) * r0, y: y + Math.sin(an) * r0 * 0.6, vx: Math.cos(an) * v, vy: Math.sin(an) * v * 0.6, drag: 4.2, size: i % 3 ? 1.6 : 2.4, life: dur * 1.1, color: i % 3 ? color : '#fffdf4', forma: 'chispa' }); } }
@@ -232,7 +235,7 @@ export class Efectos {
           for (let i = 0; i < 5; i++) this.anillo(e.l.x, e.l.y - e.l.alto * 0.5, 30, 4, (e.mega ? ['#2f7fe0', '#5fd08a', '#8fd8f0', '#a8e070', '#e6f8ff'] : ['#ff6fd8', '#ffd23c', '#8be09a', '#6fd0ff', '#b07aff'])[i], 0.4 + i * 0.05, 2);
           this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, e.mega ? 'WATER' : 'FAIRY', 30, 220, { life: 0.8 });
           if (e.mega) this.rafaga(e.l.x, e.l.y - e.l.alto * 0.5, 'GRASS', 20, 200, { life: 0.8 });
-          this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#fffdf4'; this.flashTela = true; this.temblor = Math.max(this.temblor, 6);
+          this.flash = e.mega ? 0.9 : 0.6; this.flashColor = '#fffdf4'; this.temblor = Math.max(this.temblor, 6);
           break;
         case 'evoInicio': sfx('evoCarga'); this.temblor = Math.max(this.temblor, 2); break;
         case 'megaInicio': {

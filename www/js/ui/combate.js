@@ -349,13 +349,13 @@ export class Combate {
     g.beginPath(); g.rect(0, 0, ANCHO, ALTO); g.clip();
     g.imageSmoothingEnabled = false;
     g.drawImage(lienzo, 0, 0, vw, vh, ANCHO / 2 + (x0 - cam.x + sx) * z, cam.centroY + (y0 - cam.y + sy) * z, vw * z, vh * z);
-    // luz do estilo PB (estrelas, anéis, carga da ult e quadro de impacto) na resolução do aparelho, por cima do mundo
+    // luz do estilo PB (estrelas e carga da ult) na resolução do aparelho, por cima do mundo
     luzTiros(g, luta, cam, sx * z, sy * z, this.t);
     luzCortes(g, fx, cam, sx * z, sy * z);
     luzDash(g, luta, cam, sx * z, sy * z);
     luzRaios(g, luta, cam, sx * z, sy * z, this.t);
     luzMeteoro(g, luta, cam, sx * z, sy * z);
-    this.pb.dibujar(g, cam, sx * z, sy * z, ANCHO, ALTO);
+    this.pb.dibujar(g, cam, sx * z, sy * z);
     // o que é interface no mundo fica na resolução do aparelho, para ler bem: mira, barras, textos e balões
     cam.aplicar(g, sx * z, sy * z, 1 + (fx.punch ?? 0));
     // guia de mira (alvo marcado, linha de mira do toque): o jogador pode desligar nos ajustes
@@ -394,7 +394,7 @@ export class Combate {
       g.restore();
     }
     // clarão da tela em degraus de 25% (forte, médio, fraco), nunca sumindo suave
-    // a tela inteira só pisca na evolução e no K.O.; os golpes não piscam mais a tela (pedido do usuário)
+    // a tela inteira só pisca no K.O. (pedido do usuário)
     if (fx.flash > 0.04 && fx.flashTela) { g.globalAlpha = Math.min(1, Math.ceil(fx.flash * 4) / 4) * 0.85; g.fillStyle = fx.flashColor; g.fillRect(0, 0, ANCHO, ALTO); g.globalAlpha = 1; }
     if (luta.fase === 'fin' && this.resultado) this.dibujarResultado(g);
     if (this.pausado) this.dibujarPausa(g);
