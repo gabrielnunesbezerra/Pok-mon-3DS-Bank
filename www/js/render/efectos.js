@@ -92,6 +92,7 @@ export class Efectos {
         case 'impacto': this.impacto(e); break;
         case 'anillo': this.anillo(e.x, e.y, 4, e.r ?? 22, e.color, 0.35); break;
         case 'explosion':
+          this.heroes.push({ k: 'bloom', x: e.x, y: e.y, r: Math.max(24, e.radio * 1.6), cor: colorTipo(e.tipo), t: 0, life: 0.32, hue: this.hue });
           if (e.estilo === 'meteoro') { this.impactoMeteoro(e); break; }
           if (e.estilo === 'erupcion') { this.impactoErupcion(e); break; }
           this.add({ x: e.x, y: e.y, size: Math.max(12, e.radio * 0.8), life: 0.34, color: '#ffffff', brillo: mezcla(colorTipo(e.tipo), 0.3), forma: 'estouro' });
@@ -102,6 +103,7 @@ export class Efectos {
           break;
         case 'area': this.anillo(e.x, e.y, 2, e.radio, colorTipo(e.tipo), 0.22, 2); break;
         case 'pulso':
+          this.heroes.push({ k: 'bloom', x: e.x, y: e.y, r: Math.max(24, e.radio * 1.3), cor: colorTipo(e.tipo), t: 0, life: 0.28, hue: this.hue });
           if (e.estilo === 'hielo') { for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, s = entre(80, 170); this.add({ x: e.x, y: e.y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 60, g: 260, size: entre(2, 3.4), life: entre(0.4, 0.7), color: ['#ffffff', '#bfe9ff', '#7ad8ff'][i % 3], forma: 'chispa' }); } this.anillo(e.x, e.y, 6, e.radio, '#bfe9ff', 0.45, 3); this.humo(e.x, e.y, 5, 'rgba(220,244,255,0.7)', 9); }
           if (e.estilo === 'tierra') this.anillo(e.x, e.y, 6, e.radio * 0.8, '#b08a50', 0.3, 1); else
           this.anillo(e.x, e.y, 6, e.radio, colorTipo(e.tipo), 0.4, 3);
@@ -114,7 +116,7 @@ export class Efectos {
           if (e.estilo === 'aterrizaje' && e.radio >= 40) { this.heroes.push({ k: 'crater', x: e.x, y: e.y, radio: e.radio, semilla: Math.floor(ale() * 99), t: 0, life: 1.2, hue: this.hue }); this.debris(e.x, e.y, 'ROCK', 10); this.humo(e.x, e.y, 8, 'rgba(214,200,160,0.55)', 12); this.anillo(e.x, e.y, e.radio * 0.6, e.radio * 1.4, '#e8d8b0', 0.45, 2); this.flash = Math.max(this.flash, 0.08); this.flashColor = '#fff6e0'; }
           if (e.estilo === 'tierra') this.grietas.push({ x: e.x, y: e.y, radio: e.radio, t: 0, life: 1.1, semilla: Math.floor(ale() * 1000) });
           break;
-        case 'tajo': this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
+        case 'tajo': this.heroes.push({ k: 'bloom', x: e.l.x + Math.cos(e.ang) * e.alcance * 0.6, y: e.l.y - e.l.alto * 0.3 + Math.sin(e.ang) * e.alcance * 0.4, r: e.alcance * (e.final ? 0.9 : 0.6), cor: colorTipo(e.tipo), t: 0, life: e.final ? 0.22 : 0.15, hue: this.hue }); this.tajo(e.l.x + Math.cos(e.ang) * 6, e.l.y - e.l.alto * 0.5 + Math.sin(e.ang) * 4, e.ang, e.alcance, colorTipo(e.tipo), e.final, e.estilo, e.tipo); if (e.final) this.chispas(e.l.x + Math.cos(e.ang) * e.alcance * 0.8, e.l.y - e.l.alto * 0.4, '#fff', 4, 200); break;
         case 'viento': this.onda(e.x, e.y, e.ang, e.alcance, e.angulo, e.tipo, e.estilo); if (e.estilo === 'sonido') for (let i = 0; i < 8; i++) { const a = e.ang + (ale() - 0.5) * (e.angulo * Math.PI / 180) * 0.8, s = entre(120, 220); this.add({ x: e.x, y: e.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.8 - 20, drag: 1.5, size: entre(5, 7), life: e.alcance / 200, color: ['#ffffff', '#ff9ad8', '#bfe0ff'][i % 3], forma: 'nota' }); } break;
         case 'burbujaRompe': {
           // Barrier estourando: anel que abre e cacos de luz
@@ -1347,7 +1349,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
   // raios e cones por cima do chão
   for (const e of luta.entidades) {
     if (hueShiny(e.dueno) !== hue) continue;
-    if (e.tipo === 'chorro') { dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
+    if (e.tipo === 'chorro') { if (e.activo) brilhoFeixe(g, e, t); dibujarChorro(g, e, t, fx); dibujarPunta(g, e, t); }
     else if (e.tipo === 'cono') dibujarCono(g, e, t, fx);
   }
 }
@@ -1417,6 +1419,17 @@ function dibujarPunta(g, e, t) {
   if (!e.cola) { const s2 = w * (1.1 + 0.25 * Math.sin(t * 50)); for (const [dx, dy] of [[1, 0], [0, 1]]) PX.lineaPix(g, ox - dx * s2, oy - dy * s2 * 0.8, ox + dx * s2, oy + dy * s2 * 0.8, '#ffffff', 2); PX.esfera(g, px(ox), px(oy), Math.max(3, w * 0.45), rampa); }
 }
 
+// raio de energia somando luz por baixo dos jatos (Hydro Pump, Solar Beam, Hyper Beam...)
+function brilhoFeixe(g, e, t) {
+  const b = e.origenVis(), alt = e.dueno.alto * 0.55, ca = Math.cos(e.ang), sa = Math.sin(e.ang), W = (e.h.anchoVisual ?? e.ancho ?? 20) * (1 + 0.08 * Math.sin(t * 40));
+  const x0 = b.x + ca * (e.cola ?? 0), y0 = b.y - alt + sa * (e.cola ?? 0), x1 = b.x + ca * (e.frente ?? e.largo), y1 = b.y - alt + sa * (e.frente ?? e.largo);
+  const cor = colorTipo(e.tipoAtq);
+  g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+  for (const [c, f, a] of [[cor, 1.9, 0.22], [cor, 1.1, 0.4], ['#ffffff', 0.32, 0.85]]) { g.globalAlpha = a; g.strokeStyle = c; g.lineWidth = W * f; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
+  g.drawImage(brilhoTiro(cor), x1 - W * 1.6, y1 - W * 1.6, W * 3.2, W * 3.2);
+  g.drawImage(brilhoTiro(cor), b.x + ca * 10 - W * 1.2, b.y - alt + sa * 10 - W * 1.2, W * 2.4, W * 2.4);
+  g.restore();
+}
 function dibujarChorro(g, e, t, fx) {
   const d = e.dueno, b = e.activo ? e.origenVis() : e.boca(), alt = d.alto * 0.55;
   const col = e.tipoAtq, [c0, c1, c2, c3] = paleta(col), rampa = rampaTipo(col);

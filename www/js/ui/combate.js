@@ -23,6 +23,16 @@ const oscuro = (c, k) => mezcla(c, -k);
 const claro = (c, k) => mezcla(c, k);
 import { filaDesdeAngulo } from '../render/sprites.js';
 const SEM_INCLINAR = new Set(['0003-0001', '0003-0001s']);
+const colorTipoHex = t => '#' + (TIPOS[t] ?? 0xffffff).toString(16).padStart(6, '0');
+function brilhoDash(g, l) {
+  const v = Math.hypot(l.vx + l.empX, l.vy + l.empY) || 1, ux = (l.vx + l.empX) / v, uy = (l.vy + l.empY) / v, L = Math.min(90, 30 + v * 0.12), y = l.y - l.alto * 0.45 - (l.salto ?? 0);
+  const c = colorTipoHex(l.dash.def.tipo), gr = g.createLinearGradient(l.x, y, l.x - ux * L, y - uy * L);
+  gr.addColorStop(0, c + 'cc'); gr.addColorStop(1, c + '00');
+  g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = gr; g.lineCap = 'round';
+  g.lineWidth = l.alto * 0.7; g.globalAlpha = 0.35; g.beginPath(); g.moveTo(l.x, y); g.lineTo(l.x - ux * L, y - uy * L); g.stroke();
+  g.lineWidth = 3; g.globalAlpha = 0.9; for (const o of [-0.3, 0, 0.3]) { g.beginPath(); g.moveTo(l.x - uy * o * l.alto, y + ux * o * l.alto); g.lineTo(l.x - ux * L * 0.8 - uy * o * l.alto, y - uy * L * 0.8 + ux * o * l.alto); g.stroke(); }
+  g.restore();
+}
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
 import { vencer as vencerLiga } from '../liga/liga.js';
@@ -425,6 +435,8 @@ export class Combate {
     const fila = filaDesdeAngulo(l.est.girando ? t * 22 : l.angulo);
     if (l.est.arraigo) this.dibujarRaicesPie(g, l, false);
     // imagens que ficam para trás: em todo dash (mais fortes no Shadow Sneak) e quando está acelerado andando
+    // rastro de luz do dash na cor do tipo
+    if (l.dash && !l.dash.def.teleport) brilhoDash(g, l);
     if (l.dash && !l.dash.def.teleport) { const sombra = l.dash.def.estilo === 'sombra', paso = Math.min(14, l.dash.vel * 0.016); for (let k = 4; k >= 1; k--) bank.dibujar(g, l.dex, l.dash.def.anim ?? 'Walk', t, l.x - Math.cos(l.dash.ang) * k * paso, l.y - Math.sin(l.dash.ang) * k * paso * 0.7 - l.salto, sc, { fila, bucle: true, alpha: (sombra ? 0.32 : 0.24) - k * 0.05 }); }
     else if (l.est.rapido && l.moviendo) { const v = Math.hypot(l.vx, l.vy) || 1; for (let k = 2; k >= 1; k--) bank.dibujar(g, l.dex, 'Walk', t, l.x - (l.vx / v) * k * 8, l.y - (l.vy / v) * k * 6 - l.salto, sc, { fila, bucle: true, alpha: 0.2 - k * 0.06 }); if (Math.random() < 0.3) this.fx.add({ x: l.x + (Math.random() - 0.5) * 14, y: l.y - l.alto * Math.random(), vx: -l.vx * 0.8, vy: -l.vy * 0.8, size: 1, life: 0.15, color: '#bfe9ff', forma: 'raya' }); }
     // vida no sprite: achata e estica ao começar uma ação, estica no ar, achata ao cair e treme ao apanhar

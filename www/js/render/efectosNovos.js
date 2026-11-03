@@ -985,3 +985,8 @@ Object.assign(EVENTOS_NOVOS, {
   lavaQueima(fx, e) { for (let i = 0; i < 4; i++) fx.add({ x: e.x + entre(-8, 8), y: e.y - 2, vy: -entre(40, 90), size: 3, grow: 2, life: 0.4, forma: 'llama', rampa: ['#3b0a0a', '#ea580c', '#fbbf24', '#fff3b0'] }); },
   padNeon(fx, e) { fx.anillo(e.x, e.y, 6, 34, '#22d3ee', 0.35, 3); fx.chispas(e.x, e.y - 6, '#a5f3fc', 8, 200); },
 });
+
+// clarão somando luz nas explosões e áreas
+Object.assign(HEROES_NOVOS, {
+  bloom(g, h, k) { g.save(); g.globalCompositeOperation = 'lighter'; const R = h.r * (0.6 + k * 0.6), gr = g.createRadialGradient(h.x, h.y - 8, 0, h.x, h.y - 8, R); gr.addColorStop(0, `rgba(255,255,255,${0.75 * (1 - k)})`); gr.addColorStop(0.35, h.cor + Math.round(140 * (1 - k)).toString(16).padStart(2, '0')); gr.addColorStop(1, h.cor + '00'); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y - 8, R, 0, 7); g.fill(); g.restore(); },
+});
