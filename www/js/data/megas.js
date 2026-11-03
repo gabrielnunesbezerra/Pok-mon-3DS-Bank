@@ -83,7 +83,7 @@ export const MEGA_KITS = {
     e: { nombre: 'Mega Sky Uppercut', forma: 'patada', tipo: 'FAIRY', dano: 8.8, alcance: 150, radio: 34, cadena: 3, aturde: 0.4, blindaje: 0.4 },
   },
   gastly: {
-    lmb: { nombre: 'Mega Lick', dano: 5.2, stacks: 3, paralisa: 0.9, alcance: 80 },
+    lmb: { nombre: 'Mega Lick', dano: 5.8, stacks: 3, paralisa: 0.9, alcance: 80 },
     rmb: { nombre: 'Mega Shadow Ball', forma: 'pesadeloDuplo', entidade: 'chamaRoxa', dano: 9.5, dur: 0.5, coste: 25, cd: 5, anim: 'Charge' },
     esp: { nombre: 'Mega Shadow Sneak', bonus: 1.7, alcance: 380 },
     e: { nombre: 'Phantom Feast', forma: 'bocaFantasma', dano: 42, radio: 90, espera: 0.55, golpes: 2, contraSono: 1.5, alcance: 320, anim: 'Charge' },
@@ -96,10 +96,10 @@ export const MEGA_KITS = {
     e: { nombre: 'Thunder Cage', forma: 'jaulaTrovao', dano: 44, radio: 72, dur: 2.2, cada: 0.3, alcance: 300, anim: 'Attack' },
   },
   sceptile: {
-    lmb: { nombre: 'Mega Leaf Blade', dano: 6, xGrande: 3, danoX: 12 },
+    lmb: { nombre: 'Mega Leaf Blade', dano: 5.4, xGrande: 2.6, danoX: 8 },
     rmb: { nombre: 'Mega Dragon Pulse', dano: 17, escala: 2.6, vel: 420, explosion: { radio: 62 } },
     esp: { nombre: 'Mega Agility', dano: 6, dist: 160 },
     q: { nombre: 'Mega Leaf Hurricane', dano: 11, alcance: 115 },
-    e: { nombre: 'Tail Missile', forma: 'caudaMissil', tipo: 'GRASS', dano: 44, radio: 72, trava: 0.6, vel: 440, alcance: 420, aturde: 0.6, anim: 'Charge' },
+    e: { nombre: 'Tail Missile', forma: 'caudaMissil', tipo: 'GRASS', dano: 38, radio: 72, trava: 0.6, vel: 440, alcance: 420, aturde: 0.6, anim: 'Charge' },
   },
 };
