@@ -5,7 +5,7 @@ import { hex } from '../config.js';
 import { aleatorio as azar } from '../engine/util.js';
 import { sfx } from '../audio.js';
 import * as PX from './pixelfx.js';
-import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque } from './efectosNovos.js';
+import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 
 const ale = () => Math.random();
 const R = Math.round;
@@ -569,25 +569,23 @@ export class Efectos {
       }
     } else if (a.tipo === 'BUG' || a.tipo === 'DARK') {
       PX.carimbar(g, PX.mordida(k, Math.max(8, Math.round(rr * 0.45))), fx, fy, a.ang);
-    } else if (a.tipo === 'STEEL') {
-      // cauda de aço como no site: meia-lua prateada larga que varre na frente
-      const gro = a.final ? 8 : 6, a0 = a.ang - 1.35 + k * 0.9, a1 = a.ang + 1.1 - k * 0.15;
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#6f8296', gro, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.08, '#d6e2ee', Math.max(2, gro - 3), rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr * 0.97, a0 + 0.3, a1 - 0.2, '#ffffff', 1, rr * 0.8);
     } else if (a.tipo === 'FIGHTING' && a.estilo !== 'hueso') {
       // socos (Force Palm, Close Combat): estouro laranja na frente, como no site
       PX.carimbar(g, PX.estouro(Math.floor(k * 3), Math.max(9, Math.round(rr * 0.4)), '#fff2c0', '#ff8a2a'), fx, fy);
       PX.anilloPix(g, fx, fy, 6 + k * 14, 5 + k * 11, '#ffd0b0', 1, 3, Math.floor(a.t * 40));
     } else {
-      const gro = a.final ? 7 : 5, a0 = a.ang - 0.95 + k * 0.55, a1 = a.ang + 0.95 - k * 0.2;
-      // rastro do golpe: arcos mais finos e transparentes por dentro, dando volume ao corte
-      const al0 = g.globalAlpha; g.globalAlpha = al0 * 0.35; PX.arcoPix(g, a.x, a.y, rr * 0.78, a0 - 0.15, a1 - 0.25, claro, gro + 3, rr * 0.64); PX.arcoPix(g, a.x, a.y, rr * 0.6, a0 - 0.3, a1 - 0.45, base, gro, rr * 0.5); g.globalAlpha = al0;
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, '#04102c', gro + 2, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0, a1, base, gro, rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.1, a1 - 0.1, claro, Math.max(2, gro - 2), rr * 0.82);
-      PX.arcoPix(g, a.x, a.y, rr, a0 + 0.25, a1 - 0.25, brillo, Math.max(1, gro - 4), rr * 0.82);
+      // corte liso em meia-lua: varre rápido (ease-out), a ponta de trás recolhe atrás da da frente e some;
+      // contorno escuro, corpo na cor do tipo e fio branco por dentro (aço: prateado e mais largo)
+      const aco = a.tipo === 'STEEL', span = aco ? 2.45 : 1.9, a0 = a.ang - span / 2, varre = 1 - (1 - Math.min(1, k * 3.2)) ** 3, recolhe = Math.max(0, (k - 0.3) / 0.7) ** 1.6;
+      const ini = a0 + span * recolhe * 0.85, fim = a0 + span * varre, esp = rr * (aco ? 0.42 : a.final ? 0.38 : 0.3) * (1 - recolhe * 0.5), R = rr * (1 + k * 0.08);
+      const corB = aco ? '#6f8296' : base, corC = aco ? '#d6e2ee' : claro;
+      if (fim - ini > 0.04) {
+        g.globalAlpha = Math.min(1, (1 - k) * 1.6);
+        crescente(g, a.x, a.y, R + 1.5, ini - 0.03, fim + 0.03, esp + 3, 0.8, ['rgba(4,16,44,0)', '#04102c', '#04102c']);
+        crescente(g, a.x, a.y, R, ini, fim, esp, 0.8, ['rgba(0,0,0,0)', corB, corC, '#ffffff']);
+        // rastro mais fino e transparente por dentro, dando volume
+        g.globalAlpha *= 0.35; crescente(g, a.x, a.y, R * 0.78, ini - 0.2, fim - 0.25, esp * 0.7, 0.8, ['rgba(0,0,0,0)', corC, '#ffffff']);
+      }
     }
     g.globalAlpha = 1;
   }

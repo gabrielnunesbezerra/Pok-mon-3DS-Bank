@@ -651,7 +651,7 @@ Object.assign(HEROES_NOVOS, {
 // Solar Blade e o X de folhas (estas definições substituem as anteriores de mesmo nome)
 const lerp = (a, b, k) => a + (b - a) * k;
 // meia-lua afinando nas pontas, cheia com degradê (borda clara por fora)
-function crescente(g, x, y, R, a0, a1, esp, sy, cores) {
+export function crescente(g, x, y, R, a0, a1, esp, sy, cores) {
   if (a1 - a0 < 0.01) return;
   g.save(); g.translate(x, y); g.scale(1, sy);
   const n = 28; g.beginPath();
