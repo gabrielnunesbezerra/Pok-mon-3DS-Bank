@@ -19,11 +19,11 @@ export const UI = {
 export const hex = n => '#' + n.toString(16).padStart(6, '0');
 
 // Arena oval do combate (mundo de 960 x 441, elipse centrada em 480,222)
-export const MUNDO = { w: 960, h: 441 };
+export const MUNDO = { w: 1120, h: 500 };
 export const RADIO = 9;
 export const HUD_ALTO = 48;
 // faixa de baixo com as 5 skills (mesma altura do jogo original)
 export const BARRA_Y = 334;
 
 // Arena oval do combate: elipse em coordenadas do mundo
-export const OVALO = { cx: 480, cy: 222, rx: 455, ry: 168 };
+export const OVALO = { cx: 560, cy: 250, rx: 535, ry: 196 };

@@ -3,6 +3,7 @@
 import { RADIO } from '../config.js';
 import { REGLAS, ESTADOS_TIPO, efectividad } from '../data/regras.js';
 import { limitarCampo } from './fisica.js';
+import { resolverLutador } from './obstaculos.js';
 import { clamp, difAng } from './util.js';
 
 // chama no chão deixada pela corrida da Mega Houndoom: queima quem pisa
@@ -611,6 +612,7 @@ export class Lutador {
     this.empX *= k; this.empY *= k;
     const p = limitarCampo(this.x, this.y);
     this.x = p.x; this.y = p.y;
+    resolverLutador(this.luta, this, dt);
     this.moviendo = !this.dash && Math.hypot(mx, my) > 0.1;
     const apuntando = this.accion || t - this.ultimoAtaque < 0.45;
     if (this.accion?.angulo != null) this.angulo = this.accion.angulo;

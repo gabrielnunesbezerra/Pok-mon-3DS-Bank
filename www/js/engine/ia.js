@@ -3,6 +3,7 @@
 // pelo dano esperado. Também se defende (dash, escudo, espelho) quando vê algo forte vindo.
 // Três níveis: easy, normal, hard. Usa o aleatório com semente, então a luta continua repetível.
 import { temDormindo } from './formasNovas.js';
+import { temRio, ladoDoRio, pontePerto } from './obstaculos.js';
 import { RADIO, OVALO } from '../config.js';
 import { REGLAS, efectividad } from '../data/regras.js';
 import { difAng } from './util.js';
@@ -421,6 +422,8 @@ export class IA {
       const k = Math.min(basicoEncima ? 0.6 : 0.35, dtDec / (basicoEncima ? 0.18 : 0.45));
       nx = this.rumbo.x + (nx - this.rumbo.x) * k; ny = this.rumbo.y + (ny - this.rumbo.y) * k;
     }
+    const r = s.r;
+    if (r && temRio(this.luta) && ladoDoRio(this.luta, yo.x) !== ladoDoRio(this.luta, r.x)) { const pt = pontePerto(this.luta, yo.y); if (Math.abs(yo.y - pt.y) > 12 || Math.abs(yo.x - pt.x) > 50) { const dx = pt.x - yo.x, dy = pt.y - yo.y, dd = Math.hypot(dx, dy) || 1; nx = dx / dd; ny = dy / dd; } }
     this.rumbo = { x: nx, y: ny };
     const mm = Math.hypot(nx, ny);
     it.mx = mm > 0.15 ? nx / mm : 0; it.my = mm > 0.15 ? ny / mm : 0;

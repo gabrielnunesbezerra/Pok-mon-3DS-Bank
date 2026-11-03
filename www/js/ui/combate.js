@@ -1,5 +1,6 @@
 // Cena de combate: monta a luta, liga os controles, desenha arena, lutadores, efeitos e HUD,
 // e cuida de pausa e tela de resultado.
+import { pedrasParaDesenhar } from '../render/obstaculos.js';
 import { ANCHO, ALTO, HUD_ALTO, BARRA_Y, UI, FUENTE } from '../config.js';
 
 const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80', '#fbbf24'];
@@ -288,6 +289,7 @@ export class Combate {
     // lutadores, clones e projéteis ordenados pela profundidade
     const cosas = [];
     for (const l of luta.luchadores) cosas.push({ y: l.y, f: () => this.dibujarLutador(g, l) });
+    for (const p of (this.pedras ??= pedrasParaDesenhar(this.datos.arena))) cosas.push({ y: p.y, f: () => p.f(g) });
     for (const e of luta.entidades) {
       if (e.tipo === 'clon') cosas.push({ y: e.y, f: () => this.dibujarClon(g, e) });
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });

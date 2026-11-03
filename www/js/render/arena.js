@@ -1,4 +1,5 @@
 // As 4 arenas ovais desenhadas por código em pixel art (960 x 441): estádio, neon, cratera e ruínas.
+import { chaoObstaculos, animarChao } from './obstaculos.js';
 import { MUNDO, OVALO } from '../config.js';
 
 // a arena é desenhada com uma margem em volta, para a câmera nunca mostrar o fim (borda preta);
@@ -556,6 +557,7 @@ export function crearArena(id) {
   g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
+  chaoObstaculos(g, id);
   // profundidade: o fundo da arena fica mais escuro e enevoado, a frente mais clara
   const prof = g.createLinearGradient(0, -MARGEM.y, 0, MUNDO.h + MARGEM.y);
   const yc = v => (v + MARGEM.y) / (MUNDO.h + MARGEM.y * 2);
@@ -571,6 +573,7 @@ export function crearArena(id) {
 const frac = v => v - Math.floor(v);
 const hash = i => frac(Math.sin(i * 127.1 + 311.7) * 43758.5453);
 export function ambienteArena(g, id, t) {
+  animarChao(g, id, t);
   if (id === 'estadio' || !ESTILOS[id]) {
     // flashes de câmera piscando na torcida
     for (let i = 0; i < 46; i++) {

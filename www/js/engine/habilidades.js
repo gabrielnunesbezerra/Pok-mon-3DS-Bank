@@ -1,6 +1,6 @@
 // As 25 formas de skill do PK confront. Cada Pokémon só escolhe uma forma e entrega os números.
 // usar(l, slot) faz as checagens comuns (recarga, energia, ultimate, calor) e chama a forma.
-import { RADIO } from '../config.js';
+import { RADIO, OVALO } from '../config.js';
 import { REGLAS } from '../data/regras.js';
 import { aleatorio, entre, difAng, clamp, dist, distSegmento } from './util.js';
 import { fijarCampo, fueraCampo, limitarCampo } from './fisica.js';
@@ -655,7 +655,7 @@ export class Habilidades {
       if (l.ko || o.t >= (h.dur ?? 3) || o.rebotes > (h.rebotes ?? 4)) return false;
       o.x += o.vx * dt; o.y += o.vy * dt;
       if (fueraCampo(o.x, o.y, -8)) {
-        const nx = (o.x - 480) / (455 * 455), ny = (o.y - 222) / (168 * 168), nm = Math.hypot(nx, ny) || 1, ux = nx / nm, uy = ny / nm, dot = o.vx * ux + o.vy * uy;
+        const nx = (o.x - OVALO.cx) / (OVALO.rx * OVALO.rx), ny = (o.y - OVALO.cy) / (OVALO.ry * OVALO.ry), nm = Math.hypot(nx, ny) || 1, ux = nx / nm, uy = ny / nm, dot = o.vx * ux + o.vy * uy;
         o.vx -= 2 * dot * ux; o.vy -= 2 * dot * uy; const p = limitarCampo(o.x, o.y, 10); o.x = p.x; o.y = p.y; o.rebotes++;
         luta.emit({ t: 'impacto', x: o.x, y: o.y - 10, tipo: 'FIGHTING', estilo: 'aura' });
       }
@@ -752,7 +752,7 @@ export class Habilidades {
           f.x += f.vx * dt; f.y += f.vy * dt;
           if (fueraCampo(f.x, f.y, -8)) {
             // quica na borda do oval (reflete pela normal da elipse)
-            const o = { cx: 480, cy: 222, rx: 455, ry: 168 }, nx = (f.x - o.cx) / (o.rx * o.rx), ny = (f.y - o.cy) / (o.ry * o.ry), nm = Math.hypot(nx, ny) || 1, ux = nx / nm, uy = ny / nm, dot = f.vx * ux + f.vy * uy;
+            const o = OVALO, nx = (f.x - o.cx) / (o.rx * o.rx), ny = (f.y - o.cy) / (o.ry * o.ry), nm = Math.hypot(nx, ny) || 1, ux = nx / nm, uy = ny / nm, dot = f.vx * ux + f.vy * uy;
             f.vx -= 2 * dot * ux; f.vy -= 2 * dot * uy;
             const p = limitarCampo(f.x, f.y, 10); f.x = p.x; f.y = p.y; f.rebotes++;
             luta.emit({ t: 'impacto', x: f.x, y: f.y - 8, tipo: h.tipo, estilo: 'glitch' });

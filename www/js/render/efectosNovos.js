@@ -979,3 +979,9 @@ Object.assign(HEROES_NOVOS, {
     if (t < 0.4) for (let i = 0; i < 6; i++) { const a = i * 1.05 + t * 3; g.fillStyle = '#4c1d95'; g.fillRect(Math.round(h.x + Math.cos(a) * R), Math.round(base - Math.abs(Math.sin(a)) * 14 * (1 - t / 0.4)), 4, 4); }
   },
 });
+
+// ---------------------------------------------------------------- mecânicas das arenas
+Object.assign(EVENTOS_NOVOS, {
+  lavaQueima(fx, e) { for (let i = 0; i < 4; i++) fx.add({ x: e.x + entre(-8, 8), y: e.y - 2, vy: -entre(40, 90), size: 3, grow: 2, life: 0.4, forma: 'llama', rampa: ['#3b0a0a', '#ea580c', '#fbbf24', '#fff3b0'] }); },
+  padNeon(fx, e) { fx.anillo(e.x, e.y, 6, 34, '#22d3ee', 0.35, 3); fx.chispas(e.x, e.y - 6, '#a5f3fc', 8, 200); },
+});

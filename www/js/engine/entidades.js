@@ -1,5 +1,6 @@
 // Coisas que existem na arena além dos lutadores: projéteis, raios, cones, ondas, pedras caindo,
 // fumaça, poças e clones. Cada uma tem update(dt) (devolve false ao acabar) e dados para o desenho.
+import { bloqueiaTiro } from './obstaculos.js';
 import { RADIO } from '../config.js';
 import { REGLAS } from '../data/regras.js';
 import { aleatorio, entre, difAng, distSegmento, clamp } from './util.js';
@@ -112,7 +113,7 @@ export class Proyectil {
       return this.terminar(false, b);
     }
     // corta contra a borda da arena
-    if (this.recorrido >= this.alcance || fueraCampo(this.x, this.y, 22)) return this.terminar(true);
+    if (this.recorrido >= this.alcance || fueraCampo(this.x, this.y, 22) || bloqueiaTiro(luta, this.x, this.y)) return this.terminar(true);
     return true;
   }
 
