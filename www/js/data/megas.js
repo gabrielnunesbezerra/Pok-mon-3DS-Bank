@@ -95,4 +95,11 @@ export const MEGA_KITS = {
     q: { nombre: 'Mega Discharge', dano: 7, saltos: 4, decai: 0.7 },
     e: { nombre: 'Mega Plasma Overdrive', dano: 34, golpes: 7, cada: 0.12 },
   },
+  sceptile: {
+    lmb: { nombre: 'Mega Leaf Blade', dano: 6, xGrande: 3, danoX: 12 },
+    rmb: { nombre: 'Mega Dragon Pulse', dano: 17, escala: 2.6, vel: 420, explosion: { radio: 62 } },
+    esp: { nombre: 'Mega Agility', dano: 6, dist: 160 },
+    q: { nombre: 'Mega Leaf Hurricane', dano: 11, alcance: 115 },
+    e: { nombre: 'Tail Missile', forma: 'caudaMissil', tipo: 'GRASS', dano: 44, radio: 72, trava: 0.6, vel: 440, alcance: 420, aturde: 0.6, anim: 'Charge' },
+  },
 };

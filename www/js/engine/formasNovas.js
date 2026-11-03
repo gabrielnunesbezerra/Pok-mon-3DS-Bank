@@ -907,3 +907,106 @@ Object.assign(formasNovas, {
     });
   },
 });
+
+
+// ================================================================ Sceptile (Treecko, Grovyle, Sceptile e Mega Sceptile)
+const dAng = (a, b) => ((a - b + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Leaf Hurricane (Sceptile): dash curto em meia-lua cortando com as folhas;
+  // dá para usar duas vezes seguidas (a segunda curva para o outro lado) e cada uma guarda o X gigante no próximo básico
+  cortesFolha(l, h, extra) {
+    const luta = this.luta, slot = extra.slot, segundo = l.folhaHasta > luta.t, alc = h.alcance ?? 95;
+    const r = maisPerto(luta, l, alc + 50);
+    const ang = r ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l);
+    const d = r ? Math.min(alc, Math.hypot(r.x - l.x, r.y - l.y) + 22) : alc;
+    const lado = segundo ? -1 : 1, x0 = l.x, y0 = l.y, x1 = x0 + Math.cos(ang) * d, y1 = y0 + Math.sin(ang) * d;
+    const nx = -Math.sin(ang) * lado, ny = Math.cos(ang) * lado, curva = d * 0.5, dur = h.dur ?? 0.22;
+    const pos = k => fijarCampo(x0 + (x1 - x0) * k + nx * curva * Math.sin(k * Math.PI), y0 + (y1 - y0) * k + ny * curva * Math.sin(k * Math.PI));
+    const golpeados = new Set();
+    let t = 0;
+    l.cortarAccion();
+    l.animar(h.anim ?? 'Attack', dur + 0.1);
+    l.ponerEstado('invul', dur * 0.7);
+    luta.emit({ t: 'furacaoFolha', l, x0, y0, x1, y1, nx, ny, curva, dur });
+    l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0, angulo: ang, update: dt => {
+      t += dt;
+      const p = pos(Math.min(1, t / dur));
+      l.x = p.x; l.y = p.y;
+      for (const b of luta.blancos(l)) {
+        if (golpeados.has(b) || b.oculto || b.est?.vuelo) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, dd = Math.hypot(dx, dy) || 1;
+        if (dd < RADIO * 2 + 14) { golpeados.add(b); atingir(l, b, pacote(h, extra, ang, { empuje: 50, dirX: dx / dd, dirY: dy / dd })); luta.emit({ t: 'corteFolha', x: b.x, y: b.y - b.alto * 0.5, ang }); }
+      }
+    } };
+    l.xListo = true;
+    if (segundo) { l.folhaHasta = 0; l.cd[slot] = h.cd; return; }
+    const ventana = h.ventana ?? 2.2, hasta = luta.t + ventana;
+    l.folhaHasta = hasta; l.cd[slot] = 0.3;
+    luta.programar(ventana, () => { if (l.folhaHasta === hasta) { l.folhaHasta = 0; l.cd[slot] = Math.max(l.cd[slot], h.cd - ventana); } });
+  },
+
+  // ---------------------------------------------------------------- Solar Blade (ult do Grovyle e do Sceptile): junta a luz do sol nas lâminas
+  // e solta um corte gigante em meia-lua na frente
+  laminaSolar(l, h, extra) {
+    const luta = this.luta, carga = h.carga ?? 0.5, R = h.alcance ?? 130, abre = ((h.angulo ?? 170) * Math.PI) / 180;
+    const a = mirar(l, R + 40, 1.2);
+    l.animar('Charge', carga);
+    l.accion = { hasta: luta.t + carga + 0.25, bloquea: true, lento: 0, angulo: a };
+    l.ponerEstado('blindaje', carga, { reduce: 0.5 });
+    luta.emit({ t: 'solarCarga', l, dur: carga });
+    luta.programar(carga, () => {
+      if (l.ko || l.est.aturdido) return;
+      l.animar('Attack', 0.35);
+      const a2 = mirar(l, R + 40, 1.2);
+      l.angulo = a2;
+      luta.emit({ t: 'solarCorte', l, ang: a2, alcance: R, angulo: abre });
+      for (const b of luta.blancos(l)) {
+        if (b.oculto || b.est?.vuelo) continue;
+        const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
+        if (d < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a2)) < abre / 2) atingir(l, b, pacote(h, extra, a2, { empuje: 150, aturde: h.aturde ?? 0.5, pesado: true, dirX: dx / d, dirY: dy / d }));
+      }
+      luta.emit({ t: 'temblor', f: 0.01 }); luta.hitstop(90);
+    });
+  },
+
+  // ---------------------------------------------------------------- Tail Missile (ult da Mega Sceptile): trava a mira em alguém e dispara
+  // a cauda (o pinheiro de pontas vermelhas) como um míssil teleguiado que explode no alvo
+  caudaMissil(l, h, extra) {
+    const luta = this.luta, alc = h.alcance ?? 420, a0 = angApunte(l);
+    let alvo = null, melhor = Infinity;
+    for (const b of luta.blancos(l)) {
+      if (b.esClon || b.oculto || b.ko) continue;
+      const d = Math.hypot(b.x - l.x, b.y - l.y);
+      if (d > alc) continue;
+      const nota = d * (1 + Math.abs(dAng(Math.atan2(b.y - l.y, b.x - l.x), a0)));
+      if (nota < melhor) { melhor = nota; alvo = b; }
+    }
+    if (!alvo) { if (l.humano) l.avisar('caudaMissil', () => l.texto('NO TARGET', '#fca5a5')); return false; }
+    const trava = h.trava ?? 0.6;
+    l.animar('Charge', trava);
+    l.accion = { hasta: luta.t + trava, bloquea: true, lento: 0, angulo: Math.atan2(alvo.y - l.y, alvo.x - l.x) };
+    l.texto('LOCK ON!', '#f87171');
+    luta.emit({ t: 'travaMira', l, b: alvo, dur: trava });
+    luta.programar(trava, () => {
+      if (l.ko) return;
+      const lado = l.x < alvo.x ? -1 : 1;
+      const m = { tipo: 'caudaMissil', dueno: l, vivo: true, x: l.x, y: l.y, alt: 26, ang: Math.atan2(alvo.y - l.y, alvo.x - l.x) + lado * 1.4, vel: 90, t: 0, update: dt => {
+        m.t += dt; m.vel = Math.min(h.vel ?? 440, m.vel + 1000 * dt);
+        if (!alvo.ko && !alvo.oculto) m.ang += Math.max(-7 * dt, Math.min(7 * dt, dAng(Math.atan2(alvo.y - m.y, alvo.x - m.x), m.ang)));
+        m.x += Math.cos(m.ang) * m.vel * dt; m.y += Math.sin(m.ang) * m.vel * dt;
+        m.alt = 26 - Math.min(18, m.t * 30);
+        for (const b of luta.blancos(l)) if (!b.oculto && !b.est?.vuelo && Math.hypot(b.x - m.x, b.y - m.y) < RADIO + 10) { explodir(); return false; }
+        if (m.t > 2.6 || m.x < -40 || m.x > 1400 || m.y < -40 || m.y > 900) { explodir(); return false; }
+        return true;
+      } };
+      const explodir = () => {
+        const R = h.radio ?? 70;
+        areaCirculo(luta, l, m.x, m.y, R, pacote(h, extra, m.ang, { dirX: undefined, dirY: undefined, pesado: true, empuje: 150, aturde: h.aturde ?? 0.5 }));
+        luta.emit({ t: 'explodeMissil', x: m.x, y: m.y, radio: R });
+        luta.emit({ t: 'temblor', f: 0.014 }); luta.hitstop(100);
+      };
+      luta.add(m);
+      luta.emit({ t: 'lancaMissil', l });
+    });
+  },
+});

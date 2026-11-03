@@ -38,7 +38,7 @@ const CEREBRO = {
 const SLOTS = ['lmb', 'rmb', 'q', 'esp', 'e'];
 const RAYOS = new Set(['chorro', 'helice', 'cono']);
 const AREAS = new Set(['pulso', 'explosion', 'plantaFeroz', 'caparazon', 'erupcion', 'estallido']);
-const MELES = new Set(['tajo', 'rafaga', 'golpe', 'patada', 'salto', 'linguada', 'cortesFolha']);
+const MELES = new Set(['tajo', 'rafaga', 'golpe', 'patada', 'salto', 'linguada']);
 const BUFFS = new Set(['potenciar', 'crecimiento', 'recuperar', 'descanso', 'arraigo', 'chapoteo', 'curaAnillo', 'torreta']);
 const DEFESAS = new Set(['escudo', 'humo', 'clones', 'espejo', 'caparazon', 'burbuja']);
 const ATAQUES_ESP = new Set(['patada', 'salto', 'golpe', 'proyectil', 'teleSono']);
@@ -57,7 +57,7 @@ export function rangoDe(h) {
     case 'mordidaLanza': return (h.dist ?? 100) + 20;
     case 'tumbaArena': return h.alcance;
     case 'tajo': case 'golpe': case 'rafaga': return h.alcance + (h.embestida ?? 0) * 0.5;
-    case 'linguada': case 'cortesFolha': return h.alcance + 8;
+    case 'linguada': return h.alcance + 8;
     case 'patada': case 'salto': case 'cortesSuelo': case 'jabLuna': return h.alcance;
     case 'ondaToxica': return h.ondas.at(-1);
     case 'overheat': return h.alcance;
@@ -154,6 +154,9 @@ function perfil(h, slot, d) {
     case 'vinculo': P.tipo = 'buff'; break;
     case 'bolaSombra': case 'filhoteLanca': P.retardo += d / (h.vel ?? 250); break;
     case 'linguada': P.tipo = 'mele'; P.alcance = h.alcance + 14; break;
+    case 'cortesFolha': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) + 30; P.retardo = 0.05; break;
+    case 'laminaSolar': P.tipo = 'mele'; P.alcance = h.alcance ?? 130; P.retardo = h.carga ?? 0.5; break;
+    case 'caudaMissil': P.tipo = 'area'; P.alcance = h.alcance ?? 420; P.retardo = 0.8; break;
     case 'teleSono': P.tipo = 'mele'; P.alcance = h.alcance ?? 340; P.retardo = 0; break;
     case 'mergulhoFantasma': P.tipo = 'area'; P.alcance = (h.radio ?? 80) + 30; P.retardo = 0.7; break;
     case 'bocaFantasma': P.tipo = 'area'; P.alcance = h.alcance ?? 320; P.retardo = h.espera ?? 0.55; break;

@@ -71,7 +71,7 @@ export class Habilidades {
       if (l.humano) l.avisar('ulti', () => l.texto(`ULT ${Math.floor(l.ulti)}%`, '#9aa0b4'));
       return false;
     }
-    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) || (h.forma === 'voltSwitch' && l.voltPos) || (h.forma === 'socoCombo' && l.comboHasta > t) ? 0 : h.coste ?? 0;
+    const coste = slot === 'e' || (h.forma === 'jabLuna' && l.jabHasta > t) || (h.forma === 'voltSwitch' && l.voltPos) || (h.forma === 'socoCombo' && l.comboHasta > t) || (h.forma === 'cortesFolha' && l.folhaHasta > t) ? 0 : h.coste ?? 0;
     if (l.energia < coste) {
       if (l.humano) l.avisar('energia', () => { l.texto('NO ENERGY', '#9aa0b4'); luta.emit({ t: 'sonido', n: 'miss' }); }, 1);
       return false;
@@ -91,7 +91,7 @@ export class Habilidades {
     if (slot === 'e') l.ulti = 0;
     // Houndoom: golpes de fogo esquentam
     if (l.def.fervor && h.calienta) l.calentar(h.calienta);
-    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida') l.cd[slot] = h.cd;
+    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida' && h.forma !== 'cortesFolha') l.cd[slot] = h.cd;
     // Sneasler: depois de qualquer skill o próximo básico sai como corte em X
     if (slot !== 'lmb' && l.kit.lmb?.trasSkill) l.xListo = true;
     // skills que giram o Pokémon no lugar
@@ -954,19 +954,22 @@ export class Habilidades {
       luta.programar(lanzar + i * entre2, () => {
         if (l.ko || l.est.aturdido) return;
         const final = cierra && i === n - 1;
-        const alcance = h.alcance + (final ? 8 : 0);
+        // Sceptile: o X guardado pelo dash é gigante, com as lâminas de folha esticadas
+        const grande = final && forzaX && h.xGrande;
+        const alcance = grande ? h.alcance * h.xGrande : h.alcance + (final ? 8 : 0), abre = rad(grande ? 220 : h.angulo);
         ang = asistir(l, ang, alcance + RADIO + 12, 1.6);
         l.angulo = ang;
         // corte em X da Sneasler (guardado por uma skill)
-        if (final && forzaX) luta.emit({ t: 'corteX', x: l.x + Math.cos(ang) * alcance * 0.55, y: l.y - l.alto * 0.5 + Math.sin(ang) * alcance * 0.4, ang, r: alcance * 0.6, tipo: h.tipo });
+        if (grande) { luta.emit({ t: 'corteXFolha', l, x: l.x + Math.cos(ang) * alcance * 0.45, y: l.y - l.alto * 0.5 + Math.sin(ang) * alcance * 0.3, ang, r: alcance * 0.75 }); luta.emit({ t: 'temblor', f: 0.008 }); luta.hitstop(80); }
+        else if (final && forzaX) luta.emit({ t: 'corteX', x: l.x + Math.cos(ang) * alcance * 0.55, y: l.y - l.alto * 0.5 + Math.sin(ang) * alcance * 0.4, ang, r: alcance * 0.6, tipo: h.tipo });
         else luta.emit({ t: 'tajo', l, ang, alcance, final, estilo: h.estilo, tipo: h.tipo, anguloArco: h.angulo });
         this.cortarProyectiles(l, ang, alcance, rad(h.angulo) / 2);
         for (const b of luta.blancos(l)) {
           const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1;
           if (b.oculto || b.est?.vuelo) continue;
-          if (d < alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < rad(h.angulo) / 2) {
+          if (d < alcance + RADIO && Math.abs(difAng(Math.atan2(dy, dx), ang)) < abre / 2) {
             const rem = final ? remate : null;
-            const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano + (final ? 2 : 0) + (rem?.dano ?? 0), empuje: rem?.empuje ?? (final ? 70 : 22), aturde: rem?.aturde, dirX: dx / d, dirY: dy / d, pesado: final }));
+            const res = atingir(l, b, pacote(h, extra, ang, { dano: h.dano + (final ? 2 : 0) + (rem?.dano ?? 0) + (grande ? h.danoX ?? 0 : 0), empuje: rem?.empuje ?? (grande ? 130 : final ? 70 : 22), aturde: rem?.aturde, dirX: dx / d, dirY: dy / d, pesado: final }));
             if (res === 'golpe' && i === 0 && !cierra) l.aciertosCombo++;
             // Dire Claw (Sneasler): o golpe que fecha a combinação deixa veneno, paralisia ou sono
             if (res === 'golpe' && final && h.estadoAleatorio && (forzaX || !h.cruzX) && !b.esClon) estadoAleatorio(b, l);

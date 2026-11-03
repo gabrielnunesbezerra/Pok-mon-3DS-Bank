@@ -134,7 +134,7 @@ export class Lutador {
     this.avisos = {};
     this.clones = null;
     this.burbuja = null;
-    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99; this.plasma = 0; this.voltPos = null; this.disfarce = !!this.def.disfarce; this.disfarceVolta = 0; this.carga = 0;
+    this.almas = 0; this.xListo = false; this.jabHasta = 0; this.fervor = 0; this.ultimoFuego = -99; this.plasma = 0; this.voltPos = null; this.disfarce = !!this.def.disfarce; this.disfarceVolta = 0; this.carga = 0; this.folhaHasta = 0;
     this.stats = { dano: 0, golpes: 0, usos: 0 };
     this.intento = null;
   }

@@ -11,10 +11,10 @@ import { sembrar } from '../www/js/engine/util.js';
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
+const FORMAS = ['cortesFolha', 'laminaSolar', 'caudaMissil', 'linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
 
 test('o roster tem os 28 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora']);
+  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora', 'sceptile']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -672,4 +672,24 @@ test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, fi
   correr(l, 1, [null, null]); a.ulti = 100; a.accion = null; b.hp = b.hpMax; b.est = {}; const hm = b.hp;
   assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 1.6, [null, null]);
   assert.ok(b.hp < hm, 'a boca mordeu');
+  // Sceptile: o dash em meia-lua sai duas vezes e guarda o X gigante; o Dragon Pulse só explode se acertar
+  l = nuevaLuta('sceptile', 'munchlax', { etapas: [2, 0] }); [a, b] = l.luchadores;
+  a.x = 200; a.y = 222; b.x = 280; b.y = 222; a.ax = b.x; a.ay = b.y; a.energia = 100; b.inmortal = true;
+  assert.equal(l.habilidades.usar(a, 'q'), true); correr(l, 0.4, [null, null]);
+  assert.ok(a.xListo, 'o dash guardou o X');
+  const e0 = a.energia; a.accion = null; assert.equal(l.habilidades.usar(a, 'q'), true, 'segundo dash');
+  assert.equal(a.energia, e0, 'o segundo dash é de graça'); correr(l, 0.4, [null, null]);
+  assert.ok(a.cd.q > 2, 'depois do segundo entra na recarga');
+  b.x = a.x + 90; b.y = a.y; a.ax = b.x; a.ay = b.y; a.accion = null; a.cd.lmb = 0; b.hp = b.hpMax; const hx = b.hp;
+  assert.equal(l.habilidades.usar(a, 'lmb'), true); correr(l, 0.3, [null, null]);
+  assert.ok(b.hp < hx && !a.xListo, 'o X gigante alcançou longe');
+  a.accion = null; a.energia = 100; a.ax = a.x; a.ay = a.y - 200; b.x = a.x + 150; b.y = a.y;
+  let explodiu = false; const tomar = l.tomarEventos.bind(l); l.tomarEventos = () => { const evs = tomar(); if (evs.some(e => e.t === 'explosion')) explodiu = true; return evs; };
+  assert.equal(l.habilidades.usar(a, 'rmb'), true); correr(l, 1.2, [null, null]);
+  assert.ok(!explodiu, 'errou: não explode');
+  // Mega Sceptile: trava a mira e a cauda-míssil persegue e explode
+  a.mega = true; a.kit = a.kitActual(); a.accion = null; a.ulti = 100; b.hp = b.hpMax; b.est = {}; b.x = a.x + 220; b.y = a.y + 40; const hmis = b.hp;
+  assert.equal(l.habilidades.usar(a, 'e'), true); correr(l, 0.7, [null, null]);
+  assert.ok(l.entidades.some(e => e.tipo === 'caudaMissil'), 'a cauda saiu voando');
+  correr(l, 1.5, [null, null]); assert.ok(b.hp < hmis, 'o míssil explodiu no alvo');
 });

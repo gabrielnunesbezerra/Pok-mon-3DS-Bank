@@ -131,7 +131,8 @@ export class Proyectil {
         const res = atingir(dueno, alvo, g);
         if (res === 'golpe') luta.emit({ t: 'impacto', x: this.x, y: this.y - 4, tipo: h.tipo, estilo: this.estilo, slot: this.extra.slot });
       }
-    } else if (h.explosion) this.explotar(h.explosion.radio, g);
+    } else if (h.explosion && !h.explotaSoloImpacto) this.explotar(h.explosion.radio, g);
+    else if (h.explotaSoloImpacto) luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: h.tipo });
     if (h.revienta && explotarSolo) { this.reventar(); luta.emit({ t: 'finProyectil', x: this.x, y: this.y, estilo: this.estilo, tipo: h.tipo }); return false; }
     if (h.metralla && alvo) {
       const m = h.metralla;
