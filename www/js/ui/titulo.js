@@ -22,9 +22,9 @@ const MENUS = {
     { id: 'creditos', txt: 'CREDITS', escena: 'creditos', ico: 'personas', cor: '#7dd3fc', x: 455, y: 212, w: 82, h: 24 },
   ],
   jugar: [
-    { id: 'cpu', txt: 'VS CPU', sub: '1 VS 1', escena: 'seleccion', datos: { modo: 'cpu' }, ico: 'robot', cor: '#ffd23c', arte: ['0448'], x: 103, y: 134, w: 106, h: 68 },
-    { id: 'duplas', txt: 'DOUBLES', sub: 'YOU + CPU ALLY', escena: 'seleccion', datos: { modo: 'duplas' }, ico: 'dos', cor: '#4ade80', arte: ['0807', '0094-0001'], x: 213, y: 134, w: 106, h: 68 },
-    { id: 'arena', txt: 'ARENA', sub: '3 FIGHTERS', escena: 'seleccion', datos: { modo: 'arena' }, ico: 'personas', cor: '#fb923c', arte: ['0006', '0009'], x: 323, y: 134, w: 106, h: 68 },
+    { id: 'cpu', txt: 'VS CPU', sub: '1 VS 1', escena: 'lobby', datos: { n: 2 }, ico: 'robot', cor: '#ffd23c', arte: ['0448'], x: 103, y: 134, w: 106, h: 68 },
+    { id: 'duplas', txt: 'DOUBLES', sub: 'YOU + CPU ALLY', escena: 'lobby', datos: { n: 4, modo: 'duplas' }, ico: 'dos', cor: '#4ade80', arte: ['0807', '0094-0001'], x: 213, y: 134, w: 106, h: 68 },
+    { id: 'arena', txt: 'ARENA', sub: '3 FIGHTERS', escena: 'lobby', datos: { n: 3 }, ico: 'personas', cor: '#fb923c', arte: ['0006', '0009'], x: 323, y: 134, w: 106, h: 68 },
     { id: 'entreno', txt: 'TRAINING', sub: 'TEST MOVES', escena: 'seleccion', datos: { modo: 'entreno' }, ico: 'diana', cor: '#7dd3fc', arte: ['0253'], x: 433, y: 134, w: 104, h: 68 },
     { id: 'atras', txt: 'BACK', menu: 'principal', ico: 'atras', atras: true, cor: '#9aa0b4', x: 270, y: 212, w: 100, h: 24 },
   ],

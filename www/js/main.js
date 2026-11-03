@@ -1,4 +1,5 @@
 // Ponto de entrada: tela única em 640 x 360 com escala nítida, troca de cenas e laço principal.
+import { Lobby } from './ui/lobby.js';
 import { ANCHO, ALTO, TICK, setAncho } from './config.js';
 import { Entrada } from './input.js';
 import { SpriteBank } from './render/sprites.js';
@@ -61,7 +62,7 @@ canvas.addEventListener('contextrestored', () => {
   app.geracaoGrafica++;
   aviso.style.display = 'none';
 });
-const ESCENAS = { titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
+const ESCENAS = { lobby: Lobby, titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }
