@@ -485,9 +485,15 @@ export class Combate {
     if (l.ko) { nombre = bank.resolver(l.dex, 'Faint'); tt = t - (l.koT ?? t); bucle = false; }
     else if (l.est.dormido) nombre = 'Sleep';
     else if (l.est.aturdido || t < l.dolorHasta) { nombre = 'Hurt'; tt = t - (l.dolorHasta - 0.18); bucle = false; }
-    else if (l.anim && t < l.animHasta) { nombre = l.anim; tt = t - l.animInicio; bucle = false; }
+    else if (l.anim && t < l.animHasta) {
+      nombre = l.anim; tt = t - l.animInicio; bucle = false;
+      // a animação do golpe inteira cabe no tempo do golpe: se ela é mais longa, acelera em vez de ser cortada no meio
+      const a = bank.manifiesto[l.dex]?.anims[bank.resolver(l.dex, nombre)], janela = Math.max(0.12, l.animHasta - l.animInicio);
+      if (a) { const dur = a.durations.reduce((x, y) => x + y, 0) / 60; if (dur > janela) tt *= dur / janela; }
+    }
     else if (l.dash) { nombre = l.dash.def.anim ?? 'Walk'; }
-    else if (l.moviendo) nombre = 'Walk';
+    // só anda na tela quando anda de verdade (um resto no analógico ou a CPU se ajustando não faz andar no lugar)
+    else if (l.moviendo && Math.hypot(l.vx, l.vy) > 18) nombre = 'Walk';
     // acerto: o alvo fica branco por exatamente 2 quadros (o tempo da luta para no hit stop, então o branco segura junto)
     const flash = l.flash && t - l.flash < 2 / 60 + 1e-6 ? 1 : 0;
     const parpadeo = l.est.invul && Math.floor(t * 30) % 2 ? 0.55 : 1;
@@ -522,7 +528,7 @@ export class Combate {
     const lean = l.moviendo && !l.dash && !SEM_INCLINAR.has(l.dex) ? (l.vx / (v || 1)) * velN * 0.14 : 0;
     l._lean = (l._lean ?? 0) + (lean - (l._lean ?? 0)) * 0.2;
     let rot = l._lean, ox = 0, oy = 0;
-    if (l.moviendo && !l.dash && alto <= 0) { const ph = this.t * 15; sy *= 1 + Math.sin(ph * 2) * 0.03; oy -= Math.abs(Math.sin(ph)) * 1.6 * velN; if (Math.random() < 0.06 * velN && !this.app.ajustes.graficosBajos) this.fx.polvo(l.x - (l.vx / (v || 1)) * 6, l.y, 1, 3); }
+    if (l.moviendo && Math.hypot(l.vx, l.vy) > 18 && !l.dash && alto <= 0) { const ph = this.t * 15; sy *= 1 + Math.sin(ph * 2) * 0.03; oy -= Math.abs(Math.sin(ph)) * 1.6 * velN; if (Math.random() < 0.06 * velN && !this.app.ajustes.graficosBajos) this.fx.polvo(l.x - (l.vx / (v || 1)) * 6, l.y, 1, 3); }
     if (l.anim && t - l.animInicio < 0.22) { const k = Math.sin(((t - l.animInicio) / 0.22) * Math.PI), a = l.angulo ?? 0; ox += Math.cos(a) * 6 * k; oy += Math.sin(a) * 3 * k; rot += Math.cos(a) * 0.1 * k; }
     if (t < l.dolorHasta) rot += (Math.floor(t * 30) % 2 ? 0.06 : -0.06);
     const kSai = Math.min(1, Math.max(0, (this.t - (this.tGo ?? -9)) / 0.32)), luzSai = this.t - (this.tGo ?? -9) < 0.45 ? 1 - (this.t - this.tGo) / 0.45 : 0;
