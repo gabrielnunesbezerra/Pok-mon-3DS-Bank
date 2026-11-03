@@ -1155,10 +1155,13 @@ export function dibujarLaco(g, e, t) {
 export function dibujarTorbellino(g, e, t, fx) {
   const k = Math.min(1, e.t / 0.2, (e.vida - e.t) / 0.25), alto = 56, base = e.radio;
   if (e.estilo === 'agua') {
-    // Whirlpool Waltz: redemoinho de água azul que gira, com espuma e gotas subindo
-    g.globalAlpha = 0.4 * k; PX.elipsePix(g, px(e.x), px(e.y), base, base * 0.5, '#123f9c'); g.globalAlpha = k;
-    for (let i = 0; i < 4; i++) { const r = base * (1 - i * 0.22), gira = -t * (8 + i * 3) + i; PX.arcoPix(g, e.x, e.y - i * 3, r, gira, gira + 2.8, '#04102c', 5, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 0.05, gira + 2.75, i % 2 ? '#8fd0ff' : '#2f7fe0', 3, r * 0.5); PX.arcoPix(g, e.x, e.y - i * 3, r, gira + 3.1, gira + 4.4, '#fffdf4', 1, r * 0.5); }
-    for (let i = 0; i < 6; i++) { const a = -t * 9 + i * 1.05, r = base * 0.8; PX.carimbar(g, PX.humo(3, ['#4aa3f0', '#bfe4ff', '#fffdf4']), e.x + Math.cos(a) * r, e.y + Math.sin(a) * r * 0.5 - 2, 0, 1, k); }
+    // Whirlpool como no Pokémon Arena 2D: disco de água azul-clara pontilhado de branco e uma espiral de linhas brancas
+    // finas girando por cima
+    g.globalAlpha = 0.45 * k; PX.elipsePix(g, px(e.x), px(e.y), base, base * 0.5, '#4f8fe0');
+    g.globalAlpha = 0.35 * k; PX.elipsePix(g, px(e.x), px(e.y), base * 0.7, base * 0.35, '#9fd2ff'); g.globalAlpha = k;
+    g.fillStyle = '#eaf8ff';
+    for (let i = 0; i < 22; i++) { const a = i * 2.39 - t * 3, r = base * ((i * 0.137) % 0.95); g.fillRect(px(e.x + Math.cos(a) * r), px(e.y + Math.sin(a) * r * 0.5), 1, 1); }
+    for (let i = 0; i < 4; i++) { const gira = -t * 7 + i * (Math.PI / 2); for (let j = 0; j < 3; j++) { const r = base * (0.3 + j * 0.25 + i * 0.04); PX.arcoPix(g, e.x, e.y, r, gira + j * 0.6, gira + j * 0.6 + 1.1, j === 1 ? '#fffdf4' : '#d8f0ff', 1, r * 0.5); } }
     g.globalAlpha = 1;
     if (ale() < 0.5) fx.add({ x: e.x + entre(-base, base) * 0.6, y: e.y, vy: -90 - ale() * 60, g: 260, size: 2, life: 0.5, color: '#cfeeff', forma: 'gota', rampa: AGUA });
     return;

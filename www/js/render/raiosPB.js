@@ -1,7 +1,7 @@
 // Raios e cones em pixel art.
-// - jatoAgua (no mundo): Hydro Pump / Hydro Cannon como uma coluna grossa de água que ondula, em camadas do azul
-//   escuro ao núcleo branco, com brilhos brancos varrendo, espuma pedaçuda na ponta e cristais de água subindo em leque
-//   em volta de quem usa quando o jato sai;
+// - jatoAgua (no mundo): Hydro Pump / Hydro Cannon como uma coluna grossa de água com borda serrilhada em lascas, em
+//   camadas do azul escuro ao núcleo branco, com pontilhado e borrifo brancos, leque de pontas brancas na ponta e
+//   cristais de água subindo em leque em volta de quem usa quando o jato sai;
 // - bolasFogo (no mundo): bolas de fogo pedaçudas rolando na ponta e nas bordas do Flamethrower.
 // Só desenho: nada aqui muda a luta.
 import * as PX from './pixelfx.js';
@@ -33,7 +33,7 @@ export function jatoAgua(g, o, t) {
     }
     g.globalAlpha = 1;
   }
-  coluna(g, o, t, P);
+  coluna(g, o, t, P, true);
 }
 
 // paletas das colunas de energia das ults (5 tons, do núcleo à borda, como em paletas.js)
@@ -44,27 +44,39 @@ export const PALETA_COLUNA = {
 };
 
 // coluna grossa que ondula, em camadas da borda ao núcleo branco, com brilhos correndo e estouro pedaçudo na ponta
-export function coluna(g, o, t, P) {
-  const w = o.w;
+export function coluna(g, o, t, P, agua = false) {
+  const w = o.w, fr = Math.floor(t * 16);
   if (o.L < 3) return;
-  // coluna em camadas: borda, sombra, base, claro e núcleo branco; a borda ondula como água correndo
-  const onda = (f, i, k) => 1 + k * Math.sin(f * 22 - t * 34 + i * 0.3) + k * 0.6 * Math.sin(f * 9 + t * 21);
-  const forma = (kw, ko) => (f, i) => w * 0.5 * kw * onda(f, i, ko) * (f < 0.06 ? 0.55 + f * 7.5 : 1) * (0.85 + 0.25 * f);
-  faixa(g, o, (f, i) => forma(1, 0.1)(f, i) + 1.5, P[4]);
-  faixa(g, o, forma(1, 0.1), P[3]);
-  faixa(g, o, forma(0.78, 0.08), P[2]);
-  faixa(g, o, forma(0.5, 0.06), P[1]);
-  faixa(g, o, forma(0.16, 0.04), IMPACTO[0]);
-  // brilhos brancos varrendo ao longo do jato
-  for (let i = 0; i < 6; i++) {
-    const f = (i / 6 + t * 2.6) % 1, lado = (i % 2 ? 1 : -1) * w * 0.26 * (0.85 + 0.25 * f), d0 = o.L * f, d1 = Math.min(o.L, d0 + 6 + w * 0.3);
-    PX.lineaPix(g, o.x + o.ux * d0 + o.nx * lado, o.y + o.uy * d0 + o.ny * lado, o.x + o.ux * d1 + o.nx * lado, o.y + o.uy * d1 + o.ny * lado, i % 3 ? P[0] : IMPACTO[0], i % 3 ? 1 : 2);
-  }
-  // pedaços na ponta (espuma na água, estouro de energia no resto) e esfera na boca
-  const xp = o.x + o.ux * o.L, yp = o.y + o.uy * o.L, fr = Math.floor(t * 18);
-  for (let i = 0; i < 6; i++) { const a = i * 1.047 + fr * 0.4, r = w * (0.32 + 0.16 * fixo(i, fr)), d = w * 0.38; PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r + 1, P[4]); PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r, i % 2 ? P[1] : P[0]); }
-  PX.disco(g, px(xp), px(yp), w * 0.42, IMPACTO[0]);
+  // camadas: borda, sombra, base, claro e núcleo branco. Água (como no Pokémon Arena 2D): borda serrilhada em lascas que
+  // muda a cada quadro; energia (Hyper Beam...): borda quase reta, sólida
+  const borda = agua ? (f, i) => ((i + fr) % 2 ? 1.16 : 0.86) : (f, i) => 1 + 0.03 * Math.sin(f * 22 - t * 34 + i * 0.3);
+  const forma = kw => (f, i) => w * 0.5 * kw * borda(f, i) * (f < 0.06 ? 0.55 + f * 7.5 : 1) * (0.85 + 0.25 * f);
+  faixa(g, o, (f, i) => forma(1)(f, i) + 1.5, P[4]);
+  faixa(g, o, forma(1), P[3]);
+  faixa(g, o, forma(0.78), P[2]);
+  faixa(g, o, forma(0.5), P[1]);
+  faixa(g, o, forma(0.16), IMPACTO[0]);
+  const xp = o.x + o.ux * o.L, yp = o.y + o.uy * o.L;
+  if (agua) {
+    // pontilhado branco por dentro e traços curtos de borrifo saindo das bordas
+    g.fillStyle = IMPACTO[0];
+    for (let i = 0; i < 26; i++) { const d = o.L * fixo(i, fr), lado = (fixo(i, fr + 1) - 0.5) * w * 0.8; g.fillRect(px(o.x + o.ux * d + o.nx * lado), px(o.y + o.uy * d + o.ny * lado), 1, 1); }
+    for (let i = 0; i < 8; i++) {
+      const f = (i / 8 + t * 2.2) % 1, lado = i % 2 ? 1 : -1, d = o.L * f, b = w * 0.55 * (0.85 + 0.25 * f), x0 = o.x + o.ux * d + o.nx * lado * b, y0 = o.y + o.uy * d + o.ny * lado * b;
+      PX.lineaPix(g, x0, y0, x0 + o.nx * lado * 4 - o.ux * 3, y0 + o.ny * lado * 4 - o.uy * 3, P[0], 1);
+    }
+    espinhos(g, xp, yp, Math.atan2(o.uy, o.ux), w, fr, P);
+  } else for (let i = 0; i < 5; i++) { const a = i * 1.257 + fr * 0.4, r = w * (0.2 + 0.1 * fixo(i, fr)), d = w * 0.3; PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r + 1, P[4]); PX.disco(g, px(xp + Math.cos(a) * d), px(yp + Math.sin(a) * d * 0.8), r, i % 2 ? P[1] : P[0]); }
   PX.esfera(g, px(o.x), px(o.y), Math.max(3, w * 0.38), [P[3], P[2], P[1], IMPACTO[0]], P[4]);
+}
+
+// leque de pontas de água brancas e anguladas (o respingo do jato no Pokémon Arena 2D)
+function espinhos(g, x, y, ang, w, fr, P) {
+  for (let i = -3; i <= 3; i++) {
+    const a = ang + i * 0.38 + (fixo(i + 9, fr) - 0.5) * 0.2, len = w * (0.6 + fixo(i + 4, fr) * 0.55) * (1 - Math.abs(i) * 0.1), bw = w * 0.15, nx = -Math.sin(a), ny = Math.cos(a) * 0.8;
+    const tx = x + Math.cos(a) * len, ty = y + Math.sin(a) * len * 0.8;
+    for (const [cor, k] of [[P[3], 1.35], [P[0], 1], [IMPACTO[0], 0.45]]) { g.fillStyle = cor; g.beginPath(); g.moveTo(px(x + (tx - x) * (k > 1 ? 1.08 : 1)), px(y + (ty - y) * (k > 1 ? 1.08 : 1))); g.lineTo(px(x + nx * bw * k), px(y + ny * bw * k)); g.lineTo(px(x - nx * bw * k), px(y - ny * bw * k)); g.closePath(); g.fill(); }
+  }
 }
 
 // bolas de fogo pedaçudas: rolam do meio até a ponta do jato e se soltam nas bordas
