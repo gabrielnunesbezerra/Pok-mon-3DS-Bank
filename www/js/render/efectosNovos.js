@@ -602,3 +602,34 @@ Object.assign(ENTIDADES_NOVAS, {
     if (ale() < 0.5) fx.add({ x: x - Math.cos(a) * 15, y: y - Math.sin(a) * 15, vx: -Math.cos(a) * 60, vy: -Math.sin(a) * 60, size: 3, grow: 1.5, life: 0.2, forma: 'llama', rampa: ['#3b0a0a', '#ea580c', '#fde047', '#ffffff'] });
   },
 });
+
+// ---------------------------------------------------------------- Mega Zeraora
+Object.assign(EVENTOS_NOVOS, {
+  raioCai(fx, e) { fx.heroes.push({ k: 'raioCeu', x: e.x, y: e.y, s: ale() * 99, w: e.leve ? 2 : 3, t: 0, life: e.leve ? 0.18 : 0.26, hue: fx.hue }); fx.chispas(e.x, e.y - 6, '#fde047', e.leve ? 4 : 8, 180); if (!e.leve) { fx.anillo(e.x, e.y, 3, 26, '#fde047', 0.25, 2); fx.flash = Math.max(fx.flash, 0.06); fx.flashColor = '#fef9c3'; } },
+  jaulaTrovao(fx, e) { fx.flash = Math.max(fx.flash, 0.12); fx.flashColor = '#fef08a'; fx.anillo(e.x, e.y, e.radio * 1.4, e.radio, '#fde047', 0.3, 3); },
+  raioGigante(fx, e) {
+    fx.heroes.push({ k: 'raioCeu', x: e.x, y: e.y, s: ale() * 99, w: 9, t: 0, life: 0.4, hue: fx.hue });
+    fx.anillo(e.x, e.y, 6, e.radio * 1.3, '#fde047', 0.45, 4); fx.anillo(e.x, e.y, 2, e.radio * 0.9, '#ffffff', 0.35, 2);
+    for (let i = 0; i < 24; i++) { const a = (i / 24) * 6.28; fx.add({ x: e.x, y: e.y - 6, vx: Math.cos(a) * entre(140, 260), vy: Math.sin(a) * entre(70, 130) - 30, drag: 3, size: 2.5, life: 0.5, color: i % 3 ? '#fde047' : '#ffffff', forma: 'chispa' }); }
+    fx.flash = Math.max(fx.flash, 0.25); fx.flashColor = '#fffbeb'; fx.punch = Math.max(fx.punch ?? 0, 0.08);
+    fx.heroes.push({ k: 'quemado', x: e.x, y: e.y, radio: e.radio * 0.7, semilla: 5, cores: ['#0b0b14', '#1f2937', '#a16207', '#fde047'], t: 0, life: 1.4, hue: fx.hue });
+  },
+});
+Object.assign(HEROES_NOVOS, {
+  // raio caindo do céu
+  raioCeu(g, h, k) { g.globalAlpha = 1 - k * k; raio(g, h.x + Math.sin(h.s) * 20, h.y - 220, h.x, h.y - 4, h.s + Math.floor(k * 3), '#fde047', h.w, 9); g.globalAlpha = (1 - k) * 0.5; g.fillStyle = '#fef9c3'; g.beginPath(); g.ellipse(h.x, h.y, 12 + h.w * 2, 5 + h.w, 0, 0, 7); g.fill(); g.globalAlpha = 1; },
+});
+Object.assign(ENTIDADES_NOVAS, {
+  // jaula: seis pilares de raio ligados por arcos elétricos que estalam, e o chão carregado
+  jaulaTrovao(g, e, t) {
+    const R = e.radio, al = Math.min(1, e.t * 6, (e.dur - e.t) / 0.2 + 0.3), n = 6, s = Math.floor(t * 18);
+    g.globalAlpha = al * 0.18; g.fillStyle = '#fde047'; g.beginPath(); g.ellipse(e.x, e.y, R, R * 0.62, 0, 0, 7); g.fill();
+    g.globalAlpha = al * 0.8; g.strokeStyle = '#facc15'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(e.x, e.y, R, R * 0.62, 0, 0, 7); g.stroke();
+    const pts = [];
+    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + 0.3; pts.push([e.x + Math.cos(a) * R, e.y + Math.sin(a) * R * 0.62]); }
+    g.globalAlpha = al;
+    for (let i = 0; i < n; i++) { const [x, y] = pts[i], [x2, y2] = pts[(i + 1) % n]; raio(g, x, y - 34, x2, y2 - 34, s + i, '#fde047', 1, 4); }
+    for (const [x, y] of pts) { raio(g, x, y, x, y - 46, s * 3 + x, '#fef08a', 2, 4); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y - 46, 2.5, 0, 7); g.fill(); }
+    g.globalAlpha = 1;
+  },
+});

@@ -89,11 +89,11 @@ export const MEGA_KITS = {
     e: { nombre: 'Phantom Feast', forma: 'bocaFantasma', dano: 42, radio: 90, espera: 0.55, golpes: 2, contraSono: 1.5, alcance: 320, anim: 'Charge' },
   },
   zeraora: {
-    lmb: { nombre: 'Mega Plasma Fists', dano: 5.6 },
-    rmb: { nombre: 'Mega Volt Switch', dano: 11, danoChegada: 8, raioChegada: 44 },
-    esp: { nombre: 'Mega Wild Charge', dano: 6.5, dist: 160 },
-    q: { nombre: 'Mega Discharge', dano: 7, saltos: 4, decai: 0.7 },
-    e: { nombre: 'Mega Plasma Overdrive', dano: 34, golpes: 7, cada: 0.12 },
+    lmb: { nombre: 'Mega Plasma Fists', dano: 5.8, raioFinal: 6 },
+    rmb: { nombre: 'Mega Volt Switch', dano: 11, danoChegada: 9, raioChegada: 48, cadeiaChegada: 7 },
+    esp: { nombre: 'Mega Wild Charge', dano: 7, dist: 170, aturde: 0.35 },
+    q: { nombre: 'Mega Discharge', dano: 7.5, saltos: 5, decai: 0.8, aturde: 0.4 },
+    e: { nombre: 'Thunder Cage', forma: 'jaulaTrovao', dano: 44, radio: 72, dur: 2.2, cada: 0.3, alcance: 300, anim: 'Attack' },
   },
   sceptile: {
     lmb: { nombre: 'Mega Leaf Blade', dano: 6, xGrande: 3, danoX: 12 },

@@ -974,6 +974,8 @@ export class Habilidades {
             // Dire Claw (Sneasler): o golpe que fecha a combinação deixa veneno, paralisia ou sono
             if (res === 'golpe' && final && h.estadoAleatorio && (forzaX || !h.cruzX) && !b.esClon) estadoAleatorio(b, l);
             if (rem && res === 'golpe') { l.texto('CRUSHED!', '#e5e7eb'); luta.emit({ t: 'temblor', f: 0.006 }); }
+            // Mega Zeraora: o golpe que fecha o combo chama um raio do céu em cima do rival
+            if (res === 'golpe' && final && h.raioFinal && !b.esClon) luta.programar(0.1, () => { if (b.ko || l.ko) return; areaCirculo(luta, l, b.x, b.y, 28, pacote(h, extra, 0, { dano: h.raioFinal, aturde: 0.2, empuje: 0, dirX: undefined, dirY: undefined, tick: true })); luta.emit({ t: 'raioCai', x: b.x, y: b.y }); });
           }
         }
       });

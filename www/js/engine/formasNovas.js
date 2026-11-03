@@ -192,6 +192,8 @@ export const formasNovas = {
       luta.emit({ t: 'voltTeleporte', l, x0, y0, x1: p.x, y1: p.y });
       areaCirculo(luta, l, p.x, p.y, h.raioChegada ?? 36, pacote(h, extra, 0, { dano: h.danoChegada ?? h.dano * 0.7, aturde: 0.3, dirX: undefined, dirY: undefined, empuje: 50 }));
       luta.programar(0, () => { l.cd[extra.slot] = h.cdReal ?? 6; });
+      // Mega: chega soltando uma descarga que pula entre os inimigos perto
+      if (h.cadeiaChegada && maisPerto(luta, l, 170)) this.formas.cadenaRayo.call(this, l, { ...h, dano: h.cadeiaChegada, saltos: 2, alcance: 170, salto: 130, aturde: 0.2 }, extra);
       return;
     }
     const ang = Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -1008,5 +1010,51 @@ Object.assign(formasNovas, {
       luta.add(m);
       luta.emit({ t: 'lancaMissil', l });
     });
+  },
+});
+
+
+// ================================================================ Mega Zeraora
+Object.assign(formasNovas, {
+  // ---------------------------------------------------------------- Thunder Cage (ult da Mega Zeraora): salta até o rival e prende quem estiver
+  // perto numa jaula de pilares de raio; lá dentro cai um raio atrás do outro e no fim um raio gigante joga todo mundo longe
+  jaulaTrovao(l, h, extra) {
+    const luta = this.luta, r = maisPerto(luta, l, h.alcance ?? 300);
+    const c = fijarCampo(r ? r.x : l.ax, r ? r.y : l.ay), R = h.radio ?? 72, dur = h.dur ?? 2.2, cada = h.cada ?? 0.3, n = Math.max(1, Math.floor(dur / cada));
+    if (r) {
+      const a = Math.atan2(l.y - r.y, l.x - r.x), x0 = l.x, y0 = l.y, p = fijarCampo(r.x + Math.cos(a) * (R - 18), r.y + Math.sin(a) * (R - 18) * 0.62);
+      l.x = p.x; l.y = p.y; l.vx = l.vy = 0; l.angulo = a + Math.PI;
+      luta.emit({ t: 'voltTeleporte', l, x0, y0, x1: p.x, y1: p.y });
+    }
+    l.cortarAccion();
+    l.animar('Attack', 0.4); l.ponerEstado('invul', 0.35);
+    l.texto('THUNDER CAGE!', '#fde047');
+    luta.emit({ t: 'jaulaTrovao', x: c.x, y: c.y, radio: R, dur });
+    let prox = cada;
+    const e = { tipo: 'jaulaTrovao', dueno: l, vivo: true, x: c.x, y: c.y, radio: R, t: 0, dur, update: dt => {
+      e.t += dt;
+      // a cerca: quem está dentro não consegue sair
+      for (const b of luta.blancos(l)) {
+        if (b.esClon || b.oculto) continue;
+        const dx = b.x - e.x, dy = (b.y - e.y) / 0.62, d = Math.hypot(dx, dy) || 1;
+        if (d > R - 10 && d < R + 6) { b.x = e.x + (dx / d) * (R - 10); b.y = e.y + (dy / d) * (R - 10) * 0.62; b.empX *= 0.2; b.empY *= 0.2; }
+      }
+      if (e.t >= prox && e.t < dur) {
+        prox += cada;
+        for (const b of luta.blancos(l)) {
+          if (b.oculto || !dentroElipse(b, e.x, e.y, R)) continue;
+          atingir(l, b, pacote(h, extra, 0, { dano: (h.dano * 0.55) / n, aturde: 0.12, empuje: 0, dirX: undefined, dirY: undefined, tick: true }));
+          luta.emit({ t: 'raioCai', x: b.x, y: b.y, leve: true });
+        }
+      }
+      if (e.t >= dur) {
+        areaCirculo(luta, l, e.x, e.y, R + 6, pacote(h, extra, 0, { dano: h.dano * 0.45, empuje: 160, aturde: 0.5, pesado: true, dirX: undefined, dirY: undefined }));
+        luta.emit({ t: 'raioGigante', x: e.x, y: e.y, radio: R });
+        luta.emit({ t: 'temblor', f: 0.014 }); luta.hitstop(100);
+        return false;
+      }
+      return !l.ko;
+    } };
+    luta.add(e);
   },
 });

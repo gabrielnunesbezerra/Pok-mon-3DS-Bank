@@ -156,6 +156,7 @@ function perfil(h, slot, d) {
     case 'linguada': P.tipo = 'mele'; P.alcance = h.alcance + 14; break;
     case 'cortesFolha': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) + 30; P.retardo = 0.05; break;
     case 'laminaSolar': P.tipo = 'mele'; P.alcance = h.alcance ?? 130; P.retardo = h.carga ?? 0.5; break;
+    case 'jaulaTrovao': P.tipo = 'area'; P.alcance = h.alcance ?? 300; P.retardo = 0.3; break;
     case 'caudaMissil': P.tipo = 'area'; P.alcance = h.alcance ?? 420; P.retardo = 0.8; break;
     case 'teleSono': P.tipo = 'mele'; P.alcance = h.alcance ?? 340; P.retardo = 0; break;
     case 'mergulhoFantasma': P.tipo = 'area'; P.alcance = (h.radio ?? 80) + 30; P.retardo = 0.7; break;
