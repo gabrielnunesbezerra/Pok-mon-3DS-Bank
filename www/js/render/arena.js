@@ -501,7 +501,7 @@ export function setGraficosBajos(v) { if (graficosBajos !== !!v) { graficosBajos
 const COR_BARREIRA = { estadio: '#7dd3fc', neon: '#f0abfc', crater: '#fdba74', ruinas: '#a7f3d0', praia: '#67e8f9', halloween: '#c4b5fd' };
 function rgba(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
 function barreira3D(g, cor) {
-  const { rin, rout } = MURETA, N = 72, H = 34, HF = 16;
+  const { rin, rout } = MURETA, N = 72, H = 50, HF = 18;
   const P = (r, a) => ptE(r.rx, r.ry, a);
   // frente: face de fora da parede, escurecendo para baixo
   for (let i = 0; i < N; i++) {
@@ -520,7 +520,7 @@ function barreira3D(g, cor) {
     if (Math.sin((a0 + a1) / 2) > -0.02) continue;
     const [x0, y0] = P(rin, a0), [x1, y1] = P(rin, a1), h0 = H * (0.55 + 0.45 * -Math.sin(a0)), h1 = H * (0.55 + 0.45 * -Math.sin(a1));
     const gr = g.createLinearGradient(0, Math.min(y0, y1) - H, 0, Math.max(y0, y1));
-    gr.addColorStop(0, rgba(cor, 0.34)); gr.addColorStop(0.75, rgba(cor, 0.12)); gr.addColorStop(1, rgba(cor, 0.22));
+    gr.addColorStop(0, rgba(cor, 0.5)); gr.addColorStop(0.7, rgba(cor, 0.2)); gr.addColorStop(1, rgba(cor, 0.32));
     quad(g, [[x0, y0], [x1, y1], [x1, y1 - h1], [x0, y0 - h0]], gr);
     // reflexo diagonal no vidro
     if (i % 3 === 0) { g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x0 + (x1 - x0) * 0.2, y0 - h0 * 0.15); g.lineTo(x0 + (x1 - x0) * 0.7, y0 - h0 * 0.85); g.stroke(); }
@@ -531,7 +531,8 @@ function barreira3D(g, cor) {
   g.strokeStyle = rgba(cor, 0.95); g.lineWidth = 2; g.beginPath();
   for (let i = 0; i <= N; i++) { const a = Math.PI + (i / N) * Math.PI, [x, y] = P(rin, a), h = H * (0.55 + 0.45 * -Math.sin(a)); if (i) g.lineTo(x, y - h); else g.moveTo(x, y - h); }
   g.stroke();
-  g.strokeStyle = rgba(cor, 0.25); g.lineWidth = 6; g.stroke();
+  g.strokeStyle = rgba(cor, 0.3); g.lineWidth = 7; g.stroke();
+  g.strokeStyle = rgba(cor, 0.6); g.lineWidth = 1; g.beginPath(); for (let i = 0; i <= N; i++) { const a = Math.PI + (i / N) * Math.PI, [x, y] = P(rin, a), h = H * (0.55 + 0.45 * -Math.sin(a)) * 0.5; if (i) g.lineTo(x, y - h); else g.moveTo(x, y - h); } g.stroke();
 }
 
 export function crearArena(id) {

@@ -105,15 +105,15 @@ export const MEGA_KITS = {
   bulbasaur: {
     lmb: { nombre: 'Mega Petal Blizzard', dano: 3.4, escala: 2.8 },
     rmb: { nombre: 'Sleep Sludge', dano: 13, duerme: 1.2, radio: 32 },
-    esp: { nombre: 'Vine Throw', forma: 'telecinese', vinha: true, tipo: 'GRASS', dano: 11, alcance: 170, lanza: 190, cd: 7, anim: 'Charge' },
+    esp: { nombre: 'Vine Throw', forma: 'telecinese', vinha: true, tipo: 'GRASS', dano: 8, alcance: 170, lanza: 190, cd: 7, anim: 'Charge' },
     q: { nombre: 'Ingrain + Sludge Wave', forma: 'arraigoOnda', onda: { radio: 95, dano: 9, empuje: 150, veneno: { dps: 3, dur: 3 } }, coste: 30, cd: 13 },
-    e: { nombre: 'Mega Solar Beam', forma: 'raioSolar', tipo: 'GRASS', dano: 38, carga: 0.95, largo: 340, ancho: 30, anchoVisual: 60, dur: 1.2, empuje: 90 },
+    e: { nombre: 'Mega Solar Beam', forma: 'raioSolar', tipo: 'GRASS', dano: 30, carga: 0.95, largo: 340, ancho: 30, anchoVisual: 60, dur: 1.2, empuje: 90 },
   },
   squirtle: {
-    lmb: { nombre: 'Mega Water Pulse', dano: 4.6 },
-    rmb: { nombre: 'Mini Hydro Pump', forma: 'chorro', tipo: 'WATER', dano: 15, largo: 175, ancho: 14, anchoVisual: 22, carga: 0.12, dur: 0.6, empuje: 70, giro: 3, coste: 30, cd: 5, anim: 'Shoot', trozos: ['chorro-a', 'chorro-b', 'chorro-c'] },
+    lmb: { nombre: 'Mega Water Pulse', dano: 3.9 },
+    rmb: { nombre: 'Mini Hydro Pump', forma: 'chorro', tipo: 'WATER', dano: 12, largo: 175, ancho: 14, anchoVisual: 22, carga: 0.12, dur: 0.6, empuje: 70, giro: 3, coste: 30, cd: 5, anim: 'Shoot', trozos: ['chorro-a', 'chorro-b', 'chorro-c'] },
     esp: { nombre: 'Surf', forma: 'surfar', tipo: 'WATER', dano: 6, dur: 1.6, vel: 1.25, cd: 7, anim: 'Walk' },
-    q: { nombre: 'Mega Shell Smash Spin', salto: 130, radioImpacto: 66, danoImpacto: 10 },
-    e: { nombre: 'Mega Hydro Cannon', forma: 'canhaoAncorado', tipo: 'WATER', dano: 40, radioSurf: 105, danoSurf: 8, carga: 0.9, largo: 330, ancho: 34, anchoVisual: 64, dur: 1.4, empuje: 120, retroceso: 0 },
+    q: { nombre: 'Mega Shell Smash Spin', salto: 130, radioImpacto: 66, danoImpacto: 7 },
+    e: { nombre: 'Mega Hydro Cannon', forma: 'canhaoAncorado', tipo: 'WATER', dano: 32, radioSurf: 105, danoSurf: 8, carga: 0.9, largo: 330, ancho: 34, anchoVisual: 64, dur: 1.4, empuje: 120, retroceso: 0 },
   },
 };
