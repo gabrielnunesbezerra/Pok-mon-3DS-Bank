@@ -336,7 +336,7 @@ export class Combate {
       else if (e.tipo === 'proj') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarProyectil(c, e, this.t)) });
       else if (e.tipo === 'bomba') cosas.push({ y: e.y + 60, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBomba(c, e)) });
       else if (e.tipo === 'laco') cosas.push({ y: (e.preso?.y ?? e.y) + 1, f: () => dibujarLaco(g, e, this.t) });
-      else if (e.tipo === 'espinho' && e.t >= e.aviso) cosas.push({ y: e.y, f: () => dibujarEspinho(g, e, this.t) });
+      else if (e.tipo === 'espinho' && e.t >= e.aviso) cosas.push({ y: e.y, f: () => dibujarEspinho(g, e, this.t, fx) });
       else if (e.tipo === 'arenaRoca') cosas.push({ y: e.y + e.radio * 0.62, f: () => dibujarArenaRoca(g, e, this.t, true) });
       else if (e.tipo === 'bolaGigante') cosas.push({ y: e.y + 80, f: () => conHue(g, hueShiny(e.dueno), c => dibujarBolaGigante(c, e, this.t, fx)) });
       else if (e.tipo === 'torbellino') cosas.push({ y: e.y, f: () => conHue(g, hueShiny(e.dueno), c => dibujarTorbellino(c, e, this.t, fx)) });
@@ -362,7 +362,7 @@ export class Combate {
     const eu = luta.luchadores[this.lado];
     if (eu?.est.cego && !eu.ko) {
       const p = this.camara.aPantalla(eu.x, eu.y - eu.alto * 0.5), R = 46 * this.camara.z, fim = eu.est.cego.hasta - luta.t, al = Math.min(1, fim / 0.3, (luta.t - (eu.est.cego.desde ?? luta.t - 1)) / 0.2 + 0.3);
-      const gr = g.createRadialGradient(p.x, p.y, R * 0.6, p.x, p.y, R * 1.6); gr.addColorStop(0, 'rgba(6,2,14,0)'); gr.addColorStop(1, `rgba(6,2,14,${0.97 * al})`);
+      const gr = g.createRadialGradient(p.x, p.y, R * 0.6, p.x, p.y, R * 1.6); PX.degraus(gr, ['rgba(6,2,14,0)', `rgba(6,2,14,${0.5 * al})`, `rgba(6,2,14,${0.8 * al})`, `rgba(6,2,14,${0.97 * al})`]);
       g.fillStyle = gr; g.fillRect(0, 0, ANCHO, ALTO);
     }
     this.dibujarOscuro(g);
@@ -601,11 +601,11 @@ export class Combate {
     g.save();
     g.globalCompositeOperation = 'lighter';
     const halo = g.createRadialGradient(l.x, cy, 2, l.x, cy, raio + l.alto * 0.4);
-    halo.addColorStop(0, rgb(antes ? 0.25 + 0.55 * u : 0.8 * (1 - v))); halo.addColorStop(1, rgb(0));
+    { const a0 = antes ? 0.25 + 0.55 * u : 0.8 * (1 - v); PX.degraus(halo, [rgb(a0), rgb(a0 * 0.6), rgb(a0 * 0.3), rgb(a0 * 0.1)]); }
     g.fillStyle = halo; g.beginPath(); g.arc(l.x, cy, raio + l.alto * 0.4, 0, 7); g.fill();
     const largo = antes ? 4 + u * 20 : 24 * (1 - v);
     const pilar = g.createLinearGradient(0, l.y - 190, 0, l.y);
-    pilar.addColorStop(0, rgb(0)); pilar.addColorStop(1, rgb(antes ? 0.2 + 0.5 * u : 0.7 * (1 - v)));
+    { const a1 = antes ? 0.2 + 0.5 * u : 0.7 * (1 - v); PX.degraus(pilar, [rgb(a1 * 0.1), rgb(a1 * 0.35), rgb(a1 * 0.65), rgb(a1)]); }
     g.fillStyle = pilar; g.fillRect(l.x - largo / 2, l.y - 190, largo, 190);
     g.strokeStyle = rgb(0.8 * (antes ? u : 1 - v)); g.lineWidth = 2;
     for (let i = 0; i < 2; i++) { const r = ((t * 1.6 + i * 0.5) % 1); g.beginPath(); g.ellipse(l.x, l.y, 8 + r * 46, 3 + r * 20, 0, 0, 7); g.globalAlpha = 1 - r; g.stroke(); }
@@ -724,7 +724,7 @@ export class Combate {
     if (yo && !yo.ko && yo.est.cegado) {
       const p = this.camara.aPantalla(yo.x, yo.y - yo.alto * 0.5), r = 60 * this.camara.z + 18;
       const gr = g.createRadialGradient(p.x, p.y, r * 0.5, p.x, p.y, r * 1.8);
-      gr.addColorStop(0, 'rgba(6,2,14,0)'); gr.addColorStop(0.45, `rgba(6,2,14,${0.8 * al})`); gr.addColorStop(1, `rgba(6,2,14,${0.96 * al})`);
+      PX.degraus(gr, ['rgba(6,2,14,0)', `rgba(6,2,14,${0.45 * al})`, `rgba(6,2,14,${0.8 * al})`, `rgba(6,2,14,${0.96 * al})`]);
       g.fillStyle = gr; g.fillRect(0, 0, ANCHO, ALTO);
       const d = noche.dueno;
       if (d && !d.ko) { const q = this.camara.aPantalla(d.x, d.y - d.alto * 0.7); g.globalAlpha = al * (0.6 + 0.4 * Math.sin(this.t * 6)); g.fillStyle = '#ff2a4a'; g.fillRect(Math.round(q.x - 4), Math.round(q.y), 3, 2); g.fillRect(Math.round(q.x + 1), Math.round(q.y), 3, 2); g.globalAlpha = 1; }

@@ -91,6 +91,12 @@ export function brilhoDegrau(g, cx, cy, r, rampa, alfa = 1, ry = r) {
   }
   g.globalAlpha = a0;
 }
+// degradê do canvas em faixas duras: cada cor ocupa uma faixa inteira e a troca é seca (duas paradas no mesmo ponto)
+export function degraus(gr, cores) {
+  const n = cores.length;
+  cores.forEach((c, i) => { gr.addColorStop(i / n, c); gr.addColorStop(Math.min(1, (i + 1) / n - 1e-6), c); });
+  return gr;
+}
 // faixa em degraus (no lugar do degradê linear): n listras de uma ponta (cores[0]) à outra, retângulo de x,y,w,h
 export function faixaDegrau(g, x, y, w, h, cores, alfas, vertical = true) {
   const a0 = g.globalAlpha, n = cores.length;

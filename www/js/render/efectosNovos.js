@@ -659,7 +659,7 @@ export function crescente(g, x, y, R, a0, a1, esp, sy, cores) {
   for (let i = n; i >= 0; i--) { const u = i / n, a = lerp(a0, a1, u), th = esp * Math.pow(Math.sin(u * Math.PI), 0.7); g.lineTo(Math.cos(a) * (R - th), Math.sin(a) * (R - th)); }
   g.closePath();
   const gr = g.createRadialGradient(0, 0, Math.max(0, R - esp), 0, 0, R);
-  cores.forEach((c, i) => gr.addColorStop(i / (cores.length - 1), c));
+  PX.degraus(gr, cores);
   g.fillStyle = gr; g.fill();
   g.restore();
 }
@@ -669,7 +669,7 @@ function laminaLente(g, x0, y0, x1, y1, w, camadas) {
   for (const [c, f, al] of camadas) { g.globalAlpha *= al; g.fillStyle = c; g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(mx + nx * w * f, my + ny * w * f, x1, y1); g.quadraticCurveTo(mx - nx * w * f, my - ny * w * f, x0, y0); g.fill(); g.globalAlpha /= al; }
 }
 function brilho() {} // sem halos de brilho em volta (pedido do jogador)
-function brilhoAntigo(g, x, y, R, c, al = 1) { const gr = g.createRadialGradient(x, y, 0, x, y, R); gr.addColorStop(0, c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill(); g.globalAlpha = 1; }
+function brilhoAntigo(g, x, y, R, c, al = 1) { const gr = PX.degraus(g.createRadialGradient(x, y, 0, x, y, R), [c, 'rgba(0,0,0,0)']); g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill(); g.globalAlpha = 1; }
 function estrela(g, x, y, R, c, al = 1, rot = 0) { g.globalAlpha = al; g.fillStyle = c; g.beginPath(); for (let i = 0; i < 8; i++) { const a = rot + (i * Math.PI) / 4, r = i % 2 ? R * 0.16 : i % 4 ? R * 0.6 : R; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); g.fill(); g.globalAlpha = 1; }
 
 Object.assign(ESTILOS_NOVOS, {
@@ -736,7 +736,7 @@ Object.assign(HEROES_NOVOS, {
   escuridao(g, h, k, t) {
     const entra = Math.min(1, t / 0.3), sai = h.life - t < 0.5 ? (h.life - t) / 0.5 : 1, al = 0.5 * entra * sai, R = 330;
     const gr = g.createRadialGradient(h.x, h.y, R * 0.15, h.x, h.y, R);
-    gr.addColorStop(0, `rgba(10,2,24,${al * 0.9})`); gr.addColorStop(0.7, `rgba(20,4,40,${al * 0.75})`); gr.addColorStop(1, 'rgba(20,4,40,0)');
+    PX.degraus(gr, [`rgba(10,2,24,${al * 0.9})`, `rgba(16,3,32,${al * 0.75})`, `rgba(20,4,40,${al * 0.45})`, `rgba(20,4,40,${al * 0.18})`]);
     g.fillStyle = gr; g.beginPath(); g.ellipse(h.x, h.y, R, R * 0.7, 0, 0, 7); g.fill();
   },
   fantasminha(g, h, k, t) {
@@ -764,10 +764,10 @@ Object.assign(HEROES_NOVOS, {
     g.save(); g.globalCompositeOperation = 'lighter';
     for (let i = 0; i < 5; i++) {
       const off = (i - 2) * 46 * (1 - k * 0.85), w = (5 + 3 * Math.sin(t * 25 + i * 2)) * (0.5 + k);
-      const gr = g.createLinearGradient(x + off, top, x, y - l.alto * 0.5); gr.addColorStop(0, 'rgba(253,230,138,0)'); gr.addColorStop(1, `rgba(253,230,138,${0.25 + 0.35 * k})`);
+      const gr = PX.degraus(g.createLinearGradient(x + off, top, x, y - l.alto * 0.5), ['rgba(253,230,138,0)', `rgba(253,230,138,${0.12 + 0.18 * k})`, `rgba(253,230,138,${0.25 + 0.35 * k})`]);
       g.fillStyle = gr; g.beginPath(); g.moveTo(x + off - w, top); g.lineTo(x + off + w, top); g.lineTo(x + 3, y - l.alto * 0.5); g.lineTo(x - 3, y - l.alto * 0.5); g.fill();
     }
-    const halo = g.createRadialGradient(x, y, 0, x, y, 46 + k * 20); halo.addColorStop(0, `rgba(254,240,138,${0.5 * k + 0.15})`); halo.addColorStop(1, 'rgba(254,240,138,0)');
+    const halo = PX.degraus(g.createRadialGradient(x, y, 0, x, y, 46 + k * 20), [`rgba(254,240,138,${0.5 * k + 0.15})`, `rgba(254,240,138,${0.3 * k + 0.1})`, `rgba(254,240,138,${0.12 * k + 0.05})`]);
     g.save(); g.translate(x, y); g.scale(1, 0.5); g.translate(-x, -y); g.fillStyle = halo; g.beginPath(); g.arc(x, y, 46 + k * 20, 0, 7); g.fill(); g.restore();
     for (let i = 0; i < 8; i++) { const a = t * 5 + i * 0.785, rr = 50 * (1 - k) + 8; g.fillStyle = i % 2 ? '#fef9c3' : '#86efac'; g.fillRect(px(x + Math.cos(a) * rr), px(y - l.alto * 0.5 + Math.sin(a) * rr * 0.55 - k * 6), 2, 2); }
     g.restore();
@@ -840,7 +840,7 @@ Object.assign(ENTIDADES_NOVAS, {
     g.globalAlpha = 0.35; g.fillStyle = '#0a0612'; g.beginPath(); g.ellipse(e.x, e.y, R * 0.9, R * 0.35, 0, 0, 7); g.fill(); g.globalAlpha = 1;
     brilho(g, x, y, R * 2, 'rgba(168,85,247,0.6)');
     const gr = g.createRadialGradient(x - R * 0.3, y - R * 0.35, R * 0.1, x, y, R);
-    gr.addColorStop(0, '#f5d0fe'); gr.addColorStop(0.25, '#a855f7'); gr.addColorStop(0.7, '#3b0764'); gr.addColorStop(1, '#0b0418');
+    PX.degraus(gr, ['#f5d0fe', '#a855f7', '#6b21a8', '#3b0764', '#0b0418']);
     g.fillStyle = gr; g.beginPath(); g.arc(x, y, R, 0, 7); g.fill();
     g.strokeStyle = '#e9d5ff'; g.lineWidth = 2; g.globalAlpha = 0.8;
     for (let i = 0; i < 2; i++) { const a = t * 4 * (i ? -1 : 1); g.beginPath(); g.ellipse(x, y, R * 1.25, R * 0.42, a * 0.4 + i * 1.2, t * 6 + i, t * 6 + i + 3.6); g.stroke(); }
@@ -917,7 +917,7 @@ Object.assign(HEROES_NOVOS, {
     const s = Math.sin(Math.min(1, k * 1.2) * Math.PI), R = 26 * s;
     if (R < 1) return;
     g.save(); g.translate(h.x, h.y); g.scale(1, 0.4);
-    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, '#0a0612'); gr.addColorStop(0.7, '#1e0b3a'); gr.addColorStop(1, '#7c3aed');
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); PX.degraus(gr, ['#0a0612', '#1e0b3a', '#4c1d95', '#7c3aed']);
     g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
     g.strokeStyle = '#d8b4fe'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; g.beginPath(); g.arc(0, 0, R * 0.92, a, a + 1.2); g.stroke(); }
     g.restore();
@@ -925,7 +925,7 @@ Object.assign(HEROES_NOVOS, {
   escuridao(g, h, k, t) {
     const entra = Math.min(1, t / 0.3), sai = h.life - t < 0.5 ? (h.life - t) / 0.5 : 1, al = 0.55 * entra * sai, R = h.R ?? 300;
     const gr = g.createRadialGradient(h.x, h.y, R * 0.2, h.x, h.y, R);
-    gr.addColorStop(0, `rgba(10,2,24,${al * 0.9})`); gr.addColorStop(0.85, `rgba(20,4,40,${al * 0.8})`); gr.addColorStop(1, 'rgba(20,4,40,0)');
+    PX.degraus(gr, [`rgba(10,2,24,${al * 0.9})`, `rgba(16,3,32,${al * 0.85})`, `rgba(20,4,40,${al * 0.8})`, `rgba(20,4,40,${al * 0.3})`]);
     g.fillStyle = gr; g.beginPath(); g.ellipse(h.x, h.y, R, R * 0.7, 0, 0, 7); g.fill();
     g.globalAlpha = al; g.strokeStyle = '#7c3aed'; g.lineWidth = 2; g.setLineDash([6, 8]); g.lineDashOffset = -t * 30; g.beginPath(); g.ellipse(h.x, h.y, R * 0.92, R * 0.92 * 0.62, 0, 0, 7); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
   },
@@ -960,7 +960,7 @@ Object.assign(ENTIDADES_NOVAS, {
     for (const [x, y] of [[e.x0, e.y0], [e.x1, e.y1]]) {
       const R = 26 * s; if (R < 1) continue;
       g.save(); g.translate(x, y); g.scale(1, 0.4);
-      const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, '#0a0612'); gr.addColorStop(0.7, '#1e0b3a'); gr.addColorStop(1, '#7c3aed');
+      const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); PX.degraus(gr, ['#0a0612', '#1e0b3a', '#4c1d95', '#7c3aed']);
       g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
       g.strokeStyle = '#d8b4fe'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; g.beginPath(); g.arc(0, 0, R * 0.92, a, a + 1.2); g.stroke(); }
       g.restore();
@@ -989,7 +989,7 @@ Object.assign(EVENTOS_NOVOS, {
 
 // clarão somando luz nas explosões e áreas
 Object.assign(HEROES_NOVOS, {
-  bloom(g, h, k) { g.save(); g.globalCompositeOperation = 'lighter'; const R = h.r * (0.6 + k * 0.6), gr = g.createRadialGradient(h.x, h.y - 8, 0, h.x, h.y - 8, R); gr.addColorStop(0, `rgba(255,253,244,${0.75 * (1 - k)})`); gr.addColorStop(0.35, h.cor + Math.round(140 * (1 - k)).toString(16).padStart(2, '0')); gr.addColorStop(1, h.cor + '00'); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y - 8, R, 0, 7); g.fill(); g.restore(); },
+  bloom(g, h, k) { g.save(); g.globalCompositeOperation = 'lighter'; const R = h.r * (0.6 + k * 0.6), gr = g.createRadialGradient(h.x, h.y - 8, 0, h.x, h.y - 8, R); const hx = v => Math.round(v * (1 - k)).toString(16).padStart(2, '0'); PX.degraus(gr, [`rgba(255,253,244,${0.75 * (1 - k)})`, h.cor + hx(140), h.cor + hx(70), h.cor + hx(25)]); g.fillStyle = gr; g.beginPath(); g.arc(h.x, h.y - 8, R, 0, 7); g.fill(); g.restore(); },
 });
 
 // entrada de toda ultimate: pilar de luz na cor do tipo, brilho no chão e faíscas subindo em espiral
@@ -998,9 +998,9 @@ Object.assign(HEROES_NOVOS, {
     const l = h.l; if (!l || l.ko) return;
     const x = l.x, y = l.y, al = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8, H = 150, W = 26 + 18 * Math.sin(k * Math.PI);
     g.save(); g.globalCompositeOperation = 'lighter';
-    const gr = g.createLinearGradient(0, y - H, 0, y); gr.addColorStop(0, h.cor + '00'); gr.addColorStop(0.6, h.cor + '66'); gr.addColorStop(1, '#ffffffaa');
+    const gr = PX.degraus(g.createLinearGradient(0, y - H, 0, y), [h.cor + '00', h.cor + '33', h.cor + '66', '#fffdf4aa']);
     g.globalAlpha = al; g.fillStyle = gr; g.beginPath(); g.moveTo(x - W * 0.35, y - H); g.lineTo(x + W * 0.35, y - H); g.lineTo(x + W, y); g.lineTo(x - W, y); g.fill();
-    const ch = g.createRadialGradient(x, y, 0, x, y, 60); ch.addColorStop(0, h.cor + 'aa'); ch.addColorStop(1, h.cor + '00');
+    const ch = PX.degraus(g.createRadialGradient(x, y, 0, x, y, 60), [h.cor + 'aa', h.cor + '66', h.cor + '22']);
     g.save(); g.translate(x, y); g.scale(1, 0.4); g.fillStyle = ch; g.beginPath(); g.arc(0, 0, 60, 0, 7); g.fill(); g.restore();
     for (let i = 0; i < 10; i++) { const u = (t * 1.6 + i / 10) % 1, a = i * 2.4 + t * 8, r = 22 * (1 - u) + 6; g.globalAlpha = al * (1 - u); g.fillStyle = i % 3 ? h.cor : '#fffdf4'; g.fillRect(Math.round(x + Math.cos(a) * r), Math.round(y - u * H * 0.8 + Math.sin(a) * r * 0.3), 3, 3); }
     g.restore();
