@@ -496,6 +496,44 @@ const cache = new Map();
 export const limparArenas = () => cache.clear();
 let graficosBajos = false;
 export function setGraficosBajos(v) { if (graficosBajos !== !!v) { graficosBajos = !!v; cache.clear(); } }
+// barreira em 3D em volta da arena: atrás, painéis de vidro de energia com postes e trilho brilhando; na frente, a
+// espessura da parede (a face de fora) para o campo parecer um palco elevado
+const COR_BARREIRA = { estadio: '#7dd3fc', neon: '#f0abfc', crater: '#fdba74', ruinas: '#a7f3d0', praia: '#67e8f9', halloween: '#c4b5fd' };
+function rgba(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
+function barreira3D(g, cor) {
+  const { rin, rout } = MURETA, N = 72, H = 34, HF = 16;
+  const P = (r, a) => ptE(r.rx, r.ry, a);
+  // frente: face de fora da parede, escurecendo para baixo
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
+    if (Math.sin((a0 + a1) / 2) <= 0.05) continue;
+    const [x0, y0] = P(rout, a0), [x1, y1] = P(rout, a1), lado = Math.cos((a0 + a1) / 2);
+    const gr = g.createLinearGradient(0, Math.min(y0, y1), 0, Math.max(y0, y1) + HF);
+    gr.addColorStop(0, lado > 0 ? '#3b4252' : '#454c5e'); gr.addColorStop(1, '#14171f');
+    quad(g, [[x0, y0], [x1, y1], [x1, y1 + HF], [x0, y0 + HF]], gr);
+  }
+  // trilho de luz na borda da frente
+  g.strokeStyle = rgba(cor, 0.9); g.lineWidth = 2; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, rout.rx, rout.ry, 0, 0.08, Math.PI - 0.08); g.stroke();
+  // fundo: vidro de energia subindo da borda de dentro
+  for (let i = 0; i < N; i++) {
+    const a0 = (i / N) * Math.PI * 2, a1 = ((i + 1) / N) * Math.PI * 2;
+    if (Math.sin((a0 + a1) / 2) > -0.02) continue;
+    const [x0, y0] = P(rin, a0), [x1, y1] = P(rin, a1), h0 = H * (0.55 + 0.45 * -Math.sin(a0)), h1 = H * (0.55 + 0.45 * -Math.sin(a1));
+    const gr = g.createLinearGradient(0, Math.min(y0, y1) - H, 0, Math.max(y0, y1));
+    gr.addColorStop(0, rgba(cor, 0.34)); gr.addColorStop(0.75, rgba(cor, 0.12)); gr.addColorStop(1, rgba(cor, 0.22));
+    quad(g, [[x0, y0], [x1, y1], [x1, y1 - h1], [x0, y0 - h0]], gr);
+    // reflexo diagonal no vidro
+    if (i % 3 === 0) { g.strokeStyle = 'rgba(255,255,255,0.18)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x0 + (x1 - x0) * 0.2, y0 - h0 * 0.15); g.lineTo(x0 + (x1 - x0) * 0.7, y0 - h0 * 0.85); g.stroke(); }
+    // poste a cada painel
+    if (i % 4 === 0) { g.fillStyle = '#2b3140'; g.fillRect(Math.round(x0) - 2, Math.round(y0 - h0 - 3), 4, Math.round(h0 + 3)); g.fillStyle = rgba(cor, 0.9); g.fillRect(Math.round(x0) - 1, Math.round(y0 - h0 - 3), 2, 3); }
+  }
+  // trilho brilhante no alto do vidro
+  g.strokeStyle = rgba(cor, 0.95); g.lineWidth = 2; g.beginPath();
+  for (let i = 0; i <= N; i++) { const a = Math.PI + (i / N) * Math.PI, [x, y] = P(rin, a), h = H * (0.55 + 0.45 * -Math.sin(a)); if (i) g.lineTo(x, y - h); else g.moveTo(x, y - h); }
+  g.stroke();
+  g.strokeStyle = rgba(cor, 0.25); g.lineWidth = 6; g.stroke();
+}
+
 export function crearArena(id) {
   if (cache.has(id)) return cache.get(id);
   cache.clear(); // só a arena atual fica na memória
@@ -507,6 +545,7 @@ export function crearArena(id) {
   g.translate(MARGEM.x, MARGEM.y);
   const semilla = [...id].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7);
   (ESTILOS[id] ?? ESTILOS.estadio)(g, rng(semilla));
+  barreira3D(g, COR_BARREIRA[id] ?? '#7dd3fc');
   // profundidade: o fundo da arena fica mais escuro e enevoado, a frente mais clara
   const prof = g.createLinearGradient(0, -MARGEM.y, 0, MUNDO.h + MARGEM.y);
   const yc = v => (v + MARGEM.y) / (MUNDO.h + MARGEM.y * 2);

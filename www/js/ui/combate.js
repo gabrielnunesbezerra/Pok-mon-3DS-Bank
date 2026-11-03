@@ -306,6 +306,13 @@ export class Combate {
     fx.dibujarTextos(g, FUENTE);
     for (const b of fx.globos) this.dibujarGlobo(g, b);
     g.restore();
+    // cego pela Mega Gengar: a tela escurece e só se enxerga em volta de si
+    const eu = luta.luchadores[this.lado];
+    if (eu?.est.cego && !eu.ko) {
+      const p = this.camara.aPantalla(eu.x, eu.y - eu.alto * 0.5), R = 46 * this.camara.z, fim = eu.est.cego.hasta - luta.t, al = Math.min(1, fim / 0.3, (luta.t - (eu.est.cego.desde ?? luta.t - 1)) / 0.2 + 0.3);
+      const gr = g.createRadialGradient(p.x, p.y, R * 0.6, p.x, p.y, R * 1.6); gr.addColorStop(0, 'rgba(6,2,14,0)'); gr.addColorStop(1, `rgba(6,2,14,${0.97 * al})`);
+      g.fillStyle = gr; g.fillRect(0, 0, ANCHO, ALTO);
+    }
     this.dibujarOscuro(g);
     this.dibujarNoche(g, luta);
 

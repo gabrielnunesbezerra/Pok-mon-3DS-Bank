@@ -690,10 +690,10 @@ Object.assign(EVENTOS_NOVOS, {
   kamehaFim(fx, e) { fx.chispas(e.x, e.y - 4, '#5eead4', 8, 140); fx.polvo(e.x, e.y, 2, 6); },
   explodeDraco(fx, e) {
     fx.heroes.push({ k: 'explosaoDraco', x: e.x, y: e.y, radio: e.radio, ang: e.ang, t: 0, life: 0.55, hue: fx.hue });
-    fx.anillo(e.x, e.y, 6, e.radio * 1.3, '#2dd4bf', 0.42, 4); fx.anillo(e.x, e.y, 4, e.radio * 0.85, '#bbf7d0', 0.3, 2);
-    for (let i = 0; i < 16; i++) { const a = e.ang + (ale() - 0.5) * 2.2, s = entre(160, 320); fx.add({ x: e.x, y: e.y - 8, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 3.5, size: 2, life: 0.45, color: i % 3 ? '#5eead4' : '#ffffff', forma: 'chispa' }); }
+    fx.anillo(e.x, e.y, 6, e.radio * 1.3, '#a855f7', 0.42, 4); fx.anillo(e.x, e.y, 4, e.radio * 0.85, '#f0abfc', 0.3, 2);
+    for (let i = 0; i < 16; i++) { const a = e.ang + (ale() - 0.5) * 2.2, s = entre(160, 320); fx.add({ x: e.x, y: e.y - 8, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, drag: 3.5, size: 2, life: 0.45, color: i % 3 ? '#c084fc' : '#ffffff', forma: 'chispa' }); }
     folhas(fx, e.x, e.y - 10, 10, 220);
-    fx.flash = Math.max(fx.flash, 0.14); fx.flashColor = '#ccfbf1'; fx.punch = Math.max(fx.punch ?? 0, 0.06);
+    fx.flash = Math.max(fx.flash, 0.14); fx.flashColor = '#f5d0fe'; fx.punch = Math.max(fx.punch ?? 0, 0.06);
   },
   pesadeloCarga(fx, e) { fx.heroes.push({ k: 'escuridao', l: e.l, x: e.l.x, y: e.l.y, t: 0, life: e.dur + 1.6, dur: e.dur, hue: fx.hue }); },
   pesadeloLanca(fx, e) { fx.chispas(e.l.x, e.l.y - e.l.alto - 30, '#f0abfc', 10, 160); },
@@ -719,16 +719,16 @@ Object.assign(HEROES_NOVOS, {
   kamehaCarga(g, h, k, t) {
     const l = h.l; if (!l || l.ko) return;
     const x = l.x + Math.cos(h.ang) * 12, y = l.y - l.alto * 0.55, R = 4 + k * 9;
-    brilho(g, x, y, R * 3, 'rgba(45,212,191,0.55)');
-    for (let i = 0; i < 6; i++) { const a = t * 9 + i * 1.05, rr = 26 * (1 - k) + R; g.globalAlpha = 0.9; g.fillStyle = i % 2 ? '#99f6e4' : '#4ade80'; g.fillRect(px(x + Math.cos(a) * rr), px(y + Math.sin(a) * rr * 0.7), 2, 2); }
-    g.globalAlpha = 1; g.fillStyle = '#f0fdfa'; g.beginPath(); g.arc(x, y, R * 0.6, 0, 7); g.fill();
+    brilho(g, x, y, R * 3, 'rgba(168,85,247,0.55)');
+    for (let i = 0; i < 6; i++) { const a = t * 9 + i * 1.05, rr = 26 * (1 - k) + R; g.globalAlpha = 0.9; g.fillStyle = i % 2 ? '#e9d5ff' : '#c084fc'; g.fillRect(px(x + Math.cos(a) * rr), px(y + Math.sin(a) * rr * 0.7), 2, 2); }
+    g.globalAlpha = 1; g.fillStyle = '#faf5ff'; g.beginPath(); g.arc(x, y, R * 0.6, 0, 7); g.fill();
   },
   explosaoDraco(g, h, k) {
     const R = h.radio * (0.4 + k * 0.9), al = (1 - k) ** 1.3;
-    brilho(g, h.x, h.y - 8, R * 1.6, 'rgba(94,234,212,0.9)', al);
+    brilho(g, h.x, h.y - 8, R * 1.6, 'rgba(192,132,252,0.9)', al);
     brilho(g, h.x, h.y - 8, R * 0.8, 'rgba(255,255,255,0.95)', al);
     // labaredas em forma de chama de dragão saindo para a frente
-    for (let i = 0; i < 5; i++) { const a = h.ang + (i - 2) * 0.45, L = R * (1.2 - Math.abs(i - 2) * 0.15); g.globalAlpha = al * 0.85; laminaLente(g, h.x, h.y - 8, h.x + Math.cos(a) * L, h.y - 8 + Math.sin(a) * L * 0.65, 7 * (1 - k), [['#0d9488', 1, 0.8], ['#5eead4', 0.6, 1], ['#ffffff', 0.25, 1]]); }
+    for (let i = 0; i < 5; i++) { const a = h.ang + (i - 2) * 0.45, L = R * (1.2 - Math.abs(i - 2) * 0.15); g.globalAlpha = al * 0.85; laminaLente(g, h.x, h.y - 8, h.x + Math.cos(a) * L, h.y - 8 + Math.sin(a) * L * 0.65, 7 * (1 - k), [['#7c3aed', 1, 0.8], ['#c084fc', 0.6, 1], ['#ffffff', 0.25, 1]]); }
     g.globalAlpha = 1;
   },
   // escuridão em volta da Mega Gengar enquanto a bomba existe
@@ -850,5 +850,104 @@ Object.assign(ENTIDADES_NOVAS, {
     // almas sendo sugadas enquanto carrega
     if (!e.voando && ale() < 0.8) { const a = ale() * 6.28, d = entre(70, 120); fx.add({ x: x + Math.cos(a) * d, y: y + Math.sin(a) * d * 0.6, vx: -Math.cos(a) * d * 2.2, vy: -Math.sin(a) * d * 1.3, size: 2.4, life: 0.42, color: ale() < 0.5 ? '#c084fc' : '#f5d0fe', forma: 'chispa' }); }
     if (e.voando) for (let i = 0; i < 2; i++) fx.add({ x: x + entre(-R, R) * 0.6, y: y + entre(-R, R) * 0.6, vx: entre(-20, 20), vy: entre(-30, 10), drag: 2, size: entre(2, 4), grow: -2, life: 0.45, color: ale() < 0.5 ? '#a855f7' : '#f0abfc', forma: 'circulo' });
+  },
+});
+
+// ================================================================ Mega Venusaur, Mega Blastoise, portais e hipnose do Gengar, Dragon Pulse roxo
+const AGUA = ['#082f49', '#0284c7', '#7dd3fc', '#f0f9ff'];
+const VENENO = ['#2e1065', '#7e22ce', '#c084fc', '#f5d0fe'];
+const gotas = (fx, x, y, n, v, cores, alto = 160) => { for (let i = 0; i < n; i++) { const a = ale() * 6.28, s = entre(v * 0.4, v); fx.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.5 - entre(alto * 0.4, alto), g: 420, size: entre(2, 3.5), life: entre(0.45, 0.8), color: cores[1 + (i % 3)], forma: 'gota' }); } };
+const psiOrig = { t: EVENTOS_NOVOS.telecinese, a: EVENTOS_NOVOS.arremessoPsi, i: EVENTOS_NOVOS.impactoPsi };
+Object.assign(EVENTOS_NOVOS, {
+  telecinese(fx, e) { if (!e.vinha) return psiOrig.t(fx, e); fx.heroes.push({ k: 'vinhas', l: e.l, b: e.b, t: 0, life: e.dur + 0.3, hue: fx.hue }); },
+  arremessoPsi(fx, e) { if (!e.vinha) return psiOrig.a(fx, e); fx.heroes.push({ k: 'vinhas', l: e.l, b: e.b, t: 0, life: 0.3, solta: true, hue: fx.hue }); folhas(fx, e.x0, e.y0 - 16, 10, 180); },
+  impactoPsi(fx, e) { if (!e.vinha) return psiOrig.i(fx, e); fx.polvo(e.x, e.y, 4, 8); folhas(fx, e.x, e.y - 10, 12, 220); fx.anillo(e.x, e.y, 4, e.parede ? 46 : 30, '#4ade80', 0.3, 3); },
+  ondaVeneno(fx, e) {
+    fx.anillo(e.x, e.y, 10, e.radio * 1.15, '#a855f7', 0.5, 5); fx.anillo(e.x, e.y, 6, e.radio * 0.85, '#f0abfc', 0.38, 2);
+    fx.heroes.push({ k: 'ondaToxica', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.55, hue: fx.hue });
+    for (let i = 0; i < 26; i++) { const a = (i / 26) * 6.28; fx.add({ x: e.x + Math.cos(a) * 20, y: e.y + Math.sin(a) * 12, vx: Math.cos(a) * entre(150, 240), vy: Math.sin(a) * entre(80, 130) - 40, g: 260, size: entre(2.5, 4), life: 0.6, color: VENENO[1 + (i % 3)], forma: 'gota' }); }
+  },
+  cascoPula(fx, e) { gotas(fx, e.l.x, e.l.y, 14, 120, AGUA); fx.polvo(e.l.x, e.l.y, 3, 7); },
+  cascoCai(fx, e) { fx.anillo(e.x, e.y, 6, e.radio * 1.3, '#38bdf8', 0.4, 4); fx.add({ x: e.x, y: e.y, size: 34, life: 0.4, forma: 'salpicadura' }); gotas(fx, e.x, e.y, 30, 220, AGUA, 260); fx.punch = Math.max(fx.punch ?? 0, 0.05); },
+  surfVolta(fx, e) { fx.heroes.push({ k: 'ondaSurf', x: e.x, y: e.y, radio: e.radio, t: 0, life: 0.7, hue: fx.hue }); gotas(fx, e.x, e.y, 40, 260, AGUA, 240); fx.anillo(e.x, e.y, 10, e.radio * 1.2, '#7dd3fc', 0.5, 5); },
+  olharHipnose(fx, e) { fx.heroes.push({ k: 'olharHipnose', l: e.l, b: e.b, t: 0, life: 0.55, hue: fx.hue }); },
+  portalAbre(fx, e) { fx.heroes.push({ k: 'portal', x: e.x, y: e.y, t: 0, life: 0.6, hue: fx.hue }); },
+  portalSai(fx, e) { const l = e.l; for (let i = 0; i < 12; i++) fx.add({ x: l.x + entre(-10, 10), y: l.y - entre(0, 30), vx: entre(-50, 50), vy: -entre(40, 120), size: 3, grow: 1.5, life: 0.45, color: i % 2 ? '#a855f7' : '#f0abfc', forma: 'chispa' }); },
+});
+Object.assign(HEROES_NOVOS, {
+  // vinhas do Mega Venusaur saindo das costas, ondulando até o rival e enrolando nele
+  vinhas(g, h, k, t) {
+    const l = h.l, b = h.b; if (!l || !b || b.ko) return;
+    const x0 = l.x, y0 = l.y - l.alto * 0.7, x1 = b.x, y1 = b.y - (b.alto ?? 30) * 0.5 - (b.salto ?? 0), sai = Math.min(1, t / 0.15), al = h.solta ? 1 - k : 1;
+    g.lineCap = 'round';
+    for (const s of [-1, 1]) {
+      for (const [c, w] of [['#14532d', 7], ['#22c55e', 4], ['#86efac', 1.5]]) {
+        g.globalAlpha = al; g.strokeStyle = c; g.lineWidth = w; g.beginPath();
+        for (let i = 0; i <= 16; i++) { const u = (i / 16) * sai, x = lerp(x0, x1, u), y = lerp(y0, y1, u) - Math.sin(u * Math.PI) * 40 + Math.sin(u * 12 + t * 14) * 5 * s; if (i) g.lineTo(x + s * 6 * Math.sin(u * Math.PI), y); else g.moveTo(x, y); }
+        g.stroke();
+      }
+    }
+    if (sai >= 1 && !h.solta) { g.strokeStyle = '#16a34a'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(x1, y1 + (i - 1) * 7, 13, 4, 0, 0, 7); g.stroke(); } g.fillStyle = '#4ade80'; for (let i = 0; i < 4; i++) { const a = t * 4 + i * 1.57; g.beginPath(); g.ellipse(x1 + Math.cos(a) * 14, y1 + Math.sin(a) * 5, 4, 2, a, 0, 7); g.fill(); } }
+    g.lineCap = 'butt'; g.globalAlpha = 1;
+  },
+  ondaToxica(g, h, k, t) {
+    const R = h.radio * (0.3 + 0.9 * (1 - (1 - k) ** 2)), al = 1 - k;
+    g.save(); g.translate(h.x, h.y); g.scale(1, 0.6);
+    for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2 + t * 2, r = R + Math.sin(i * 3 + t * 20) * 6; g.globalAlpha = al * 0.8; g.fillStyle = i % 2 ? '#a855f7' : '#7e22ce'; g.beginPath(); g.arc(Math.cos(a) * r, Math.sin(a) * r - 6, 7 * (1 - k * 0.5), 0, 7); g.fill(); }
+    g.restore(); g.globalAlpha = 1;
+  },
+  // onda de surf que abre em volta: crista azul com espuma branca
+  ondaSurf(g, h, k, t) {
+    const R = h.radio * (0.25 + 1.0 * (1 - (1 - k) ** 2)), al = 1 - k * k;
+    g.save(); g.translate(h.x, h.y); g.scale(1, 0.6); g.lineCap = 'round';
+    for (const [c, w, dy] of [['#0369a1', 16, 0], ['#38bdf8', 10, -6], ['#e0f2fe', 4, -11]]) { g.globalAlpha = al; g.strokeStyle = c; g.lineWidth = w * (1 - k * 0.4); g.beginPath(); for (let i = 0; i <= 40; i++) { const a = (i / 40) * Math.PI * 2, r = R + Math.sin(a * 6 + t * 12) * 5; const x = Math.cos(a) * r, y = Math.sin(a) * r + dy; if (i) g.lineTo(x, y); else g.moveTo(x, y); } g.stroke(); }
+    g.restore(); g.globalAlpha = 1; g.lineCap = 'butt';
+  },
+  // olhar hipnótico: os olhos do Gengar brilham e ondas roxas finas vão até o alvo
+  olharHipnose(g, h, k, t) {
+    const l = h.l, b = h.b; if (!l || !b) return;
+    const x0 = l.x + Math.cos(l.angulo ?? 0) * 6, y0 = l.y - l.alto * 0.62, x1 = b.x, y1 = b.y - (b.alto ?? 30) * 0.6, al = 1 - k * k;
+    estrela(g, x0 - 3, y0, 7 * al + 2, '#f0abfc', al, t * 8); estrela(g, x0 + 4, y0, 7 * al + 2, '#f0abfc', al, -t * 8);
+    for (let i = 0; i < 5; i++) { const u = (k * 2 + i / 5) % 1, x = lerp(x0, x1, u), y = lerp(y0, y1, u); g.globalAlpha = al * (1 - u * 0.4); g.strokeStyle = i % 2 ? '#e879f9' : '#a855f7'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 4 + u * 9, (4 + u * 9) * 0.8, Math.atan2(y1 - y0, x1 - x0), -1.2, 1.2); g.stroke(); }
+    g.globalAlpha = 1;
+  },
+  // portal de sombra no chão: abre girando e fecha
+  portal(g, h, k, t) {
+    const s = Math.sin(Math.min(1, k * 1.2) * Math.PI), R = 26 * s;
+    if (R < 1) return;
+    g.save(); g.translate(h.x, h.y); g.scale(1, 0.4);
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, R); gr.addColorStop(0, '#000000'); gr.addColorStop(0.7, '#1e0b3a'); gr.addColorStop(1, '#7c3aed');
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, R, 0, 7); g.fill();
+    g.strokeStyle = '#d8b4fe'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; g.beginPath(); g.arc(0, 0, R * 0.92, a, a + 1.2); g.stroke(); }
+    g.restore();
+  },
+  escuridao(g, h, k, t) {
+    const entra = Math.min(1, t / 0.3), sai = h.life - t < 0.5 ? (h.life - t) / 0.5 : 1, al = 0.55 * entra * sai, R = h.R ?? 300;
+    const gr = g.createRadialGradient(h.x, h.y, R * 0.2, h.x, h.y, R);
+    gr.addColorStop(0, `rgba(10,2,24,${al * 0.9})`); gr.addColorStop(0.85, `rgba(20,4,40,${al * 0.8})`); gr.addColorStop(1, 'rgba(20,4,40,0)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(h.x, h.y, R, R * 0.7, 0, 0, 7); g.fill();
+    g.globalAlpha = al; g.strokeStyle = '#7c3aed'; g.lineWidth = 2; g.setLineDash([6, 8]); g.lineDashOffset = -t * 30; g.beginPath(); g.ellipse(h.x, h.y, R * 0.92, R * 0.92 * 0.62, 0, 0, 7); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+  },
+});
+const pesCarga = EVENTOS_NOVOS.pesadeloCarga;
+EVENTOS_NOVOS.pesadeloCarga = (fx, e) => { fx.heroes.push({ k: 'escuridao', l: e.l, x: e.l.x, y: e.l.y, R: e.escuro ?? 300, t: 0, life: e.dur + 1.6, dur: e.dur, hue: fx.hue }); void pesCarga; };
+Object.assign(ENTIDADES_NOVAS, {
+  // Dragon Pulse do Sceptile: raio fino e roxo, reto na altura da boca, com argolas correndo pelo tronco e ponta de flecha
+  kamehaDraco(g, e, t) {
+    const l = e.dueno; if (!l || e.t < 0 || e.largo < 2) return;
+    const ca = Math.cos(e.ang), sa = Math.sin(e.ang), sai = e.fim === null ? 1 : Math.max(0, 1 - (e.t - e.fim) / 0.3);
+    const y0 = l.y - l.alto * 0.55, mx = l.x + ca * 12, my = y0 + sa * 8, tx = l.x + ca * e.largo, ty = y0 + sa * e.largo, W = 4 * (0.5 + 0.5 * sai);
+    g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for (const [c, f, al] of [['#7c3aed', 3.2, 0.35], ['#a855f7', 1.8, 0.8], ['#f5d0fe', 0.6, 1]]) { g.globalAlpha = al * sai; g.strokeStyle = c; g.lineWidth = W * f; g.beginPath(); g.moveTo(mx, my); g.lineTo(tx, ty); g.stroke(); }
+    // argolas correndo pelo tronco
+    const L = Math.hypot(tx - mx, ty - my), n = Math.floor(L / 34);
+    for (let i = 0; i < n; i++) { const u = ((i + (t * 3) % 1) * 34) / L; if (u > 1) continue; const x = lerp(mx, tx, u), y = lerp(my, ty, u); g.globalAlpha = 0.9 * sai; g.strokeStyle = i % 2 ? '#e9d5ff' : '#c084fc'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 3, 9, e.ang, 0, 7); g.stroke(); }
+    g.restore(); g.lineCap = 'butt';
+    // ponta de flecha
+    g.save(); g.translate(tx, ty); g.rotate(e.ang); g.globalAlpha = sai;
+    g.fillStyle = '#6d28d9'; g.beginPath(); g.moveTo(16, 0); g.lineTo(-6, -9); g.lineTo(-2, 0); g.lineTo(-6, 9); g.closePath(); g.fill();
+    g.fillStyle = '#f5d0fe'; g.beginPath(); g.moveTo(12, 0); g.lineTo(-2, -4); g.lineTo(0, 0); g.lineTo(-2, 4); g.closePath(); g.fill();
+    g.restore(); g.globalAlpha = 1;
+    brilho(g, tx, ty, 16, 'rgba(192,132,252,0.7)', sai);
   },
 });
