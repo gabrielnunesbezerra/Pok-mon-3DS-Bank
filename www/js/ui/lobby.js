@@ -49,6 +49,8 @@ export class Lobby {
     const arena = this.arena < 0 ? ARENAS[Math.floor(Math.random() * ARENAS.length)].id : ARENAS[this.arena].id;
     this.salvar(); this.app.ultimaSeleccion = [this.vagas[0].p]; sfx('confirmar');
     const base = { p1: ids[0], p2: ids[1], p3: ids[2] ?? null, p4: ids[3] ?? null, arena, nivel: this.nivel };
+    // dois jogadores no mesmo PC: P1 no WASD + mouse, P2 nas setas + K L ENTER I O P
+    if (this.vagas[1]?.humano) return this.app.ir('combate', { modo: 'versus', p1: ids[0], p2: ids[1], arena });
     if (n === 4 && this.modo === 'duplas') return this.app.ir('combate', { ...base, modo: 'duplas', equipos: [0, 1, 0, 1] });
     return this.app.ir('combate', { ...base, modo: n === 2 ? 'cpu' : 'arena' });
   }
@@ -74,17 +76,18 @@ export class Lobby {
       if (!em(c)) return;
       const lx = p.x - c.x, ly = p.y - c.y;
       if (i > 0 && this.vagas.length > 2 && lx > c.w - 18 && ly < 16) { this.vagas.splice(i, 1); if (this.vagas.length < 4) this.modo = 'todos'; sfx('volver'); return; }
+      if (i === 1 && ly > c.h - 22 && lx > 30 && lx < 98) { v.humano = !v.humano; if (v.humano) { this.vagas.length = 2; this.modo = 'todos'; v.aleatorio = false; } sfx('seleccion'); return; }
       if (ly > c.h - 22 && lx > c.w - 96) { if (i > 0) { v.aleatorio = !v.aleatorio; if (v.aleatorio) v.p = azar(); sfx('seleccion'); } return; }
       if (lx < 18 || lx > c.w - 18) { const d = lx < 18 ? -1 : 1; let k = v.p; do { k = (k + d + ROSTER.length) % ROSTER.length; } while (i === 0 && !desbloqueado(ROSTER[k].id)); v.p = k; v.aleatorio = false; sfx('seleccion'); return; }
       this.lista = i; sfx('seleccion');
     });
     // vaga vazia: adiciona CPU
-    if (this.vagas.length < 4) { const c = this.posCard(this.vagas.length); if (em(c)) { this.vagas.push({ p: azar(), aleatorio: false }); sfx('confirmar'); } }
+    if (this.vagas.length < 4 && !this.vagas[1]?.humano) { const c = this.posCard(this.vagas.length); if (em(c)) { this.vagas.push({ p: azar(), aleatorio: false }); sfx('confirmar'); } }
     // arena
     for (let i = -1; i < ARENAS.length; i++) if (em(this.posArena(i))) { this.arena = i; sfx('seleccion'); }
     NIVEIS.forEach(([id], k) => { if (em(this.posNivel(k))) { this.nivel = id; sfx('seleccion'); } });
     if (em(this.posModo(0))) { this.modo = 'todos'; sfx('seleccion'); }
-    if (em(this.posModo(1))) { if (this.vagas.length === 4) { this.modo = 'duplas'; sfx('seleccion'); } else { while (this.vagas.length < 4) this.vagas.push({ p: azar(), aleatorio: false }); this.modo = 'duplas'; sfx('seleccion'); } }
+    if (em(this.posModo(1))) { if (this.vagas[1]) this.vagas[1].humano = false; if (this.vagas.length === 4) { this.modo = 'duplas'; sfx('seleccion'); } else { while (this.vagas.length < 4) this.vagas.push({ p: azar(), aleatorio: false }); this.modo = 'duplas'; sfx('seleccion'); } }
     if (em(this.posLutar())) this.lutar();
   }
   tecla(c, nova) {
@@ -109,7 +112,7 @@ export class Lobby {
     texto(g, 'ARENA', W / 2, 6, { tam: 16, align: 'center', color: '#facc15', borde: 2 });
     if (this.lista !== null) return this.dibujarLista(g);
     this.vagas.forEach((v, i) => this.dibujarCard(g, v, i, bank));
-    if (this.vagas.length < 4) { const c = this.posCard(this.vagas.length); g.setLineDash([5, 4]); caixa(g, c.x, c.y, c.w, c.h, 'rgba(10,25,60,0.4)', '#4f7bc4'); g.setLineDash([]); texto(g, '+ ADD CPU', c.x + c.w / 2, c.y + c.h / 2 - 6, { tam: 12, align: 'center', color: '#9fc0f0' }); }
+    if (this.vagas.length < 4 && !this.vagas[1]?.humano) { const c = this.posCard(this.vagas.length); g.setLineDash([5, 4]); caixa(g, c.x, c.y, c.w, c.h, 'rgba(10,25,60,0.4)', '#4f7bc4'); g.setLineDash([]); texto(g, '+ ADD CPU', c.x + c.w / 2, c.y + c.h / 2 - 6, { tam: 12, align: 'center', color: '#9fc0f0' }); }
     texto(g, 'ARENA', 14, 231, { tam: 8, color: '#9fc0f0' });
     botao(g, ...Object.values(this.posArena(-1)), 'RANDOM', this.arena === -1);
     ARENAS.forEach((a, i) => botao(g, ...Object.values(this.posArena(i)), a.nombre.slice(0, 8), this.arena === i));
@@ -121,7 +124,7 @@ export class Lobby {
     const L = this.posLutar(), pul = 1 + Math.sin(this.t * 5) * 0.03;
     g.save(); g.translate(L.x + L.w / 2, L.y + L.h / 2); g.scale(pul, pul); g.translate(-(L.x + L.w / 2), -(L.y + L.h / 2));
     caixa(g, L.x, L.y, L.w, L.h, '#facc15', '#fff7d6', 6); texto(g, 'FIGHT!', L.x + L.w / 2, L.y + 7, { tam: 12, align: 'center', color: '#1c1300' }); g.restore();
-    texto(g, this.modo === 'duplas' ? 'P1 + P3  VS  P2 + P4' : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
+    texto(g, this.vagas[1]?.humano ? 'P1: WASD + MOUSE  ·  P2: ARROWS + K L ENTER I O P' : this.modo === 'duplas' ? 'P1 + P3  VS  P2 + P4' : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
     texto(g, 'TAP A POKÉMON TO PICK ANOTHER · X REMOVES · RANDOM = NEW POKÉMON EVERY FIGHT', W / 2, 340, { tam: 6, align: 'center', color: '#9fc0f0' });
   }
 
@@ -129,7 +132,7 @@ export class Lobby {
     const c = this.posCard(i), def = ROSTER[v.p], cor = CORES[i];
     caixa(g, c.x, c.y, c.w, c.h, '#16223f', cor, 6);
     g.fillStyle = cor; g.fillRect(c.x + 1, c.y + 1, c.w - 2, 13);
-    texto(g, `P${i + 1} · ${i === 0 ? 'YOU' : 'CPU'}`, c.x + 6, c.y + 2, { tam: 8, color: '#ffffff' });
+    texto(g, `P${i + 1} · ${i === 0 ? 'YOU' : v.humano ? 'PLAYER 2' : 'CPU'}`, c.x + 6, c.y + 2, { tam: 8, color: '#ffffff' });
     if (i > 0 && this.vagas.length > 2) { g.fillStyle = '#7f1d1d'; g.fillRect(c.x + c.w - 16, c.y + 2, 12, 10); texto(g, 'X', c.x + c.w - 10, c.y + 2, { tam: 8, align: 'center', color: '#fecaca' }); }
     // setas
     texto(g, '<', c.x + 6, c.y + 38, { tam: 12, color: '#facc15' }); texto(g, '>', c.x + c.w - 14, c.y + 38, { tam: 12, color: '#facc15' });
@@ -147,7 +150,7 @@ export class Lobby {
       const rol = ROLES[def.rol]; if (rol) { const w = 8 + rol.nombre.length * 5; g.fillStyle = hex(rol.color); g.fillRect(tx, y, w, 10); texto(g, rol.nombre, tx + 4, y + 1, { tam: 6, color: '#ffffff' }); }
     }
     // controles de baixo
-    botao(g, c.x + 34, c.y + c.h - 20, 60, 15, i === 0 ? 'YOU' : 'CPU', i === 0);
+    botao(g, c.x + 34, c.y + c.h - 20, 60, 15, i === 0 ? 'YOU' : v.humano ? 'PLAYER 2' : 'CPU', i === 0 || v.humano);
     if (i > 0) botao(g, c.x + c.w - 94, c.y + c.h - 20, 80, 15, 'RANDOM', v.aleatorio);
   }
 
