@@ -10,7 +10,7 @@ export const CONTROLES = {
   tactil: { mover: 'Stick', lmb: 'ATK', rmb: 'SKL', esp: 'DASH', q: 'UTIL', e: 'ULT', mega: 'EVO' },
   teclado2: { mover: 'Arrows', lmb: 'K', rmb: 'L', esp: '↵', q: 'I', e: 'O', mega: 'P' },
 };
-export const nombreTecla = c => ({ Space: 'SPC', Enter: 'ENTER', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' }[c] ?? c.replace(/^Key|^Digit/, ''));
+export const nombreTecla = c => ({ Space: 'SPC', Enter: 'ENTER', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', NumpadAdd: 'NUM+', NumpadEnter: 'NUM ENTER' }[c] ?? c.replace(/^Key|^Digit/, '').replace(/^Numpad/, 'NUM'));
 
 const rgba = (c, a) => { const n = parseInt(c.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
 const VACIO = () => ({ mx: 0, my: 0, ax: 0, ay: 0, lmb: false, rmb: false, esp: false, q: false, e: false, mega: false });
@@ -20,17 +20,19 @@ export const ACOES = [['up', 'UP'], ['down', 'DOWN'], ['left', 'LEFT'], ['right'
 export const TECLAS_PADRAO = {
   p1: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', lmb: 'KeyG', rmb: 'KeyH', esp: 'Space', q: 'KeyQ', e: 'KeyE', mega: 'KeyF' },
   p2: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', lmb: 'KeyK', rmb: 'KeyL', esp: 'Enter', q: 'KeyI', e: 'KeyO', mega: 'KeyP' },
+  p3: { up: 'Numpad8', down: 'Numpad5', left: 'Numpad4', right: 'Numpad6', lmb: 'Numpad1', rmb: 'Numpad2', esp: 'Numpad0', q: 'Numpad3', e: 'NumpadAdd', mega: 'NumpadEnter' },
 };
 export const teclasDe = (app, j) => ({ ...TECLAS_PADRAO[j], ...(app.ajustes?.teclas?.[j] ?? {}) });
 // dispositivo de cada jogador: P1 'kbm' (teclado + mouse), 'teclado' (só teclado, mira automática), 'pad0'/'pad1'; P2 'teclado2', 'pad0', 'pad1'
-export const ENTRADAS = { p1: [['kbm', 'KEYS + MOUSE'], ['teclado', 'KEYBOARD'], ['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2']], p2: [['teclado2', 'KEYBOARD'], ['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2']] };
-export const entradaDe = (app, j) => app.ajustes?.entrada?.[j] ?? (j === 'p1' ? 'kbm' : 'teclado2');
+const PADS = [['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2'], ['pad2', 'GAMEPAD 3']];
+export const ENTRADAS = { p1: [['kbm', 'KEYS + MOUSE'], ['teclado', 'KEYBOARD'], ...PADS], p2: [['teclado2', 'KEYBOARD'], ...PADS], p3: [['teclado3', 'NUMPAD'], ...PADS] };
+export const entradaDe = (app, j) => app.ajustes?.entrada?.[j] ?? ({ p1: 'kbm', p2: 'teclado2', p3: 'teclado3' }[j]);
 const PAD = { lmb: 'X', rmb: 'B', esp: 'A', q: 'Y', e: 'RT', mega: 'LB' };
 // nomes das teclas para a barra de skills do HUD
 export function etiquetasDe(app, esquema) {
   if (esquema === 'tactil') return CONTROLES.tactil;
-  if (esquema === 'pad0' || esquema === 'pad1') return { mover: 'L-Stick', ...PAD };
-  const k = teclasDe(app, esquema === 'teclado2' ? 'p2' : 'p1'), n = nombreTecla;
+  if (/^pad\d$/.test(esquema)) return { mover: 'L-Stick', ...PAD };
+  const k = teclasDe(app, esquema === 'teclado2' ? 'p2' : esquema === 'teclado3' ? 'p3' : 'p1'), n = nombreTecla;
   const r = { mover: `${n(k.up)}${n(k.left)}${n(k.down)}${n(k.right)}`, lmb: n(k.lmb), rmb: n(k.rmb), esp: n(k.esp), q: n(k.q), e: n(k.e), mega: n(k.mega) };
   if (esquema === 'kbm') { r.lmb = 'LMB'; r.rmb = 'RMB'; }
   return r;
@@ -55,7 +57,7 @@ export class ControlHumano {
     };
     // celular que não foi reconhecido como toque no começo da luta: assim que há toque, vale o esquema de toque
     const esquema = this.esquema === 'kbm' && this.app.tactil?.activo ? 'tactil' : this.esquema;
-    let padI = esquema === 'pad0' ? 0 : esquema === 'pad1' ? 1 : this.comPad ? 0 : -1;
+    let padI = /^pad\d$/.test(esquema) ? +esquema[3] : this.comPad ? 0 : -1;
     if (esquema === 'kbm') {
       teclado('p1');
       it.lmb ||= ent.ptr.izq; it.rmb ||= ent.ptr.der;
@@ -63,6 +65,7 @@ export class ControlHumano {
       else mira();
     } else if (esquema === 'teclado') { teclado('p1'); mira(); }
     else if (esquema === 'teclado2') { teclado('p2'); mira(); }
+    else if (esquema === 'teclado3') { teclado('p3'); mira(); }
     else if (esquema === 'tactil') {
       const s = this.app.tactil?.estado ?? VACIO();
       Object.assign(it, s);

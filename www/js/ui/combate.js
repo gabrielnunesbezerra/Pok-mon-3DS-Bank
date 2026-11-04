@@ -116,15 +116,18 @@ export class Combate {
       this.sesion.alCerrar = () => { this.rivalFuera = true; };
       this.quiereOtra = new Set();
     } else {
-      const e1 = tactil ? 'tactil' : entradaDe(app, 'p1'), e2 = entradaDe(app, 'p2');
-      this.esquemas = { 0: e1, 1: d.modo === 'versus' ? e2 : e1 };
-      this.ctrls = [new ControlHumano(app, luta, a, e1, this.camara, d.modo !== 'versus' && e1 !== 'pad1')];
-      if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, e2, this.camara));
-      else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
-      else { this.ctrls.push(new IA(luta, b, d.nivel)); b.ventaja = ventajaDe(d.nivel); }
-      // arena e duplas: as outras vagas são CPU (no modo duplas o parceiro não ganha a vantagem da dificuldade)
-      for (let i = 2; i < luta.luchadores.length; i++) { const x = luta.luchadores[i]; this.ctrls.push(new IA(luta, x, d.nivel)); if (x.equipo !== a.equipo) x.ventaja = ventajaDe(d.nivel); }
-      this.humanos = d.modo === 'versus' ? [0, 1] : [0];
+      // quem é jogador neste PC: { lugar: 'p1' | 'p2' | 'p3' } (cada um com o seu dispositivo); o resto é CPU
+      const locais = d.locais ?? (d.modo === 'versus' ? { 0: 'p1', 1: 'p2' } : { 0: 'p1' }), nLoc = Object.keys(locais).length;
+      const timesHumanos = new Set(Object.keys(locais).map(i => luta.luchadores[i]?.equipo));
+      this.esquemas = {}; this.ctrls = [];
+      luta.luchadores.forEach((x, i) => {
+        const j = locais[i];
+        if (j) { const e = i === 0 && tactil ? 'tactil' : entradaDe(app, j); this.esquemas[i] = e; this.ctrls.push(new ControlHumano(app, luta, x, e, this.camara, nLoc === 1 && e !== 'pad1' && e !== 'pad2')); }
+        else if (d.modo === 'entreno' && i === 1) this.ctrls.push(new Muneco(x));
+        // CPU inimiga ganha a vantagem da dificuldade; CPU parceira de um jogador, não
+        else { this.ctrls.push(new IA(luta, x, d.nivel)); if (!timesHumanos.has(x.equipo)) x.ventaja = ventajaDe(d.nivel); }
+      });
+      this.humanos = Object.keys(locais).map(Number);
     }
     if (d.tutorial) this.tutorial = { pasos: [['move', 'MOVE', false], ['lmb', 'BASIC ATTACK', false], ['rmb', 'SKILL', false], ['esp', 'DODGE', false], ['q', 'UTILITY', false], ['e', 'ULTIMATE', false], ['mega', 'EVOLVE / MEGA', false]] };
     if (!app.tactil.activo) app.canvas.style.cursor = 'none';
@@ -148,7 +151,7 @@ export class Combate {
       return this.resultado?.lista.tecla(c);
     }
     if (this.menuSalir && c !== 'Escape') { this.menuSalir.tecla(c); return; }
-    if (c === 'Escape' || c === 'KeyP' && this.datos.modo !== 'versus' && !this.sesion) return this.alternarPausa();
+    if (c === 'Escape' || c === 'KeyP' && (this.humanos?.length ?? 1) < 2 && !this.sesion) return this.alternarPausa();
     if (this.luta?.entreno && !this.pausado) { if (c === 'KeyT') this.recargar(); else if (c === 'KeyK') this.alternarMuneco(); }
     if (c === 'KeyM') { this.app.ajustes.sonido = !this.app.ajustes.sonido; silenciar(!this.app.ajustes.sonido); this.app.guardarAjustes(); }
     if (this.pausado) {
@@ -380,7 +383,7 @@ export class Combate {
     this.hud.dibujar(g, luta, this.t);
     const tk = this.app.tactil.activo ? CONTROLES.tactil : etiquetasDe(this.app, this.esquemas?.[0] ?? 'kbm');
     // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
-    if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : { 0: tk, 1: etiquetasDe(this.app, this.esquemas?.[1] ?? 'teclado2') });
+    if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : Object.fromEntries(this.humanos.map(i => [i, i === 0 ? tk : etiquetasDe(this.app, this.esquemas?.[i] ?? 'teclado2')])));
     else if (!this.pausado && luta.fase !== 'fin') this.hud.barraSkills(g, luta, this.humanos, this.t, { 0: tk }, true);
     if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);
