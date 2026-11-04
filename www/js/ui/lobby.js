@@ -34,7 +34,7 @@ export class Lobby {
     const n = datos.n ?? salvo.n ?? 3;
     const meu = Math.max(0, ROSTER.findIndex(p => p.id === (app.ultimaSeleccion?.[0] != null ? ROSTER[app.ultimaSeleccion[0]]?.id : 'charmander')));
     this.vagas = Array.from({ length: n }, (_, i) => ({ p: i === 0 ? meu : salvo.vagas?.[i]?.p ?? azar(), aleatorio: i > 0 && (salvo.vagas?.[i]?.aleatorio ?? false) }));
-    if (!desbloqueado(ROSTER[this.vagas[0].p].id)) this.vagas[0].p = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
+    if (n !== 2 && !desbloqueado(ROSTER[this.vagas[0].p].id)) this.vagas[0].p = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
     this.arena = salvo.arena ?? -1; // -1 = aleatória
     this.nivel = salvo.nivel ?? app.ajustes.nivel ?? 'normal';
     this.modo = datos.modo ?? (n === 4 && salvo.modo === 'duplas' ? 'duplas' : 'todos');
@@ -45,7 +45,10 @@ export class Lobby {
   atras() { if (this.lista !== null) { this.lista = null; return; } sfx('volver'); this.app.ir('titulo'); }
   posCard(i) { return { x: CARD.x[i % 2], y: CARD.y[Math.floor(i / 2)], w: CARD.w, h: CARD.h }; }
 
+  // no 1 contra 1 todos os Pokémon estão liberados; com mais lutadores, o seu precisa estar desbloqueado na Liga
+  liberado(id) { return this.vagas.length === 2 || desbloqueado(id); }
   lutar() {
+    if (!this.liberado(ROSTER[this.vagas[0].p].id)) { sfx('error'); this.lista = 0; return; }
     const ids = this.vagas.map((v, i) => ROSTER[v.aleatorio ? azar() : v.p].id), n = ids.length;
     const arena = this.arena < 0 ? ARENAS[Math.floor(Math.random() * ARENAS.length)].id : ARENAS[this.arena].id;
     this.salvar(); this.app.ultimaSeleccion = [this.vagas[0].p]; sfx('confirmar');
@@ -65,7 +68,7 @@ export class Lobby {
         if (!em(c)) continue;
         const v = this.vagas[this.lista];
         if (i === ROSTER.length) { if (this.lista > 0) { v.aleatorio = true; v.p = azar(); } }
-        else { if (this.lista === 0 && !desbloqueado(ROSTER[i].id)) { sfx('error'); return; } v.p = i; v.aleatorio = false; }
+        else { if (this.lista === 0 && !this.liberado(ROSTER[i].id)) { sfx('error'); return; } v.p = i; v.aleatorio = false; }
         sfx('confirmar'); this.lista = null; return;
       }
       if (em({ x: 4, y: 4, w: 70, h: 18 })) this.lista = null;
@@ -81,7 +84,7 @@ export class Lobby {
       const jj = i === 0 ? 'p1' : v.humano ? 'p2' : null;
       if (jj && ly > c.h - 22 && lx > c.w - 106) { const ops = ENTRADAS[jj], k = ops.findIndex(([id]) => id === entradaDe(this.app, jj)); this.app.ajustes.entrada ??= {}; this.app.ajustes.entrada[jj] = ops[(k + 1) % ops.length][0]; this.app.guardarAjustes?.(); sfx('seleccion'); return; }
       if (ly > c.h - 22 && lx > c.w - 96) { if (i > 0) { v.aleatorio = !v.aleatorio; if (v.aleatorio) v.p = azar(); sfx('seleccion'); } return; }
-      if (lx < 18 || lx > c.w - 18) { const d = lx < 18 ? -1 : 1; let k = v.p; do { k = (k + d + ROSTER.length) % ROSTER.length; } while (i === 0 && !desbloqueado(ROSTER[k].id)); v.p = k; v.aleatorio = false; sfx('seleccion'); return; }
+      if (lx < 18 || lx > c.w - 18) { const d = lx < 18 ? -1 : 1; let k = v.p; do { k = (k + d + ROSTER.length) % ROSTER.length; } while (i === 0 && !this.liberado(ROSTER[k].id)); v.p = k; v.aleatorio = false; sfx('seleccion'); return; }
       this.lista = i; sfx('seleccion');
     });
     // vaga vazia: adiciona CPU
@@ -165,7 +168,7 @@ export class Lobby {
     texto(g, `PICK P${this.lista + 1}`, 320, 28, { tam: 8, align: 'center', color: '#e6eefc' });
     for (let i = 0; i <= ROSTER.length; i++) {
       const c = this.posPick(i), aleatorio = i === ROSTER.length, def = ROSTER[i];
-      const bloqueado = !aleatorio && this.lista === 0 && !desbloqueado(def.id), atual = !aleatorio && this.vagas[this.lista].p === i && !this.vagas[this.lista].aleatorio;
+      const bloqueado = !aleatorio && this.lista === 0 && !this.liberado(def.id), atual = !aleatorio && this.vagas[this.lista].p === i && !this.vagas[this.lista].aleatorio;
       caixa(g, c.x, c.y, c.w, c.h, atual ? '#2a4a8a' : '#16223f', atual ? '#facc15' : '#4f7bc4', 5);
       if (aleatorio) { if (this.lista === 0) continue; texto(g, '?', c.x + c.w / 2, c.y + 6, { tam: 24, align: 'center', color: '#facc15' }); texto(g, 'RANDOM', c.x + c.w / 2, c.y + c.h - 10, { tam: 6, align: 'center', color: '#ffffff' }); continue; }
       const r = bank.retrato(def.dex);
