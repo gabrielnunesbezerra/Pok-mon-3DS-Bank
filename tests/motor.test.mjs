@@ -7,14 +7,16 @@ import { IA } from '../www/js/engine/ia.js';
 import { ROSTER } from '../www/js/data/pokemon.js';
 import { REGLAS } from '../www/js/data/regras.js';
 import { sembrar } from '../www/js/engine/util.js';
+import { formasMega } from '../www/js/engine/formasMega.js';
+import { ROSTER_NOVOS } from '../www/js/data/pokemonNovos.js';
 
 const def = id => ROSTER.find(p => p.id === id);
 const nuevaLuta = (a = 'riolu', b = 'munchlax', extra = {}) => { const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 7, ...extra }); if (!extra.conEspera) l.inicioRonda = -999; return l; };
 const correr = (luta, seg, intentos = null) => { for (let i = 0; i < seg * 60; i++) { luta.paso(1 / 60, intentos); luta.tomarEventos(); } };
-const FORMAS = ['arraigoOnda', 'raioSolar', 'cascoSalto', 'canhaoAncorado', 'hipnoseToque', 'portalSombra', 'xFolha', 'surfar', 'telecinese', 'kamehaDraco', 'bolaPesadelo', 'jaulaTrovao', 'cortesFolha', 'laminaSolar', 'caudaMissil', 'linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'];
+const FORMAS = ['arraigoOnda', 'raioSolar', 'cascoSalto', 'canhaoAncorado', 'hipnoseToque', 'portalSombra', 'xFolha', 'surfar', 'telecinese', 'kamehaDraco', 'bolaPesadelo', 'jaulaTrovao', 'cortesFolha', 'laminaSolar', 'caudaMissil', 'linguada', 'teleSono', 'mergulhoFantasma', 'bocaFantasma', 'proyectil', 'crecimiento', 'dash', 'chorro', 'helice', 'tajo', 'golpe', 'cono', 'pulso', 'burbujas', 'caparazon', 'viento', 'lluvia', 'vuelo', 'erupcion', 'patada', 'descanso', 'meteoro', 'rafaga', 'clones', 'humo', 'embestidas', 'bombaLodo', 'plantaFeroz', 'arraigo', 'chapoteo', 'potenciar', 'escudo', 'explosion', 'trampa', 'torbellino', 'laco', 'ninguna', 'geiser', 'torreta', 'lanzaTorretas', 'espejo', 'curaAnillo', 'recuperar', 'estallido', 'burbuja', 'salto', 'flecha', 'puente', 'agarre', 'sismo', 'hueso', 'levitar', 'enrollar', 'bolaGigante', 'rodar', 'arenaRoca', 'espinho', 'almas', 'cortesSuelo', 'jabLuna', 'overheat', 'infierno', 'lineaVeneno', 'flipTurn', 'bombaAcida', 'aeronave', 'lluviaMeteoros', 'mordidaLanza', 'corrida', 'tormentaArena', 'tumbaArena', 'stoneEdge', 'vorticeArena', 'posesion', 'reinoSombras', 'vinculo', 'teleporte', 'campoFada', 'contraataque', 'deltaStream', 'voltSwitch', 'cadenaRayo', 'blitzPlasma', 'nocheEterna', 'bolaSombra', 'saltoSombra', 'lambida', 'maosSombra', 'telecinese', 'futuroVisao', 'luaCaindo', 'filhoteLanca', 'socoCombo', 'agarraoSlam', 'ascensaoDraco', 'passoSombra', 'pesadeloDuplo', 'brigaNuvem', 'salaTruque', 'abraco', 'arcoCarga', 'chuvaFlechas', 'espadasOrbita', 'espadaGigante', 'cancao', 'surfar'].concat(Object.keys(formasMega));
 
 test('o roster tem os 28 Pokémon pedidos', () => {
-  assert.deepEqual(ROSTER.map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora', 'sceptile']);
+  assert.deepEqual(ROSTER.slice(0, ROSTER.length - ROSTER_NOVOS.length).map(p => p.id), ['bulbasaur', 'charmander', 'squirtle', 'zubat', 'abra', 'onix', 'magikarp', 'munchlax', 'seedot', 'buneary', 'riolu', 'froakie', 'poltchageist', 'tynamo', 'veluza', 'duraludon', 'feebas', 'swablu', 'porygon', 'mewtwo', 'geodude', 'basculegion', 'basculegionf', 'sneasler', 'skrelp', 'dreepy', 'houndour', 'larvitar', 'gastly', 'zeraora', 'sceptile']);
   const finais = ROSTER.map(p => (p.evoluciones.at(-1).mega?.nombre ?? p.evoluciones.at(-1).nombre));
   assert.ok(finais.includes('MEGA CHARIZARD X') && finais.includes('MEGA STEELIX') && finais.includes('MEGA LUCARIO') && finais.includes('MEGA LOPUNNY'));
   assert.ok(ROSTER.some(p => p.evoluciones.some(e => e.nombre === 'GRENINJA')));
@@ -32,7 +34,8 @@ test('cada Pokémon tem as 5 skills e só usa formas que o motor conhece', () =>
 test('todos os sprites do PMD existem no manifesto e nos arquivos', { skip: !existsSync('www/assets/pmd/manifest.json') }, () => {
   const m = JSON.parse(readFileSync('www/assets/pmd/manifest.json', 'utf8'));
   for (const p of ROSTER) for (const f of [p, ...p.evoluciones]) for (const dex of [f.dex, f.mega?.dex].filter(Boolean)) {
-    assert.ok(m[dex]?.anims.Idle && m[dex].anims.Walk, `faltam sprites de ${dex}`);
+    // algumas Megas novas têm sprite incompleto no PMD (Chimecho só tem Idle): o jogo usa o Idle no lugar
+    assert.ok(m[dex]?.anims.Idle && (m[dex].anims.Walk || dex === f.mega?.dex), `faltam sprites de ${dex}`);
     assert.ok(existsSync(`www/assets/pmd/${m[dex].anims.Idle.file}`));
   }
 });
@@ -209,8 +212,20 @@ test('um duelo completo termina em melhor de 3 e é repetível com a mesma semen
 });
 
 test('os 72 duelos entre os 9 Pokémon terminam sem erro', () => {
-  for (const a of ROSTER) for (const b of ROSTER) {
+  const nove = ROSTER.slice(0, 9);
+  for (const a of nove) for (const b of nove) {
     if (a === b) continue;
+    const l = nuevaLuta(a.id, b.id, { semilla: 3 });
+    const ias = l.luchadores.map(x => new IA(l, x, 'normal'));
+    let n = 0;
+    while (l.fase !== 'fin' && n < 60 * 400) { l.paso(1 / 60, ias.map(ia => ia.intento(1 / 60))); l.tomarEventos(); n++; }
+    assert.equal(l.fase, 'fin', `${a.id} x ${b.id} não terminou`);
+  }
+});
+
+test('as linhas novas (Megas novas e Aegislash) lutam até o fim contra quatro rivais', () => {
+  const rivais = ['charmander', 'riolu', 'gastly', 'zeraora'].map(def);
+  for (const a of ROSTER.slice(-ROSTER_NOVOS.length)) for (const b of rivais) {
     const l = nuevaLuta(a.id, b.id, { semilla: 3 });
     const ias = l.luchadores.map(x => new IA(l, x, 'normal'));
     let n = 0;

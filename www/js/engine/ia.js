@@ -3,6 +3,7 @@
 // pelo dano esperado. Também se defende (dash, escudo, espelho) quando vê algo forte vindo.
 // Três níveis: easy, normal, hard. Usa o aleatório com semente, então a luta continua repetível.
 import { temDormindo } from './formasNovas.js';
+import { META } from './formasMega.js';
 import { temRio, ladoDoRio, pontePerto } from './obstaculos.js';
 import { RADIO, OVALO } from '../config.js';
 import { REGLAS, efectividad } from '../data/regras.js';
@@ -188,7 +189,8 @@ function perfil(h, slot, d) {
     case 'voltSwitch': P.retardo += d / (h.vel ?? 300); break;
     case 'cadenaRayo': case 'blitzPlasma': P.tipo = 'area'; P.alcance = h.alcance ?? 180; P.retardo = 0.1; break;
     default:
-      if (DEFESAS.has(f)) P.tipo = 'defensa';
+      if (META[f]?.ia) META[f].ia(P, h, d);
+      else if (DEFESAS.has(f)) P.tipo = 'defensa';
       else if (BUFFS.has(f)) P.tipo = 'buff';
   }
   if (f === 'caparazon') { P.tipo = 'defensa'; P.alcance = h.alcance * 0.9; }

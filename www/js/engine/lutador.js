@@ -64,12 +64,14 @@ export class Lutador {
   // ---------------------------------------------------------------- dados derivados
   get forma() { return etapaDe(this.def, this.etapa); }
   // shiny: a mesma forma com "s" no fim (pasta dos sprites shiny do PMD)
-  get dex() { return (this.mega ? this.forma.mega.dex : this.forma.dex) + (this.shiny ? 's' : ''); }
+  // Aegislash: na forma Lâmina usa o sprite e os atributos da lâmina (forma.lamina)
+  get lam() { return this.lamina && !this.mega ? this.forma.lamina : null; }
+  get dex() { return (this.mega ? this.forma.mega.dex : this.lam?.dex ?? this.forma.dex) + (this.shiny ? 's' : ''); }
   get nombre() { return this.mega ? this.forma.mega.nombre : this.forma.nombre; }
   get tipos() { return (this.mega && this.forma.mega.tipos) || this.forma.tipos; }
   get hpMax() { return Math.round(this.forma.hp * REGLAS.vidaGlobal); }
-  get atk() { return this.forma.atk + (this.mega ? this.forma.mega.atk : 0); }
-  get defensa() { return this.forma.def + (this.mega ? this.forma.mega.def : 0); }
+  get atk() { return this.forma.atk + (this.mega ? this.forma.mega.atk : 0) + (this.lam?.atk ?? 0); }
+  get defensa() { return this.forma.def + (this.mega ? this.forma.mega.def : 0) + (this.lam?.def ?? 0); }
   get velBase() { return this.forma.vel + (this.mega ? this.forma.mega.vel : 0); }
   get regen() { return this.forma.regen ?? this.def.regen; }
   get escala() { return (this.forma.escala ?? 1 + REGLAS.escalaPorEtapa * this.etapa) + (this.mega ? REGLAS.escalaMega : 0); }

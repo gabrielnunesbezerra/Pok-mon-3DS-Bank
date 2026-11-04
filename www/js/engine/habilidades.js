@@ -7,6 +7,7 @@ import { fijarCampo, fueraCampo, limitarCampo } from './fisica.js';
 import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacote, atingir, ponerCharco } from './entidades.js';
 import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
 import { formasNovas, ecoFilhote } from './formasNovas.js';
+import { formasMega } from './formasMega.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -43,7 +44,7 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega,
           };
   }
 
@@ -90,6 +91,11 @@ export class Habilidades {
     if (l.accion && l.accion !== accionAntes) { l.accion.h = h; l.accion.slot = slot; l.accion.desde = t; }
     l.energia -= coste;
     if (slot === 'e') l.ulti = 0;
+    // Stance Change (Aegislash): atacar puxa a espada (forma Lâmina), o King's Shield volta para a forma Escudo
+    if (l.forma.lamina && !l.mega) {
+      const lamina = slot === 'q' ? false : slot === 'lmb' || slot === 'rmb' || slot === 'e' ? true : l.lamina;
+      if (lamina !== !!l.lamina) { l.lamina = lamina; l.texto(lamina ? 'BLADE FORME' : 'SHIELD FORME', lamina ? '#fca5a5' : '#fde68a', { dy: 14 }); luta.emit({ t: 'trocaPostura', l, lamina }); }
+    }
     if (h.requierePlasma) l.plasma = 0;
     // Houndoom: golpes de fogo esquentam
     if (l.def.fervor && h.calienta) l.calentar(h.calienta);

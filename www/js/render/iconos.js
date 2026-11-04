@@ -1,4 +1,5 @@
 // Símbolos das skills desenhados em vetor: um por forma de skill (a mesma lista do motor).
+import { META } from '../engine/formasMega.js';
 // Cada símbolo cabe num quadrado de -1 a 1; contorno escuro por baixo e traço claro por cima.
 const CONTORNO = '#04102c';
 
@@ -80,6 +81,7 @@ const APELIDOS = {
   bolaSombra: 'bombaLodo', saltoSombra: 'dash', lambida: 'laco', maosSombra: 'trampa', posesion: 'humo', reinoSombras: 'escudo', vinculo: 'curaAnillo', teleporte: 'dash', campoFada: 'escudo', contraataque: 'espejo', deltaStream: 'viento', nocheEterna: 'humo',
 };
 for (const [k, v] of Object.entries(APELIDOS)) if (!GLIFOS[k] && GLIFOS[v]) GLIFOS[k] = GLIFOS[v];
+for (const [k, m] of Object.entries(META)) if (!GLIFOS[k] && GLIFOS[m.icono]) GLIFOS[k] = GLIFOS[m.icono];
 export const hayIcono = forma => forma in GLIFOS;
 
 // mistura de cores '#rrggbb' com branco (k > 0) ou preto (k < 0)

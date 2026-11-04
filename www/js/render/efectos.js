@@ -12,6 +12,7 @@ import { golpeChato } from './cortesPB.js';
 import { jatoAgua, bolasFogo, coluna, PALETA_COLUNA } from './raiosPB.js';
 import { ondaSom, fogoAnel } from './areaPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
+import './efectosMega.js';
 
 const ale = () => Math.random();
 const R = Math.round;
@@ -1391,7 +1392,7 @@ export function dibujarEntidades(g, luta, fx, t, dibujarLutadorClon, hue = null)
         }
         break;
       }
-      default: break;
+      default: if (ENTIDADES_NOVAS[e.tipo]) ENTIDADES_NOVAS[e.tipo](g, e, t, fx); break;
     }
   }
   // raios e cones por cima do chão
