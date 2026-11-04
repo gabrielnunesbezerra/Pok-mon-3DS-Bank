@@ -34,7 +34,7 @@ export class Lobby {
     const n = datos.n ?? salvo.n ?? 3;
     const meu = Math.max(0, ROSTER.findIndex(p => p.id === (app.ultimaSeleccion?.[0] != null ? ROSTER[app.ultimaSeleccion[0]]?.id : 'charmander')));
     this.vagas = Array.from({ length: n }, (_, i) => ({ p: i === 0 ? meu : salvo.vagas?.[i]?.p ?? azar(), aleatorio: i > 0 && (salvo.vagas?.[i]?.aleatorio ?? false) }));
-    if (n !== 2 && !desbloqueado(ROSTER[this.vagas[0].p].id)) this.vagas[0].p = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
+    if (false && !desbloqueado(ROSTER[this.vagas[0].p].id)) this.vagas[0].p = Math.max(0, ROSTER.findIndex(p => desbloqueado(p.id)));
     this.arena = salvo.arena ?? -1; // -1 = aleatória
     this.nivel = salvo.nivel ?? app.ajustes.nivel ?? 'normal';
     this.modo = datos.modo ?? (n === 4 && salvo.modo === 'duplas' ? 'duplas' : 'todos');
@@ -45,8 +45,8 @@ export class Lobby {
   atras() { if (this.lista !== null) { this.lista = null; return; } sfx('volver'); this.app.ir('titulo'); }
   posCard(i) { return { x: CARD.x[i % 2], y: CARD.y[Math.floor(i / 2)], w: CARD.w, h: CARD.h }; }
 
-  // no 1 contra 1 todos os Pokémon estão liberados; com mais lutadores, o seu precisa estar desbloqueado na Liga
-  liberado(id) { return this.vagas.length === 2 || desbloqueado(id); }
+  // no lobby todos os Pokémon estão liberados (a Liga continua com o desbloqueio dela)
+  liberado() { return true; }
   lutar() {
     if (!this.liberado(ROSTER[this.vagas[0].p].id)) { sfx('error'); this.lista = 0; return; }
     const ids = this.vagas.map((v, i) => ROSTER[v.aleatorio ? azar() : v.p].id), n = ids.length;
