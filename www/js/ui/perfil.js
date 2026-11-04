@@ -1,4 +1,4 @@
-// Perfil: entrar ou criar conta (a mesma do Poke Bank), escolher o ícone (liberado na Liga),
+// Perfil: entrar ou criar conta (a mesma do Poke Bank), escolher o ícone (todos liberados),
 // ver amigos, aceitar pedidos de amizade, adicionar amigos e chamar um amigo para uma sala.
 import { ANCHO, ALTO, UI } from '../config.js';
 import { ROSTER } from '../data/pokemon.js';
@@ -8,7 +8,7 @@ import { centrada } from './centrar.js';
 import { pedirFormulario } from './formulario.js';
 import { cuenta } from '../nube/firebase.js';
 import { social } from '../nube/social.js';
-import { icono, elegirIcono, iconoLiberado, desbloqueados, vitorias, LIGA } from '../liga/liga.js';
+import { icono, elegirIcono, shiniesLiberados } from '../data/conta.js';
 
 const B = (x, y, w, h, id, txt, estilo = 'azul') => ({ x, y, w, h, id, txt, estilo });
 const dentro = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
@@ -48,7 +48,7 @@ export class Perfil {
         const novo = nome === 'crear';
         const f = await pedirFormulario({
           titulo: novo ? 'Create account' : 'Sign in',
-          nota: novo ? 'The same account works in the Poké Bank. Your League progress is saved in it.' : 'Use your PK confront or Poké Bank account (username or e-mail).',
+          nota: novo ? 'The same account works in the Poké Bank. Your shinies are saved in it.' : 'Use your PK confront or Poké Bank account (username or e-mail).',
           campos: [{ id: 'usuario', rotulo: novo ? 'Username (3 to 20 letters, numbers, . or _)' : 'Username or e-mail', max: 60, autocomplete: 'username' }, { id: 'senha', rotulo: 'Password (6+ characters)', tipo: 'password', autocomplete: novo ? 'new-password' : 'current-password' }],
           ok: novo ? 'CREATE' : 'SIGN IN',
         });
@@ -62,11 +62,11 @@ export class Perfil {
     this.ocupado = false;
   }
 
-  cajaIcono(i) { const c = i % 10, f = Math.floor(i / 10); return { x: 40 + c * 57, y: 60 + f * 60, w: 52, h: 52 }; }
+  cajaIcono(i) { const c = i % 14, f = Math.floor(i / 14); return { x: 19 + c * 43, y: 34 + f * 43, w: 40, h: 40 }; }
   tecla(c, nueva) { if (nueva && (c === 'Escape' || c === 'Backspace')) this.acao(this.modo === 'iconos' ? 'voltar' : 'menu'); }
   puntero(tipo, p) {
     if (tipo !== 'down') return;
-    if (this.modo === 'iconos') ROSTER.forEach((q, i) => { if (dentro(p, this.cajaIcono(i))) { if (elegirIcono(q.id)) { sfx('confirmar'); this.decir(`ICON: ${q.nombre}`); this.modo = 'perfil'; } else { sfx('atras'); this.decir('WIN 2 TIMES IN THE LEAGUE TO UNLOCK THIS ICON', true); } } });
+    if (this.modo === 'iconos') ROSTER.forEach((q, i) => { if (dentro(p, this.cajaIcono(i))) { if (elegirIcono(q.id)) { sfx('confirmar'); this.decir(`ICON: ${q.nombre}`); this.modo = 'perfil'; } } });
     for (const b of this.botones()) if (dentro(p, b)) return this.acao(b.id);
   }
   actualizar(dt) { this.t += dt; }
@@ -85,18 +85,16 @@ export class Perfil {
     texto(g, this.modo === 'iconos' ? 'PROFILE ICON' : 'PROFILE', ANCHO / 2, 13, { tam: 12, color: UI.amarillo, borde: 3, align: 'center', base: 'middle' });
     if (this.modo === 'iconos') {
       ROSTER.forEach((q, i) => {
-        const b = this.cajaIcono(i), ok = iconoLiberado(q.id);
-        marco(g, b.x, b.y, b.w, b.h, icono() === q.id ? 'oro' : ok ? 'azul' : 'apagado');
-        this.retrato(g, q.id, b.x + 4, b.y + 4, 44, !ok);
-        if (!ok) texto(g, `${vitorias(q.id)}/2`, b.x + b.w / 2, b.y + b.h - 8, { tam: 7, align: 'center', color: '#ffd23c', borde: 2 });
+        const b = this.cajaIcono(i);
+        marco(g, b.x, b.y, b.w, b.h, icono() === q.id ? 'oro' : 'azul');
+        this.retrato(g, q.id, b.x + 3, b.y + 3, 34);
       });
-      texto(g, 'Icons unlock with 2 League wins against that Pokémon. Starters are free.', ANCHO / 2, 300, { tam: 7, align: 'center', color: UI.suave });
     } else if (!cuenta.conectado) {
       marco(g, 150, 46, 340, 140, 'panel');
       this.retrato(g, icono(), 290, 58, 60);
       texto(g, 'GUEST', ANCHO / 2, 132, { tam: 12, align: 'center', color: '#fff', borde: 3 });
       texto(g, 'Sign in with your Poké Bank account, or create one.', ANCHO / 2, 152, { tam: 7, align: 'center', color: UI.suave });
-      texto(g, 'Your League progress goes to the cloud, friends can find you', ANCHO / 2, 164, { tam: 7, align: 'center', color: UI.suave });
+      texto(g, 'Your shinies go to the cloud, friends can find you', ANCHO / 2, 164, { tam: 7, align: 'center', color: UI.suave });
       texto(g, 'and invite you, and rooms work even on school Wi-Fi or a VPN.', ANCHO / 2, 176, { tam: 7, align: 'center', color: UI.suave });
     } else {
       // cartão do jogador
@@ -104,9 +102,8 @@ export class Perfil {
       marco(g, 63, 44, 84, 84, 'oro');
       this.retrato(g, icono(), 67, 48, 76);
       texto(g, cuenta.nombre.toUpperCase(), 105, 142, { tam: 11, align: 'center', color: '#fff', borde: 3, max: 170 });
-      const total = LIGA.circuitos.flatMap(c => c.rivales), estrelas = total.reduce((n, id) => n + vitorias(id), 0);
-      texto(g, `UNLOCKED ${desbloqueados().length}/${ROSTER.length}`, 105, 166, { tam: 8, align: 'center', color: '#7dd3fc' });
-      texto(g, `LEAGUE STARS ${estrelas}/${total.length * 3}`, 105, 182, { tam: 8, align: 'center', color: '#ffd23c' });
+      texto(g, `${ROSTER.length} POKÉMON`, 105, 166, { tam: 8, align: 'center', color: '#7dd3fc' });
+      texto(g, `SHINIES ${shiniesLiberados().length}/${ROSTER.length}`, 105, 182, { tam: 8, align: 'center', color: '#ffd23c' });
       texto(g, 'Same account as the Poké Bank', 105, 214, { tam: 6, align: 'center', color: UI.apagado });
       // amigos e pedidos
       marco(g, 206, 34, 420, 278, 'panel');

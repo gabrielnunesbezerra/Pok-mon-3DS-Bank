@@ -44,7 +44,7 @@ function pokebolaMini(g, x, y, R, rot, abre, al = 1) {
 }
 import { texto, marco, rect } from '../render/pixel.js';
 import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
-import { vencer as vencerLiga } from '../liga/liga.js';
+import { sortearShiny } from '../data/conta.js';
 import { ListaBotones } from './menus.js';
 import { sfx, silenciar, activarMusica, pararMusica } from '../audio.js';
 import { TICK } from '../config.js';
@@ -94,9 +94,12 @@ export class Combate {
   empezar() {
     const d = this.datos, app = this.app, bank = app.bank;
     const online = d.modo === 'online';
-    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, shiny: d.shiny ?? [], etapas: d.etapas ?? [0, 0, 0, 0], equipos: d.equipos ?? null, modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
+    // shiny: 1% de chance para o Pokémon de cada jogador ao entrar na partida (online o sorteio vem da seleção); o que sai fica liberado
+    const shiny = online ? (d.shiny ?? []).map((s, i) => ({ shiny: !!s, novo: !!d.shinyNovo?.[i] })) : this.defs.map((def, i) => (i === 0 || (i === 1 && d.modo === 'versus') ? sortearShiny(def.id, !!d.shinyQuer?.[i]) : { shiny: false }));
+    this.luta = new Luta({ p1: this.defs[0], p2: this.defs[1], p3: this.defs[2] ?? null, p4: this.defs[3] ?? null, shiny: shiny.map(s => s.shiny), etapas: d.etapas ?? [0, 0, 0, 0], equipos: d.equipos ?? null, modo: online ? 'versus' : d.modo, arena: d.arena, medidas: dex => bank.medidas(dex), semilla: online ? d.semilla : (Math.random() * 1e9) | 0 });
     const luta = this.luta;
     const [a, b] = luta.luchadores;
+    luta.luchadores.forEach((l, i) => { if (shiny[i]?.shiny) l.texto(shiny[i].novo ? 'NEW SHINY UNLOCKED!' : 'SHINY!', '#ffe27a'); });
     const tactil = app.tactil.activo;
     this.lado = online ? d.lado : 0;
     this.sesion = online ? app.online : null;
@@ -135,7 +138,7 @@ export class Combate {
   }
 
   salir() { this.app.canvas.style.cursor = 'default'; }
-  volver(a = 'seleccion') { this.app.ir(this.datos.tutorial ? 'titulo' : a, { modo: this.datos.modo }); }
+  volver() { const d = this.datos; if (d.tutorial) return this.app.ir('titulo'); this.app.ir('lobby', { modo: d.modo, n: [d.p1, d.p2, d.p3, d.p4].filter(Boolean).length }); }
 
   // ---------------------------------------------------------------- entrada
   tecla(c, nueva) {
@@ -281,19 +284,16 @@ export class Combate {
     const titulo = luta.equipos && (d.modo === 'online' || vs) ? (venci ? 'VICTORY!' : 'DEFEAT') : d.modo === 'online' ? (venci ? 'VICTORY!' : `PLAYER ${ganador + 1} WINS`) : d.modo === 'versus' ? `PLAYER ${ganador + 1} WINS!` : vs ? (venci ? 'VICTORY' : 'DEFEAT') : `${l.nombre} WINS`;
     this.venci = venci;
     sfx((vs || d.modo === 'online') && !venci ? 'derrota' : 'victoria');
-    // Liga Pokémon: a vitória conta para o rival e pode liberar Pokémon, ícone ou shiny
-    const premios = d.liga && ganador === 0 ? vencerLiga(d.liga) : [];
-    if (premios.length) { sfx('evoCarga'); this.app.alProgreso?.(); }
     this.resultado = {
-      ganador, titulo, premios,
+      ganador, titulo,
       lista: new ListaBotones(this.sesion ? {
         x: ANCHO / 2, y: 232, w: 170, h: 22, paso: 26,
         ops: [{ txt: 'REMATCH', id: 'otra' }, { txt: 'MAIN MENU', id: 'menu' }],
         alElegir: o => { if (o.id === 'otra') this.pedirOtra(); else this.salirOnline(); },
       } : {
         x: ANCHO / 2, y: 232, w: 170, h: 22, paso: 26,
-        ops: d.liga ? [{ txt: 'BACK TO THE LEAGUE', id: 'liga' }, { txt: 'FIGHT AGAIN', id: 'otraLiga' }, { txt: 'MAIN MENU', id: 'menu' }] : [{ txt: 'REMATCH', id: 'otra' }, { txt: 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' }],
-        alElegir: o => { if (o.id === 'otra') this.revancha(); else if (o.id === 'liga') this.app.ir('liga'); else if (o.id === 'otraLiga') this.app.ir('seleccion', { modo: 'liga', liga: d.liga }); else if (o.id === 'cambiar') this.volver(); else this.app.ir('titulo'); },
+        ops: [{ txt: 'REMATCH', id: 'otra' }, { txt: 'CHANGE POKÉMON', id: 'cambiar' }, { txt: 'MAIN MENU', id: 'menu' }],
+        alElegir: o => { if (o.id === 'otra') this.revancha(); else if (o.id === 'cambiar') this.volver(); else this.app.ir('titulo'); },
       }),
     };
   }
@@ -884,10 +884,7 @@ export class Combate {
       texto(g, ganhou ? 'WIN' : 'LOSE', x0 + 5, y0 + 46, { tam: 7, color: ganhou ? '#86efac' : '#9aa0b4' });
       if (x === mvp && mvp.stats.dano > 0) { g.fillStyle = '#ffd23c'; g.beginPath(); g.roundRect(x0 + cw - 34, y0 + 44, 28, 12, 5); g.fill(); texto(g, 'MVP', x0 + cw - 20, y0 + 46, { tam: 6, color: '#3a2a00', align: 'center' }); }
     });
-    if (r.premios?.length) {
-      const nome = luta.luchadores[1].def.nombre, TXT = { pokemon: `${nome} UNLOCKED!`, icono: `${nome} PROFILE ICON UNLOCKED!`, shiny: `SHINY ${nome} UNLOCKED!`, liga: 'LEAGUE CLEARED!' };
-      r.premios.forEach((k, i) => texto(g, TXT[k], ANCHO / 2, 190 + i * 14, { tam: 9, color: k === 'shiny' || k === 'liga' ? '#ffe27a' : '#86efac', align: 'center', borde: 3, peso: 700 }));
-    } else texto(g, this.datos.liga ? (r.ganador === 0 ? 'WIN AGAIN FOR MORE REWARDS' : 'TRY AGAIN!') : this.app.tactil.activo ? '' : this.sesion ? 'R  REMATCH      ESC  LEAVE' : 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
+    texto(g, this.app.tactil.activo ? '' : this.sesion ? 'R  REMATCH      ESC  LEAVE' : 'R  REMATCH      ESC  PICK AGAIN', ANCHO / 2, 200, { tam: 8, color: '#f8c448', align: 'center' });
     r.lista.dibujar(g, this.t);
   }
 

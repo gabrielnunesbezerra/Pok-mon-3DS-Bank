@@ -1,9 +1,9 @@
-// Social pela conta do Poke Bank: progresso da Liga salvo no perfil, presença (online), amigos,
+// Social pela conta do Poke Bank: shinies liberados salvos no perfil, presença (online), amigos,
 // pedidos de amizade e convites para sala. Tudo nos caminhos que as regras do Poke Bank já permitem:
 // profiles/<uid> (o próprio perfil), presence/<uid>, friends, friendRequests e arena/results/<evento>/<uid>
 // (cada um escreve só o seu nó, todos os logados leem) para convites e salas.
 import { cuenta, claveNombre, normalizarNombre } from './firebase.js';
-import * as liga from '../liga/liga.js';
+import * as conta from '../data/conta.js';
 
 export const EVENTO_CONVITE = uid => `pkcinv_${uid}`;
 const VALIDADE_CONVITE = 10 * 60 * 1000;
@@ -20,14 +20,14 @@ class Social {
   // liga/desliga junto com a conta
   iniciar() {
     cuenta.alCambiar(s => (s ? this.ligar() : this.desligar()));
-    liga.alCambiar(() => this.salvarProgresso());
+    conta.alCambiar(() => this.salvarProgresso());
     if (cuenta.conectado) this.ligar();
   }
   async ligar() {
     this.desligar();
     try {
       const remoto = await cuenta.get(`profiles/${cuenta.uid}/pkc`);
-      liga.fundir(remoto);
+      conta.fundir(remoto);
       await this.salvarProgresso(true);
     } catch (e) { this.ultimoErro = e.message; }
     const presenca = () => cuenta.put(`presence/${cuenta.uid}`, Date.now()).catch(() => {});
@@ -45,7 +45,7 @@ class Social {
   async salvarProgresso(agora = false) {
     if (!cuenta.conectado) return;
     clearTimeout(this.salvarT);
-    const enviar = () => { const p = liga.progreso(); return cuenta.patch(`profiles/${cuenta.uid}/pkc`, { vencidos: p.vencidos, icono: p.icono ?? null, t: Date.now() }).catch(e => { this.ultimoErro = e.message; }); };
+    const enviar = () => { const p = conta.progreso(); return cuenta.patch(`profiles/${cuenta.uid}/pkc`, { shinies: p.shinies, icono: p.icono ?? null, t: Date.now() }).catch(e => { this.ultimoErro = e.message; }); };
     if (agora) return enviar();
     this.salvarT = setTimeout(enviar, 1500);
   }

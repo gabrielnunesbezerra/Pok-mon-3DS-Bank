@@ -11,7 +11,6 @@ import { Pokedex } from './ui/pokedex.js';
 import { Seleccion } from './ui/seleccion.js';
 import { Online } from './ui/online.js';
 import { LayoutTactil } from './ui/layout.js';
-import { Liga } from './ui/liga.js';
 import { Perfil } from './ui/perfil.js';
 import { social } from './nube/social.js';
 import { formularioAberto } from './ui/formulario.js';
@@ -62,7 +61,7 @@ canvas.addEventListener('contextrestored', () => {
   app.geracaoGrafica++;
   aviso.style.display = 'none';
 });
-const ESCENAS = { lobby: Lobby, titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, liga: Liga, perfil: Perfil, fxlab: FxLab, combate: Combate };
+const ESCENAS = { lobby: Lobby, titulo: Titulo, creditos: Creditos, controles: Controles, pokedex: Pokedex, seleccion: Seleccion, online: Online, layout: LayoutTactil, perfil: Perfil, fxlab: FxLab, combate: Combate };
 
 function cargarAjustes() {
   try { return { musica: true, sonido: true, ...JSON.parse(localStorage.getItem('pkconfront.ajustes')) }; } catch { return { musica: true, sonido: true }; }
