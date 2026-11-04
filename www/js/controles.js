@@ -15,10 +15,32 @@ export const nombreTecla = c => ({ Space: 'SPC', Enter: 'ENTER', ArrowUp: '↑',
 const rgba = (c, a) => { const n = parseInt(c.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
 const VACIO = () => ({ mx: 0, my: 0, ax: 0, ay: 0, lmb: false, rmb: false, esp: false, q: false, e: false, mega: false });
 
+// teclas de cada jogador (dá para trocar na tela CONTROLS; ficam salvas nos ajustes)
+export const ACOES = [['up', 'UP'], ['down', 'DOWN'], ['left', 'LEFT'], ['right', 'RIGHT'], ['lmb', 'BASIC'], ['rmb', 'SKILL'], ['esp', 'DASH'], ['q', 'UTILITY'], ['e', 'ULTIMATE'], ['mega', 'EVOLVE']];
+export const TECLAS_PADRAO = {
+  p1: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', lmb: 'KeyG', rmb: 'KeyH', esp: 'Space', q: 'KeyQ', e: 'KeyE', mega: 'KeyF' },
+  p2: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', lmb: 'KeyK', rmb: 'KeyL', esp: 'Enter', q: 'KeyI', e: 'KeyO', mega: 'KeyP' },
+};
+export const teclasDe = (app, j) => ({ ...TECLAS_PADRAO[j], ...(app.ajustes?.teclas?.[j] ?? {}) });
+// dispositivo de cada jogador: P1 'kbm' (teclado + mouse), 'teclado' (só teclado, mira automática), 'pad0'/'pad1'; P2 'teclado2', 'pad0', 'pad1'
+export const ENTRADAS = { p1: [['kbm', 'KEYS + MOUSE'], ['teclado', 'KEYBOARD'], ['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2']], p2: [['teclado2', 'KEYBOARD'], ['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2']] };
+export const entradaDe = (app, j) => app.ajustes?.entrada?.[j] ?? (j === 'p1' ? 'kbm' : 'teclado2');
+const PAD = { lmb: 'X', rmb: 'B', esp: 'A', q: 'Y', e: 'RT', mega: 'LB' };
+// nomes das teclas para a barra de skills do HUD
+export function etiquetasDe(app, esquema) {
+  if (esquema === 'tactil') return CONTROLES.tactil;
+  if (esquema === 'pad0' || esquema === 'pad1') return { mover: 'L-Stick', ...PAD };
+  const k = teclasDe(app, esquema === 'teclado2' ? 'p2' : 'p1'), n = nombreTecla;
+  const r = { mover: `${n(k.up)}${n(k.left)}${n(k.down)}${n(k.right)}`, lmb: n(k.lmb), rmb: n(k.rmb), esp: n(k.esp), q: n(k.q), e: n(k.e), mega: n(k.mega) };
+  if (esquema === 'kbm') { r.lmb = 'LMB'; r.rmb = 'RMB'; }
+  return r;
+}
+
 export class ControlHumano {
-  // esquema: 'kbm' (WASD + mouse), 'teclado2' (setas + K L Enter I O P), 'pad' (controle), 'tactil'
-  constructor(app, luta, l, esquema, camara) {
-    this.app = app; this.luta = luta; this.l = l; this.esquema = esquema; this.camara = camara; this.tactil = null;
+  // esquema: 'kbm' (teclado + mouse), 'teclado' (só teclado do P1), 'teclado2' (teclado do P2), 'pad0'/'pad1' (controle), 'tactil'
+  // comPad: no jogo de um jogador só, o controle 1 também vale junto com o teclado
+  constructor(app, luta, l, esquema, camara, comPad = false) {
+    this.app = app; this.luta = luta; this.l = l; this.esquema = esquema; this.camara = camara; this.tactil = null; this.comPad = comPad;
     this.ultimoMouse = -9;
     l.humano = true;
   }
@@ -26,36 +48,34 @@ export class ControlHumano {
     const l = this.l, ent = this.app.entrada, r = l.rival;
     const it = VACIO();
     const mira = () => { it.ax = r ? r.x : l.x + 100; it.ay = r ? r.y : l.y; };
+    const teclado = j => {
+      const k = teclasDe(this.app, j), a = c => ent.abajo(c);
+      it.mx = (a(k.right) ? 1 : 0) - (a(k.left) ? 1 : 0); it.my = (a(k.down) ? 1 : 0) - (a(k.up) ? 1 : 0);
+      it.lmb = a(k.lmb); it.rmb = a(k.rmb); it.esp = a(k.esp); it.q = a(k.q); it.e = a(k.e); it.mega = a(k.mega);
+    };
     // celular que não foi reconhecido como toque no começo da luta: assim que há toque, vale o esquema de toque
-    // (senão o dedo do analógico virava a "mira do mouse" e o golpe saía para o lado errado)
     const esquema = this.esquema === 'kbm' && this.app.tactil?.activo ? 'tactil' : this.esquema;
+    let padI = esquema === 'pad0' ? 0 : esquema === 'pad1' ? 1 : this.comPad ? 0 : -1;
     if (esquema === 'kbm') {
-      it.mx = (ent.abajo('KeyD') ? 1 : 0) - (ent.abajo('KeyA') ? 1 : 0);
-      it.my = (ent.abajo('KeyS') ? 1 : 0) - (ent.abajo('KeyW') ? 1 : 0);
-      it.lmb = ent.ptr.izq || ent.abajo('KeyJ');
-      it.rmb = ent.ptr.der || ent.abajo('KeyK');
-      it.esp = ent.abajo('Space'); it.q = ent.abajo('KeyQ'); it.e = ent.abajo('KeyE'); it.mega = ent.abajo('KeyF') || ent.abajo('KeyR');
+      teclado('p1');
+      it.lmb ||= ent.ptr.izq; it.rmb ||= ent.ptr.der;
       if (!ent.ptr.fuera && this.camara) { const p = this.camara.aMundo(ent.ptr.x, ent.ptr.y); it.ax = p.x; it.ay = p.y; this.hayMouse = true; }
       else mira();
-    } else if (esquema === 'teclado2') {
-      it.mx = (ent.abajo('ArrowRight') ? 1 : 0) - (ent.abajo('ArrowLeft') ? 1 : 0);
-      it.my = (ent.abajo('ArrowDown') ? 1 : 0) - (ent.abajo('ArrowUp') ? 1 : 0);
-      it.lmb = ent.abajo('KeyK'); it.rmb = ent.abajo('KeyL'); it.esp = ent.abajo('Enter'); it.q = ent.abajo('KeyI'); it.e = ent.abajo('KeyO'); it.mega = ent.abajo('KeyP');
-      mira();
-    } else if (esquema === 'tactil') {
+    } else if (esquema === 'teclado') { teclado('p1'); mira(); }
+    else if (esquema === 'teclado2') { teclado('p2'); mira(); }
+    else if (esquema === 'tactil') {
       const s = this.app.tactil?.estado ?? VACIO();
       Object.assign(it, s);
       mira();
       if (s.apunta) { it.ax = l.x + s.apunta.x * 220; it.ay = l.y + s.apunta.y * 220; }
-    }
-    // controle: funciona junto com qualquer esquema do jogador 1
-    const pad = ent.mando(this.esquema === 'teclado2' ? 1 : 0);
+    } else mira();
+    const pad = padI >= 0 ? ent.mando(padI) : null;
     if (pad) {
       const dz = v => (Math.abs(v) > 0.2 ? v : 0);
       const px = dz(pad.axes[0]), py = dz(pad.axes[1]);
       if (px || py) { it.mx = px; it.my = py; }
       const rx = pad.axes[2] ?? 0, ry = pad.axes[3] ?? 0;
-      if (Math.hypot(rx, ry) > 0.35) { it.ax = l.x + rx * 200; it.ay = l.y + ry * 200; } else if (this.esquema !== 'kbm' || ent.ptr.fuera) mira();
+      if (Math.hypot(rx, ry) > 0.35) { it.ax = l.x + rx * 200; it.ay = l.y + ry * 200; } else if (esquema !== 'kbm' || ent.ptr.fuera) mira();
       const b = i => pad.buttons[i]?.pressed;
       it.lmb ||= b(2) || b(7); it.rmb ||= b(1) || b(5); it.esp ||= b(0); it.q ||= b(3); it.e ||= b(7) && b(6) || b(4) && b(5); it.mega ||= b(4);
     }

@@ -43,7 +43,7 @@ function pokebolaMini(g, x, y, R, rot, abre, al = 1) {
   g.restore();
 }
 import { texto, marco, rect } from '../render/pixel.js';
-import { ControlHumano, PanelTactil, CONTROLES } from '../controles.js';
+import { ControlHumano, PanelTactil, CONTROLES, entradaDe, etiquetasDe } from '../controles.js';
 import { vencer as vencerLiga } from '../liga/liga.js';
 import { ListaBotones } from './menus.js';
 import { sfx, silenciar, activarMusica, pararMusica } from '../audio.js';
@@ -106,7 +106,7 @@ export class Combate {
       { x: ANCHO - 140, y: 52, w: 88, h: 24, txt: () => (this.ctrls[1]?.quieto ? 'DUMMY: STILL' : 'DUMMY: MOVES'), al: () => this.alternarMuneco() },
     ] : [];
     if (online) {
-      this.ctrls = luta.luchadores.map((l, i) => (i === this.lado ? new ControlHumano(app, luta, l, tactil ? 'tactil' : 'kbm', this.camara) : null));
+      this.ctrls = luta.luchadores.map((l, i) => (i === this.lado ? new ControlHumano(app, luta, l, tactil ? 'tactil' : entradaDe(app, 'p1'), this.camara, true) : null));
       this.humanos = [this.lado];
       // duplas online: o anfitrião joga pelas CPUs que completam os times
       this.iasCpu = {};
@@ -116,8 +116,10 @@ export class Combate {
       this.sesion.alCerrar = () => { this.rivalFuera = true; };
       this.quiereOtra = new Set();
     } else {
-      this.ctrls = [new ControlHumano(app, luta, a, tactil ? 'tactil' : 'kbm', this.camara)];
-      if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, 'teclado2', this.camara));
+      const e1 = tactil ? 'tactil' : entradaDe(app, 'p1'), e2 = entradaDe(app, 'p2');
+      this.esquemas = { 0: e1, 1: d.modo === 'versus' ? e2 : e1 };
+      this.ctrls = [new ControlHumano(app, luta, a, e1, this.camara, d.modo !== 'versus' && e1 !== 'pad1')];
+      if (d.modo === 'versus') this.ctrls.push(new ControlHumano(app, luta, b, e2, this.camara));
       else if (d.modo === 'entreno') this.ctrls.push(new Muneco(b));
       else { this.ctrls.push(new IA(luta, b, d.nivel)); b.ventaja = ventajaDe(d.nivel); }
       // arena e duplas: as outras vagas são CPU (no modo duplas o parceiro não ganha a vantagem da dificuldade)
@@ -376,9 +378,9 @@ export class Combate {
 
     // HUD
     this.hud.dibujar(g, luta, this.t);
-    const tk = this.app.tactil.activo ? CONTROLES.tactil : CONTROLES.kbm;
+    const tk = this.app.tactil.activo ? CONTROLES.tactil : etiquetasDe(this.app, this.esquemas?.[0] ?? 'kbm');
     // no celular os botões já mostram tudo: sem a faixa de skills, a luta usa a tela inteira
-    if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : { 0: tk, 1: CONTROLES.teclado2 });
+    if (!this.app.tactil.activo) this.hud.barraSkills(g, luta, this.humanos, this.t, this.sesion ? { 0: tk, 1: tk, 2: tk, 3: tk } : { 0: tk, 1: etiquetasDe(this.app, this.esquemas?.[1] ?? 'teclado2') });
     else if (!this.pausado && luta.fase !== 'fin') this.hud.barraSkills(g, luta, this.humanos, this.t, { 0: tk }, true);
     if (this.sesion) this.dibujarRed(g);
     if (this.app.tactil.activo && !this.pausado && luta.fase !== 'fin') this.app.tactil.dibujar(g, this.t);

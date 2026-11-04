@@ -9,6 +9,7 @@ import { texto } from '../render/pixel.js';
 import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
 import { desbloqueado } from '../liga/liga.js';
+import { ENTRADAS, entradaDe } from '../controles.js';
 
 const CORES = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const NIVEIS = [['facil', 'EASY'], ['normal', 'NORMAL'], ['dificil', 'HARD']];
@@ -77,6 +78,8 @@ export class Lobby {
       const lx = p.x - c.x, ly = p.y - c.y;
       if (i > 0 && this.vagas.length > 2 && lx > c.w - 18 && ly < 16) { this.vagas.splice(i, 1); if (this.vagas.length < 4) this.modo = 'todos'; sfx('volver'); return; }
       if (i === 1 && ly > c.h - 22 && lx > 30 && lx < 98) { v.humano = !v.humano; if (v.humano) { this.vagas.length = 2; this.modo = 'todos'; v.aleatorio = false; } sfx('seleccion'); return; }
+      const jj = i === 0 ? 'p1' : v.humano ? 'p2' : null;
+      if (jj && ly > c.h - 22 && lx > c.w - 106) { const ops = ENTRADAS[jj], k = ops.findIndex(([id]) => id === entradaDe(this.app, jj)); this.app.ajustes.entrada ??= {}; this.app.ajustes.entrada[jj] = ops[(k + 1) % ops.length][0]; this.app.guardarAjustes?.(); sfx('seleccion'); return; }
       if (ly > c.h - 22 && lx > c.w - 96) { if (i > 0) { v.aleatorio = !v.aleatorio; if (v.aleatorio) v.p = azar(); sfx('seleccion'); } return; }
       if (lx < 18 || lx > c.w - 18) { const d = lx < 18 ? -1 : 1; let k = v.p; do { k = (k + d + ROSTER.length) % ROSTER.length; } while (i === 0 && !desbloqueado(ROSTER[k].id)); v.p = k; v.aleatorio = false; sfx('seleccion'); return; }
       this.lista = i; sfx('seleccion');
@@ -124,7 +127,7 @@ export class Lobby {
     const L = this.posLutar(), pul = 1 + Math.sin(this.t * 5) * 0.03;
     g.save(); g.translate(L.x + L.w / 2, L.y + L.h / 2); g.scale(pul, pul); g.translate(-(L.x + L.w / 2), -(L.y + L.h / 2));
     caixa(g, L.x, L.y, L.w, L.h, '#facc15', '#fff7d6', 6); texto(g, 'FIGHT!', L.x + L.w / 2, L.y + 7, { tam: 12, align: 'center', color: '#1c1300' }); g.restore();
-    texto(g, this.vagas[1]?.humano ? 'P1: WASD + MOUSE  ·  P2: ARROWS + K L ENTER I O P' : this.modo === 'duplas' ? 'P1 + P3  VS  P2 + P4' : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
+    texto(g, this.vagas[1]?.humano ? '2 PLAYERS ON THIS PC · CHANGE KEYS IN SETTINGS > CONTROLS' : this.modo === 'duplas' ? 'P1 + P3  VS  P2 + P4' : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
     texto(g, 'TAP A POKÉMON TO PICK ANOTHER · X REMOVES · RANDOM = NEW POKÉMON EVERY FIGHT', W / 2, 340, { tam: 6, align: 'center', color: '#9fc0f0' });
   }
 
@@ -151,7 +154,10 @@ export class Lobby {
     }
     // controles de baixo
     botao(g, c.x + 34, c.y + c.h - 20, 60, 15, i === 0 ? 'YOU' : v.humano ? 'PLAYER 2' : 'CPU', i === 0 || v.humano);
-    if (i > 0) botao(g, c.x + c.w - 94, c.y + c.h - 20, 80, 15, 'RANDOM', v.aleatorio);
+    // jogador de verdade: escolhe o dispositivo (teclado + mouse, só teclado, controle 1 ou 2)
+    const j = i === 0 ? 'p1' : v.humano ? 'p2' : null;
+    if (j) botao(g, c.x + c.w - 104, c.y + c.h - 20, 94, 15, ENTRADAS[j].find(([id]) => id === entradaDe(this.app, j))?.[1] ?? '', true, '#7dd3fc');
+    else if (i > 0) botao(g, c.x + c.w - 94, c.y + c.h - 20, 80, 15, 'RANDOM', v.aleatorio);
   }
 
   dibujarLista(g) {
