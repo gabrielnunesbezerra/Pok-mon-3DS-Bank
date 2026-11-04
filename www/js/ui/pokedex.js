@@ -15,8 +15,8 @@ const FORMA = {
 };
 const SLOTS = [['lmb', 'LMB'], ['rmb', 'RMB'], ['esp', 'SPC'], ['q', 'Q'], ['e', 'E']];
 // 5 colunas de cartões menores: cabem todos os Pokémon na tela
-const COLS = 5;
-const CARD = { w: 32, h: 33, gap: 3, x0: 8, y0: 32 };
+const COLS = 7;
+const CARD = { w: 24, h: 28, gap: 2, x0: 8, y0: 32 };
 
 export class Pokedex {
   constructor(app) { this.app = app; this.t = 0; this.cursor = 0; this.etapa = 0; }
@@ -56,8 +56,8 @@ export class Pokedex {
       const c = this.caja(i), foco = i === this.cursor;
       marco(g, c.x, c.y, c.w, c.h, foco ? 'oro' : 'azul');
       const img = bank.retrato(p.dex);
-      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 3, c.y + 2, 26, 26);
-      texto(g, p.nombre, c.x + c.w / 2, c.y + c.h - 4, { tam: 5, align: 'center', base: 'bottom', borde: 2, max: c.w - 4 });
+      if (img) g.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, c.x + 2, c.y + 2, 20, 20);
+      texto(g, p.nombre.slice(0, 6), c.x + c.w / 2, c.y + c.h - 1, { tam: 4, align: 'center', base: 'bottom', borde: 1, max: c.w - 2 });
     });
     const p = ROSTER[this.cursor], fs = this.formas();
     // estágios
