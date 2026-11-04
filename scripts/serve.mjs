@@ -12,7 +12,8 @@ const port = Number(process.env.PORT || 8080);
 
 const servidor = createServer(async (req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^(\.\.[/\\])+/, '');
-  const file = join(root, path.endsWith('/') ? `${path}index.html` : path);
+  // no Windows o normalize troca '/' por '\\': aceita os dois para achar o index.html
+  const file = join(root, /[\\/]$/.test(path) ? `${path}index.html` : path);
   if (!file.startsWith(root)) { res.writeHead(403); res.end(); return; }
   try {
     const body = await readFile(file);

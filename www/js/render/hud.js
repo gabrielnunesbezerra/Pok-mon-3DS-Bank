@@ -148,12 +148,12 @@ export class Hud {
   barraSkills(g, luta, lados, t, teclas, celular = false) {
     this.teclas = teclas;
     if (!celular) { const gr = g.createLinearGradient(0, BARRA_Y - 4, 0, ALTO); gr.addColorStop(0, 'rgba(4,8,20,0)'); gr.addColorStop(0.35, 'rgba(4,8,20,0.75)'); gr.addColorStop(1, 'rgba(4,8,20,0.9)'); g.fillStyle = gr; g.fillRect(0, BARRA_Y - 4, ANCHO, ALTO - BARRA_Y + 4); }
-    const compacta = !celular && lados.length === 2;
+    const compacta = !celular && lados.length >= 2;
     for (const i of (celular ? lados.slice(0, 1) : lados)) {
       const l = luta.luchadores[i];
       let w, gap, x0, y, h;
       if (celular) { const esq = 122, dir = ANCHO - 186; gap = 3; w = Math.min(70, Math.floor((dir - esq - 4 * gap) / 5)); h = 22; x0 = Math.round((esq + dir) / 2 - (5 * w + 4 * gap) / 2); y = ALTO - h - 4; }
-      else { w = compacta ? 60 : 120; gap = 3; h = 24; const total = 5 * w + 4 * gap; x0 = compacta ? (i === 0 ? 6 : ANCHO - 6 - total) : Math.round((ANCHO - total) / 2); y = BARRA_Y + 1; }
+      else { w = compacta ? 60 : 120; gap = 3; h = 24; const total = 5 * w + 4 * gap; x0 = compacta ? [6, ANCHO - 6 - total, Math.round((ANCHO - total) / 2)][Math.min(2, lados.indexOf(i))] : Math.round((ANCHO - total) / 2); y = BARRA_Y + 1; }
       RANURAS.forEach((slot, k) => this.cartao(g, l, slot, x0 + k * (w + gap), y, w, h, compacta || celular, t, celular));
     }
   }

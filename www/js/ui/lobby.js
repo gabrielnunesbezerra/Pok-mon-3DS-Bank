@@ -10,6 +10,7 @@ import { sfx } from '../audio.js';
 import { centrada } from './centrar.js';
 import { shinyLiberado } from '../data/conta.js';
 import { Escolha } from './escolha.js';
+import { ENTRADAS, entradaDe } from '../controles.js';
 
 const CORES = ['#3b82f6', '#ef4444', '#22c55e', '#eab308'];
 const NIVEIS = [['facil', 'EASY'], ['normal', 'NORMAL'], ['dificil', 'HARD']];
@@ -63,12 +64,20 @@ export class Lobby {
   temShiny(i) { const v = this.vagas[i]; return i === 0 && !v.aleatorio && shinyLiberado(ROSTER[v.p].id); }
   posCard(i) { return { x: CARD.x[i % 2], y: CARD.y[Math.floor(i / 2)], w: CARD.w, h: CARD.h }; }
 
+  // todos os Pokémon estão liberados
+  liberado() { return true; }
   lutar() {
     const ids = this.vagas.map(v => ROSTER[v.aleatorio ? azar() : v.p].id), n = ids.length;
     const arena = this.arena < 0 ? ARENAS[Math.floor(Math.random() * ARENAS.length)].id : ARENAS[this.arena].id;
     this.salvar(); this.app.ultimaSeleccion = [this.vagas[0].p]; sfx('confirmar');
     const base = { p1: ids[0], p2: ids[1], p3: ids[2] ?? null, p4: ids[3] ?? null, arena, nivel: this.nivel, shinyQuer: [this.temShiny(0) && this.vagas[0].shiny] };
     if (this.entreno) return this.app.ir('combate', { ...base, modo: 'entreno' });
+    // dois jogadores no mesmo PC: P1 no WASD + mouse, P2 nas setas + K L ENTER I O P
+    // jogadores no mesmo PC: P1 sempre; P2 e P3 quando viram PLAYER (cada um com o seu dispositivo)
+    const locais = { 0: 'p1' }; this.vagas.forEach((v, i) => { if (v.humano && i <= 2) locais[i] = `p${i + 1}`; });
+    const nLoc = Object.keys(locais).length;
+    if (nLoc === 2 && n === 2) return this.app.ir('combate', { modo: 'versus', p1: ids[0], p2: ids[1], arena, shinyQuer: base.shinyQuer });
+    if (nLoc > 1) base.locais = locais;
     if (n === 4 && this.modo === 'duplas') return this.app.ir('combate', { ...base, modo: 'duplas', equipos: [0, 1, 0, 1] });
     return this.app.ir('combate', { ...base, modo: n === 2 ? 'cpu' : 'arena' });
   }
@@ -86,6 +95,9 @@ export class Lobby {
       const lx = p.x - c.x, ly = p.y - c.y;
       if (this.temShiny(i) && em(this.posShiny(i))) { v.shiny = !v.shiny; sfx(v.shiny ? 'evoCarga' : 'seleccion'); return; }
       if (!this.entreno && i > 0 && this.vagas.length > 2 && lx > c.w - 18 && ly < 16) { this.vagas.splice(i, 1); if (this.vagas.length < 4) this.modo = 'todos'; sfx('volver'); return; }
+      if (!this.entreno && (i === 1 || i === 2) && ly > c.h - 22 && lx > 30 && lx < 98) { v.humano = !v.humano; if (v.humano) v.aleatorio = false; sfx('seleccion'); return; }
+      const jj = i === 0 ? 'p1' : v.humano ? `p${i + 1}` : null;
+      if (jj && ly > c.h - 22 && lx > c.w - 106) { const ops = ENTRADAS[jj], k = ops.findIndex(([id]) => id === entradaDe(this.app, jj)); this.app.ajustes.entrada ??= {}; this.app.ajustes.entrada[jj] = ops[(k + 1) % ops.length][0]; this.app.guardarAjustes?.(); sfx('seleccion'); return; }
       if (ly > c.h - 22 && lx > c.w - 96) { if (i > 0 && !this.entreno) { v.aleatorio = !v.aleatorio; if (v.aleatorio) v.p = azar(); sfx('seleccion'); } return; }
       if (lx < 18 || lx > c.w - 18) { const d = lx < 18 ? -1 : 1; v.p = (v.p + d + ROSTER.length) % ROSTER.length; v.aleatorio = false; v.shiny = false; sfx('seleccion'); return; }
       this.abrirLista(i); sfx('seleccion');
@@ -145,7 +157,8 @@ export class Lobby {
     const L = this.posLutar(), pul = 1 + Math.sin(this.t * 5) * 0.03;
     g.save(); g.translate(L.x + L.w / 2, L.y + L.h / 2); g.scale(pul, pul); g.translate(-(L.x + L.w / 2), -(L.y + L.h / 2));
     caixa(g, L.x, L.y, L.w, L.h, '#facc15', '#fff7d6', 6); texto(g, 'FIGHT!', L.x + L.w / 2, L.y + 7, { tam: 12, align: 'center', color: '#1c1300' }); g.restore();
-    texto(g, this.modo === 'duplas' ? 'P1 + P3  VS  P2 + P4' : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
+    const nh = this.vagas.filter((v, i) => i === 0 || v.humano).length;
+    texto(g, this.modo === 'duplas' ? `P1 + P3  VS  P2 + P4${nh > 1 ? ` · ${nh} PLAYERS ON THIS PC` : ''}` : nh > 1 ? `${nh} PLAYERS ON THIS PC · KEYS IN SETTINGS > CONTROLS` : `${this.vagas.length} FIGHTERS · LAST ONE STANDING WINS`, 14, 306, { tam: 8, color: '#e6eefc' });
     texto(g, 'TAP A POKÉMON TO PICK ANOTHER · X REMOVES · RANDOM = NEW POKÉMON EVERY FIGHT', W / 2, 340, { tam: 6, align: 'center', color: '#9fc0f0' });
   }
 
@@ -153,7 +166,7 @@ export class Lobby {
     const c = this.posCard(i), def = ROSTER[v.p], cor = CORES[i];
     caixa(g, c.x, c.y, c.w, c.h, '#16223f', cor, 6);
     g.fillStyle = cor; g.fillRect(c.x + 1, c.y + 1, c.w - 2, 13);
-    texto(g, `P${i + 1} · ${i === 0 ? 'YOU' : this.entreno ? 'DUMMY' : 'CPU'}`, c.x + 6, c.y + 2, { tam: 8, color: '#ffffff' });
+    texto(g, `P${i + 1} · ${i === 0 ? 'YOU' : this.entreno ? 'DUMMY' : v.humano ? `PLAYER ${i + 1}` : 'CPU'}`, c.x + 6, c.y + 2, { tam: 8, color: '#ffffff' });
     if (!this.entreno && i > 0 && this.vagas.length > 2) { g.fillStyle = '#7f1d1d'; g.fillRect(c.x + c.w - 16, c.y + 2, 12, 10); texto(g, 'X', c.x + c.w - 10, c.y + 2, { tam: 8, align: 'center', color: '#fecaca' }); }
     // setas
     texto(g, '<', c.x + 6, c.y + 38, { tam: 12, color: '#facc15' }); texto(g, '>', c.x + c.w - 14, c.y + 38, { tam: 12, color: '#facc15' });
@@ -171,10 +184,12 @@ export class Lobby {
       const rol = ROLES[def.rol]; if (rol) { const w = 8 + rol.nombre.length * 5; g.fillStyle = hex(rol.color); g.fillRect(tx, y, w, 10); texto(g, rol.nombre, tx + 4, y + 1, { tam: 6, color: '#ffffff' }); }
     }
     // controles de baixo
-    botao(g, c.x + 34, c.y + c.h - 20, 60, 15, i === 0 ? 'YOU' : this.entreno ? 'DUMMY' : 'CPU', i === 0);
-    if (i > 0 && !this.entreno) botao(g, c.x + c.w - 94, c.y + c.h - 20, 80, 15, 'RANDOM', v.aleatorio);
+    botao(g, c.x + 34, c.y + c.h - 20, 60, 15, i === 0 ? 'YOU' : this.entreno ? 'DUMMY' : v.humano ? `PLAYER ${i + 1}` : 'CPU', i === 0 || v.humano);
+    // jogador de verdade: escolhe o dispositivo (teclado + mouse, só teclado, controle 1 ou 2)
+    const j = i === 0 ? 'p1' : v.humano ? `p${i + 1}` : null;
+    if (j) botao(g, c.x + c.w - 104, c.y + c.h - 20, 94, 15, ENTRADAS[j].find(([id]) => id === entradaDe(this.app, j))?.[1] ?? '', true, '#7dd3fc');
+    else if (i > 0 && !this.entreno) botao(g, c.x + c.w - 94, c.y + c.h - 20, 80, 15, 'RANDOM', v.aleatorio);
     if (this.temShiny(i)) { const b = this.posShiny(i); botao(g, b.x, b.y, b.w, b.h, 'SHINY', !!v.shiny, '#ffe27a'); }
   }
-
 }
 centrada(Lobby);
