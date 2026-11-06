@@ -2908,5 +2908,65 @@
   "retrato": [
    "G〜"
   ]
+ },
+ {
+  "dex": "0702",
+  "sprite": [
+   "Inv3rse",
+   "baronessfaron"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "Top_Kec"
+  ]
+ },
+ {
+  "dex": "0702s",
+  "sprite": [
+   "rhys"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0877",
+  "sprite": [
+   "Emmuffin",
+   "Uni"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0877-0001",
+  "sprite": [
+   "Emmuffin",
+   "JFain"
+  ],
+  "retrato": [
+   "Emmuffin",
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0877-0001s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0877s",
+  "sprite": [
+   "Emmuffin",
+   "Morei"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
  }
 ]

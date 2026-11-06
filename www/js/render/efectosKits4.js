@@ -5,7 +5,8 @@ import { EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS } from './efectosNovos.js'
 
 const px = Math.round, ale = Math.random, entre = (a, b) => a + ale() * (b - a);
 const C = '#0b0a14';
-const heroi = (fx, k, life, o) => fx.heroes.push({ k, t: 0, life, ...o });
+// o evento vem junto em `o` (e tem o campo t = tipo do evento): o tempo da animação precisa vir depois
+const heroi = (fx, k, life, o) => fx.heroes.push({ ...o, k, t: 0, life });
 function poli(g, pts, cor, contorno = C) { g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(px(x), px(y)) : g.moveTo(px(x), px(y)))); g.closePath(); g.fillStyle = cor; g.fill(); if (contorno) { g.strokeStyle = contorno; g.lineWidth = 1; g.stroke(); } }
 const cacos = (fx, x, y, cores, n = 6, v = 120, forma = 'sq') => { for (let i = 0; i < n; i++) { const a = ale() * 6.28; fx.add({ x, y, vx: Math.cos(a) * entre(v * 0.4, v), vy: Math.sin(a) * entre(v * 0.3, v * 0.7) - 40, g: 320, size: entre(1.5, 2.6), life: 0.45, color: cores[i % cores.length], forma }); } };
 const gotas = (fx, x, y, n = 8, v = 120) => { for (let i = 0; i < n; i++) { const a = ale() * 6.28, s = entre(v * 0.4, v); fx.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.5 - 70, g: 380, size: entre(1.6, 2.6), life: entre(0.4, 0.6), forma: 'gota', rampa: PX.RAMPA_AGUA }); } };

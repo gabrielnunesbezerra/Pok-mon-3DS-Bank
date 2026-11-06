@@ -13,6 +13,7 @@ import { formasKits7 } from './formasKits7.js';
 import { formasKits8 } from './formasKits8.js';
 import { formasKits9 } from './formasKits9.js';
 import { formasKits10 } from './formasKits10.js';
+import { formasKits11 } from './formasKits11.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -49,13 +50,15 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7, ...formasKits8, ...formasKits9, ...formasKits10,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7, ...formasKits8, ...formasKits9, ...formasKits10, ...formasKits11,
           };
   }
 
   // ---------------------------------------------------------------- uso de um espaço
   usar(l, slot) {
-    const h = l.kit[slot];
+    let h = l.kit[slot];
+    // concha da Mega Slowbro: o dash vira um pulo que joga para o alto quem estiver onde ele cai
+    if (slot === 'esp' && h && l.est.concha) h = { ...h, forma: 'puloConcha' };
     const luta = this.luta;
     // rolando, o botão do Rollout sempre deixa parar (a recarga já está correndo); o mesmo toque que
     // começou a rolar fica apertado por alguns quadros, por isso só para depois de um instante

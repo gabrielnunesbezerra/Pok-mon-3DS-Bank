@@ -100,7 +100,7 @@ export const formasKits7 = {
   },
   // Distorção Psíquica: distorce o espaço na mira; quem estiver lá apanha e fica preso
   distorcao(l, h, extra) {
-    if (h.raio && noSantuario(this.luta, l)) return this.formas.raioSolar.call(this, l, { ...h, ...h.raio }, extra);
+    if (h.raio && noSantuario(this.luta, l)) return this.formas[h.raio.forma ?? 'raioSolar'].call(this, l, { ...h, ...h.raio }, extra);
     const luta = this.luta, p = pontoMira(l, h.alcance ?? 220), R = h.radio ?? 40, c = h.carga ?? 0.35;
     l.animar('Charge', c + 0.1); l.accion = { hasta: luta.t + 0.2, lento: 0.3, angulo: Math.atan2(p.y - l.y, p.x - l.x) };
     luta.emit({ t: 'distorcao', x: p.x, y: p.y, r: R, dur: c });
@@ -141,7 +141,7 @@ export const formasKits7 = {
   },
   // Supernova Pixie (Mega): 3 estrelas em cone que silenciam
   estrelasPixie(l, h, extra) {
-    if (h.raio && noSantuario(this.luta, l)) return this.formas.raioSolar.call(this, l, { ...h, ...h.raio }, extra);
+    if (h.raio && noSantuario(this.luta, l)) return this.formas[h.raio.forma ?? 'raioSolar'].call(this, l, { ...h, ...h.raio }, extra);
     const luta = this.luta, a = mirar(l, 240);
     l.animar('Shoot', 0.3); l.accion = { hasta: luta.t + 0.2, lento: 0.3, angulo: a };
     for (let i = -1; i <= 1; i++) tiro(luta, l, { tipo: 'estrelaPixie', ang: a + i * 0.3, vel: 340, alc: h.alcance ?? 240, raio: 7, acerta: (b, p) => { atingir(l, b, pacote(h, extra, p.ang, { empuje: 40 })); b.ponerEstado('silencio', h.silencio ?? 1.2, {}); b.texto('SILENCED!', '#f9a8d4'); }, fim: p => luta.emit({ t: 'estrelaFim', x: p.x, y: p.y }) });

@@ -88,6 +88,11 @@ export function rangoDe(h) {
     case 'hyperVoice': P.tipo = 'mele'; P.alcance = (h.alcance ?? 130) * 0.85; P.retardo = 0.1; P.golpes = 4; break;
     case 'calmaMente': P.tipo = 'buff'; break;
     case 'nuvemNegra': P.alcance = 400; P.ancho = h.radio ?? 90; P.retardo = 0.8; P.sigue = 1; P.golpes = 4; break;
+    case 'cargaParabolica': P.tipo = 'area'; P.alcance = (h.radio ?? 75) * 0.85; P.retardo = 0.15; break;
+    case 'campoEletrico': case 'lanche': P.tipo = 'buff'; break;
+    case 'tempestadeAntenas': P.tipo = 'area'; P.alcance = (h.alcance ?? 210) * 0.85; P.retardo = 0.2; P.golpes = 5; break;
+    case 'auraWheel': P.tipo = 'mele'; P.alcance = (h.dist ?? 160) + 10; P.retardo = 0.2; break;
+    case 'rodaFrenesi': P.tipo = 'movil'; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;

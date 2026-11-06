@@ -81,8 +81,8 @@ export const ROSTER_NOVOS = [
       e: semUlt('Cryo Nova', 'explosion', 'ICE', { dano: 22, radio: 92, carga: 0.5, empuje: 90, ralentiza: 0.7, ralentizaDur: 2 }),
     },
     evoluciones: [
-      { dex: '0362', nombre: 'GLALIE', hp: 92, vel: 126, atk: 1.06, def: 1.04, kit: { lmb: { dano: 4.8 }, rmb: { nombre: 'Giant Snowball', forma: 'bolaNeve', tipo: 'ICE', dano: 11, vel: 200, alcance: 240, radio: 50, congela: 1, cd: 7 }, q: { nombre: 'Glacial Shield', forma: 'escudoGlacial', tipo: 'ICE', dur: 3, reduce: 0.4, congela: 1.2, cd: 11 }, e: { nombre: 'Blizzard', forma: 'blizzard', tipo: 'ICE', dano: 26, radio: 110, carga: 1.6, danoTick: 1.2, sinUlti: false } } },
-      { dex: '0362', nombre: 'GLALIE', hp: 106, vel: 128, atk: 1.14, def: 1.08, escala: 1.1, kit: { lmb: { dano: 5.2 }, rmb: { nombre: 'Giant Snowball', forma: 'bolaNeve', tipo: 'ICE', dano: 12.5, vel: 200, alcance: 240, radio: 50, congela: 1, cd: 7 }, q: { nombre: 'Glacial Shield', forma: 'escudoGlacial', tipo: 'ICE', dur: 3, reduce: 0.4, congela: 1.2, cd: 11 }, e: { nombre: 'Blizzard', forma: 'blizzard', tipo: 'ICE', dano: 29, radio: 110, carga: 1.6, danoTick: 1.2, sinUlti: false } },
+      { dex: '0362', nombre: 'GLALIE', hp: 92, vel: 126, atk: 1.06, def: 1.04, kit: { lmb: { dano: 4.8 }, rmb: { nombre: 'Giant Snowball', forma: 'bolaNeve', tipo: 'ICE', dano: 11, vel: 190, alcance: 240, radio: 62, congela: 1, cd: 7 }, q: { nombre: 'Glacial Shield', forma: 'escudoGlacial', tipo: 'ICE', dur: 3, reduce: 0.4, congela: 1.2, cd: 11 }, e: { nombre: 'Blizzard', forma: 'blizzard', tipo: 'ICE', dano: 26, radio: 110, carga: 1.6, danoTick: 1.2, sinUlti: false } } },
+      { dex: '0362', nombre: 'GLALIE', hp: 106, vel: 128, atk: 1.14, def: 1.08, escala: 1.1, kit: { lmb: { dano: 5.2 }, rmb: { nombre: 'Giant Snowball', forma: 'bolaNeve', tipo: 'ICE', dano: 12.5, vel: 190, alcance: 240, radio: 62, congela: 1, cd: 7 }, q: { nombre: 'Glacial Shield', forma: 'escudoGlacial', tipo: 'ICE', dur: 3, reduce: 0.4, congela: 1.2, cd: 11 }, e: { nombre: 'Blizzard', forma: 'blizzard', tipo: 'ICE', dano: 29, radio: 110, carga: 1.6, danoTick: 1.2, sinUlti: false } },
         mega: { dex: '0362-0001', nombre: 'MEGA GLALIE', atk: 0.14, def: 0.05, vel: 6 } },
     ] },
   // ------------------------------------------------------------ Ralts > Kirlia > Gardevoir > Mega Gardevoir
@@ -97,7 +97,7 @@ export const ROSTER_NOVOS = [
     evoluciones: [
       { dex: '0281', nombre: 'KIRLIA', hp: 68, vel: 140, atk: 1.1, def: 0.84, kit: { lmb: { dano: 4.8 }, rmb: { nombre: 'Bewitched Orb', estilo: 'brisaHada', tipo: 'FAIRY', dano: 10, vel: 260, radio: 7, escala: 2, ralentiza: 0, explosion: { radio: 38 } }, q: { nombre: 'Dimensional Waltz', forma: 'valsaEscudo', absorbe: 16, dur: 3, radio: 110, cd: 10 } } },
       { dex: '0282', nombre: 'GARDEVOIR', hp: 82, vel: 142, atk: 1.24, def: 0.88, escala: 1.06,
-        kit: { lmb: { nombre: 'Moonblast Shard', dano: 5.2 }, rmb: { nombre: 'Psychic Distortion', forma: 'distorcao', tipo: 'PSYCHIC', dano: 11, alcance: 220, radio: 40, carga: 0.35, prendeDur: 1, cd: 6, raio: { forma: 'raioSolar', nombre: 'Astral Beam', tipo: 'FAIRY', dano: 20, carga: 0.8, largo: 300, ancho: 24, anchoVisual: 64, dur: 1.6, empuje: 70 } }, q: { nombre: 'Astral Sanctuary', forma: 'santuario', radio: 70, dur: 4, cura: 0.02, reduce: 0.25, cd: 13 }, e: ult('Dark Singularity', 'singularidade', 'PSYCHIC', 26, { alcance: 240, radio: 70, dur: 1.4 }) },
+        kit: { lmb: { nombre: 'Moonblast Shard', dano: 5.2 }, rmb: { nombre: 'Psychic Distortion', forma: 'distorcao', tipo: 'PSYCHIC', dano: 11, alcance: 220, radio: 40, carga: 0.35, prendeDur: 1, cd: 6, raio: { forma: 'telecinese', nombre: 'Astral Lasso', tipo: 'PSYCHIC', dano: 12, alcance: 190, lanza: 200 } }, q: { nombre: 'Astral Sanctuary', forma: 'santuario', radio: 70, dur: 4, cura: 0.02, reduce: 0.25, cd: 13 }, e: ult('Dark Singularity', 'singularidade', 'PSYCHIC', 26, { alcance: 240, radio: 70, dur: 1.4 }) },
         mega: { dex: '0282-0001', nombre: 'MEGA GARDEVOIR', atk: 0.14, def: 0.04, vel: 6 } },
     ] },
   // ------------------------------------------------------------ Absol > 3 Power Ups > Mega Absol
@@ -160,5 +160,33 @@ export const ROSTER_NOVOS = [
       { dex: '0780', nombre: 'DRAMPA', hp: 94, vel: 124, atk: 1.12, def: 1.0, kit: { lmb: { dano: 5.2 }, rmb: { dano: 9.6 }, q: { cura: 0.025 }, e: { dano: 26, sinUlti: false } } },
       { dex: '0780', nombre: 'DRAMPA', hp: 102, vel: 125, atk: 1.18, def: 1.03, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 10.4 }, q: { cura: 0.025 }, e: { dano: 28, sinUlti: false } },
         mega: { dex: '0780-0001', nombre: 'MEGA DRAMPA', atk: 0.14, def: 0.05, vel: 6 } },
+    ] },
+  // ------------------------------------------------------------ Dedenne > 3 Power Ups (sem Mega)
+  { id: 'dedenne', dex: '0702', nombre: 'DEDENNE', tipos: ['ELECTRIC', 'FAIRY'], rol: 'CONTROL', lema: 'THE ANTENNA THIEF', hp: 62, vel: 142, atk: 1.0, def: 0.86, regen: 5, expEvolucion: [45, 80, 115], ia: { rango: 150 },
+    kit: {
+      lmb: tiro('Thunder Shock', 'ELECTRIC', 'rayito', 4.2, { alcance: 190 }),
+      rmb: skill('Parabolic Charge', 'cargaParabolica', 'ELECTRIC', { dano: 9, radio: 75, drena: 0.5, coste: 25, cd: 6 }),
+      esp: dash('Quick Attack', 'NORMAL', { dano: 3, dist: 140, estilo: 'rapido' }),
+      q: skill('Electric Terrain', 'campoEletrico', 'ELECTRIC', { radio: 85, dur: 4, danoTick: 2, vel: 1.25, coste: 25, cd: 11 }),
+      e: semUlt('Antenna Storm', 'tempestadeAntenas', 'ELECTRIC', { dano: 30, dur: 2.2, alcance: 210, pulo: 130, saltos: 4 }),
+    },
+    evoluciones: [
+      { dex: '0702', nombre: 'DEDENNE', hp: 70, vel: 144, atk: 1.06, def: 0.88, kit: { lmb: { dano: 4.6 }, rmb: { dano: 10 }, e: { dano: 32, sinUlti: false } } },
+      { dex: '0702', nombre: 'DEDENNE', hp: 78, vel: 146, atk: 1.12, def: 0.9, kit: { lmb: { dano: 5 }, rmb: { dano: 11 }, q: { danoTick: 2.4 }, e: { dano: 35, sinUlti: false } } },
+      { dex: '0702', nombre: 'DEDENNE', hp: 86, vel: 148, atk: 1.18, def: 0.93, escala: 1.08, kit: { lmb: { dano: 5.4 }, rmb: { dano: 12, radio: 85 }, q: { danoTick: 2.8, radio: 95 }, e: { dano: 38, saltos: 5, sinUlti: false } } },
+    ] },
+  // ------------------------------------------------------------ Morpeko > 3 Power Ups (sem Mega): troca de forma com a Aura Wheel
+  { id: 'morpeko', dex: '0877', dexFome: '0877-0001', nombre: 'MORPEKO', tipos: ['ELECTRIC', 'DARK'], rol: 'FISICO', lema: 'HUNGER SWITCH', hp: 64, vel: 150, atk: 1.04, def: 0.84, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 70 },
+    kit: {
+      lmb: corte('Spark Bite', 'ELECTRIC', 4.4, { alcance: 46 }),
+      rmb: skill('Aura Wheel', 'auraWheel', 'ELECTRIC', { dano: 9, dist: 160, dur: 0.36, acelera: 1.3, coste: 25, cd: 5, anim: 'Rotate' }),
+      esp: dash('Quick Attack', 'NORMAL', { dano: 3, dist: 150, estilo: 'rapido' }),
+      q: skill('Seed Snack', 'lanche', 'GRASS', { cura: 0.12, energia: 20, coste: 0, cd: 12 }),
+      e: semUlt('Frenzy Wheel', 'rodaFrenesi', 'ELECTRIC', { dano: 8, dur: 3, vel: 1.9 }),
+    },
+    evoluciones: [
+      { dex: '0877', nombre: 'MORPEKO', hp: 72, vel: 152, atk: 1.1, def: 0.86, kit: { lmb: { dano: 4.8 }, rmb: { dano: 10 }, e: { dano: 9, sinUlti: false } } },
+      { dex: '0877', nombre: 'MORPEKO', hp: 80, vel: 154, atk: 1.16, def: 0.88, kit: { lmb: { dano: 5.2 }, rmb: { dano: 11, dist: 175 }, e: { dano: 10, sinUlti: false } } },
+      { dex: '0877', nombre: 'MORPEKO', hp: 88, vel: 156, atk: 1.22, def: 0.9, escala: 1.08, kit: { lmb: { dano: 5.6 }, rmb: { dano: 12, dist: 190 }, q: { cura: 0.15 }, e: { dano: 11.5, dur: 3.5, sinUlti: false } } },
     ] },
 ];

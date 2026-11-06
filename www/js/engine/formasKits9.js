@@ -77,7 +77,7 @@ export const formasKits9 = {
   // Bola de Neve Gigante: rola com espinhos de gelo deixando camadas de neve (lentidão); ao pegar alguém explode e
   // congela. Mega: maior, cresce rolando, a explosão é maior, quebra armadura e deixa o chão congelado
   bolaNeve(l, h, extra) {
-    const luta = this.luta, a = mirar(l, 260), vel = h.vel ?? 200, alc = h.alcance ?? 240, R0 = h.mega ? 12 : 10;
+    const luta = this.luta, a = mirar(l, 260), vel = h.vel ?? 200, alc = h.alcance ?? 240, R0 = h.mega ? 24 : 18;
     l.animar('Shoot', 0.4); l.accion = { hasta: luta.t + 0.3, lento: 0.3, angulo: a };
     let rastro = 0;
     const explode = p => {
@@ -87,7 +87,7 @@ export const formasKits9 = {
       if (h.mega) luta.add({ tipo: 'chaoGelo', dueno: l, vivo: true, x: p.x, y: p.y, radio: R, t: 0, dur: 3, prox: 0.5, update(dt) { this.t += dt; if (this.t >= this.prox) { this.prox += 0.5; for (const b of inimigos(luta, l)) if (dentro(b, this.x, this.y, this.radio)) { b.recibir(l, { dano: 1.5, tipo: 'ICE', tick: true }); b.ponerEstado('lento', 0.6, { f: Math.max(0.4, b.est.lento?.f ?? 0) }); } } return this.t < this.dur; } });
     };
     const p = { tipo: 'bolaNeve', dueno: l, vivo: true, bloqueavel: false, x: l.x + Math.cos(a) * 14, y: l.y + Math.sin(a) * 9, ang: a, t: 0, r: R0, mega: !!h.mega, update: dt => {
-      p.t += dt; p.x += Math.cos(a) * vel * dt; p.y += Math.sin(a) * vel * dt * 0.85; if (h.mega) p.r = R0 + p.t * 8;
+      p.t += dt; p.x += Math.cos(a) * vel * dt; p.y += Math.sin(a) * vel * dt * 0.85; if (h.mega) p.r = Math.min(40, R0 + p.t * 12);
       rastro += vel * dt;
       if (rastro > 26) { rastro = 0; luta.add({ tipo: 'neveChao', dueno: l, vivo: true, x: p.x, y: p.y, radio: p.r + 6, t: 0, dur: 2.5, update(d) { this.t += d; for (const b of inimigos(luta, l)) if (dentro(b, this.x, this.y, this.radio)) b.ponerEstado('lento', 0.3, { f: Math.max(0.3, b.est.lento?.f ?? 0) }); return this.t < this.dur; } }); }
       if (inimigos(luta, l).some(b => Math.hypot(b.x - p.x, b.y - p.y) < RADIO + p.r)) { explode(p); return false; }

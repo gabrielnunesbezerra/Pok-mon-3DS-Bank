@@ -126,7 +126,7 @@ export const MEGA_KITS = {
   },
   snorunt: {
     lmb: { nombre: 'Mega Powder Snow', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
-    rmb: { nombre: 'Avalanche Snowball', forma: 'bolaNeve', tipo: 'ICE', mega: true, dano: 15, radio: 56, congela: 1.4, vel: 190, alcance: 260 },
+    rmb: { nombre: 'Avalanche Snowball', forma: 'bolaNeve', tipo: 'ICE', mega: true, dano: 16, radio: 78, congela: 1.4, vel: 190, alcance: 260 },
     esp: { nombre: 'Mega Gyro Ball', mega: true, dano: 6.5, dist: 190, quebra: 3.2, cd: 5 },
     q: { nombre: 'Glacial Fortress', forma: 'escudoGlacial', tipo: 'ICE', mega: true, dur: 3.5, danoEstalactite: 12, n: 12, alcance: 170, escudo: 22, cd: 11 },
     e: { nombre: 'Abyssal Jaws', forma: 'abismoMandibula', tipo: 'ICE', mega: true, dano: 40, alcance: 230, angulo: 95, radio: 68, aturde: 1.5, puxa: 2600, totem: 3 },
@@ -134,7 +134,7 @@ export const MEGA_KITS = {
 
   ralts: {
     lmb: { nombre: 'Mega Moonblast Shard', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
-    rmb: { nombre: 'Pixie Supernova', forma: 'estrelasPixie', tipo: 'FAIRY', mega: true, dano: 10, alcance: 240, silencio: 1.2, raio: { forma: 'raioSolar', nombre: 'Mega Astral Beam', tipo: 'FAIRY', dano: 28, carga: 0.85, largo: 340, ancho: 30, anchoVisual: 90, dur: 2.2, empuje: 90 } },
+    rmb: { nombre: 'Pixie Supernova', forma: 'estrelasPixie', tipo: 'FAIRY', mega: true, dano: 10, alcance: 240, silencio: 1.2, raio: { forma: 'telecinese', nombre: 'Mega Astral Lasso', tipo: 'FAIRY', dano: 16, alcance: 220, lanza: 240 } },
     esp: { nombre: 'Mega Teleport', dist: 140, cd: 6 },
     q: { nombre: 'Astral Dominance', mega: true, radio: 95, dur: 5, cura: 0.025 },
     e: { nombre: 'Gravitational Cataclysm', mega: true, dano: 22, radio: 110, dur: 2.2, porVida: 0.12 },
@@ -152,7 +152,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Torpor Bubble', mega: true, dano: 8, radio: 64, duerme: 1.8 },
     esp: { nombre: 'Mega Slack Off Slide', dist: 130, cd: 5 },
     q: { nombre: 'Inviolable Shell', mega: true, dur: 2.4, regen: 0.012, devolve: 0.4, dano: 6, radio: 80, raioPorHit: 12, danoPorHit: 2.5, cd: 13 },
-    e: { nombre: 'Relentless Psy Vortex', mega: true, dur: 3, radio: 190, danoTick: 3.4, puxa: 1900 },
+    e: { nombre: 'Relentless Psy Vortex', mega: true, dur: 3, radio: 170, danoTick: 3.4, puxa: 1150 },
   },
   drampa: {
     lmb: { nombre: 'Mega Dragon Breath', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },

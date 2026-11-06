@@ -56,3 +56,21 @@ Object.assign(ENTIDADES_NOVAS, {
     g.globalAlpha = 1;
   },
 });
+
+// ---------------------------------------------------------------- reforços: Hyper Voice, descarga das torres e pulo do Slowbro
+const SOM = ['#fde68a', '#ffffff', '#e2e8f0', '#facc15'];
+Object.assign(EVENTOS_NOVOS, {
+  ondaVoz(fx, e) {
+    heroi(fx, 'ondaVoz', 0.45, { ...e });
+    const bx = e.x + Math.cos(e.ang) * 16, by = e.y - 14 + Math.sin(e.ang) * 10;
+    choque(fx, bx, by + 14, 14, e.mega ? '#facc15' : '#f8fafc');
+    for (let i = 0; i < (e.mega ? 12 : 7); i++) { const a = e.ang + (ale() - 0.5) * e.abre, s = entre(180, 320); fx.add({ x: bx, y: by, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.62, g: 0, drag: 2, size: entre(1.6, 3), life: entre(0.3, 0.5), color: SOM[i % 4], forma: i % 3 ? 'sq' : 'chispa' }); }
+    for (let i = 0; i < 2; i++) { const a = e.ang + (ale() - 0.5) * e.abre, r = e.R * entre(0.4, 1); fx.add({ x: e.x + Math.cos(a) * r, y: e.y + Math.sin(a) * r * 0.62, vx: Math.cos(a) * 60, vy: -40, g: 300, size: 2, life: 0.4, color: '#a8a29e', forma: 'sq' }); }
+  },
+  descargaTorre(fx, e) { faiscas(fx, e.x, e.y - 30, CRISTAL, 44, 380); cacos(fx, e.x, e.y - 20, CRISTAL, 16, 260); choque(fx, e.x, e.y, e.r, '#ef4444'); choque(fx, e.x, e.y, e.r * 1.25, '#fecaca'); choque(fx, e.x, e.y, e.r * 0.55, '#ffffff'); rachas(fx, e.x, e.y, e.r * 0.9, '#450a0a'); heroi(fx, 'descarga', 0.6, { x: e.x, y: e.y, r: e.r }); fx.debris?.(e.x, e.y, 'ROCK', 8); },
+  puloConcha(fx, e) { faiscas(fx, e.l.x, e.l.y - 8, ['#f9a8d4', '#ec4899', '#ffffff'], 10, 160); },
+  caiConcha(fx, e) { faiscas(fx, e.x, e.y - 8, ['#f9a8d4', '#ec4899', '#ffffff'], 22, 260); cacos(fx, e.x, e.y, ['#a8a29e', '#e2e8f0'], 12, 220); choque(fx, e.x, e.y, e.r, '#ec4899'); rachas(fx, e.x, e.y, e.r * 0.8, '#500724'); },
+});
+Object.assign(HEROES_NOVOS, {
+  descarga(g, h, k, t) { const al = 1 - k; g.globalAlpha = al; for (let i = 0; i < 12; i++) { const a = i * 0.52 + Math.floor(t * 20) * 0.7; raioZig(g, h.x, h.y - 34, h.x + Math.cos(a) * h.r, h.y + Math.sin(a) * h.r * 0.62, '#7f1d1d', 4, i + t * 9); raioZig(g, h.x, h.y - 34, h.x + Math.cos(a) * h.r, h.y + Math.sin(a) * h.r * 0.62, i % 2 ? '#ef4444' : '#fecaca', 2, i + t * 9); } g.globalAlpha = al * 0.35; g.fillStyle = '#ef4444'; g.beginPath(); g.ellipse(px(h.x), px(h.y), h.r * (0.5 + k * 0.5), h.r * 0.62 * (0.5 + k * 0.5), 0, 0, 7); g.fill(); g.globalAlpha = 1; },
+});

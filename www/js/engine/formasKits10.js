@@ -59,17 +59,40 @@ export const formasKits10 = {
   // Descarga Cristalina: o feixe de cristal, e cada torre solta uma descarga vermelha forte em volta
   raioCristal(l, h, extra) {
     formasKits8.raioCristal.call(this, l, h, extra);
-    const luta = this.luta;
-    for (const t of torresDe(luta, l)) {
-      luta.emit({ t: 'cargaTorre', x: t.x, y: t.y, dur: h.carga ?? 0.35 });
-      luta.programar(h.carga ?? 0.35, () => { if (l.ko || t.vivo === false) return; for (const b of inimigos(luta, l)) if (dentro(b, t.x, t.y, h.radioDescarga ?? 74)) { atingir(l, b, pacote(h, extra, 0, { dano: h.danoDescarga ?? 12, dirX: undefined, dirY: undefined, empuje: 120, aturde: 0.3 })); b.ponerEstado('defBaja', 3, {}); } luta.emit({ t: 'descargaTorre', x: t.x, y: t.y, r: h.radioDescarga ?? 74 }); luta.emit({ t: 'temblor', f: 0.01 }); });
-    }
+    const luta = this.luta, feixe = luta.entidades.filter(e => e.tipo === 'feixeCristal' && e.dueno === l).at(-1), feitas = new Set();
+    if (!feixe) return;
+    const descarga = t => { if (l.ko || t.vivo === false) return; for (const b of inimigos(luta, l)) if (dentro(b, t.x, t.y, h.radioDescarga ?? 74)) { atingir(l, b, pacote(h, extra, 0, { dano: h.danoDescarga ?? 12, dirX: undefined, dirY: undefined, empuje: 120, aturde: 0.3 })); b.ponerEstado('defBaja', 3, {}); } luta.emit({ t: 'descargaTorre', x: t.x, y: t.y, r: h.radioDescarga ?? 74 }); luta.emit({ t: 'temblor', f: 0.014 }); luta.hitstop(70); };
+    // vigia o feixe: a torre que ele tocar descarrega (uma vez por disparo)
+    luta.add({ tipo: 'vigiaFeixe', dueno: l, vivo: true, update: () => {
+      if (feixe.vivo === false || l.ko) return false;
+      if (feixe.t < feixe.carga) return true;
+      const ux = Math.cos(feixe.ang), uy = Math.sin(feixe.ang);
+      for (const t of torresDe(luta, l)) { if (feitas.has(t)) continue; const qx = t.x - l.x, qy = t.y - l.y, lon = qx * ux + qy * uy, lat = Math.abs(-qx * uy + qy * ux); if (lon > 0 && lon < feixe.largo && lat < feixe.ancho / 2 + t.r) { feitas.add(t); luta.emit({ t: 'cargaTorre', x: t.x, y: t.y, dur: 0.15 }); luta.programar(0.15, () => descarga(t)); } }
+      return true;
+    } });
   },
   // Cataclismo de Geoda: o campo de geodo, e as torres dentro dele atiram lasers teleguiados até o campo acabar
   campoGeoda(l, h, extra) {
     formasKits8.campoGeoda.call(this, l, h, extra);
     const luta = this.luta, R = h.radio ?? 130;
     for (const t of torresDe(luta, l)) if (dentro(t, l.x, l.y, R + 10)) { t.ativa = luta.t + (h.dur ?? 4); luta.emit({ t: 'torreLiga', x: t.x, y: t.y }); }
+  },
+
+  // ================================================================ SLOWBRO
+  // pulo de dentro da concha (só durante a skill de defesa da Mega): cai machucando e joga para o alto; continua lento
+  puloConcha(l, h, extra) {
+    const luta = this.luta, mx = l.intento?.mx ?? 0, my = l.intento?.my ?? 0, a = Math.hypot(mx, my) > 0.2 ? Math.atan2(my, mx) : mirar(l, 140);
+    const p = fijarCampo(l.x + Math.cos(a) * (h.saltoDist ?? 120), l.y + Math.sin(a) * (h.saltoDist ?? 120)), x0 = l.x, y0 = l.y, dur = 0.45, fimConcha = l.est.concha?.hasta ?? luta.t;
+    let t = 0;
+    luta.emit({ t: 'puloConcha', l });
+    l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0, angulo: a, update: dt => { t += dt; const k = Math.min(1, t / dur); l.x = x0 + (p.x - x0) * k; l.y = y0 + (p.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 44); },
+      fin: () => {
+        l.salto = 0; if (l.ko) return;
+        for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, h.radioPulo ?? 56)) { atingir(l, b, pacote({ ...h, dano: h.danoPulo ?? 8, tipo: 'PSYCHIC' }, extra, 0, { dirX: undefined, dirY: undefined, empuje: 0, aturde: 0.8 })); jogarAlto(luta, b, 0.8, 50); }
+        luta.emit({ t: 'caiConcha', x: l.x, y: l.y, r: h.radioPulo ?? 56 }); luta.emit({ t: 'temblor', f: 0.014 }); luta.hitstop(80);
+        // continua dentro da concha, lento
+        if (fimConcha > luta.t) l.accion = { hasta: fimConcha, lento: 0.35 };
+      } };
   },
 
   // ================================================================ DRAMPA
@@ -87,7 +110,7 @@ export const formasKits10 = {
       if (solto) { l.accion.hasta = luta.t; return; }
       if (t < prox) return; prox += 0.25;
       for (const b of inimigos(luta, l)) { const dx = b.x - l.x, dy = b.y - l.y; if (Math.hypot(dx, dy) < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2) { atingir(l, b, pacote(h, extra, a, { dano: h.dano * 0.25 / max * 2.2, empuje: h.mega ? 90 : 50, tick: true })); if (h.mega) b.ponerEstado('silencio', 0.4, {}); } }
-      luta.emit({ t: 'ondaVoz', x: l.x, y: l.y, ang: a, R, abre, mega: !!h.mega });
+      luta.emit({ t: 'ondaVoz', x: l.x, y: l.y, ang: a, R, abre, mega: !!h.mega }); luta.emit({ t: 'temblor', f: h.mega ? 0.006 : 0.004 });
     }, fin: () => { e.vivo = false; } };
   },
   // Calm Mind (ult da forma normal): aumenta defesa, ataque especial e velocidade por um tempo
@@ -101,13 +124,13 @@ export const formasKits10 = {
   },
   // Nuvem Negra (ult da Mega): nuvem gigante que persegue os inimigos e solta raios neles
   nuvemNegra(l, h, extra) {
-    const luta = this.luta, dur = h.dur ?? 6, R = h.radio ?? 90, p = fijarCampo(l.ax, l.ay);
+    const luta = this.luta, dur = h.dur ?? 6, R = h.radio ?? 90, p = { x: l.x, y: l.y }; // sai do Drampa e vai devagar até o inimigo
     l.animar('Charge', 0.6); l.accion = { hasta: luta.t + 0.45, bloquea: true, lento: 0 };
     luta.emit({ t: 'temblor', f: 0.012 });
     const e = { tipo: 'nuvemNegra', dueno: l, vivo: true, x: p.x, y: p.y, radio: R, t: 0, dur, prox: 0.5, update: dt => {
       e.t += dt; if (l.ko) return false;
       const alvo = maisPerto(luta, l, 9999, e);
-      if (alvo) { const dx = alvo.x - e.x, dy = alvo.y - e.y, d = Math.hypot(dx, dy) || 1, v = Math.min(d, (h.vel ?? 95) * dt); e.x += (dx / d) * v; e.y += (dy / d) * v; }
+      if (alvo) { const dx = alvo.x - e.x, dy = alvo.y - e.y, d = Math.hypot(dx, dy) || 1, v = Math.min(d, (h.vel ?? 60) * dt); e.x += (dx / d) * v; e.y += (dy / d) * v; }
       if (e.t >= e.prox) {
         e.prox += h.cada ?? 0.55;
         const sob = inimigos(luta, l).filter(b => dentro(b, e.x, e.y, R));

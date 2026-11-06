@@ -7,7 +7,7 @@ const px = Math.round;
 const ale = Math.random;
 const entre = (a, b) => a + ale() * (b - a);
 const C = '#0b0a14'; // contorno
-const heroi = (fx, k, life, o) => fx.heroes.push({ k, t: 0, life, hue: fx.hue, ...o });
+const heroi = (fx, k, life, o) => fx.heroes.push({ hue: fx.hue, ...o, k, t: 0, life });
 function poli(g, pts, cor, contorno = C) {
   g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(px(x), px(y)) : g.moveTo(px(x), px(y)))); g.closePath();
   if (contorno) { g.strokeStyle = contorno; g.lineWidth = 2; g.stroke(); }

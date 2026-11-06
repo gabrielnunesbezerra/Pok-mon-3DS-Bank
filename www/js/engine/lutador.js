@@ -68,7 +68,8 @@ export class Lutador {
   // shiny: a mesma forma com "s" no fim (pasta dos sprites shiny do PMD)
   // Aegislash: na forma Lâmina usa o sprite e os atributos da lâmina (forma.lamina)
   get lam() { return this.lamina && !this.mega ? this.forma.lamina : null; }
-  get dex() { return (this.mega ? this.forma.mega.dex : this.lam?.dex ?? this.forma.dex) + (this.shiny ? 's' : ''); }
+  // Morpeko: no modo Faminto usa o sprite da forma Hangry
+  get dex() { return (this.mega ? this.forma.mega.dex : this.lam?.dex ?? (this.fome && this.def.dexFome ? this.def.dexFome : this.forma.dex)) + (this.shiny ? 's' : ''); }
   get nombre() { return this.mega ? this.forma.mega.nombre : this.forma.nombre; }
   get tipos() { return (this.mega && this.forma.mega.tipos) || this.forma.tipos; }
   get hpMax() { return Math.round(this.forma.hp * REGLAS.vidaGlobal); }
@@ -115,6 +116,7 @@ export class Lutador {
     // a Mega Slowbro fica Mega nos rounds seguintes, ganhando ou perdendo
     this.mega = !!(this.def.megaFija && this.mega && this.forma?.mega);
     this.evoVis = null;
+    this.fome = false;
     this.kit = this.kitActual();
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.empX = 0; this.empY = 0;
     this.angulo = this.lado === 1 ? Math.PI : this.lado === 2 ? -Math.PI / 2 : 0;
