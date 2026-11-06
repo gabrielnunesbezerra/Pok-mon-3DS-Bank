@@ -47,7 +47,7 @@ export class TransporteWS {
 // ---------------------------------------------------------------- P2P (WebRTC) com códigos copiados à mão
 // canal rápido: sem ordem e sem reenvio (os comandos já vão repetidos em todo pacote)
 export const RAPIDO = { ordered: false, maxRetransmits: 0 };
-const SERVIDORES_ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:global.stun.twilio.com:3478'] }];
+const SERVIDORES_ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478', 'stun:global.stun.twilio.com:3478'] }];
 
 const aB64 = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const deB64 = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
@@ -143,7 +143,7 @@ export class TransporteP2P {
 const SENAL = 'wss://0.peerjs.com/peerjs?key=peerjs';
 const PREFIJO = 'pkcf-';
 const LETRAS_SALA = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-const ICE_NUBE = [...SERVIDORES_ICE, { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }];
+const ICE_NUBE = [...SERVIDORES_ICE, { urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:80?transport=tcp', 'turn:openrelay.metered.ca:443?transport=tcp', 'turns:openrelay.metered.ca:443?transport=tcp'], username: 'openrelayproject', credential: 'openrelayproject' }];
 const aleatorio = n => Array.from({ length: n }, () => Math.random().toString(36)[2]).join('');
 
 function abrirSenal(id, url = globalThis.PK_SENAL ?? SENAL) {

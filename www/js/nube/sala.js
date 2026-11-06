@@ -18,7 +18,7 @@ const VIVO = 20000;           // sem sinal de vida por 20 s = saiu (na luta, 60 
 const VIVO_LUTA = 60000;
 // canal rápido: sem ordem e sem reenvio (os comandos já vão repetidos em todo pacote)
 const RAPIDO = { ordered: false, maxRetransmits: 0 };
-const ESPERA_DIRETA = 9000;   // tempo para o canal direto abrir antes de usar a reserva
+const ESPERA_DIRETA = 6000;   // tempo para o canal direto abrir antes de usar a reserva
 export const caminhoSala = codigo => `arena/results/pkcroom_${codigo}`;
 // canal direto aberto e a conexão de pé (com o sinal oscilando, o canal ainda diz "open" mas nada passa: aí vai pela nuvem)
 const ligado = (pc, dc) => dc?.readyState === 'open' && (pc?.connectionState ?? 'connected') === 'connected';

@@ -39,7 +39,8 @@ export class Sesion {
     this.reiniciar(0);
     tr.alMensaje = m => this.recibir(m);
     tr.alCerrar = () => { this.cerrada = true; this.alCerrar?.(); };
-    this.reloj = setInterval(() => this.ping(), 500);
+    this.reloj = setInterval(() => this.ping(), 250);
+    this.jitter = 0; this.Dmin = D0; this.ultimaEspera = 0; this.passoDe = new Array(n).fill(0);
     this.ping();
   }
   get via() { return this.tr.via; }
@@ -56,7 +57,7 @@ export class Sesion {
     for (let k = 0; k < D0; k++) for (const e of this.ent) e.set(k, NEUTRO);
     this.ack = new Array(this.nj).fill(D0 - 1);                              // até onde tenho os comandos de cada um, sem buraco
     this.ackDe = Array.from({ length: this.nj }, () => new Array(this.nj).fill(D0 - 1)); // até onde cada um diz ter os meus
-    this.hLocal = new Map(); this.hRemoto = new Map();
+    this.hLocal = new Map(); this.hRemoto = new Map(); this.passoDe = new Array(this.nj).fill(0);
     this.esperando = 0; this.desync = false; this.sinSenal = performance.now(); this.reconectando = false;
     for (const s of this.propios) { this.listos.set(s, id); this.tr.enviar({ t: 'listo', s, id }); }
   }
@@ -69,12 +70,13 @@ export class Sesion {
       const e = this.ent[m.s];
       for (let j = 0; j < m.v.length; j++) { const k = m.k + j; if (k >= this.paso_) e.set(k, m.v[j]); }
       let a = this.ack[m.s]; while (a + 1 < this.paso_ || e.has(a + 1)) a++; this.ack[m.s] = a;
+      if (m.p != null) this.passoDe[m.s] = Math.max(this.passoDe[m.s] ?? 0, m.p);
       if (m.a) { const d = this.ackDe[m.s]; for (let s = 0; s < this.nj; s++) d[s] = Math.max(d[s], m.a[s] ?? -1); }
     } else if (m.t === 'listo') this.listos.set(m.s, m.id);
     else if (m.t === 'i') this.ent[m.s]?.set(m.k, m.v);
     else if (m.t === 'h') { const mapa = this.hRemoto.get(m.k) ?? new Map(); mapa.set(m.s, m.v); this.hRemoto.set(m.k, mapa); this.comparar(m.k); }
     else if (m.t === 'ping') this.rapido({ t: 'pong', s: m.s, a: m.de });
-    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; this.rtt = this.rtt == null ? r : this.rtt * 0.75 + r * 0.25; this.pico = Math.max(r, this.pico * 0.9); }
+    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; if (this.rtt != null) this.jitter = this.jitter * 0.85 + Math.abs(r - this.rtt) * 0.15; this.rtt = this.rtt == null ? r : this.rtt * 0.8 + r * 0.2; this.pico = Math.max(r, this.pico * 0.9); }
     else this.alOtro?.(m);
   }
   comparar(k) {
@@ -95,10 +97,18 @@ export class Sesion {
       for (let k = desde; k < this.prod; k++) v.push(this.ent[s].get(k) ?? NEUTRO);
       // com tudo confirmado, só um aviso de vida de vez em quando
       if (!v.length && !vida) continue;
-      this.rapido({ t: 'I', id: this.id, s, k: desde, v, a: this.ack });
+      this.rapido({ t: 'I', id: this.id, s, k: desde, v, a: this.ack, p: this.paso_ });
     }
   }
 
+  // está na frente dos outros? (o meu passo bem além do deles): segura um pouco em vez de travar esperando
+  adiantado() {
+    if (!this.lista) return false;
+    let min = Infinity;
+    for (let o = 0; o < this.nj; o++) if (!this.propios.includes(o) && !this.cpus.includes(o)) min = Math.min(min, this.passoDe[o] ?? 0);
+    // o passo dele chegou com meio ping de atraso: soma o que ele andou nesse tempo
+    return min !== Infinity && this.paso_ - (min + (this.rtt ?? 0) / 2 / 16.7) > 2;
+  }
   // está atrás dos outros? (tem comandos deles bem além do próprio passo) então roda passos extras
   atrasado() {
     if (!this.lista) return false;
@@ -114,9 +124,12 @@ export class Sesion {
     const mudo = performance.now() - this.sinSenal;
     this.reconectando = mudo > MUDO_AVISO;
     if (!this.perdida && mudo > MUDO_FIM) { this.perdida = true; this.alCerrar?.(); }
-    // atraso de entrada: metade do ping médio, com folga para o pico recente (jitter)
-    const base = (this.rtt ?? 0) * 0.75 + this.pico * 0.25;
-    this.D = Math.max(D0, Math.min(this.tr.lento ? 30 : 15, Math.ceil((base / 2) / 16.7) + 2));
+    // atraso de entrada: metade do ping + folga para a variação (jitter). Sobe na hora quando trava e desce devagar,
+    // para não ficar mudando (cada mudança dá um tranco)
+    const agora = performance.now(), alvo = Math.ceil(((this.rtt ?? 0) / 2 + this.jitter * 2 + 6) / 16.7) + 1;
+    if (this.esperando > 2 && agora - this.ultimaEspera > 400) { this.ultimaEspera = agora; this.Dmin = Math.min(this.Dmin + 1, 12); }
+    else if (agora - this.ultimaEspera > 6000 && this.Dmin > D0) { this.ultimaEspera = agora - 3000; this.Dmin--; }
+    this.D = Math.max(D0, this.Dmin, Math.min(this.tr.lento ? 30 : 15, alvo));
     while (this.prod < this.paso_ + this.D) {
       for (const s of this.propios) this.ent[s].set(this.prod, cuantizar(amostra(s)));
       this.prod++;

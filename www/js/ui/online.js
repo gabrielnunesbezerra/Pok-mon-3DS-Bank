@@ -95,7 +95,11 @@ export class Online {
       tr.alCerrar = () => { if (this.estado === 'sala') { this.estado = 'menu'; this.decir('THE ROOM WAS CLOSED', true); } };
       tr.alPar = n => { this.jugadores = n; if (tr.rol === 'host' && n >= MAXJ) this.comenzar(); };
       tr.alMensaje = m => { if (m.t === 'ir') this.emparejar(tr, m.n, m.modo); else if (m.t === 'salio') this.jugadores = m.n; };
-    } catch (e) { this.decir(e.message === 'ID-TAKEN' ? 'TRY AGAIN' : e.message, true); }
+    } catch (e) {
+      // sem conta só existe a conexão direta: em rede bloqueada (escola, VPN) a conta libera o caminho pela nuvem
+      const bloqueio = !propio && !cuenta.conectado && /CONNECTION FAILED|ROOM NOT FOUND|NOT REACHABLE/.test(e.message);
+      this.decir(e.message === 'ID-TAKEN' ? 'TRY AGAIN' : bloqueio ? `${e.message} · BLOCKED NETWORK? LOG IN (PROFILE) TO USE THE CLOUD ROUTE` : e.message, true);
+    }
     this.ocupado = false;
   }
 
