@@ -49,5 +49,15 @@ export const ARENAS = [
    "rx": 455,
    "ry": 168
   }
+ },
+ {
+  "id": "gelo",
+  "nombre": "GLACIER",
+  "ovalo": { "cx": 480, "cy": 222, "rx": 455, "ry": 168 }
+ },
+ {
+  "id": "ceu",
+  "nombre": "SKY TEMPLE",
+  "ovalo": { "cx": 480, "cy": 222, "rx": 455, "ry": 168 }
  }
 ];

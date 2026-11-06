@@ -4,6 +4,8 @@
 //  - praia: um rio no meio divide a arena; só dá para atravessar pelas duas pontes
 //  - cratera: poças de lava que queimam quem pisa
 //  - neon: placas de impulso que deixam mais rápido por um instante
+//  - geleira: placas de gelo em que todo mundo desliza e cristais de gelo que bloqueiam o caminho e os tiros
+//  - templo do céu: duas correntes de vento atravessam a arena e empurram; a cada 7s trocam de sentido
 //  - estádio: campo livre
 import { OVALO, RADIO } from '../config.js';
 
@@ -16,6 +18,11 @@ export const MAPAS = {
   halloween: { pedras: [[-0.5, -0.3, 14], [-0.36, 0.42, 14], [0.5, 0.32, 14], [0.38, -0.42, 14], [0, -0.6, 13], [0, 0.62, 13], [-0.18, 0.02, 12], [0.18, 0.02, 12]].map(([fx, fy, r]) => ({ ...P(fx, fy), r, tipo: 'lapide' })) },
   praia: { rio: { x: C.cx, meio: 30, pontes: [{ y: Math.round(C.cy - C.ry * 0.48), meio: 24 }, { y: Math.round(C.cy + C.ry * 0.48), meio: 24 }] } },
   crater: { lava: [{ ...P(-0.4, 0.12), rx: 64, ry: 34 }, { ...P(0.4, -0.12), rx: 64, ry: 34 }, { ...P(0, 0.62), rx: 50, ry: 22 }, { ...P(0, -0.62), rx: 50, ry: 22 }] },
+  gelo: {
+    pedras: [[-0.34, -0.46, 17], [0.36, 0.44, 17], [-0.62, 0.08, 15], [0.62, -0.08, 15], [0, 0.66, 13], [0, -0.66, 13]].map(([fx, fy, r]) => ({ ...P(fx, fy), r, tipo: 'cristal' })),
+    gelo: [{ ...P(-0.3, 0.2), rx: 92, ry: 44 }, { ...P(0.3, -0.2), rx: 92, ry: 44 }, { ...P(0, 0), rx: 48, ry: 24 }, { ...P(-0.06, -0.42), rx: 60, ry: 22 }, { ...P(0.06, 0.42), rx: 60, ry: 22 }],
+  },
+  ceu: { vento: { faixas: [{ y: Math.round(C.cy - C.ry * 0.42), meio: 30 }, { y: Math.round(C.cy + C.ry * 0.42), meio: 30 }], vel: 70, troca: 7, dir: 1 } },
   neon: { pads: [{ ...P(-0.5, 0), r: 24 }, { ...P(0.5, 0), r: 24 }, { ...P(0, -0.56), r: 22 }, { ...P(0, 0.56), r: 22 }] },
 };
 
@@ -48,6 +55,16 @@ export function resolverLutador(luta, l, dt) {
       l._lava = (l._lava ?? 0) + dt;
       if (l._lava >= 0.4) { l._lava -= 0.4; l.recibir(null, { dano: 2.5, tipo: 'FIRE', tick: true, puro: true }); luta.emit({ t: 'lavaQueima', x: l.x, y: l.y }); }
     } else l._lava = 0;
+  }
+  if (m.gelo) {
+    // no gelo o lutador não para na hora: o movimento vira deslize
+    const pisa = m.gelo.some(z => ((l.x - z.x) / z.rx) ** 2 + ((l.y - z.y) / z.ry) ** 2 < 1);
+    if (pisa) { l.empX += (l.vx ?? 0) * dt * 2.4; l.empY += (l.vy ?? 0) * dt * 2.4; if (!l._gelo) luta.emit({ t: 'pisaGelo', x: l.x, y: l.y }); }
+    l._gelo = pisa;
+  }
+  if (m.vento) {
+    const v = m.vento, dir = Math.floor(luta.t / v.troca) % 2 ? -1 : 1; v.dir = dir;
+    if (v.faixas.some(f => Math.abs(l.y - f.y) < f.meio)) l.x += dir * v.vel * dt;
   }
   if (m.pads) {
     const pad = m.pads.find(z => Math.hypot(l.x - z.x, (l.y - z.y) / ACHATA) < z.r);

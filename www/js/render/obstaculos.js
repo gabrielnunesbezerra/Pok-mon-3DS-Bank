@@ -42,6 +42,18 @@ export function chaoObstaculos(g, id) {
     g.lineWidth = 3; for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(-8 + i * 9, -9); g.lineTo(1 + i * 9, 0); g.lineTo(-8 + i * 9, 9); g.stroke(); }
     g.restore();
   }
+  if (m.gelo) for (const z of m.gelo) {
+    g.fillStyle = 'rgba(14,116,144,0.35)'; g.beginPath(); g.ellipse(z.x, z.y + 2, z.rx + 4, z.ry + 3, 0, 0, 7); g.fill();
+    const gr = g.createLinearGradient(z.x - z.rx, z.y - z.ry, z.x + z.rx, z.y + z.ry);
+    gr.addColorStop(0, '#e0f7ff'); gr.addColorStop(0.5, '#a5e3f7'); gr.addColorStop(1, '#7cc8e8');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(z.x, z.y, z.rx, z.ry, 0, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 2; g.beginPath(); g.ellipse(z.x, z.y, z.rx, z.ry, 0, 3.4, 5.6); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.7)'; for (let i = 0; i < 3; i++) g.fillRect(Math.round(z.x - z.rx * 0.5 + i * z.rx * 0.3), Math.round(z.y - z.ry * 0.3 + i * 3), Math.round(z.rx * 0.22), 2);
+  }
+  if (m.vento) for (const f of m.vento.faixas) {
+    g.fillStyle = 'rgba(125,211,252,0.28)'; g.fillRect(OVALO.cx - OVALO.rx - 20, f.y - f.meio, (OVALO.rx + 20) * 2, f.meio * 2);
+    g.fillStyle = 'rgba(214,170,60,0.55)'; g.fillRect(OVALO.cx - OVALO.rx - 20, f.y - f.meio, (OVALO.rx + 20) * 2, 2); g.fillRect(OVALO.cx - OVALO.rx - 20, f.y + f.meio - 2, (OVALO.rx + 20) * 2, 2);
+  }
   // sombra no chão de cada pedra
   if (m.pedras) for (const p of m.pedras) { g.fillStyle = 'rgba(0,0,0,0.35)'; g.beginPath(); g.ellipse(p.x + 4, p.y + 2, p.r * 1.1, p.r * ACHATA * 1.05, 0, 0, 7); g.fill(); }
   g.restore();
@@ -54,7 +66,15 @@ function spritePedra(p, i) {
   if (cache.has(k)) return cache.get(k);
   const W = p.r * 2 + 12, H = p.r * 2.4 + 12, c = document.createElement('canvas'); c.width = W; c.height = H;
   const g = c.getContext('2d'), cx = W / 2, base = H - 6;
-  if (p.tipo === 'lapide') {
+  if (p.tipo === 'cristal') {
+    const r = p.r;
+    g.fillStyle = 'rgba(14,60,90,0.5)'; g.beginPath(); g.ellipse(cx, base, r, 4, 0, 0, 7); g.fill();
+    const ponta = (x, h, w, c1, c2) => { g.fillStyle = c1; g.beginPath(); g.moveTo(x - w, base); g.lineTo(x - w * 0.6, base - h * 0.8); g.lineTo(x, base - h); g.lineTo(x + w * 0.6, base - h * 0.8); g.lineTo(x + w, base); g.closePath(); g.fill(); g.fillStyle = c2; g.beginPath(); g.moveTo(x - w, base); g.lineTo(x - w * 0.6, base - h * 0.8); g.lineTo(x, base - h); g.lineTo(x - w * 0.1, base); g.closePath(); g.fill(); g.strokeStyle = '#0c4a6e'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - w, base); g.lineTo(x - w * 0.6, base - h * 0.8); g.lineTo(x, base - h); g.lineTo(x + w * 0.6, base - h * 0.8); g.lineTo(x + w, base); g.stroke(); };
+    ponta(cx - r * 0.55, r * 1.3, r * 0.4, '#7dd3fc', '#bae6fd');
+    ponta(cx + r * 0.55, r * 1.5, r * 0.42, '#7dd3fc', '#bae6fd');
+    ponta(cx, r * 2.1, r * 0.55, '#38bdf8', '#e0f2fe');
+    g.fillStyle = '#ffffff'; g.fillRect(Math.round(cx - r * 0.15), Math.round(base - r * 1.7), 2, Math.round(r * 0.9));
+  } else if (p.tipo === 'lapide') {
     const w = p.r * 1.3, h = p.r * 2.1;
     g.fillStyle = '#3f3a2e'; g.beginPath(); g.ellipse(cx, base, w * 0.75, 4, 0, 0, 7); g.fill();
     g.fillStyle = '#6b6878'; g.beginPath(); g.moveTo(cx - w / 2, base); g.lineTo(cx - w / 2, base - h + w / 2); g.arc(cx, base - h + w / 2, w / 2, Math.PI, 0); g.lineTo(cx + w / 2, base); g.closePath(); g.fill();
@@ -86,5 +106,7 @@ export function animarChao(g, id, t) {
   if (m.lava) for (const [j, z] of m.lava.entries()) for (let i = 0; i < 3; i++) { const f = (t * 0.8 + i / 3 + j * 0.37) % 1, a = i * 2.1 + j; g.globalAlpha = 1 - f; g.fillStyle = '#fff3b0'; g.beginPath(); g.arc(z.x + Math.cos(a) * z.rx * 0.45, z.y + Math.sin(a) * z.ry * 0.4 - f * 6, 2 + f * 2, 0, 7); g.fill(); }
   if (m.pads) for (const z of m.pads) { g.globalAlpha = 0.3 + 0.3 * Math.sin(t * 6); g.fillStyle = '#22d3ee'; g.beginPath(); g.ellipse(z.x, z.y, z.r, z.r * ACHATA, 0, 0, 7); g.fill(); }
   if (m.rio) { const r = m.rio; g.globalAlpha = 0.5; g.fillStyle = '#e0f2fe'; for (let i = 0; i < 12; i++) { const y = OVALO.cy - OVALO.ry + ((t * 40 + i * 37) % (OVALO.ry * 2)); if (r.pontes.some(b => Math.abs(y - b.y) < b.meio + 2)) continue; g.fillRect(Math.round(r.x - 8 + Math.sin(i * 3) * 10), Math.round(y), 5, 1); } }
+  if (m.vento) for (const f of m.vento.faixas) { const d = m.vento.dir; g.globalAlpha = 0.8; g.strokeStyle = '#0ea5e9'; g.lineWidth = 3; for (let i = 0; i < 9; i++) { const x = OVALO.cx - OVALO.rx + (((t * 120 * d + i * 110) % (OVALO.rx * 2)) + OVALO.rx * 2) % (OVALO.rx * 2), y = f.y + ((i * 13) % 3 - 1) * f.meio * 0.5; g.beginPath(); g.moveTo(x - d * 14, y - 5); g.lineTo(x, y); g.lineTo(x - d * 14, y + 5); g.stroke(); g.globalAlpha = 0.25; g.beginPath(); g.moveTo(x - d * 50, y); g.lineTo(x - d * 16, y); g.stroke(); g.globalAlpha = 0.55; } }
+  if (m.gelo) for (const [j, z] of m.gelo.entries()) { const f = (t * 0.4 + j * 0.31) % 1; g.globalAlpha = Math.sin(f * Math.PI) * 0.7; g.fillStyle = '#ffffff'; g.fillRect(Math.round(z.x - z.rx * 0.6 + f * z.rx * 1.2), Math.round(z.y - z.ry * 0.2), 3, 3); }
   g.globalAlpha = 1;
 }

@@ -246,6 +246,67 @@ const ESTILOS = {
       moita(g, X + 6, Y - 28, 4, R);
     }
   },
+  // ---------------------------------------------------------------- geleira: estádio coberto de neve, chão de gelo azul
+  gelo(g, R) {
+    g.fillStyle = '#0f1a2e'; g.fillRect(...TODO);
+    torcida(g, R, { fundo: ['#24324c', '#1e2a40'], roupas: ['#e2e8f0', '#38bdf8', '#f87171', '#1e3a8a', '#fbbf24', '#94a3b8', '#ffffff'], escadas: 10 });
+    // neve acumulada nas arquibancadas
+    for (let n = 0; n < 900; n++) { const a = R() * Math.PI * 2, k = 1.08 + R() * 1.4, [x, y] = ptE(OVALO.rx * k + 40, OVALO.ry * k + 30, a); g.fillStyle = R() < 0.6 ? 'rgba(241,245,249,0.75)' : 'rgba(186,230,253,0.6)'; g.fillRect(Math.round(x), Math.round(y), 2 + Math.floor(R() * 4), 1 + Math.floor(R() * 2)); }
+    mureta(g, [['#bae6fd', '#e0f2fe', '#7dd3fc'], ['#e2e8f0', '#ffffff', '#94a3b8']], ['#94a3b8', '#e2e8f0', '#475569'], 40);
+    g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
+    faixasLeque(g, ['#bfe6f7', '#b3def2'], 64);
+    // trincas no gelo
+    g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 1;
+    for (let n = 0; n < 60; n++) { let x = R() * MUNDO.w, y = 30 + R() * (MUNDO.h - 40), a = R() * 6.28; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 4; k++) { x += Math.cos(a) * (8 + R() * 14); y += Math.sin(a) * (5 + R() * 8); a += R() - 0.5; g.lineTo(x, y); } g.stroke(); }
+    for (let n = 0; n < 2600; n++) { const x = Math.floor(R() * MUNDO.w), y = Math.floor(R() * MUNDO.h); g.fillStyle = R() < 0.5 ? 'rgba(255,255,255,0.35)' : 'rgba(56,130,180,0.14)'; g.fillRect(x, y, 1 + Math.floor(R() * 2), 1); }
+    // montinhos de neve
+    for (let n = 0; n < 22; n++) { const a = R() * 6.28, [x, y] = ptE(OVALO.rx * (0.82 + R() * 0.15), OVALO.ry * (0.82 + R() * 0.15), a); g.fillStyle = '#f1f5f9'; g.beginPath(); g.ellipse(x, y, 10 + R() * 16, 4 + R() * 4, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#cbd5e1'; g.fillRect(Math.round(x) - 6, Math.round(y) + 2, 12, 1); }
+    sombraCampo(g, 'rgba(30,64,110,0.28)');
+    g.restore();
+    linhaElipse(g, OVALO.rx, OVALO.ry, 'rgba(255,255,255,0.8)');
+    g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(OVALO.cx - 1, OVALO.cy - OVALO.ry, 3, OVALO.ry * 2);
+    // floco de neve gigante no centro
+    g.strokeStyle = 'rgba(255,255,255,0.75)'; g.lineWidth = 3;
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a); g.beginPath(); g.moveTo(OVALO.cx, OVALO.cy); g.lineTo(OVALO.cx + c * 54, OVALO.cy + sn * 33); g.stroke(); for (const f of [0.55, 0.8]) { const bx = OVALO.cx + c * 54 * f, by = OVALO.cy + sn * 33 * f; for (const s2 of [-0.6, 0.6]) { g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + Math.cos(a + s2) * 12, by + Math.sin(a + s2) * 7); g.stroke(); } } }
+    // pinheiros nevados em volta
+    for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2 + 0.1, [x, y] = ptE(MURETA.rout.rx + 30, MURETA.rout.ry + 20, a); if (foraDaArte(x, y, 40)) continue; const X = Math.round(x), Y = Math.round(y); for (let k = 0; k < 3; k++) { const w = 16 - k * 4, yy = Y - 8 - k * 9; g.fillStyle = '#14532d'; g.beginPath(); g.moveTo(X - w, yy); g.lineTo(X, yy - 14); g.lineTo(X + w, yy); g.closePath(); g.fill(); g.fillStyle = '#f1f5f9'; g.beginPath(); g.moveTo(X - w * 0.6, yy - 5); g.lineTo(X, yy - 14); g.lineTo(X + w * 0.6, yy - 5); g.closePath(); g.fill(); } g.fillStyle = '#5b3a1a'; g.fillRect(X - 2, Y - 8, 4, 8); }
+  },
+  // ---------------------------------------------------------------- templo do céu: plataforma de mármore flutuando acima das nuvens, sem plateia
+  ceu(g, R) {
+    const ceu = g.createLinearGradient(0, -MARGEM.y, 0, MUNDO.h + MARGEM.y);
+    ceu.addColorStop(0, '#3b82c4'); ceu.addColorStop(0.5, '#7cc0ec'); ceu.addColorStop(1, '#cfe9fb');
+    g.fillStyle = ceu; g.fillRect(...TODO);
+    // mar de nuvens
+    for (let n = 0; n < 260; n++) { const x = -MARGEM.x + R() * (MUNDO.w + MARGEM.x * 2), y = -MARGEM.y + R() * (MUNDO.h + MARGEM.y * 2), r = 18 + R() * 46; g.fillStyle = R() < 0.5 ? 'rgba(255,255,255,0.55)' : 'rgba(226,240,252,0.5)'; g.beginPath(); g.ellipse(x, y, r, r * 0.45, 0, 0, Math.PI * 2); g.fill(); }
+    // parte de baixo da plataforma: rocha flutuante que afina para baixo
+    const B = { rx: MURETA.rout.rx + 26, ry: MURETA.rout.ry + 18 };
+    g.fillStyle = '#5b4a3a'; g.beginPath(); g.moveTo(OVALO.cx - B.rx, OVALO.cy); g.quadraticCurveTo(OVALO.cx - B.rx * 0.5, OVALO.cy + B.ry + 150, OVALO.cx, OVALO.cy + B.ry + 200); g.quadraticCurveTo(OVALO.cx + B.rx * 0.5, OVALO.cy + B.ry + 150, OVALO.cx + B.rx, OVALO.cy); g.closePath(); g.fill();
+    g.fillStyle = '#7a6450'; for (let n = 0; n < 140; n++) { const x = OVALO.cx + (R() - 0.5) * B.rx * 1.7, y = OVALO.cy + B.ry * 0.6 + R() * 160; g.fillRect(Math.round(x), Math.round(y), 3 + Math.floor(R() * 6), 2); }
+    g.fillStyle = '#e8dcc4'; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, B.rx, B.ry, 0, 0, Math.PI * 2); g.fill();
+    mureta(g, [['#f5f0e1', '#ffffff', '#cbbf9f'], ['#e7c86a', '#fde68a', '#b08a2a']], ['#e7c86a', '#fde68a', '#8a6a1a'], 36);
+    g.save(); g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, CAMPO_R.rx, CAMPO_R.ry, 0, 0, Math.PI * 2); g.clip();
+    g.fillStyle = '#ece6d6'; g.fillRect(0, 0, MUNDO.w, MUNDO.h);
+    lajotas(g, R, { largura: 48, alto: 26, cores: ['#f1ece0', '#e8e1d0', '#f6f2e8', '#e2dac6', '#ede7d8'], junta: '#bfb298', brilho: 'rgba(255,255,255,0.25)', torto: 1 });
+    // veios do mármore
+    g.strokeStyle = 'rgba(170,150,120,0.35)'; g.lineWidth = 1;
+    for (let n = 0; n < 40; n++) { let x = R() * MUNDO.w, y = R() * MUNDO.h; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += 6 + R() * 12; y += (R() - 0.5) * 8; g.lineTo(x, y); } g.stroke(); }
+    sombraCampo(g, 'rgba(120,100,60,0.22)');
+    g.restore();
+    linhaElipse(g, OVALO.rx, OVALO.ry, 'rgba(214,170,60,0.9)');
+    // sol dourado no centro
+    g.strokeStyle = 'rgba(214,170,60,0.8)'; g.lineWidth = 3; g.beginPath(); g.ellipse(OVALO.cx, OVALO.cy, 40, 25, 0, 0, Math.PI * 2); g.stroke();
+    for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; g.beginPath(); g.moveTo(OVALO.cx + Math.cos(a) * 46, OVALO.cy + Math.sin(a) * 28); g.lineTo(OVALO.cx + Math.cos(a) * 62, OVALO.cy + Math.sin(a) * 38); g.stroke(); }
+    // colunas de mármore com capitel dourado
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + 0.26, [x, y] = ptE(MURETA.rout.rx + 6, MURETA.rout.ry + 4, a);
+      if (foraDaArte(x, y, 40)) continue;
+      const X = Math.round(x), Y = Math.round(y);
+      g.fillStyle = '#8a7a5a'; g.fillRect(X - 9, Y - 40, 18, 44);
+      g.fillStyle = '#f5f0e1'; g.fillRect(X - 7, Y - 38, 14, 40);
+      g.fillStyle = '#ffffff'; g.fillRect(X - 7, Y - 38, 3, 40); g.fillStyle = '#d6cdb4'; g.fillRect(X + 3, Y - 38, 4, 40);
+      g.fillStyle = '#e7c86a'; g.fillRect(X - 10, Y - 42, 20, 5); g.fillStyle = '#fde68a'; g.fillRect(X - 10, Y - 42, 20, 1);
+    }
+  },
   // ---------------------------------------------------------------- praia: ilha de areia no meio do mar, sem plateia
   praia(g, R) {
     // mar em volta de tudo
@@ -509,7 +570,7 @@ let graficosBajos = false;
 export function setGraficosBajos(v) { if (graficosBajos !== !!v) { graficosBajos = !!v; cache.clear(); } }
 // barreira em 3D em volta da arena: atrás, painéis de vidro de energia com postes e trilho brilhando; na frente, a
 // espessura da parede (a face de fora) para o campo parecer um palco elevado
-const COR_BARREIRA = { estadio: '#7dd3fc', neon: '#f0abfc', crater: '#fdba74', ruinas: '#a7f3d0', praia: '#67e8f9', halloween: '#c4b5fd' };
+const COR_BARREIRA = { gelo: '#e0f2fe', ceu: '#fde68a', estadio: '#7dd3fc', neon: '#f0abfc', crater: '#fdba74', ruinas: '#a7f3d0', praia: '#67e8f9', halloween: '#c4b5fd' };
 function rgba(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
 function barreira3D(g, cor) {
   const { rin, rout } = MURETA, N = 72, H = 50, HF = 18;
@@ -621,6 +682,23 @@ export function ambienteArena(g, id, t) {
       const a = hash(i + 70) * Math.PI * 2 + t * 0.15, k = 1.25 + hash(i + 80) * 0.5, x = OVALO.cx + Math.cos(a) * (MURETA.rout.rx + 40) * k, y = OVALO.cy + Math.sin(a) * (MURETA.rout.ry + 26) * k - 14 + Math.sin(t * 2 + i) * 6;
       g.globalAlpha = 0.25; g.fillStyle = '#a855f7'; g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill();
       g.globalAlpha = 0.9; g.fillStyle = '#e9d5ff'; g.fillRect(Math.round(x) - 1, Math.round(y) - 1, 3, 3);
+    }
+    g.globalAlpha = 1;
+  } else if (id === 'gelo') {
+    // neve caindo devagar, balançando
+    for (let i = 0; i < 70; i++) {
+      const x = frac(hash(i) + t * 0.004 * (1 + hash(i + 3))) * (MUNDO.w + 600) - 300 + Math.sin(t * 1.5 + i) * 8, y = frac(t * (0.06 + hash(i + 30) * 0.06) + hash(i + 50)) * (MUNDO.h + 260) - 130;
+      g.fillStyle = hash(i + 70) < 0.7 ? '#ffffff' : '#bae6fd'; const s = hash(i + 90) < 0.3 ? 3 : 2; g.fillRect(Math.round(x), Math.round(y), s, s);
+    }
+  } else if (id === 'ceu') {
+    // nuvens passando por baixo da plataforma e pássaros
+    for (let i = 0; i < 9; i++) {
+      const x = frac(hash(i) + t * (0.008 + hash(i + 5) * 0.01)) * (MUNDO.w + 800) - 400, y = MUNDO.h + 20 + hash(i + 10) * 120;
+      g.globalAlpha = 0.6; g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(x, y, 70, 18, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.ellipse(x + 30, y - 10, 40, 14, 0, 0, Math.PI * 2); g.fill();
+    }
+    for (let i = 0; i < 6; i++) {
+      const x = frac(hash(i + 30) + t * (0.02 + hash(i + 40) * 0.02)) * (MUNDO.w + 600) - 300, y = -80 + hash(i + 50) * 90 + Math.sin(t * 2 + i) * 8, asa = Math.sin(t * 10 + i * 2) * 3;
+      g.globalAlpha = 0.9; g.strokeStyle = '#334155'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 6, y - asa); g.lineTo(x, y); g.lineTo(x + 6, y - asa); g.stroke();
     }
     g.globalAlpha = 1;
   } else if (id === 'ruinas') {

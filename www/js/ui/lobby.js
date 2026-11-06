@@ -130,7 +130,7 @@ export class Lobby {
     if (c === 'Enter' || c === 'Space') this.lutar();
     if (c === 'KeyP' || c === 'Tab') this.abrirLista(0);
   }
-  posArena(i) { return { x: 80 + (i + 1) * 64, y: 228, w: 60, h: 16 }; }
+  posArena(i) { return { x: 70 + (i + 1) * 62, y: 228, w: 58, h: 16 }; }
   posNivel(k) { return { x: 80 + k * 64, y: 250, w: 60, h: 16 }; }
   posModo(k) { return { x: 80 + k * 100, y: 272, w: 96, h: 16 }; }
   livre() { const usados = new Set(this.vagas.map(v => v.time)); return [0, 1, 2, 3].find(t => !usados.has(t)) ?? 1; }
@@ -151,7 +151,7 @@ export class Lobby {
     if (this.entreno) {
       texto(g, 'ARENA', 14, 231, { tam: 8, color: '#9fc0f0' });
       botao(g, ...Object.values(this.posArena(-1)), 'RANDOM', this.arena === -1);
-      ARENAS.forEach((a, i) => botao(g, ...Object.values(this.posArena(i)), a.nombre.slice(0, 8), this.arena === i));
+      ARENAS.forEach((a, i) => botao(g, ...Object.values(this.posArena(i)), a.nombre.slice(0, 10), this.arena === i));
       const L = this.posLutar(); caixa(g, L.x, L.y, L.w, L.h, '#facc15', '#fff7d6', 6); texto(g, 'TRAIN!', L.x + L.w / 2, L.y + 7, { tam: 12, align: 'center', color: '#1c1300' });
       texto(g, 'TAP A CARD TO PICK YOUR POKÉMON OR THE DUMMY · NO TIMER', W / 2, 340, { tam: 6, align: 'center', color: '#9fc0f0' });
       return;
@@ -160,7 +160,7 @@ export class Lobby {
     caixa(g, 8, 222, 624, 92, 'rgba(10,20,50,0.55)', '#2c4f8f', 6);
     texto(g, 'ARENA', 14, 231, { tam: 8, color: '#9fc0f0' });
     botao(g, ...Object.values(this.posArena(-1)), 'RANDOM', this.arena === -1);
-    ARENAS.forEach((a, i) => botao(g, ...Object.values(this.posArena(i)), a.nombre.slice(0, 8), this.arena === i));
+    ARENAS.forEach((a, i) => botao(g, ...Object.values(this.posArena(i)), a.nombre.slice(0, 10), this.arena === i));
     texto(g, 'CPU', 14, 253, { tam: 8, color: '#9fc0f0' });
     NIVEIS.forEach(([id, nome], k) => botao(g, ...Object.values(this.posNivel(k)), nome, this.nivel === id));
     texto(g, 'MODE', 14, 275, { tam: 8, color: '#9fc0f0' });
