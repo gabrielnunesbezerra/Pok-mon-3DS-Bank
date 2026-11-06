@@ -114,10 +114,13 @@ export const formasKits9 = {
     let t = 0, prox = 0.3;
     luta.add({ tipo: 'nevasca', dueno: l, vivo: true, x: l.x, y: l.y, radio: R, t: 0, dur, update(dt) {
       t += dt; this.t = t; this.x = l.x; this.y = l.y; if (l.ko) return false;
-      if (t >= prox) { prox += 0.3; for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { b.recibir(l, { dano: h.danoTick ?? 1.2, tipo: 'ICE', tick: true }); b.ponerEstado('lento', 0.4, { f: Math.max(0.3, b.est.lento?.f ?? 0) }); } }
+      // dentro da nevasca: dano aos poucos e cada vez mais lento
+      if (t >= prox) { prox += 0.3; for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { b.recibir(l, { dano: h.danoTick ?? 1.2, tipo: 'ICE', tick: true }); b.ponerEstado('lento', 0.5, { f: Math.min(0.6, Math.max(0.3, (b.est.lento?.f ?? 0) + 0.08)) }); } }
       if (t < dur) return true;
-      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) atingir(l, b, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 120, ralentiza: { f: 0.7, dur: 2 }, pesado: true }));
-      luta.emit({ t: 'explodeNevasca', x: l.x, y: l.y, r: R }); luta.emit({ t: 'temblor', f: 0.016 }); luta.hitstop(100);
+      // explode: congela todo mundo dentro e depois deixa 70% mais lento
+      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { atingir(l, b, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 0, ralentiza: { f: 0.7, dur: 2 + (h.congela ?? 1.4) }, pesado: true })); congelar(luta, b, h.congela ?? 1.4); }
+      luta.emit({ t: 'explodeNevasca', x: l.x, y: l.y, r: R });
+      luta.add({ tipo: 'chaoGelo', dueno: l, vivo: true, x: l.x, y: l.y, radio: R * 0.9, t: 0, dur: 2.5, prox: 0.5, update(dt) { this.t += dt; if (this.t >= this.prox) { this.prox += 0.5; for (const b of inimigos(luta, l)) if (dentro(b, this.x, this.y, this.radio)) b.ponerEstado('lento', 0.6, { f: Math.max(0.4, b.est.lento?.f ?? 0) }); } return this.t < this.dur; } }); luta.emit({ t: 'temblor', f: 0.016 }); luta.hitstop(100);
       return false;
     } });
   },

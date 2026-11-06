@@ -82,7 +82,7 @@ export function rangoDe(h) {
     case 'slashTriplo': P.alcance = (h.alcance ?? 200) * 0.8; P.ancho = 16; P.retardo = 0.15; break;
     case 'bolaNeve': P.alcance = (h.alcance ?? 240) * 0.9; P.ancho = h.radio ?? 40; P.retardo = d / (h.vel ?? 200); break;
     case 'escudoGlacial': P.tipo = 'defensa'; P.alcance = 140; break;
-    case 'blizzard': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.85; P.retardo = h.carga ?? 1.6; break;
+    case 'blizzard': P.tipo = 'area'; P.alcance = (h.radio ?? 150) * 0.85; P.retardo = h.carga ?? 1.6; break;
     case 'torresCristal': P.tipo = 'buff'; break;
     case 'empurrao': P.tipo = 'mele'; P.alcance = (h.alcance ?? 70) + 10; P.retardo = 0.1; break;
     case 'hyperVoice': P.tipo = 'mele'; P.alcance = (h.alcance ?? 130) * 0.85; P.retardo = 0.1; P.golpes = 4; break;

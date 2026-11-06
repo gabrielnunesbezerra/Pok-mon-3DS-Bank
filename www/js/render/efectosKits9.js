@@ -18,7 +18,7 @@ Object.assign(EVENTOS_NOVOS, {
   congelaK9(fx, e) { heroi(fx, 'blocoGeloK9', e.dur, { l: e.l }); neve(fx, e.l.x, e.l.y - 12, 10, 120); },
   explodeNeve(fx, e) { neve(fx, e.x, e.y - 10, 30, 260); cacos(fx, e.x, e.y - 8, GELO, 18, 240); choque(fx, e.x, e.y, e.r, '#e0f2fe'); rachas(fx, e.x, e.y, e.r * 0.7, '#0c4a6e'); },
   trincaGelo(fx, e) { cacos(fx, e.l.x, e.l.y - 14, GELO, 4 + e.k * 2, 120); },
-  explodeNevasca(fx, e) { neve(fx, e.x, e.y - 10, 50, 320); cacos(fx, e.x, e.y - 10, GELO, 24, 300); choque(fx, e.x, e.y, e.r, '#bae6fd'); choque(fx, e.x, e.y, e.r * 0.6, '#ffffff'); rachas(fx, e.x, e.y, e.r * 0.8, '#0c4a6e'); },
+  explodeNevasca(fx, e) { neve(fx, e.x, e.y - 10, 70, 360); cacos(fx, e.x, e.y - 10, GELO, 34, 340); faiscas(fx, e.x, e.y - 12, ['#ffffff', '#e0f2fe', '#7dd3fc'], 24, 320); choque(fx, e.x, e.y, e.r, '#bae6fd'); choque(fx, e.x, e.y, e.r * 1.2, '#ffffff'); choque(fx, e.x, e.y, e.r * 0.55, '#38bdf8'); rachas(fx, e.x, e.y, e.r * 0.9, '#0c4a6e'); heroi(fx, 'espetosGelo', 1.4, { x: e.x, y: e.y, r: e.r * 0.85, s: ale() * 9 }); heroi(fx, 'espetosGelo', 1.2, { x: e.x, y: e.y, r: e.r * 0.45, s: ale() * 9 }); }
 });
 Object.assign(HEROES_NOVOS, {
   rastroNegro(g, h, k) { const f = Math.min(1, k * 1.3), al = 1 - Math.max(0, (k - 0.6) / 0.4); g.globalAlpha = al; for (let i = 0; i < 10; i++) { const q = (i / 10) * f, x = h.x0 + (h.x1 - h.x0) * q, y = h.y0 + (h.y1 - h.y0) * q - Math.sin(q * Math.PI) * 30 - 10; PX.disco(g, px(x), px(y), 3.4 - i * 0.2, SOMBRA[i % 3]); } g.globalAlpha = 1; },
@@ -38,10 +38,16 @@ Object.assign(ENTIDADES_NOVAS, {
   },
   neveChao(g, e) { const al = Math.min(1, (e.dur - e.t) * 1.5); g.globalAlpha = al * 0.75; g.fillStyle = '#f1f5f9'; g.beginPath(); g.ellipse(px(e.x), px(e.y), e.radio, e.radio * 0.5, 0, 0, 7); g.fill(); g.fillStyle = '#e0f2fe'; g.beginPath(); g.ellipse(px(e.x + 3), px(e.y - 1), e.radio * 0.6, e.radio * 0.28, 0, 0, 7); g.fill(); g.globalAlpha = 1; },
   nevasca(g, e, t, fx) {
-    const R = e.radio, k = Math.min(1, e.t / e.dur);
-    g.globalAlpha = 0.2 + k * 0.25; g.fillStyle = '#bae6fd'; g.beginPath(); g.ellipse(px(e.x), px(e.y), R, R * 0.62, 0, 0, 7); g.fill(); g.globalAlpha = 1;
-    PX.anilloPix(g, px(e.x), px(e.y), px(R), px(R * 0.62), '#e0f2fe', 2, 16, t * 3); PX.anilloPix(g, px(e.x), px(e.y), px(R * (1 - k)), px(R * 0.62 * (1 - k)), '#7dd3fc', 2, 0, 0);
-    for (let i = 0; i < 18; i++) { const a = t * 3 + i * 0.35, rr = R * (0.2 + (i % 6) * 0.15), x = e.x + Math.cos(a) * rr, y = e.y + Math.sin(a) * rr * 0.62 - 10 - (i % 3) * 8; PX.lineaPix(g, x, y, x - Math.sin(a) * 6, y + Math.cos(a) * 3, GELO[i % 4], 1); }
-    if (fx) for (let i = 0; i < 2; i++) { const a = ale() * 6.28; fx.add({ x: e.x + Math.cos(a) * R, y: e.y + Math.sin(a) * R * 0.62 - 10, vx: -Math.sin(a) * 140, vy: Math.cos(a) * 60, g: 0, size: entre(1.4, 2.4), life: 0.5, color: GELO[i], forma: 'sq' }); }
+    const R = e.radio, k = Math.min(1, e.t / e.dur), x = e.x, y = e.y;
+    // chão branqueando e o anel que fecha até a explosão
+    g.globalAlpha = 0.18 + k * 0.32; g.fillStyle = '#e0f2fe'; g.beginPath(); g.ellipse(px(x), px(y), R, R * 0.62, 0, 0, 7); g.fill();
+    g.globalAlpha = 1; PX.anilloPix(g, px(x), px(y), px(R), px(R * 0.62), '#ffffff', 2, 20, t * 3); PX.anilloPix(g, px(x), px(y), px(R * (1 - k) + 6), px((R * (1 - k) + 6) * 0.62), '#38bdf8', 2, 0, 0);
+    // cristais crescendo na borda
+    for (let i = 0; i < 14; i++) { const a = i * 0.449 + 0.2, cx = x + Math.cos(a) * R * 0.92, cy = y + Math.sin(a) * R * 0.57, H = (6 + (i % 3) * 4) * (0.3 + k * 0.7); poli(g, [[cx - 3, cy], [cx, cy - H], [cx + 3, cy]], i % 2 ? '#bae6fd' : '#e0f2fe', '#0c4a6e'); }
+    // redemoinho de vento e neve em três alturas
+    for (let j = 0; j < 3; j++) { g.globalAlpha = 0.55; g.strokeStyle = GELO[j]; g.lineWidth = 2; g.beginPath(); g.ellipse(px(x), px(y - 8 - j * 14), R * (0.85 - j * 0.2), R * 0.32 * (0.85 - j * 0.2), 0, t * (4 + j) + j, t * (4 + j) + j + 3.6); g.stroke(); }
+    g.globalAlpha = 1;
+    for (let i = 0; i < 30; i++) { const a = t * (3 + (i % 3)) + i * 0.21, rr = R * (0.15 + (i % 7) * 0.12), px1 = x + Math.cos(a) * rr, py1 = y + Math.sin(a) * rr * 0.62 - 8 - (i % 4) * 9; PX.lineaPix(g, px1, py1, px1 - Math.sin(a) * 7, py1 + Math.cos(a) * 3, GELO[i % 4], i % 5 ? 1 : 2); }
+    if (fx) for (let i = 0; i < 4; i++) { const a = ale() * 6.28; fx.add({ x: x + Math.cos(a) * R, y: y + Math.sin(a) * R * 0.62 - 10, vx: -Math.sin(a) * 180 - Math.cos(a) * 40, vy: Math.cos(a) * 70 - 20, g: 0, drag: 0.5, size: entre(1.4, 3), life: 0.6, color: GELO[i], forma: 'sq', vr: entre(-8, 8) }); }
   },
 });
