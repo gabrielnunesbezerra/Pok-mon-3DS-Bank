@@ -105,15 +105,15 @@ export const MEGA_KITS = {
   // ---------------------------------------------------------------- Megas novas (ults em engine/formasMega.js)
   mawile: {
     lmb: { nombre: 'Mega Iron Head', dano: 6.2, alcance: 54 },
-    rmb: { nombre: 'Mega Sneaky Bite', mega: true, dano: 9, dist: 110 },
-    esp: { nombre: 'Mega Sucker Punch', dano: 6, dist: 140 },
+    rmb: { nombre: 'Mega Twin Snare', mega: true, dano: 9, alcance: 112, angulo: 150 },
+    esp: { nombre: 'Mega Play Rough', mega: true, dano: 7, alcance: 115, aturde: 1.1, cd: 5 },
     q: { nombre: 'Mega Steel Spin', mega: true, dano: 11, radio: 72, escudo: 18 },
     e: { nombre: 'Mega Twin Jaws', mega: true, dano: 32, alcance: 130, angulo: 120 },
   },
   skarmory: {
     lmb: { nombre: 'Mega Steel Wing', dano: 5.8, alcance: 58 },
-    rmb: { nombre: 'Mega Steel Swoop', mega: true, dano: 9, dist: 200, danoTrilha: 2 },
-    esp: { nombre: 'Mega Drill Peck', dist: 170, cd: 4 },
+    rmb: { nombre: 'Mega Wind Blades', mega: true, dano: 10, alcance: 240, danoTrilha: 2 },
+    esp: { nombre: 'Mega Steel Crescent', mega: true, dano: 2.5, dist: 130, danoTrilha: 1.5, cd: 5 },
     q: { nombre: 'Mega Feather Burst', mega: true, dano: 9, dur: 2, radio: 90 },
     e: { nombre: 'Mega Blade Hurricane', mega: true, dano: 28, alcance: 300, danoFuracao: 2.5 },
   },
@@ -126,8 +126,8 @@ export const MEGA_KITS = {
   },
   tatsugiri: {
     lmb: { nombre: 'Mega Water Shuriken', dano: 5.6, rafaga: 2, cadaRafaga: 0.08 },
-    rmb: { nombre: 'Mega Slippery Slide', mega: true, dist: 150, danoBolha: 3.5 },
-    esp: { nombre: 'Mega Aqua Jet', dist: 170, cd: 4 },
+    rmb: { nombre: 'Mega Flip Turn', mega: true, dano: 10, alcance: 180, radio: 40, danoBolha: 3.5 },
+    esp: { nombre: 'Mega Slippery Slide', mega: true, dist: 170, cd: 4 },
     q: { nombre: 'Mega Sneaky Spit', mega: true, dano: 13, alcance: 260 },
     e: { nombre: 'Mega Twin Turret', mega: true, dano: 14, danoTiro: 2.4, dur: 5, escudo: 30 },
   },

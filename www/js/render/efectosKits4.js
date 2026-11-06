@@ -94,3 +94,80 @@ Object.assign(ENTIDADES_NOVAS, {
   rastroAgua(g, e, t) { const al = Math.min(1, (e.dur - e.t) * 2, e.t * 6), n = Math.max(2, Math.round(Math.hypot(e.x1 - e.x0, e.y1 - e.y0) / 14)); for (let i = 0; i <= n; i++) { const f = i / n, x = e.x0 + (e.x1 - e.x0) * f, y = e.y0 + (e.y1 - e.y0) * f; g.globalAlpha = al * 0.6; g.fillStyle = '#2563eb'; g.beginPath(); g.ellipse(px(x), px(y), 11, 6, 0, 0, 7); g.fill(); g.globalAlpha = al; PX.lineaPix(g, x - 5, y - 1 + Math.sin(t * 6 + i), x + 3, y - 1 + Math.sin(t * 6 + i), '#bfe9ff', 1); } g.globalAlpha = 1; },
   sangra() {},
 });
+
+// ---------------------------------------------------------------- impactos densos: faíscas, linhas de choque, rachaduras
+const faiscas = (fx, x, y, cores, n = 10, v = 220) => { for (let i = 0; i < n; i++) { const a = ale() * 6.28, s = entre(v * 0.5, v); fx.add({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 30, g: 200, drag: 3, size: entre(1.4, 2.4), life: entre(0.2, 0.4), color: cores[i % cores.length], forma: 'chispa' }); } };
+const rachas = (fx, x, y, r, cor = '#3b2f2a') => heroi(fx, 'rachas', 1.2, { x, y, r, cor, s: ale() * 100 });
+const choque = (fx, x, y, r, cor) => heroi(fx, 'choque', 0.25, { x, y, r, cor });
+Object.assign(EVENTOS_NOVOS, {
+  boteMand(fx, e) { heroi(fx, 'mandCone', 0.3, { x: e.l.x, y: e.l.y, ang: e.ang, R: e.R ?? 56, abre: e.abre ?? 1.7, dupla: e.dupla }); faiscas(fx, e.x, e.y - 10, ['#e2e8f0', '#f9a8d4', '#94a3b8'], e.dupla ? 14 : 8, 180); choque(fx, e.x, e.y - 8, 18, '#e2e8f0'); },
+  playRough(fx, e) { choque(fx, e.x, e.y - 12, 26, '#f9a8d4'); faiscas(fx, e.x, e.y - 12, ['#f9a8d4', '#fbcfe8', '#fde68a', '#ffffff'], e.mega ? 22 : 16, 230); cacos(fx, e.x, e.y - 4, ['#cbd5e1', '#64748b'], 6, 120); heroi(fx, 'estrelasTonto', 1, { x: e.x, y: e.y }); rachas(fx, e.x, e.y, 22); },
+  corteSerra(fx, e) { heroi(fx, 'serra', 0.25, { x: e.x, y: e.y, ang: e.ang, aco: e.aco }); faiscas(fx, e.x, e.y, e.aco ? ['#e2e8f0', '#94a3b8'] : ['#ef4444', '#f8fafc'], 5, 150); },
+  meiaLua(fx, e) { heroi(fx, 'meiaLua', e.dur + 0.25, { ...e, l: undefined, ox: e.l.x, oy: e.l.y }); penas(fx, e.l.x, e.l.y - 12, 5, 120); },
+  impactoAco(fx, e) { cacos(fx, e.x, e.y - 6, ['#94a3b8', '#e2e8f0', '#475569', '#7f1d1d'], 20, 260); faiscas(fx, e.x, e.y - 8, ['#ffffff', '#e2e8f0', '#fde68a'], 18, 300); choque(fx, e.x, e.y, e.radio, '#e2e8f0'); rachas(fx, e.x, e.y, e.radio * 0.8); fx.debris?.(e.x, e.y, 'ROCK', 10); penas(fx, e.x, e.y - 10, 12, 220); },
+  torretaSobe(fx, e) { gotas(fx, e.l.x, e.l.y - 6, 22, 190); choque(fx, e.l.x, e.l.y, 30, '#93c5fd'); rachas(fx, e.l.x, e.l.y, 26, '#1e3a8a'); },
+  torretaCai(fx, e) { gotas(fx, e.l.x, e.l.y - 10, 26, 210); fx.add({ x: e.l.x, y: e.l.y - 2, size: 22, life: 0.35, forma: 'salpicadura' }); },
+  disparoTorre(fx, e) { gotas(fx, e.l.x, e.l.y - e.alto - 18, 4, 90); },
+  tiroTorreta(fx, e) { gotas(fx, e.x, e.y - (e.chao ? 2 : 10), e.chao ? 8 : 10, 150); fx.add({ x: e.x, y: e.y - 2, size: e.chao ? 12 : 14, life: 0.3, forma: 'salpicadura' }); choque(fx, e.x, e.y - 4, 12, '#bfe9ff'); },
+  bolhaGigante(fx, e) { heroi(fx, 'bolhaG', e.dur ?? 0.45, { x: e.x, y: e.y, ox: e.l.x, oy: e.l.y - 40 }); },
+  bolhaEstoura(fx, e) { gotas(fx, e.x, e.y - 14, 40, 280); for (let i = 0; i < 3; i++) fx.add({ x: e.x, y: e.y - 2, size: 20 + i * 8, life: 0.35 + i * 0.08, forma: 'salpicadura' }); choque(fx, e.x, e.y, e.radio, '#bfe9ff'); rachas(fx, e.x, e.y, e.radio * 0.7, '#1e3a8a'); },
+  emergeTubarao(fx, e) { gotas(fx, e.l.x, e.l.y - 4, 28, 240); choque(fx, e.l.x, e.l.y, 54, '#1e3a8a'); rachas(fx, e.l.x, e.l.y, 34, '#0b1e3f'); fx.add({ x: e.l.x, y: e.l.y - 2, size: 24, life: 0.4, forma: 'salpicadura' }); },
+  explodePenas(fx, e) { penas(fx, e.x, e.y - 14, 30, 300); faiscas(fx, e.x, e.y - 12, ['#e2e8f0', '#ffffff'], 14, 260); choque(fx, e.x, e.y, e.radio, '#cbd5e1'); },
+});
+Object.assign(HEROES_NOVOS, {
+  choque(g, h, k) { const r = h.r * (0.3 + k * 0.9); g.globalAlpha = 1 - k; g.strokeStyle = h.cor; g.lineWidth = Math.max(1, 3 * (1 - k)); g.beginPath(); g.ellipse(px(h.x), px(h.y), r, r * 0.62, 0, 0, 7); g.stroke(); for (let i = 0; i < 8; i++) { const a = i * 0.785 + 0.3; PX.lineaPix(g, h.x + Math.cos(a) * r * 0.8, h.y + Math.sin(a) * r * 0.5, h.x + Math.cos(a) * r * 1.15, h.y + Math.sin(a) * r * 0.72, h.cor, 1); } g.globalAlpha = 1; },
+  rachas(g, h, k) { g.globalAlpha = Math.min(1, (1 - k) * 3) * 0.8; let s = h.s; const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280); for (let i = 0; i < 6; i++) { let a = (i / 6) * 6.28 + rnd(), x = h.x, y = h.y; const L = h.r * (0.6 + rnd() * 0.5); for (let j = 0; j < 3; j++) { const x1 = x + Math.cos(a) * L / 3, y1 = y + Math.sin(a) * L / 3 * 0.62; PX.lineaPix(g, x, y, x1, y1, h.cor, j ? 1 : 2); x = x1; y = y1; a += rnd() - 0.5; } } g.globalAlpha = 1; },
+  mandCone(g, h, k) { const fe = Math.min(1, k * 3), x = h.x + Math.cos(h.ang) * h.R * 0.55, y = h.y + Math.sin(h.ang) * h.R * 0.35 - 12; g.globalAlpha = (1 - k) * 0.35; g.fillStyle = '#94a3b8'; g.beginPath(); g.moveTo(px(h.x), px(h.y - 8)); g.arc(px(h.x), px(h.y - 8), h.R, h.ang - h.abre / 2, h.ang + h.abre / 2); g.closePath(); g.fill(); g.globalAlpha = 1 - k * k; mandibulaDesenho(g, x, y, h.ang, h.dupla ? 26 : 20, (1 - fe) * 0.9, '#334155'); if (h.dupla) mandibulaDesenho(g, x - Math.cos(h.ang) * 14, y - 10, h.ang, 18, (1 - fe) * 0.9, '#1f2937'); g.globalAlpha = 1; },
+  estrelasTonto(g, h, k, t) { g.globalAlpha = 1 - k * k; for (let i = 0; i < 3; i++) { const a = t * 7 + i * 2.1, x = h.x + Math.cos(a) * 10, y = h.y - 30 + Math.sin(a) * 4; poli(g, [[x, y - 3], [x + 1, y - 1], [x + 3, y], [x + 1, y + 1], [x, y + 3], [x - 1, y + 1], [x - 3, y], [x - 1, y - 1]], i % 2 ? '#fde68a' : '#f9a8d4'); } g.globalAlpha = 1; },
+  serra(g, h, k) { g.globalAlpha = 1 - k; g.save(); g.translate(px(h.x), px(h.y)); g.rotate(h.ang + 0.6); const L = 16 + k * 6; for (let i = -3; i <= 3; i++) poli(g, [[i * 4, -2], [i * 4 + 2, -6 - (i % 2) * 2], [i * 4 + 4, -2]], '#f8fafc'); PX.lineaPix(g, -L, 0, L, 0, h.aco ? '#94a3b8' : '#b91c1c', 2); PX.lineaPix(g, -L * 0.7, 3, L * 0.7, 3, h.aco ? '#e2e8f0' : '#7f1d1d', 1); g.restore(); g.globalAlpha = 1; },
+  meiaLua(g, h, k) {
+    const f = Math.min(1, k * (h.dur + 0.25) / h.dur), al = 1 - Math.max(0, (k - 0.6) / 0.4);
+    g.globalAlpha = al;
+    for (let i = 0; i < 14; i++) { const q = (i / 14) * f; if (q > f) break; const th = h.a + Math.PI + h.lado * Math.PI * q, x = h.cx + Math.cos(th) * h.R, y = h.cy + Math.sin(th) * h.R * 0.8 - 10; PX.disco(g, px(x), px(y), 2.4 - i * 0.08, i % 2 ? '#e2e8f0' : '#94a3b8'); }
+    g.strokeStyle = '#f8fafc'; g.lineWidth = 2; g.beginPath(); g.ellipse(px(h.cx), px(h.cy - 10), h.R, h.R * 0.8, 0, Math.min(h.a + Math.PI, h.a + Math.PI + h.lado * Math.PI * f), Math.max(h.a + Math.PI, h.a + Math.PI + h.lado * Math.PI * f)); g.stroke();
+    g.globalAlpha = 1;
+  },
+  bolhaG(g, h, k) { const x = h.ox + (h.x - h.ox) * k, y = h.oy + (h.y - 30 - h.oy) * k - Math.sin(k * Math.PI) * 40, r = 12 + k * 28 + Math.sin(k * 30) * 1.5; g.globalAlpha = 0.45; g.fillStyle = '#2563eb'; g.beginPath(); g.arc(px(x), px(y), r, 0, 7); g.fill(); g.globalAlpha = 1; g.strokeStyle = '#bfe9ff'; g.lineWidth = 2; g.stroke(); PX.disco(g, px(x - r * 0.4), px(y - r * 0.4), Math.max(1.5, r * 0.15), '#ffffff'); g.globalAlpha = 0.5; g.fillStyle = '#0b0a14'; g.beginPath(); g.ellipse(px(h.x), px(h.y), r * k, r * 0.62 * k, 0, 0, 7); g.fill(); g.globalAlpha = 1; },
+});
+Object.assign(ENTIDADES_NOVAS, {
+  penaAco(g, e) { g.save(); g.translate(px(e.x), px(e.y - 12)); g.rotate(e.ang); poli(g, [[-8, 0], [-2, -3], [8, 0], [-2, 3]], '#cbd5e1', '#334155'); PX.lineaPix(g, -6, 0, 6, 0, '#7f1d1d', 1); g.restore(); PX.lineaPix(g, e.x - Math.cos(e.ang) * 14, e.y - 12 - Math.sin(e.ang) * 14, e.x - Math.cos(e.ang) * 6, e.y - 12 - Math.sin(e.ang) * 6, '#e2e8f0', 1); },
+  espinhosAco(g, e, t) { const al = Math.min(1, (e.dur - e.t) * 2, e.t * 8); g.globalAlpha = al; for (const [i, p] of e.pts.entries()) { const y = p.y, x = p.x; g.globalAlpha = al * 0.35; g.fillStyle = '#0b0a14'; g.beginPath(); g.ellipse(px(x), px(y), 7, 3, 0, 0, 7); g.fill(); g.globalAlpha = al; for (const d of [-4, 0, 4]) poli(g, [[x + d - 2, y], [x + d + (i % 2 ? 1 : -1), y - 9 - (d === 0 ? 3 : 0)], [x + d + 2, y]], d === 0 ? '#e2e8f0' : '#94a3b8', '#334155'); } g.globalAlpha = 1; },
+  furacaoAco(g, e, t, fx) {
+    const al = Math.min(1, (e.dur - e.t) * 2, e.t * 4), R = e.radio;
+    g.globalAlpha = al * 0.3; g.fillStyle = '#1f2937'; g.beginPath(); g.ellipse(px(e.x), px(e.y), R, R * 0.62, 0, 0, 7); g.fill();
+    g.globalAlpha = al; PX.anilloPix(g, px(e.x), px(e.y), px(R), px(R * 0.62), '#94a3b8', 1, 16, t * 3); PX.anilloPix(g, px(e.x), px(e.y), px(R * 0.6), px(R * 0.37), '#cbd5e1', 1, 10, -t * 5);
+    // funil: anéis empilhados que abrem para cima e giram
+    for (let j = 0; j < 6; j++) { const h = j * 14, rr = R * (0.22 + j * 0.12), wob = Math.sin(t * 4 + j) * 4; g.globalAlpha = al * (0.5 + j * 0.06); g.strokeStyle = j % 2 ? '#cbd5e1' : '#64748b'; g.lineWidth = 2; g.beginPath(); g.ellipse(px(e.x + wob), px(e.y - h), rr, rr * 0.35, 0, t * 6 + j, t * 6 + j + 4.2); g.stroke(); }
+    // lâminas girando em várias alturas
+    g.globalAlpha = al;
+    for (let i = 0; i < 24; i++) { const j = i % 6, rr = R * (0.22 + j * 0.12), a = t * (8 - j) + i * 2.4, x = e.x + Math.cos(a) * rr, y = e.y - j * 14 + Math.sin(a) * rr * 0.35; g.save(); g.translate(px(x), px(y)); g.rotate(a + 1.57); poli(g, [[-6, 0], [0, -2], [6, 0], [0, 2]], i % 4 ? '#e2e8f0' : '#7f1d1d', '#334155'); g.restore(); }
+    if (fx && ale() < 0.5) { const a = ale() * 6.28; fx.add({ x: e.x + Math.cos(a) * R, y: e.y + Math.sin(a) * R * 0.62, vx: -Math.sin(a) * 160 - Math.cos(a) * 60, vy: Math.cos(a) * 80 - 40, g: -60, drag: 1, size: entre(1.5, 2.5), life: 0.5, color: ale() < 0.5 ? '#94a3b8' : '#d6b48a', forma: 'sq', vr: 10 }); }
+    g.globalAlpha = 1;
+  },
+  torretaTatsu(g, e, t, fx) {
+    const l = e.dueno, al = Math.min(1, e.t * 5, (e.dur - e.t) * 4 + 0.2), H = Math.round(e.alto * Math.min(1, e.t / 0.35, (e.dur - e.t) / 0.25 + 0.0001)), W = e.mega ? 32 : 22, x = l.x, y = l.y;
+    g.globalAlpha = al;
+    // base: poça larga com ondas
+    g.fillStyle = '#1e3a8a'; g.beginPath(); g.ellipse(px(x), px(y), W + 12, (W + 12) * 0.5, 0, 0, 7); g.fill();
+    g.fillStyle = '#2563eb'; g.beginPath(); g.ellipse(px(x), px(y), W + 6, (W + 6) * 0.45, 0, 0, 7); g.fill();
+    PX.anilloPix(g, px(x), px(y), W + 10, px((W + 10) * 0.5), '#93c5fd', 1, 12, t * 3);
+    // coluna d'água sob pressão
+    if (H > 2) {
+      g.fillStyle = '#1d4ed8'; g.fillRect(px(x - W / 2), px(y - H), px(W), H);
+      g.fillStyle = '#3b82f6'; g.fillRect(px(x - W / 2 + 3), px(y - H), px(W - 6), H);
+      for (let i = 0; i < 5; i++) { const yy = y - ((t * 90 + i * (H / 5)) % H); PX.lineaPix(g, x - W / 2 + 4 + (i % 3) * 4, yy, x - W / 2 + 4 + (i % 3) * 4, yy - 6, '#bfe9ff', 1); }
+      g.fillStyle = '#1e40af'; g.beginPath(); g.ellipse(px(x), px(y - H), W / 2 + 4, (W / 2 + 4) * 0.45, 0, 0, 7); g.fill();
+      g.fillStyle = '#60a5fa'; g.beginPath(); g.ellipse(px(x), px(y - H), W / 2 + 1, (W / 2 + 1) * 0.4, 0, 0, 7); g.fill();
+      if (e.mega) for (const s of [-1, 1]) { const tx = x + s * (W / 2 + 8); g.fillStyle = '#1d4ed8'; g.fillRect(px(tx - 5), px(y - H * 0.7), 10, Math.round(H * 0.7)); g.fillStyle = '#93c5fd'; g.fillRect(px(tx - 3), px(y - H * 0.7 - 4), 6, 4); }
+      if (fx && ale() < 0.4) fx.add({ x: x + entre(-W / 2, W / 2), y: y - H, vx: entre(-40, 40), vy: -entre(40, 90), g: 360, size: entre(1.4, 2.2), life: 0.5, forma: 'gota', rampa: PX.RAMPA_AGUA });
+    }
+    g.globalAlpha = 1;
+  },
+  jatoTorreta(g, e, t, fx) {
+    const y = e.y - 10 - e.z, ca = Math.cos(e.ang), sa = Math.sin(e.ang);
+    g.globalAlpha = 0.4; g.fillStyle = '#0b0a14'; g.beginPath(); g.ellipse(px(e.x), px(e.y), 5, 2, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    for (let i = 4; i >= 1; i--) PX.disco(g, px(e.x - ca * i * 5), px(y - sa * i * 5), 3.4 - i * 0.6, i % 2 ? '#93c5fd' : '#3b82f6');
+    g.save(); g.translate(px(e.x), px(y)); g.rotate(e.ang); poli(g, [[-6, -3], [4, -4], [8, 0], [4, 4], [-6, 3]], e.mega ? '#60a5fa' : '#3b82f6', '#1e3a8a'); PX.lineaPix(g, -3, -2, 4, -2, '#ffffff', 1); g.restore();
+    if (fx && ale() < 0.5) fx.add({ x: e.x - ca * 8, y: y - sa * 8, vx: -ca * 40 + entre(-20, 20), vy: entre(-30, 10), g: 300, size: entre(1.2, 2), life: 0.35, forma: 'gota', rampa: PX.RAMPA_AGUA });
+  },
+});

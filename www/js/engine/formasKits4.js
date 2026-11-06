@@ -42,19 +42,33 @@ function sangrar(luta, l, b, dps, dur) {
 
 export const formasKits4 = {
   // ================================================================ MAWILE
-  // Bote Traiçoeiro: avança e morde (prende). Mega: mais longe, as duas mandíbulas pegam até 2 e puxam (atordoa)
+  // Bocado Traiçoeiro: mordida curta em cone com a mandíbula (prende). Mega: o leque dobra, a dupla mandíbula agarra até 2,
+  // puxa para a Mawile e atordoa
   boteMandibula(l, h, extra) {
-    const luta = this.luta, dist = h.dist ?? 70;
-    const r = dashLinha(this, l, h, extra, dist, 0.16, () => {});
-    luta.programar(0.17, () => {
+    const luta = this.luta, R = h.alcance ?? 56, abre = ((h.angulo ?? 100) * Math.PI) / 180, a = mirar(l, R + 40);
+    l.animar('Attack', 0.35); l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0, angulo: a };
+    luta.programar(0.12, () => {
       if (l.ko) return;
-      const fx = l.x + Math.cos(r.a) * 26, fy = l.y + Math.sin(r.a) * 16, alvos = inimigos(luta, l).filter(b => Math.hypot(b.x - fx, b.y - fy) < (h.mega ? 58 : 36)).slice(0, h.mega ? 2 : 1);
-      luta.emit({ t: 'boteMand', l, x: fx, y: fy, ang: r.a, dupla: !!h.mega });
+      luta.emit({ t: 'boteMand', l, x: l.x + Math.cos(a) * R * 0.5, y: l.y + Math.sin(a) * R * 0.32, ang: a, dupla: !!h.mega, R, abre });
+      const alvos = inimigos(luta, l).filter(b => { const dx = b.x - l.x, dy = b.y - l.y; return Math.hypot(dx, dy) < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2; }).sort((p, q) => Math.hypot(p.x - l.x, p.y - l.y) - Math.hypot(q.x - l.x, q.y - l.y)).slice(0, h.mega ? 2 : 1);
       for (const b of alvos) {
-        atingir(l, b, pacote(h, extra, r.a, { empuje: 0, aturde: h.mega ? 1.2 : 0 }));
-        if (h.mega) arrastar(luta, b, l.x + Math.cos(r.a) * 28, l.y + Math.sin(r.a) * 18, 0.2, 6);
+        atingir(l, b, pacote(h, extra, a, { empuje: 0, aturde: h.mega ? 1.2 : 0 }));
+        if (h.mega) arrastar(luta, b, l.x + Math.cos(a) * 24, l.y + Math.sin(a) * 15, 0.2, 8);
         else this.prender(b, h.prende ?? 0.8);
       }
+      if (alvos.length) luta.hitstop(60);
+    });
+  },
+  // Play Rough (dash): pula em cima do alvo mais perto (bem de perto) e deixa atordoado
+  playRough(l, h, extra) {
+    const luta = this.luta, b = maisPerto(luta, l, h.alcance ?? 95);
+    if (!b) { if (l.humano) l.avisar('play', () => l.texto('TOO FAR', '#fca5a5')); return false; }
+    const a = Math.atan2(b.y - l.y, b.x - l.x); l.cortarAccion(); l.ponerEstado('invul', 0.3); l.animar('Hop', 0.3); l.angulo = a;
+    l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0, angulo: a };
+    arrastar(luta, l, b.x - Math.cos(a) * 12, b.y - Math.sin(a) * 8, 0.24, 22, () => {
+      if (l.ko || b.ko) return;
+      atingir(l, b, pacote(h, extra, a, { empuje: 20, aturde: h.aturde ?? 1 }));
+      luta.emit({ t: 'playRough', x: b.x, y: b.y, mega: !!h.mega }); luta.emit({ t: 'temblor', f: 0.008 }); luta.hitstop(90);
     });
   },
   // Giro de Aço: gira 360 com a mandíbula (reduz dano). Mega: gira duas vezes, ganha escudo e puxa quem está perto
@@ -91,19 +105,41 @@ export const formasKits4 = {
   },
 
   // ================================================================ SKARMORY
-  // Rasante de Aço: dash cortando com as asas (lentidão). Mega: mais longe e deixa penas afiadas no chão por 3s
-  rasanteAco(l, h, extra) {
-    const luta = this.luta, dist = h.dist ?? 150;
-    const r = dashLinha(this, l, h, extra, dist, 0.2, (b, a) => atingir(l, b, pacote(h, extra, a, { empuje: 40, ralentiza: { f: 0.3, dur: 2 } })));
-    luta.emit({ t: 'rasante', l, ...r });
-    if (!h.mega) return;
-    const e = { tipo: 'penasChao', dueno: l, vivo: true, x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, t: 0, dur: 3, prox: 0, update: dt => {
-      e.t += dt; if (e.t < e.prox) return e.t < e.dur; e.prox = e.t + 0.4;
-      const L = Math.hypot(e.x1 - e.x0, e.y1 - e.y0) || 1, ux = (e.x1 - e.x0) / L, uy = (e.y1 - e.y0) / L;
-      for (const b of inimigos(luta, l)) { const px = b.x - e.x0, py = b.y - e.y0, lon = px * ux + py * uy, lat = Math.abs(-px * uy + py * ux); if (lon < 0 || lon > L || lat > 16) continue; b.recibir(l, { dano: h.danoTrilha ?? 2, tipo: 'STEEL', tick: true }); b.ponerEstado('defBaja', 1, {}); }
-      return e.t < e.dur;
-    } };
-    luta.add(e);
+  // Lâminas de Vento: leque de penas de aço (lentidão). Mega: mais penas que atravessam e ficam fincadas no chão
+  laminasVento(l, h, extra) {
+    const luta = this.luta, n = h.mega ? 7 : 5, a = mirar(l, 240), abre = h.mega ? 0.9 : 0.6, alc = h.alcance ?? 210, fincadas = [];
+    l.animar('Shoot', 0.3); l.accion = { hasta: luta.t + 0.18, lento: 0.3, angulo: a };
+    for (let i = 0; i < n; i++) {
+      const ang = a + (i / (n - 1) - 0.5) * abre, ja = new Set();
+      const p = { tipo: 'penaAco', dueno: l, vivo: true, x: l.x + Math.cos(ang) * 10, y: l.y + Math.sin(ang) * 6, ang, t: 0, update: dt => {
+        p.t += dt; p.x += Math.cos(ang) * 380 * dt; p.y += Math.sin(ang) * 380 * dt * 0.8;
+        if (h.mega && Math.floor(p.t * 380 / 40) > Math.floor((p.t - dt) * 380 / 40)) fincadas.push({ x: p.x, y: p.y, a: ang });
+        for (const b of inimigos(luta, l)) { if (ja.has(b) || Math.hypot(b.x - p.x, b.y - p.y) > RADIO + 5) continue; ja.add(b); atingir(l, b, pacote(h, extra, ang, { dano: h.dano / n * 2, empuje: 15, ralentiza: { f: 0.3, dur: 2 } })); luta.emit({ t: 'corteSerra', x: b.x, y: b.y - b.alto * 0.5, ang, aco: true }); if (!h.mega) return false; }
+        return p.t < alc / 380;
+      } };
+      luta.add(p);
+    }
+    if (h.mega) luta.programar(alc / 380 + 0.02, () => espinhos(luta, l, fincadas, h, 3));
+  },
+  // Meia-Lua de Aço (dash): uma volta em meia-lua cortando; pode usar 3 vezes seguidas, cada uma para um lado.
+  // Mega: deixa espinhos de aço no caminho da meia-lua
+  meiaLuaAco(l, h, extra) {
+    const luta = this.luta, t0 = luta.t;
+    if (!(t0 < (l.meiaHasta ?? 0) && (l.meiaN ?? 0) < 3)) l.meiaN = 0;
+    const mx = l.intento?.mx ?? 0, my = l.intento?.my ?? 0, a = Math.hypot(mx, my) > 0.2 ? Math.atan2(my, mx) : mirar(l, 140);
+    const R = (h.dist ?? 110) / 2, lado = l.meiaN % 2 ? -1 : 1, cx = l.x + Math.cos(a) * R, cy = l.y + Math.sin(a) * R * 0.8, dur = h.dur ?? 0.24, ja = new Set(), pts = [];
+    l.meiaN++; l.meiaHasta = t0 + 2.2;
+    l.cd.esp = l.meiaN >= 3 ? h.cd : 0.28;
+    const n = l.meiaN; luta.programar(2.25, () => { if (l.meiaN === n && n < 3) { l.meiaN = 0; l.cd.esp = Math.max(l.cd.esp, h.cd * 0.7); } });
+    l.cortarAccion(); l.ponerEstado('invul', dur * 0.8); l.animar('Walk', dur);
+    let t = 0;
+    l.accion = { hasta: t0 + dur, bloquea: true, lento: 0, angulo: a, update: dt => {
+      t += dt; const k = Math.min(1, t / dur), th = a + Math.PI + lado * Math.PI * k;
+      const p = fijarCampo(cx + Math.cos(th) * R, cy + Math.sin(th) * R * 0.8); l.x = p.x; l.y = p.y; l.angulo = th + lado * Math.PI / 2;
+      if (pts.length < 6 && k * 6 >= pts.length) pts.push({ x: l.x, y: l.y, a: l.angulo });
+      for (const b of inimigos(luta, l)) { if (ja.has(b) || Math.hypot(b.x - l.x, b.y - l.y) > RADIO * 2 + 12) continue; ja.add(b); atingir(l, b, pacote(h, extra, l.angulo, { empuje: 50 })); }
+    }, fin: () => { if (h.mega) espinhos(luta, l, pts, h, 4); } };
+    luta.emit({ t: 'meiaLua', l, cx, cy, R, a, lado, dur });
   },
   // Plumagem Defensiva: escudo de vento e aço na frente (metade do dano) que empurra. Mega: cobre tudo em volta e,
   // ao acabar, explode em penas que atordoam
@@ -137,23 +173,24 @@ export const formasKits4 = {
   },
 
   // ================================================================ TATSUGIRI
-  // Deslize Escorregadio: desliza na água (intocável) deixando um rastro que deixa lento. Mega: mais longe, solta 3
-  // bolhas teleguiadas e fica mais rápido
+  // Deslize (dash): desliza na água (intocável) deixando um rastro que deixa 25% mais lento. Mega: mais longe e
+  // a Tatsugiri fica 30% mais rápida
   deslize(l, h, extra) {
     const luta = this.luta, dist = h.dist ?? 100;
-    const r = dashLinha(this, l, h, extra, dist, 0.22, () => {});
-    l.ponerEstado('invul', 0.5);
+    const r = dashLinha(this, l, h, extra, dist, 0.22, (b, a) => { if (h.dano) atingir(l, b, pacote(h, extra, a, { empuje: 30 })); });
+    l.ponerEstado('invul', 0.4);
     luta.emit({ t: 'deslize', l, ...r });
-    // rastro d'água: quem pisa fica 25% mais lento
     const e = { tipo: 'rastroAgua', dueno: l, vivo: true, x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1, t: 0, dur: 3, update: dt => {
       e.t += dt; const L = Math.hypot(e.x1 - e.x0, e.y1 - e.y0) || 1, ux = (e.x1 - e.x0) / L, uy = (e.y1 - e.y0) / L;
-      for (const b of inimigos(luta, l)) { const qx = b.x - e.x0, qy = b.y - e.y0, lon = qx * ux + qy * uy, lat = Math.abs(-qx * uy + qy * ux); if (lon > -10 && lon < L + 10 && lat < 16) b.ponerEstado('lento', 0.4, { f: Math.max(0.25, b.est.lento?.f ?? 0) }); }
+      for (const b of [...inimigos(luta, l), l]) { const qx = b.x - e.x0, qy = b.y - e.y0, lon = qx * ux + qy * uy, lat = Math.abs(-qx * uy + qy * ux); if (lon < -10 || lon > L + 10 || lat > 16) continue; if (b === l) { if (h.mega) l.ponerEstado('rapido', 0.4, { vel: 1.3 }); } else b.ponerEstado('lento', 0.4, { f: Math.max(0.25, b.est.lento?.f ?? 0) }); }
       return e.t < e.dur;
     } };
     luta.add(e);
-    if (!h.mega) return;
-    l.ponerEstado('rapido', 2, { vel: 1.3 });
-    for (let i = 0; i < 3; i++) luta.programar(0.25 + i * 0.12, () => { if (!l.ko) bolha(this, l, h, extra, maisPerto(luta, l, 260)); });
+  },
+  // Flip Turn: quica no alvo e volta. Mega: na volta solta 3 bolhas teleguiadas
+  flipTatsu(l, h, extra) {
+    this.formas.flipTurn.call(this, l, h, extra);
+    if (h.mega) for (let i = 0; i < 3; i++) this.luta.programar(0.3 + i * 0.08, () => { if (!l.ko) bolha(this, l, h, extra, maisPerto(this.luta, l, 260)); });
   },
   // Cuspe Traiçoeiro: 3 tiros em leque. Mega: 5 tiros que atravessam; 3 ou mais no mesmo alvo silenciam
   cuspe(l, h, extra) {
@@ -169,24 +206,41 @@ export const formasKits4 = {
       luta.add(p);
     }
   },
-  // Torreta Torrencial: monta numa torreta d'água parada por 4s, com escudo, atirando rajadas que deixam cada vez mais
-  // lento. Mega: 5s, escudo maior, tiros em volta toda e no fim uma bolha gigante que atordoa
+  // Torreta Torrencial: ergue uma torre d'água sob pressão e a Tatsugiri sobe no topo (parada) por 4s, com escudo,
+  // atirando jatos visíveis que deixam cada vez mais lento. Mega: fortaleza maior por 5s, jatos em 360 e no fim uma
+  // bolha gigante que atordoa
   torretaAgua(l, h, extra) {
-    const luta = this.luta, dur = h.dur ?? (h.mega ? 5 : 4), alc = h.alcance ?? 280;
-    l.ponerEstado('arraigo', dur, { cura: 0, acum: 0, reduce: 0 });
+    const luta = this.luta, dur = h.dur ?? (h.mega ? 5 : 4), alc = h.alcance ?? 280, ALTO = h.mega ? 50 : 40;
+    l.cortarAccion(); l.ponerEstado('arraigo', dur, { cura: 0, acum: 0, reduce: 0 });
     l.escudo = Math.max(l.escudo ?? 0, h.escudo ?? (h.mega ? 30 : 18)); l.ponerEstado('escudo', dur, {});
-    luta.emit({ t: 'torretaSobe', l });
-    let prox = 0.2, t = 0;
-    luta.add({ tipo: 'torretaTatsu', dueno: l, vivo: true, x: l.x, y: l.y, t: 0, dur, mega: !!h.mega, update(dt) {
+    luta.emit({ t: 'torretaSobe', l }); luta.emit({ t: 'temblor', f: 0.006 });
+    let prox = 0.45, t = 0, giro = 0;
+    const jato = (x, y, alvo, ang) => {
+      const p = { tipo: 'jatoTorreta', dueno: l, vivo: true, x, y, z: ALTO, ang, t: 0, mega: !!h.mega, update: dt => {
+        p.t += dt;
+        if (alvo && !alvo.ko) p.ang += Math.max(-8 * dt, Math.min(8 * dt, dAng(Math.atan2(alvo.y - p.y, alvo.x - p.x), p.ang)));
+        p.x += Math.cos(p.ang) * 420 * dt; p.y += Math.sin(p.ang) * 420 * dt; p.z = Math.max(0, p.z - 70 * dt);
+        for (const b of inimigos(luta, l)) if (Math.hypot(b.x - p.x, b.y - p.y) < RADIO + 6) { atingir(l, b, pacote(h, extra, p.ang, { dano: h.danoTiro ?? 2.2, empuje: 12, tick: true })); b.ponerEstado('lento', 1, { f: Math.min(0.5, (b.est.lento?.f ?? 0) + 0.08) }); luta.emit({ t: 'tiroTorreta', x: p.x, y: p.y }); return false; }
+        if (p.t > alc / 420) { luta.emit({ t: 'tiroTorreta', x: p.x, y: p.y, chao: true }); return false; }
+        return true;
+      } };
+      luta.add(p);
+    };
+    luta.add({ tipo: 'torretaTatsu', dueno: l, vivo: true, x: l.x, y: l.y, t: 0, dur, alto: ALTO, mega: !!h.mega, update(dt) {
       t += dt; this.t = t; this.x = l.x; this.y = l.y;
-      if (l.ko) return false;
-      if (t >= prox) {
-        prox += h.mega ? 0.35 : 0.28;
+      if (l.ko) { l.salto = 0; return false; }
+      l.salto = Math.round(ALTO * Math.min(1, t / 0.35, (dur - t) / 0.25 + 0.0001));
+      if (t >= prox && t < dur - 0.2) {
+        prox += h.mega ? 0.32 : 0.3;
         const alvos = h.mega ? inimigos(luta, l).filter(b => Math.hypot(b.x - l.x, b.y - l.y) < alc) : [maisPerto(luta, l, alc)].filter(Boolean);
-        for (const b of alvos) { atingir(l, b, pacote(h, extra, Math.atan2(b.y - l.y, b.x - l.x), { dano: h.danoTiro ?? 2.2, empuje: 10, tick: true })); b.ponerEstado('lento', 1, { f: Math.min(0.5, (b.est.lento?.f ?? 0) + 0.08) }); luta.emit({ t: 'tiroTorreta', l, x: b.x, y: b.y }); }
+        for (const b of alvos) jato(l.x, l.y, b, Math.atan2(b.y - l.y, b.x - l.x));
+        if (h.mega && (giro++ % 3) === 0) for (let i = 0; i < 8; i++) jato(l.x, l.y, null, (i / 8) * Math.PI * 2 + giro * 0.3);
+        if (alvos.length || h.mega) luta.emit({ t: 'disparoTorre', l, alto: ALTO });
       }
       if (t >= dur) {
-        if (h.mega) { const b = maisPerto(luta, l, alc); if (b) { luta.emit({ t: 'bolhaGigante', l, x: b.x, y: b.y }); luta.programar(0.4, () => { if (l.ko) return; areaCirculo(luta, l, b.x, b.y, 70, pacote(h, extra, 0, { dano: h.dano, aturde: 1.5, dirX: undefined, dirY: undefined, empuje: 80 })); luta.emit({ t: 'temblor', f: 0.012 }); }); } }
+        l.salto = 0;
+        if (h.mega) { const b = maisPerto(luta, l, alc); if (b) { const bx = b.x, by = b.y; luta.emit({ t: 'bolhaGigante', l, x: bx, y: by, dur: 0.45 }); luta.programar(0.45, () => { if (l.ko) return; areaCirculo(luta, l, bx, by, 80, pacote(h, extra, 0, { dano: h.dano, aturde: 1.5, dirX: undefined, dirY: undefined, empuje: 80 })); luta.emit({ t: 'bolhaEstoura', x: bx, y: by, radio: 80 }); luta.emit({ t: 'temblor', f: 0.014 }); luta.hitstop(90); }); } }
+        luta.emit({ t: 'torretaCai', l });
         return false;
       }
       return true;
@@ -260,4 +314,14 @@ function bolha(hab, l, h, extra, alvo) {
     return t < 1.2;
   } };
   luta.add(p);
+}
+// espinhos/penas de aço fincados no chão: dano contínuo e armadura reduzida para quem pisa
+function espinhos(luta, l, pts, h, dur) {
+  if (!pts.length) return;
+  const e = { tipo: 'espinhosAco', dueno: l, vivo: true, pts, t: 0, dur, prox: 0, update: dt => {
+    e.t += dt; if (e.t < e.prox) return e.t < e.dur; e.prox = e.t + 0.4;
+    for (const b of inimigos(luta, l)) if (pts.some(p => Math.hypot(b.x - p.x, (b.y - p.y) / 0.62) < 18)) { b.recibir(l, { dano: h.danoTrilha ?? 1.6, tipo: 'STEEL', tick: true }); b.ponerEstado('defBaja', 1, {}); }
+    return e.t < e.dur;
+  } };
+  luta.add(e);
 }

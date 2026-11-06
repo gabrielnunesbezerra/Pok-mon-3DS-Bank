@@ -15,8 +15,8 @@ export const ROSTER_NOVOS = [
   { id: 'mawile', dex: '0303', nombre: 'MAWILE', tipos: ['STEEL', 'FAIRY'], rol: 'FISICO', lema: 'THE DECEIVER WITH STEEL JAWS', hp: 72, vel: 128, atk: 1.0, def: 0.98, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 60 },
     kit: {
       lmb: corte('Iron Head', 'STEEL', 4.4, { combo: 2, alcance: 46 }),
-      rmb: skill('Sneaky Bite', 'boteMandibula', 'STEEL', { dano: 7, dist: 70, prende: 0.8, coste: 25, cd: 6, anim: 'Attack' }),
-      esp: dash('Sucker Punch', 'DARK', { dano: 4, dist: 120, estilo: 'golpe' }),
+      rmb: skill('Sneaky Bite', 'boteMandibula', 'STEEL', { dano: 7, alcance: 56, angulo: 100, prende: 0.8, coste: 25, cd: 6, anim: 'Attack' }),
+      esp: { nombre: 'Play Rough', forma: 'playRough', tipo: 'FAIRY', dano: 5, alcance: 95, aturde: 1, cd: 6, anim: 'Hop' },
       q: skill('Steel Spin', 'giroAco', 'STEEL', { dano: 8, radio: 60, cd: 8 }),
       e: semUlt('Voracious Bite', 'mordidaVoraz', 'STEEL', { dano: 20, alcance: 100, angulo: 90 }),
     },
@@ -30,8 +30,8 @@ export const ROSTER_NOVOS = [
   { id: 'skarmory', dex: '0227', nombre: 'SKARMORY', tipos: ['STEEL', 'FLYING'], rol: 'TANQUE', lema: 'RAZOR FEATHERED FORTRESS', hp: 80, vel: 128, atk: 0.92, def: 1.06, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 90 },
     kit: {
       lmb: corte('Steel Wing', 'STEEL', 4.2, { alcance: 52, angulo: 150 }),
-      rmb: skill('Steel Swoop', 'rasanteAco', 'STEEL', { dano: 7, dist: 150, coste: 25, cd: 6, anim: 'Walk' }),
-      esp: dash('Drill Peck', 'FLYING', { dano: 4, dist: 140, estilo: 'golpe' }),
+      rmb: skill('Wind Blades', 'laminasVento', 'STEEL', { dano: 8, alcance: 210, coste: 25, cd: 6, anim: 'Shoot' }),
+      esp: { nombre: 'Steel Crescent', forma: 'meiaLuaAco', tipo: 'STEEL', dano: 2, dist: 110, dur: 0.24, cd: 6, anim: 'Walk' },
       q: skill('Defensive Plumage', 'plumagem', 'STEEL', { dano: 6, dur: 1.5, radio: 80, cd: 10 }),
       e: semUlt('Steel Dive', 'mergulhoAco', 'STEEL', { dano: 20, alcance: 260, radio: 70 }),
     },
@@ -60,8 +60,8 @@ export const ROSTER_NOVOS = [
   { id: 'tatsugiri', dex: '0978', nombre: 'TATSUGIRI', tipos: ['DRAGON', 'WATER'], rol: 'DISTANCIA', lema: 'THE TINY COMMANDER', hp: 60, vel: 140, atk: 1.0, def: 0.84, regen: 5, expEvolucion: [45, 80, 115], ia: { rango: 160 },
     kit: {
       lmb: tiro('Water Shuriken', 'WATER', 'cuchillaAgua', 4, { alcance: 200 }),
-      rmb: skill('Slippery Slide', 'deslize', 'WATER', { dano: 0, dist: 100, cd: 6, coste: 20, anim: 'Walk' }),
-      esp: dash('Aqua Jet', 'WATER', { dano: 3, dist: 140, estilo: 'agua' }),
+      rmb: skill('Flip Turn', 'flipTatsu', 'WATER', { dano: 8, alcance: 150, radio: 34, rebote: 90, coste: 25, cd: 6, anim: 'Hop' }),
+      esp: { nombre: 'Slippery Slide', forma: 'deslize', tipo: 'WATER', dano: 3, dist: 140, cd: 5, anim: 'Walk' },
       q: skill('Sneaky Spit', 'cuspe', 'WATER', { dano: 9, alcance: 220, cd: 6, coste: 25, anim: 'Shoot' }),
       e: semUlt('Torrent Turret', 'torretaAgua', 'WATER', { dano: 10, danoTiro: 2, alcance: 280, escudo: 16, dur: 4 }),
     },

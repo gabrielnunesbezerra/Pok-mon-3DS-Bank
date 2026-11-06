@@ -166,7 +166,7 @@ test('todas as skills de todos os estágios e Megas podem ser usadas sem erro', 
         // a ult do Golem só sai rolando
         // o dash do Gengar só sai com o rival dormindo
         if (a.kit[slot].forma === 'teleSono') b.ponerEstado('dormido', 2, {});
-        if (a.kit[slot].forma === 'hipnoseToque') b.x = a.x + 80;
+        if (a.kit[slot].forma === 'hipnoseToque' || a.kit[slot].forma === 'playRough') b.x = a.x + 80;
         if (a.kit[slot].forma === 'xFolha') a.xListo = true;
         if (a.kit[slot].requierePlasma) a.plasma = 100;
         if (a.kit[slot].requiereRodar) a.ponerEstado('rodando', 3, { vel: 1.7, dano: 5, empuje: 100, golpes: new Map() });

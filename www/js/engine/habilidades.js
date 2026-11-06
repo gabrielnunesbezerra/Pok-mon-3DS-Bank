@@ -102,7 +102,7 @@ export class Habilidades {
     if (h.requierePlasma) l.plasma = 0;
     // Houndoom: golpes de fogo esquentam
     if (l.def.fervor && h.calienta) l.calentar(h.calienta);
-    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida' && h.forma !== 'cortesFolha') l.cd[slot] = h.cd;
+    if (h.forma !== 'puente' && h.forma !== 'rodar' && h.forma !== 'jabLuna' && h.forma !== 'corrida' && h.forma !== 'cortesFolha' && h.forma !== 'meiaLuaAco') l.cd[slot] = h.cd;
     // Sneasler: depois de qualquer skill o próximo básico sai como corte em X
     if (slot !== 'lmb' && l.kit.lmb?.trasSkill) l.xListo = true;
     // skills que giram o Pokémon no lugar
