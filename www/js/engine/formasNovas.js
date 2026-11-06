@@ -1,7 +1,8 @@
 // Mecânicas dos Pokémon da última leva (Gengar, Gardevoir, Kangaskhan, Rayquaza, Zeraora e Darkrai).
 // Cada função é uma "forma" como as de habilidades.js: recebe (l, h, extra) com `this` = Habilidades.
 import { RADIO } from '../config.js';
-const entre = (a, b) => a + Math.random() * (b - a);
+import { aleatorio } from './util.js';
+const entre = (a, b) => a + aleatorio() * (b - a);
 import { fijarCampo, limitarCampo } from './fisica.js';
 import { Proyectil, areaCirculo, pacote, atingir } from './entidades.js';
 

@@ -45,7 +45,7 @@ export class ControlHumano {
   constructor(app, luta, l, esquema, camara, comPad = false) {
     this.app = app; this.luta = luta; this.l = l; this.esquema = esquema; this.camara = camara; this.tactil = null; this.comPad = comPad;
     this.ultimoMouse = -9;
-    l.humano = true;
+    l.humano = true; l.pessoa = true;
   }
   intento() {
     const l = this.l, ent = this.app.entrada, r = l.rival;

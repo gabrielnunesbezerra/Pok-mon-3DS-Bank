@@ -111,6 +111,8 @@ export class Combate {
     if (online) {
       this.ctrls = luta.luchadores.map((l, i) => (i === this.lado ? new ControlHumano(app, luta, l, tactil ? 'tactil' : entradaDe(app, 'p1'), this.camara, true) : null));
       this.humanos = [this.lado];
+      // "pessoa" (não CPU) precisa ser igual nos dois aparelhos: o motor usa isso nas skills de segurar o botão
+      luta.luchadores.forEach((x, i) => { x.pessoa = !(d.cpus ?? []).includes(i); });
       // duplas online: o anfitrião joga pelas CPUs que completam os times
       this.iasCpu = {};
       if (this.lado === 0) for (const c of d.cpus ?? []) if (luta.luchadores[c]) this.iasCpu[c] = new IA(luta, luta.luchadores[c], 'normal');

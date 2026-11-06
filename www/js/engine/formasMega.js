@@ -2,13 +2,15 @@
 // habilidades.js: recebe (l, h, extra) com `this` = Habilidades. Os desenhos estão em render/efectosMega.js.
 // META diz à IA como usar cada forma e qual ícone ela mostra.
 import { RADIO } from '../config.js';
+import { aleatorio } from './util.js';
 import { fijarCampo } from './fisica.js';
 import { pacote, atingir, areaCirculo } from './entidades.js';
 
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
 const dentroElipse = (b, x, y, r) => Math.hypot(b.x - x, (b.y - y) / 0.62) < r;
 const dAng = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
-const entre = (a, b) => a + Math.random() * (b - a);
+// sorteio com a semente da luta (Math.random daria um valor diferente em cada aparelho no online)
+const entre = (a, b) => a + aleatorio() * (b - a);
 const vivos = (luta, l) => luta.blancos(l).filter(b => !b.oculto && !b.ko);
 function maisPerto(luta, l, alcance, de = l) {
   let m = null, dm = alcance;
@@ -396,7 +398,7 @@ export const formasMega = {
       if (e.t >= e.prox && e.t < dur) {
         e.prox += cada;
         const perto = vivos(luta, l).filter(b => dentroElipse(b, e.x, e.y, R));
-        const b = perto[Math.floor(Math.random() * perto.length)];
+        const b = perto[Math.floor(aleatorio() * perto.length)];
         if (b) { bate(l, b, h, extra, Math.atan2(e.y - b.y, e.x - b.x), { dano: h.dano / (dur / cada) * 1.2, empuje: -30, aturde: 0.12, tick: true }); luta.emit({ t: 'raioPara', x: b.x, y: b.y, rx: e.x, ry: e.y }); }
         else luta.emit({ t: 'raioPara', x: e.x + entre(-R, R) * 0.5, y: e.y + entre(-R, R) * 0.3, rx: e.x, ry: e.y, vazio: true });
       }
@@ -655,7 +657,7 @@ export const formasMega = {
       t += dt;
       const r = maisPerto(luta, l, 400), a = r ? Math.atan2(r.y - l.y, r.x - l.x) : angApunte(l), p = fijarCampo(l.x + Math.cos(a) * 210 * dt, l.y + Math.sin(a) * 210 * dt);
       l.x = p.x; l.y = p.y; this.x = p.x; this.y = p.y;
-      if (Math.random() < 0.5) luta.emit({ t: 'terraMexe', x: l.x, y: l.y });
+      if (aleatorio() < 0.5) luta.emit({ t: 'terraMexe', x: l.x, y: l.y });
       if (t >= ((feitas + 1) * dur) / saidas) {
         feitas++;
         const fim = feitas === saidas;

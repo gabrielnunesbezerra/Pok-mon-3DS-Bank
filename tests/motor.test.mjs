@@ -728,3 +728,21 @@ test('Pokémon refeitos: poças e língua do Gengar, telecinese da Gardevoir, fi
   assert.ok(Math.abs(b.x - cx) < 80 && b.hp < hz, 'preso na jaula levando raio');
   correr(l, 1.6, [null, null]); assert.ok(!l.entidades.some(e => e.tipo === 'jaulaTrovao'), 'a jaula acabou');
 });
+
+// online: cada aparelho marca como "humano" só o próprio lutador; a luta precisa sair igual nos dois
+test('online: os dois aparelhos calculam a mesma luta (roster inteiro, segurando botões e com Mega)', async () => {
+  const { resumen } = await import('../www/js/online/sesion.js');
+  const comandos = semente => { let s = semente; const r = () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); const out = []; let seg = [false, false]; for (let k = 0; k < 60 * 25; k++) { if (k % 20 === 0) seg = [r() < 0.4, r() < 0.4]; out.push([0, 1].map(j => ({ mx: r() * 2 - 1, my: r() * 2 - 1, ax: 200 + r() * 560, ay: 80 + r() * 290, lmb: r() < 0.3, rmb: seg[j] || r() < 0.1, esp: r() < 0.04, q: r() < 0.08, e: r() < 0.05, mega: r() < 0.02 }))); } return out; };
+  const rodar = (a, b, lado, cmds) => {
+    const l = new Luta({ p1: def(a), p2: def(b), rapido: true, semilla: 99, modo: 'versus', etapas: [def(a).evoluciones.length, def(b).evoluciones.length] });
+    l.luchadores.forEach((x, i) => { x.pessoa = true; x.humano = i === lado; x.ganarUlti(999); });
+    const marcas = [];
+    for (let k = 0; k < cmds.length && l.fase !== 'fin'; k++) { l.paso(1 / 60, cmds[k]); l.tomarEventos(); if (k % 60 === 0) marcas.push(resumen(l)); }
+    return marcas.join(',');
+  };
+  const ids = ROSTER.map(p => p.id);
+  for (let i = 0; i < ids.length; i++) {
+    const a = ids[i], b = ids[(i + 7) % ids.length], cmds = comandos(i + 1);
+    assert.equal(rodar(a, b, 0, cmds), rodar(a, b, 1, cmds), `${a} x ${b} saiu diferente nos dois aparelhos`);
+  }
+});

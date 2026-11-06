@@ -1900,7 +1900,7 @@ export class Habilidades {
         tiempo += dt;
         const a = Math.atan2(l.ay - l.y, l.ax - l.x); acc.angulo = a;
         preso.x = l.x + Math.cos(a) * 18; preso.y = l.y + Math.sin(a) * 12;
-        if (tiempo >= segura || (tiempo > 0.15 && l.humano && !l.intento?.[extra.slot])) { this.arremessar(l, preso, a, h, extra); preso = null; acc.hasta = luta.t + 0.1; }
+        if (tiempo >= segura || (tiempo > 0.15 && l.pessoa && !l.intento?.[extra.slot])) { this.arremessar(l, preso, a, h, extra); preso = null; acc.hasta = luta.t + 0.1; }
       } };
   }
   // joga o rival numa direção; se bater na parede da arena, explode em fogo

@@ -106,7 +106,7 @@ export const formasKits10 = {
     luta.add(Object.assign(e, { update: () => e.vivo && !l.ko }));
     l.accion = { hasta: luta.t + max, lento: 0.5, interrompe: false, update: dt => {
       t += dt; e.t = t; e.x = l.x; e.y = l.y; const a = angApunte(l); e.ang = a; l.angulo = a;
-      const pulsa = l.intento?.[extra.slot]; if (!pulsa && t > 0.25 && l.humano) solto = true;
+      const pulsa = l.intento?.[extra.slot]; if (!pulsa && t > 0.25 && l.pessoa) solto = true;
       if (solto) { l.accion.hasta = luta.t; return; }
       if (t < prox) return; prox += 0.25;
       for (const b of inimigos(luta, l)) { const dx = b.x - l.x, dy = b.y - l.y; if (Math.hypot(dx, dy) < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2) { atingir(l, b, pacote(h, extra, a, { dano: h.dano * 0.25 / max * 2.2, empuje: h.mega ? 90 : 50, tick: true })); if (h.mega) b.ponerEstado('silencio', 0.4, {}); } }

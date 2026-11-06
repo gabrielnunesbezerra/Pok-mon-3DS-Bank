@@ -280,7 +280,7 @@ export const formasKits4 = {
       }
     };
     l.accion = { hasta: luta.t + max + 0.05, bloquea: true, lento: 0.55, update: dt => {
-      t += dt; const pulsa = l.intento?.[extra.slot] || (!l.humano && t < max * 0.85);
+      t += dt; const pulsa = l.intento?.[extra.slot] || (!l.pessoa && t < max * 0.85);
       if (!pulsa) solto = true;
       if ((solto || t >= max) && l.accion) sair();
     } };
