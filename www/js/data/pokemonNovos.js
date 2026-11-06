@@ -16,7 +16,7 @@ export const ROSTER_NOVOS = [
     kit: {
       lmb: corte('Iron Head', 'STEEL', 4.4, { combo: 2, alcance: 46 }),
       rmb: skill('Sneaky Bite', 'boteMandibula', 'STEEL', { dano: 7, alcance: 56, angulo: 100, prende: 0.8, coste: 25, cd: 6, anim: 'Attack' }),
-      esp: { nombre: 'Play Rough', forma: 'playRough', tipo: 'FAIRY', dano: 5, alcance: 95, aturde: 1, cd: 6, anim: 'Hop' },
+      esp: { nombre: 'Play Rough', forma: 'playRough', tipo: 'FAIRY', dano: 5, alcance: 130, aturde: 1, cd: 6, anim: 'Hop' },
       q: skill('Steel Spin', 'giroAco', 'STEEL', { dano: 8, radio: 60, cd: 8 }),
       e: semUlt('Voracious Bite', 'mordidaVoraz', 'STEEL', { dano: 20, alcance: 100, angulo: 90 }),
     },
@@ -62,7 +62,7 @@ export const ROSTER_NOVOS = [
       lmb: tiro('Water Shuriken', 'WATER', 'cuchillaAgua', 4, { alcance: 200 }),
       rmb: skill('Flip Turn', 'flipTatsu', 'WATER', { dano: 8, alcance: 150, radio: 34, rebote: 90, coste: 25, cd: 6, anim: 'Hop' }),
       esp: { nombre: 'Slippery Slide', forma: 'deslize', tipo: 'WATER', dano: 3, dist: 140, cd: 5, anim: 'Walk' },
-      q: skill('Sneaky Spit', 'cuspe', 'WATER', { dano: 9, alcance: 220, cd: 6, coste: 25, anim: 'Shoot' }),
+      q: skill('Dragon Scale', 'leque', 'DRAGON', { dano: 9, n: 3, abre: 0.5, segue: 4, lento: 0.3, lentoDur: 1.5, vel: 300, alcance: 230, visual: 'escamaDraco', cd: 6, coste: 25, anim: 'Shoot' }),
       e: semUlt('Torrent Turret', 'torretaAgua', 'WATER', { dano: 10, danoTiro: 2, alcance: 280, escudo: 16, dur: 4 }),
     },
     evoluciones: [
@@ -114,5 +114,48 @@ export const ROSTER_NOVOS = [
       { dex: '0359', nombre: 'ABSOL', hp: 84, vel: 150, atk: 1.16, def: 0.9, kit: { lmb: { dano: 5.2 }, rmb: { dano: 10.4 }, q: { dano: 5 }, e: { dano: 26, sinUlti: false } } },
       { dex: '0359', nombre: 'ABSOL', hp: 92, vel: 152, atk: 1.22, def: 0.93, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 11 }, q: { dano: 6 }, e: { dano: 28, sinUlti: false } },
         mega: { dex: '0359-0001', nombre: 'MEGA ABSOL', atk: 0.14, def: 0.03, vel: 10 } },
+    ] },
+  // ------------------------------------------------------------ Roggenrola > Boldore > Gigalith > Mega Gigalith
+  { id: 'roggenrola', dex: '0524', nombre: 'ROGGENROLA', tipos: ['ROCK'], rol: 'TANQUE', lema: 'CRYSTAL CORE ARTILLERY', hp: 74, vel: 112, atk: 0.94, def: 1.06, regen: 4, expEvolucion: [55, 100], ia: { rango: 130 },
+    kit: {
+      lmb: tiro('Rock Blast', 'ROCK', 'guijarro', 4.4, { alcance: 190 }),
+      rmb: skill('Stone Cannon', 'leque', 'ROCK', { dano: 9, n: 3, abre: 0.45, vel: 360, alcance: 210, lento: 0.25, lentoDur: 2, planta: 0.3, visual: 'estilhacoRocha', coste: 25, cd: 6, anim: 'Shoot' }),
+      esp: dash('Rock Roll', 'ROCK', { dano: 4, dist: 110, estilo: 'golpe' }),
+      q: skill('Seismic Fortress', 'fortaleza', 'ROCK', { dano: 3, dur: 4, coste: 25, cd: 10 }),
+      e: semUlt('Solar Core', 'ondaSismica', 'ROCK', { dano: 24, radio: 110, carga: 1 }),
+    },
+    evoluciones: [
+      { dex: '0525', nombre: 'BOLDORE', hp: 92, vel: 114, atk: 1.04, def: 1.12, kit: { lmb: { dano: 4.8 }, rmb: { dano: 10 }, e: { dano: 26, sinUlti: false } } },
+      { dex: '0526', nombre: 'GIGALITH', hp: 110, vel: 116, atk: 1.14, def: 1.18, escala: 1.08, kit: { lmb: { dano: 5.2 }, rmb: { dano: 11 }, e: { dano: 29, radio: 120, sinUlti: false } },
+        mega: { dex: '0526', nombre: 'MEGA GIGALITH', atk: 0.12, def: 0.1, vel: 4 } },
+    ] },
+  // ------------------------------------------------------------ Slowpoke > Slowbro > Slowbro (Power Up) > Mega Slowbro
+  { id: 'slowpoke', dex: '0079', nombre: 'SLOWPOKE', tipos: ['WATER', 'PSYCHIC'], rol: 'TANQUE', lema: 'THE IMPOSSIBLE NAP', hp: 84, vel: 108, atk: 0.9, def: 1.04, regen: 4, expEvolucion: [55, 100], ia: { rango: 140 },
+    kit: {
+      lmb: tiro('Water Pulse', 'WATER', 'pulsoAgua', 4.4, { vel: 260, alcance: 180, radio: 5 }),
+      rmb: skill('Contagious Yawn', 'bolhaSono', 'PSYCHIC', { dano: 5, vel: 150, alcance: 220, duerme: 1, coste: 25, cd: 7, anim: 'Shoot' }),
+      esp: dash('Slack Off Slide', 'WATER', { estilo: 'agua', dist: 110, cd: 6 }),
+      q: skill('Amnesia', 'amnesia', 'PSYCHIC', { cura: 0.2, dur: 1, coste: 25, cd: 12 }),
+      e: semUlt('Shellder Spin', 'giroShellder', 'PSYCHIC', { dano: 8, radio: 110, confunde: 2 }),
+    },
+    evoluciones: [
+      { dex: '0080', nombre: 'SLOWBRO', hp: 98, vel: 112, atk: 1.0, def: 1.1, kit: { lmb: { dano: 5 }, rmb: { dano: 6 }, e: { dano: 10, sinUlti: false } } },
+      { dex: '0080', nombre: 'SLOWBRO', hp: 110, vel: 114, atk: 1.08, def: 1.14, escala: 1.06, kit: { lmb: { dano: 5.4 }, rmb: { dano: 7 }, q: { cura: 0.24 }, e: { dano: 12, radio: 120, sinUlti: false } },
+        mega: { dex: '0080-0002', nombre: 'MEGA SLOWBRO', atk: 0.06, def: 0.14, vel: 4 } },
+    ] },
+  // ------------------------------------------------------------ Drampa > 3 Power Ups > Mega Drampa (passiva Fúria Berserk)
+  { id: 'drampa', dex: '0780', nombre: 'DRAMPA', tipos: ['NORMAL', 'DRAGON'], rol: 'DISTANCIA', lema: 'BERSERK ELDER DRAGON', berserk: true, hp: 78, vel: 122, atk: 1.0, def: 0.94, regen: 5, expEvolucion: [45, 80, 115], ia: { rango: 150 },
+    kit: {
+      lmb: tiro('Dragon Breath', 'DRAGON', 'aliento', 4.4, { alcance: 190 }),
+      rmb: skill('Hypersonic Roar', 'rugido', 'DRAGON', { dano: 8, alcance: 120, angulo: 70, silencio: 1, coste: 25, cd: 7 }),
+      esp: dash('Glide', 'FLYING', { dano: 0, dist: 140, dur: 0.2 }),
+      q: skill('Mystic Mist', 'nevoa', 'DRAGON', { radio: 70, dur: 3, cura: 0.02, coste: 25, cd: 12 }),
+      e: semUlt('Elder Fury', 'furiaAnciao', 'DRAGON', { dano: 22, alcance: 320 }),
+    },
+    evoluciones: [
+      { dex: '0780', nombre: 'DRAMPA', hp: 86, vel: 123, atk: 1.06, def: 0.97, kit: { lmb: { dano: 4.8 }, rmb: { dano: 8.8 }, e: { dano: 24, sinUlti: false } } },
+      { dex: '0780', nombre: 'DRAMPA', hp: 94, vel: 124, atk: 1.12, def: 1.0, kit: { lmb: { dano: 5.2 }, rmb: { dano: 9.6 }, q: { cura: 0.025 }, e: { dano: 26, sinUlti: false } } },
+      { dex: '0780', nombre: 'DRAMPA', hp: 102, vel: 125, atk: 1.18, def: 1.03, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 10.4 }, q: { cura: 0.025 }, e: { dano: 28, sinUlti: false } },
+        mega: { dex: '0780-0001', nombre: 'MEGA DRAMPA', atk: 0.14, def: 0.05, vel: 6 } },
     ] },
 ];

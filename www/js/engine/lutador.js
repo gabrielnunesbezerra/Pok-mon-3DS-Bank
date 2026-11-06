@@ -48,6 +48,8 @@ export const etapaDe = (def, i) => {
 
 const ESTADOS_DURACION = ['quema', 'veneno', 'quemado', 'paralizado', 'empapado', 'enredado'];
 
+const CONTROLES_CC = new Set(['aturdido', 'paralizado', 'dormido', 'confuso', 'enredado', 'lento', 'ancorado', 'silencio', 'debil', 'cego']);
+
 export class Lutador {
   constructor(luta, def, lado, etapa = 0) {
     this.luta = luta;
@@ -143,6 +145,8 @@ export class Lutador {
   }
 
   ponerEstado(nombre, dur, datos = {}) {
+    // Amnésia / Shellder (Slowbro): imune a controle
+    if (this.est.imuneCC && this.est.imuneCC.hasta > this.luta.t && CONTROLES_CC.has(nombre)) return;
     const previo = this.est[nombre];
     this.est[nombre] = { ...previo, ...datos, hasta: Math.max(previo?.hasta ?? 0, this.luta.t + dur) };
   }
@@ -266,6 +270,7 @@ export class Lutador {
     }
     if ((this.invulnerable && !g.puro && !(g.atraviesa && !this.est.invul)) || (this.est.vuelo && !g.puro && !g.alcanzaVuelo)) {
       const bloquea = !!this.est.bloqueo;
+      if (this.est.concha && g.dano > 0) this.est.concha.acum += g.dano;
       if (g.tick) return 'miss';
       // Preságio Sombrio da Mega Absol: desviou de um golpe
       if (this.est.presagio && fuente && fuente !== this) this.est.presagio.fn(fuente, true);
@@ -278,6 +283,10 @@ export class Lutador {
       this.texto('DISGUISE BROKE!', '#fde68a'); luta.emit({ t: 'disfarceQuebra', l: this }); luta.hitstop(80);
       return 'bloqueo';
     }
+    // espinhos de cristal da Mega Gigalith: devolvem parte do dano dos básicos
+    if (this.est.refleteBasico && g.slot === 'lmb' && fuente && fuente !== this && !g.reflejado && !fuente.ko) fuente.recibir(this, { dano: (g.dano ?? 0) * this.est.refleteBasico.f, tipo: g.tipo, tick: true, reflejado: true });
+    // Fúria Berserk (Drampa): abaixo de 50% de vida bate 30% mais e o controle dura +0,5s
+    if (fuente?.def?.berserk && fuente.hp < fuente.hpMax * 0.5 && !g.reflejado) { g = { ...g, dano: (g.dano ?? 0) * 1.3 }; if (g.aturde) g.aturde += 0.5; if (g.ralentiza) g.ralentiza = { ...g.ralentiza, dur: g.ralentiza.dur + 0.5 }; if (g.duerme) g.duerme += 0.5; }
     // Preságio Sombrio (Absol): na postura, quem bate fica lento e leva o contra-ataque
     if (this.est.presagio && fuente && fuente !== this && !g.tick && !g.contragolpe && !fuente.ko) this.est.presagio.fn(fuente, false);
     // Counter (Kangaskhan): na guarda, o golpe não entra e volta como soco (de longe só bloqueia)
@@ -347,6 +356,10 @@ export class Lutador {
     const pr = this.est.protegido;
     if (pr && !g.vinculado && fuente !== this && pr.por && !pr.por.ko && d > 0) { const parte = d * pr.reparte; d -= parte; pr.por.recibir(fuente, { dano: parte, tipo: g.tipo, puro: true, tick: true, vinculado: true }); }
     this.hp = Math.max(0, this.hp - d);
+    if (this.def.berserk && this.hp > 0 && this.hp < this.hpMax * 0.5 && !this.luta.entidades.some(e => e.tipo === 'olhosBerserk' && e.dueno === this)) {
+      this.texto('BERSERK!', '#ef4444'); luta.emit({ t: 'berserk', l: this });
+      luta.add({ tipo: 'olhosBerserk', dueno: this, vivo: true, update: () => !this.ko && this.hp < this.hpMax * 0.5 });
+    }
     if (d > 0) this.ultimoDano = t;
     // Ceruledge: golpe de skill deixa uma espada fantasma que corta de novo um instante depois
     if (fuente?.def?.espadas && g.slot && g.slot !== 'lmb' && !g.tick && !g.espada && d > 0 && !this.ko) luta.add(espadaFantasma(luta, fuente, this, g));

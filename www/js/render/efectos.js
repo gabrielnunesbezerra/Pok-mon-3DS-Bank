@@ -15,6 +15,7 @@ import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaqu
 import './efectosMega.js';
 import './efectosKits4.js';
 import './efectosKits7.js';
+import './efectosKits8.js';
 
 const ale = () => Math.random();
 const R = Math.round;

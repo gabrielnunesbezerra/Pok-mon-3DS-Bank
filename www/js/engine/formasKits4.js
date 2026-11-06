@@ -248,11 +248,42 @@ export const formasKits4 = {
   },
 
   // ================================================================ SHARPEDO
-  // Rasgo de Barbatana: dash em linha cortando com a barbatana (sangramento). Mega: mais longe, sangra mais e quebra armadura
+  // Rasgo de Barbatana: segure para carregar (até 1,2s): quanto mais segura, mais dano e mais longe vai. Carga máxima:
+  // leva uma onda junto que arrasta quem pega. Sangra; na Mega sangra mais e quebra armadura
   rasgoBarbatana(l, h, extra) {
-    const luta = this.luta;
-    const r = dashLinha(this, l, h, extra, h.dist ?? 140, 0.18, (b, a) => { atingir(l, b, pacote(h, extra, a, { empuje: 30 })); sangrar(luta, l, b, h.sangra ?? 2, 3); if (h.mega) b.ponerEstado('defBaja', 3, {}); luta.emit({ t: 'corteSerra', x: b.x, y: b.y - b.alto * 0.5, ang: a }); });
-    luta.emit({ t: 'barbatana', l, ...r });
+    const luta = this.luta, max = h.cargaMax ?? 1.2;
+    let t = 0, solto = false;
+    l.cortarAccion(); l.animar('Charge', max);
+    luta.emit({ t: 'cargaBarbatana', l, max });
+    const sair = () => {
+      const k = Math.min(1, t / max), cheio = k >= 0.98, dist = (h.dist ?? 120) * (1 + k * 1.1), mult = 1 + k * 0.9, arrasto = new Set();
+      l.accion = null;
+      const r = dashLinha(this, l, h, extra, dist, 0.18 + k * 0.1, (b, a) => {
+        atingir(l, b, pacote(h, extra, a, { dano: h.dano * mult, empuje: cheio ? 0 : 30 })); sangrar(luta, l, b, (h.sangra ?? 2) * (1 + k * 0.5), 3);
+        if (h.mega) b.ponerEstado('defBaja', 3, {});
+        if (cheio) arrasto.add(b);
+        luta.emit({ t: 'corteSerra', x: b.x, y: b.y - b.alto * 0.5, ang: a });
+      });
+      luta.emit({ t: 'barbatana', l, ...r, onda: cheio, k });
+      if (cheio) {
+        // a onda carrega junto quem foi pego e solta no fim, com um empurrão
+        const dur = 0.18 + k * 0.1; let tt = 0;
+        luta.add({ tipo: 'ondaBarbatana', dueno: l, vivo: true, x: l.x, y: l.y, ang: r.a, t: 0, update(dt) {
+          tt += dt; this.t = tt; this.x = l.x; this.y = l.y;
+          for (const b of inimigos(luta, l)) if (!arrasto.has(b) && Math.hypot(b.x - l.x, b.y - l.y) < RADIO * 2 + 16) { arrasto.add(b); atingir(l, b, pacote(h, extra, r.a, { dano: h.dano * 0.5, empuje: 0 })); }
+          for (const b of arrasto) if (!b.ko) { b.x += (l.x + Math.cos(r.a) * 20 - b.x) * Math.min(1, dt * 18); b.y += (l.y + Math.sin(r.a) * 14 - b.y) * Math.min(1, dt * 18); }
+          if (tt < dur + 0.02) return true;
+          for (const b of arrasto) if (!b.ko) b.recibir(l, { dano: 2, tipo: 'WATER', empuje: 160, dirX: Math.cos(r.a), dirY: Math.sin(r.a), aturde: 0.5, tick: true });
+          luta.emit({ t: 'emergeTubarao', l }); luta.emit({ t: 'temblor', f: 0.012 });
+          return false;
+        } });
+      }
+    };
+    l.accion = { hasta: luta.t + max + 0.05, bloquea: true, lento: 0.55, update: dt => {
+      t += dt; const pulsa = l.intento?.[extra.slot];
+      if (!pulsa) solto = true;
+      if ((solto || t >= max) && l.accion) sair();
+    } };
   },
   // Caçador Submerso: mergulha (intocável e rápido) e sai mordendo o primeiro alvo. Mega: mais tempo, com escudo; sai
   // com dano em área, joga para o alto e acerta crítico em quem está com menos da metade da vida

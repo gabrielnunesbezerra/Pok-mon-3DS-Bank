@@ -10,6 +10,7 @@ import { formasNovas, ecoFilhote } from './formasNovas.js';
 import { formasMega } from './formasMega.js';
 import { formasKits4 } from './formasKits4.js';
 import { formasKits7 } from './formasKits7.js';
+import { formasKits8 } from './formasKits8.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -46,7 +47,7 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7, ...formasKits8,
           };
   }
 
@@ -89,6 +90,8 @@ export class Habilidades {
     // Zeraora: com o plasma cheio, a próxima skill sai sobrecarregada
     const sobrecarga = !!l.def.plasma && l.plasma >= 100 && (slot === 'rmb' || slot === 'q' || slot === 'esp');
     if (forma.call(this, l, h, { slot, surge, sobrecarga }) === false) return false;
+    // campo de geodo da Mega Gigalith: usar skill lá dentro explode
+    if (slot !== 'lmb' && l.est.geoda) { const f = l.est.geoda.fn; delete l.est.geoda; f(l); }
     if (sobrecarga) { l.plasma = 0; l.texto('OVERCHARGE!', '#fde047', { dy: 10 }); luta.emit({ t: 'sobrecargaPlasma', l }); }
     // Parental Bond (Kangaskhan): o filhote repete o básico (na Mega, tudo menos a ult)
     if (l.def.eco && slot !== 'e' && (slot === 'lmb' || l.mega)) ecoFilhote(this, l, h, slot, { slot, surge });

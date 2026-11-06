@@ -71,6 +71,13 @@ export function rangoDe(h) {
     case 'presagio': P.tipo = 'defensa'; P.alcance = 110; break;
     case 'estrelasPixie': case 'garraCalamidade': P.alcance = (h.alcance ?? 220) * 0.8; P.ancho = 14; P.retardo = d / 380; break;
     case 'tempestadePerdicao': P.tipo = 'mele'; P.alcance = (h.alcance ?? 180) * 0.9; P.retardo = 0.15; P.invul = true; break;
+    case 'leque': P.alcance = (h.alcance ?? 220) * 0.9; P.ancho = 16; P.retardo = d / (h.vel ?? 330); P.sigue = h.segue ? 0.7 : 0; break;
+    case 'raioCristal': P.alcance = (h.largo ?? 300) * 0.9; P.ancho = (h.ancho ?? 22) / 2; P.retardo = h.carga ?? 0.35; P.sigue = 0.5; break;
+    case 'fortaleza': case 'amnesia': case 'nevoa': P.tipo = 'buff'; break;
+    case 'ondaSismica': case 'campoGeoda': case 'giroShellder': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.85; P.retardo = h.carga ?? 0.3; break;
+    case 'bolhaSono': P.alcance = (h.alcance ?? 220) * 0.9; P.ancho = h.mega ? 40 : 10; P.retardo = d / (h.vel ?? 150); break;
+    case 'rugido': P.tipo = 'mele'; P.alcance = (h.alcance ?? 120) * 0.9; P.retardo = 0.1; break;
+    case 'furiaAnciao': P.alcance = h.mega ? 400 : (h.alcance ?? 320) * 0.9; P.ancho = h.mega ? 90 : 22; P.retardo = h.mega ? 0.9 : d / 420; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;

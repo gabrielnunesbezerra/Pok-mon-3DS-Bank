@@ -2854,5 +2854,59 @@
   "retrato": [
    "Emmuffin"
   ]
+ },
+ {
+  "dex": "0524",
+  "sprite": [
+   "powercristal"
+  ],
+  "retrato": [
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0524s",
+  "sprite": [
+   "Caitemis"
+  ],
+  "retrato": [
+   "Gust"
+  ]
+ },
+ {
+  "dex": "0525",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0525s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "Emmuffin"
+  ]
+ },
+ {
+  "dex": "0526",
+  "sprite": [
+   "Soulja"
+  ],
+  "retrato": [
+   "G〜"
+  ]
+ },
+ {
+  "dex": "0526s",
+  "sprite": [
+   "Emmuffin"
+  ],
+  "retrato": [
+   "G〜"
+  ]
  }
 ]
