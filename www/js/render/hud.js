@@ -7,7 +7,7 @@ import { rect, texto, medir } from './pixel.js';
 import { icono, tono } from './iconos.js';
 
 const COLOR_EQUIPO = ['#4a9fff', '#ff5a5a', '#4ade80', '#facc15'];
-const COLOR_TIME = ['#4a9fff', '#ff5a5a'];
+const COLOR_TIME = ['#4a9fff', '#ff5a5a', '#4ade80', '#facc15'];
 const RANURAS = ['lmb', 'rmb', 'esp', 'q', 'e'];
 const caso = s => s.charAt(0) + s.slice(1).toLowerCase();
 export const corDe = (luta, l) => (luta.equipos ? COLOR_TIME[l.equipo] : COLOR_EQUIPO[l.lado]);
@@ -34,8 +34,8 @@ export class Hud {
     const parpadeo = Math.floor(t * 4) % 2 === 0, L = luta.luchadores;
     // ordem: no modo duplas, o time azul à esquerda e o vermelho à direita
     const ordem = luta.equipos ? [...L].sort((a, b) => a.equipo - b.equipo || a.lado - b.lado) : L;
-    const esq = luta.equipos ? ordem.filter(l => l.equipo === 0) : ordem.slice(0, Math.ceil(L.length / 2));
-    const dir = luta.equipos ? ordem.filter(l => l.equipo === 1) : ordem.slice(Math.ceil(L.length / 2));
+    const esq = luta.equipos ? ordem.filter(l => l.equipo === L[0].equipo) : ordem.slice(0, Math.ceil(L.length / 2));
+    const dir = luta.equipos ? ordem.filter(l => l.equipo !== L[0].equipo) : ordem.slice(Math.ceil(L.length / 2));
     const meio = 34, lado = ANCHO / 2 - meio - 6;
     for (const [lista, der] of [[esq, false], [dir, true]]) {
       const n = lista.length, compacta = n > 1 || L.length > 2, w = Math.min(compacta ? 150 : 214, Math.floor((lado - 4 * (n - 1)) / Math.max(1, n)));
@@ -153,7 +153,7 @@ export class Hud {
       const l = luta.luchadores[i];
       let w, gap, x0, y, h;
       if (celular) { const esq = 122, dir = ANCHO - 186; gap = 3; w = Math.min(70, Math.floor((dir - esq - 4 * gap) / 5)); h = 22; x0 = Math.round((esq + dir) / 2 - (5 * w + 4 * gap) / 2); y = ALTO - h - 4; }
-      else { w = compacta ? 60 : 120; gap = 3; h = 24; const total = 5 * w + 4 * gap; x0 = compacta ? [6, ANCHO - 6 - total, Math.round((ANCHO - total) / 2)][Math.min(2, lados.indexOf(i))] : Math.round((ANCHO - total) / 2); y = BARRA_Y + 1; }
+      else { const n = lados.length, k = lados.indexOf(i), bloco = Math.floor((ANCHO - 12 - (n - 1) * 8) / n); gap = n > 2 ? 2 : 3; w = compacta ? Math.min(60, Math.floor((bloco - 4 * gap) / 5)) : 120; h = 24; const total = 5 * w + 4 * gap; x0 = compacta ? (n === 2 ? [6, ANCHO - 6 - total][k] : 6 + k * (bloco + 8) + Math.round((bloco - total) / 2)) : Math.round((ANCHO - total) / 2); y = BARRA_Y + 1; }
       RANURAS.forEach((slot, k) => this.cartao(g, l, slot, x0 + k * (w + gap), y, w, h, compacta || celular, t, celular));
     }
   }

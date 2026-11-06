@@ -872,7 +872,7 @@ export class Combate {
     texto(g, r.titulo, ANCHO / 2, 70, { tam: 24, color: perd ? '#ff5a5a' : '#ffd23c', borde: 6, align: 'center', base: 'middle', peso: 700 });
     const w = luta.luchadores[r.ganador];
     const outro = luta.luchadores.find(x => x.equipo !== w.equipo);
-    texto(g, luta.equipos ? `${w.equipo ? 'RED' : 'BLUE'} TEAM ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 0]}` : `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
+    texto(g, luta.equipos ? `${['BLUE', 'RED', 'GREEN', 'YELLOW'][w.equipo] ?? ''} TEAM ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 0]}` : `${w.nombre} ${luta.victorias[r.ganador]}-${luta.victorias[outro?.lado ?? 1 - r.ganador]}`, ANCHO / 2, 100, { tam: 8, align: 'center' });
     // um cartão de vidro por lutador: retrato, nome na cor do time, dano e acertos; selo de MVP em quem mais machucou
     const n = luta.luchadores.length, cw = n >= 4 ? 112 : n === 3 ? 130 : 150, mvp = luta.luchadores.reduce((m, x) => (x.stats.dano > m.stats.dano ? x : m));
     luta.luchadores.forEach((x, i) => {

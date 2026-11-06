@@ -20,19 +20,20 @@ export const ACOES = [['up', 'UP'], ['down', 'DOWN'], ['left', 'LEFT'], ['right'
 export const TECLAS_PADRAO = {
   p1: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', lmb: 'KeyG', rmb: 'KeyH', esp: 'Space', q: 'KeyQ', e: 'KeyE', mega: 'KeyF' },
   p2: { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight', lmb: 'KeyK', rmb: 'KeyL', esp: 'Enter', q: 'KeyI', e: 'KeyO', mega: 'KeyP' },
+  p4: { up: 'KeyY', down: 'KeyN', left: 'KeyB', right: 'KeyM', lmb: 'KeyZ', rmb: 'KeyX', esp: 'KeyC', q: 'KeyR', e: 'KeyT', mega: 'KeyU' },
   p3: { up: 'Numpad8', down: 'Numpad5', left: 'Numpad4', right: 'Numpad6', lmb: 'Numpad1', rmb: 'Numpad2', esp: 'Numpad0', q: 'Numpad3', e: 'NumpadAdd', mega: 'NumpadEnter' },
 };
 export const teclasDe = (app, j) => ({ ...TECLAS_PADRAO[j], ...(app.ajustes?.teclas?.[j] ?? {}) });
 // dispositivo de cada jogador: P1 'kbm' (teclado + mouse), 'teclado' (só teclado, mira automática), 'pad0'/'pad1'; P2 'teclado2', 'pad0', 'pad1'
-const PADS = [['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2'], ['pad2', 'GAMEPAD 3']];
-export const ENTRADAS = { p1: [['kbm', 'KEYS + MOUSE'], ['teclado', 'KEYBOARD'], ...PADS], p2: [['teclado2', 'KEYBOARD'], ...PADS], p3: [['teclado3', 'NUMPAD'], ...PADS] };
-export const entradaDe = (app, j) => app.ajustes?.entrada?.[j] ?? ({ p1: 'kbm', p2: 'teclado2', p3: 'teclado3' }[j]);
+const PADS = [['pad0', 'GAMEPAD 1'], ['pad1', 'GAMEPAD 2'], ['pad2', 'GAMEPAD 3'], ['pad3', 'GAMEPAD 4']];
+export const ENTRADAS = { p1: [['kbm', 'KEYS + MOUSE'], ['teclado', 'KEYBOARD'], ...PADS], p2: [['teclado2', 'KEYBOARD'], ...PADS], p3: [['teclado3', 'NUMPAD'], ...PADS], p4: [['teclado4', 'KEYBOARD 4'], ...PADS] };
+export const entradaDe = (app, j) => app.ajustes?.entrada?.[j] ?? ({ p1: 'kbm', p2: 'teclado2', p3: 'teclado3', p4: 'teclado4' }[j]);
 const PAD = { lmb: 'X', rmb: 'B', esp: 'A', q: 'Y', e: 'RT', mega: 'LB' };
 // nomes das teclas para a barra de skills do HUD
 export function etiquetasDe(app, esquema) {
   if (esquema === 'tactil') return CONTROLES.tactil;
   if (/^pad\d$/.test(esquema)) return { mover: 'L-Stick', ...PAD };
-  const k = teclasDe(app, esquema === 'teclado2' ? 'p2' : esquema === 'teclado3' ? 'p3' : 'p1'), n = nombreTecla;
+  const k = teclasDe(app, esquema === 'teclado2' ? 'p2' : esquema === 'teclado3' ? 'p3' : esquema === 'teclado4' ? 'p4' : 'p1'), n = nombreTecla;
   const r = { mover: `${n(k.up)}${n(k.left)}${n(k.down)}${n(k.right)}`, lmb: n(k.lmb), rmb: n(k.rmb), esp: n(k.esp), q: n(k.q), e: n(k.e), mega: n(k.mega) };
   if (esquema === 'kbm') { r.lmb = 'LMB'; r.rmb = 'RMB'; }
   return r;
@@ -66,6 +67,7 @@ export class ControlHumano {
     } else if (esquema === 'teclado') { teclado('p1'); mira(); }
     else if (esquema === 'teclado2') { teclado('p2'); mira(); }
     else if (esquema === 'teclado3') { teclado('p3'); mira(); }
+    else if (esquema === 'teclado4') { teclado('p4'); mira(); }
     else if (esquema === 'tactil') {
       const s = this.app.tactil?.estado ?? VACIO();
       Object.assign(it, s);

@@ -10,7 +10,7 @@ export const CONTROLES = {
   kbm: { mover: 'WASD', lmb: 'Left click', rmb: 'Right click', esp: 'Space', q: 'Q', e: 'E', mega: 'F' },
   teclado2: { mover: 'Arrows', lmb: 'K', rmb: 'L', esp: 'Enter', q: 'I', e: 'O', mega: 'P' },
 };
-const COL = { p1: 130, p2: 300, p3: 470 }, Y0 = 70, PASSO = 20, W = 120;
+const COL = { p1: 104, p2: 238, p3: 372, p4: 506 }, Y0 = 70, PASSO = 20, W = 124;
 
 export class Controles {
   constructor(app) { this.app = app; this.volver = { x: 20, y: 8, w: 76, h: 16 }; this.esperando = null; }
@@ -18,7 +18,7 @@ export class Controles {
   salvarTecla(j, acao, codigo) {
     const aj = this.app.ajustes; aj.teclas ??= {}; aj.teclas[j] ??= {};
     // a mesma tecla não pode servir a duas ações: quem já tinha ela troca com a tecla antiga
-    for (const jj of ['p1', 'p2', 'p3']) { const k = teclasDe(this.app, jj); for (const [a] of ACOES) if (k[a] === codigo && !(jj === j && a === acao)) { aj.teclas[jj] ??= {}; aj.teclas[jj][a] = teclasDe(this.app, j)[acao]; } }
+    for (const jj of ['p1', 'p2', 'p3', 'p4']) { const k = teclasDe(this.app, jj); for (const [a] of ACOES) if (k[a] === codigo && !(jj === j && a === acao)) { aj.teclas[jj] ??= {}; aj.teclas[jj][a] = teclasDe(this.app, j)[acao]; } }
     aj.teclas[j][acao] = codigo; this.app.guardarAjustes?.();
   }
   tecla(c, nueva) {
@@ -36,7 +36,7 @@ export class Controles {
     if (tipo !== 'down') return;
     const em = c => p.x >= c.x && p.x <= c.x + c.w && p.y >= c.y && p.y <= c.y + c.h;
     if (em(this.volver)) return this.sair();
-    for (const j of ['p1', 'p2', 'p3']) {
+    for (const j of ['p1', 'p2', 'p3', 'p4']) {
       if (em(this.caixaEntrada(j))) { const ops = ENTRADAS[j], i = ops.findIndex(([id]) => id === entradaDe(this.app, j)); this.app.ajustes.entrada ??= {}; this.app.ajustes.entrada[j] = ops[(i + 1) % ops.length][0]; this.app.guardarAjustes?.(); sfx('seleccion'); return; }
       ACOES.forEach(([acao], i) => { if (em(this.caixa(j, i))) { this.esperando = { j, acao }; sfx('seleccion'); } });
     }
@@ -47,14 +47,14 @@ export class Controles {
     texto(g, 'CONTROLS', 320, 8, { tam: 16, color: UI.amarillo, borde: 4, align: 'center' });
     marco(g, this.volver.x, this.volver.y, this.volver.w, this.volver.h);
     texto(g, '< MENU', this.volver.x + this.volver.w / 2, this.volver.y + 8, { tam: 8, align: 'center', base: 'middle' });
-    for (const j of ['p1', 'p2', 'p3']) {
-      texto(g, `PLAYER ${j[1]}`, COL[j] + W / 2, 32, { tam: 8, align: 'center', color: { p1: '#7db8ff', p2: '#ff8a8a', p3: '#86efac' }[j] });
+    for (const j of ['p1', 'p2', 'p3', 'p4']) {
+      texto(g, `PLAYER ${j[1]}`, COL[j] + W / 2, 32, { tam: 8, align: 'center', color: { p1: '#7db8ff', p2: '#ff8a8a', p3: '#86efac', p4: '#fde047' }[j] });
       const ce = this.caixaEntrada(j), ent = ENTRADAS[j].find(([id]) => id === entradaDe(this.app, j))?.[1] ?? '';
       marco(g, ce.x, ce.y, ce.w, ce.h, 'oro'); texto(g, `◀ ${ent} ▶`, ce.x + ce.w / 2, ce.y + 8, { tam: 8, align: 'center', base: 'middle' });
       const k = teclasDe(this.app, j);
       ACOES.forEach(([acao, nome], i) => {
         const c = this.caixa(j, i), sel = this.esperando?.j === j && this.esperando.acao === acao;
-        if (j === 'p1') texto(g, nome, 24, c.y + 4, { tam: 8, color: '#f8c448' });
+        if (j === 'p1') texto(g, nome, 14, c.y + 4, { tam: 8, color: '#f8c448' });
         marco(g, c.x, c.y, c.w, c.h, sel ? 'oro' : 'azul');
         texto(g, sel ? 'PRESS A KEY...' : nombreTecla(k[acao]) + (j === 'p1' && acao === 'lmb' ? ' / LMB' : j === 'p1' && acao === 'rmb' ? ' / RMB' : ''), c.x + c.w / 2, c.y + 8, { tam: 8, align: 'center', base: 'middle', color: sel ? '#ffd23c' : '#ffffff' });
       });

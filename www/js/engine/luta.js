@@ -59,9 +59,14 @@ export class Luta {
     this.tareas = [];
     const sep = 166;
     if (this.equipos) {
-      // cada time do seu lado, um em cima e outro embaixo
-      const n = [0, 0];
-      for (const l of this.luchadores) { const k = n[l.equipo]++; l.reiniciar(OVALO.cx + (l.equipo ? sep : -sep), OVALO.cy + (k ? 56 : -56)); }
+      // cada time no seu canto: com 2 times, um de cada lado (um em cima e outro embaixo); com 3 ou 4, nos 4 pontos
+      const times = [...new Set(this.luchadores.map(l => l.equipo))], n = {};
+      const PONTOS = [[-sep, 0], [sep, 0], [0, 112], [0, -100]];
+      for (const l of this.luchadores) {
+        const ti = times.indexOf(l.equipo), k = (n[ti] = (n[ti] ?? -1) + 1), [dx, dy] = PONTOS[ti];
+        if (times.length === 2) l.reiniciar(OVALO.cx + dx, OVALO.cy + (k % 2 ? 56 : -56) + (k > 1 ? 40 : 0));
+        else { const o = k === 0 ? 0 : k % 2 ? 1 : -1; l.reiniciar(OVALO.cx + dx + (dy ? o * 48 : 0), OVALO.cy + dy + (dy ? 0 : o * 52)); }
+      }
     } else {
       this.luchadores[0].reiniciar(OVALO.cx - sep, OVALO.cy);
       this.luchadores[1].reiniciar(OVALO.cx + sep, OVALO.cy);
