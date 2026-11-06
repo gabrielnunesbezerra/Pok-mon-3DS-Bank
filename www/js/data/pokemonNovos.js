@@ -116,21 +116,24 @@ export const ROSTER_NOVOS = [
         mega: { dex: '0359-0001', nombre: 'MEGA ABSOL', atk: 0.14, def: 0.03, vel: 10 } },
     ] },
   // ------------------------------------------------------------ Roggenrola > Boldore > Gigalith > Mega Gigalith
-  { id: 'roggenrola', dex: '0524', nombre: 'ROGGENROLA', tipos: ['ROCK'], rol: 'TANQUE', lema: 'CRYSTAL CORE ARTILLERY', hp: 74, vel: 112, atk: 0.94, def: 1.06, regen: 4, expEvolucion: [55, 100], ia: { rango: 130 },
+  { id: 'roggenrola', dex: '0524', nombre: 'ROGGENROLA', tipos: ['ROCK'], rol: 'TANQUE', lema: 'CRYSTAL CORE ARTILLERY', hp: 74, vel: 112, atk: 0.94, def: 1.06, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 130 },
     kit: {
       lmb: tiro('Rock Blast', 'ROCK', 'guijarro', 4.4, { alcance: 190 }),
       rmb: skill('Stone Cannon', 'leque', 'ROCK', { dano: 9, n: 3, abre: 0.45, vel: 360, alcance: 210, lento: 0.25, lentoDur: 2, planta: 0.3, visual: 'estilhacoRocha', coste: 25, cd: 6, anim: 'Shoot' }),
-      esp: dash('Rock Roll', 'ROCK', { dano: 4, dist: 110, estilo: 'golpe' }),
+      esp: { nombre: 'Rock Shove', forma: 'empurrao', tipo: 'ROCK', dano: 5, alcance: 70, empuje: 260, forcaTorre: 420, danoEmpurra: 8, cd: 5, anim: 'Attack' },
       q: skill('Seismic Fortress', 'fortaleza', 'ROCK', { dano: 3, dur: 4, coste: 25, cd: 10 }),
       e: semUlt('Solar Core', 'ondaSismica', 'ROCK', { dano: 24, radio: 110, carga: 1 }),
     },
     evoluciones: [
       { dex: '0525', nombre: 'BOLDORE', hp: 92, vel: 114, atk: 1.04, def: 1.12, kit: { lmb: { dano: 4.8 }, rmb: { dano: 10 }, e: { dano: 26, sinUlti: false } } },
-      { dex: '0526', nombre: 'GIGALITH', hp: 110, vel: 116, atk: 1.14, def: 1.18, escala: 1.08, kit: { lmb: { dano: 5.2 }, rmb: { dano: 11 }, e: { dano: 29, radio: 120, sinUlti: false } },
-        mega: { dex: '0526', nombre: 'MEGA GIGALITH', atk: 0.12, def: 0.1, vel: 4 } },
+      // Gigalith: torres de cristal, feixe que descarrega as torres e o campo de geodo que liga as torres
+      { dex: '0526', nombre: 'GIGALITH', hp: 108, vel: 116, atk: 1.12, def: 1.16, escala: 1.08,
+        kit: { lmb: { nombre: 'Power Gem', dano: 5.2 }, rmb: { nombre: 'Crystal Discharge', forma: 'raioCristal', tipo: 'FIRE', dano: 12, dur: 1.5, largo: 300, ancho: 22, carga: 0.35, danoDescarga: 11, radioDescarga: 74, coste: 30, cd: 7 }, q: { nombre: 'Crystal Tower', forma: 'torresCristal', tipo: 'ROCK', dano: 4, alcance: 120, radio: 18, max: 2, coste: 20, cd: 6 }, e: { nombre: 'Geode Cataclysm', forma: 'campoGeoda', tipo: 'ROCK', radio: 130, dur: 4, danoTick: 3.6, danoExplosao: 11, danoLaser: 2.6, alcanceLaser: 230, sinUlti: false } } },
+      { dex: '0526', nombre: 'GIGALITH', hp: 120, vel: 118, atk: 1.2, def: 1.2, escala: 1.14,
+        kit: { lmb: { nombre: 'Power Gem', dano: 5.8 }, rmb: { nombre: 'Crystal Discharge', forma: 'raioCristal', tipo: 'FIRE', dano: 14, dur: 1.5, largo: 320, ancho: 24, carga: 0.35, danoDescarga: 13, radioDescarga: 80, coste: 30, cd: 7 }, q: { nombre: 'Crystal Tower', forma: 'torresCristal', tipo: 'ROCK', dano: 5, alcance: 130, radio: 19, max: 2, coste: 20, cd: 5 }, e: { nombre: 'Geode Cataclysm', forma: 'campoGeoda', tipo: 'ROCK', radio: 140, dur: 4.5, danoTick: 4.2, danoExplosao: 13, danoLaser: 3, alcanceLaser: 250, sinUlti: false } } },
     ] },
   // ------------------------------------------------------------ Slowpoke > Slowbro > Slowbro (Power Up) > Mega Slowbro
-  { id: 'slowpoke', dex: '0079', nombre: 'SLOWPOKE', tipos: ['WATER', 'PSYCHIC'], rol: 'TANQUE', lema: 'THE IMPOSSIBLE NAP', hp: 84, vel: 108, atk: 0.9, def: 1.04, regen: 4, expEvolucion: [55, 100], ia: { rango: 140 },
+  { id: 'slowpoke', dex: '0079', nombre: 'SLOWPOKE', tipos: ['WATER', 'PSYCHIC'], rol: 'TANQUE', lema: 'THE IMPOSSIBLE NAP', megaFija: true, hp: 84, vel: 108, atk: 0.9, def: 1.04, regen: 4, expEvolucion: [55, 100], ia: { rango: 140 },
     kit: {
       lmb: tiro('Water Pulse', 'WATER', 'pulsoAgua', 4.4, { vel: 260, alcance: 180, radio: 5 }),
       rmb: skill('Contagious Yawn', 'bolhaSono', 'PSYCHIC', { dano: 5, vel: 150, alcance: 220, duerme: 1, coste: 25, cd: 7, anim: 'Shoot' }),
@@ -147,13 +150,13 @@ export const ROSTER_NOVOS = [
   { id: 'drampa', dex: '0780', nombre: 'DRAMPA', tipos: ['NORMAL', 'DRAGON'], rol: 'DISTANCIA', lema: 'BERSERK ELDER DRAGON', berserk: true, hp: 78, vel: 122, atk: 1.0, def: 0.94, regen: 5, expEvolucion: [45, 80, 115], ia: { rango: 150 },
     kit: {
       lmb: tiro('Dragon Breath', 'DRAGON', 'aliento', 4.4, { alcance: 190 }),
-      rmb: skill('Hypersonic Roar', 'rugido', 'DRAGON', { dano: 8, alcance: 120, angulo: 70, silencio: 1, coste: 25, cd: 7 }),
-      esp: dash('Glide', 'FLYING', { dano: 0, dist: 140, dur: 0.2 }),
+      rmb: skill('Hyper Voice', 'hyperVoice', 'NORMAL', { dano: 12, alcance: 130, angulo: 70, dur: 2.2, coste: 25, cd: 7 }),
+      esp: { nombre: 'Fly', forma: 'vuelo', tipo: 'FLYING', dano: 9, radio: 38, dur: 1.1, aturde: 0.3, empuje: 60, cd: 10, anim: 'Hop', hoja: 'fly' },
       q: skill('Mystic Mist', 'nevoa', 'DRAGON', { radio: 70, dur: 3, cura: 0.02, coste: 25, cd: 12 }),
-      e: semUlt('Elder Fury', 'furiaAnciao', 'DRAGON', { dano: 22, alcance: 320 }),
+      e: semUlt('Calm Mind', 'calmaMente', 'PSYCHIC', { dur: 7, ataque: 0.35, defesa: 0.3, velocidade: 1.3 }),
     },
     evoluciones: [
-      { dex: '0780', nombre: 'DRAMPA', hp: 86, vel: 123, atk: 1.06, def: 0.97, kit: { lmb: { dano: 4.8 }, rmb: { dano: 8.8 }, e: { dano: 24, sinUlti: false } } },
+      { dex: '0780', nombre: 'DRAMPA', hp: 86, vel: 123, atk: 1.06, def: 0.97, kit: { lmb: { dano: 4.8 }, rmb: { dano: 8.8 }, e: { dur: 7, sinUlti: false } } },
       { dex: '0780', nombre: 'DRAMPA', hp: 94, vel: 124, atk: 1.12, def: 1.0, kit: { lmb: { dano: 5.2 }, rmb: { dano: 9.6 }, q: { cura: 0.025 }, e: { dano: 26, sinUlti: false } } },
       { dex: '0780', nombre: 'DRAMPA', hp: 102, vel: 125, atk: 1.18, def: 1.03, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 10.4 }, q: { cura: 0.025 }, e: { dano: 28, sinUlti: false } },
         mega: { dex: '0780-0001', nombre: 'MEGA DRAMPA', atk: 0.14, def: 0.05, vel: 6 } },

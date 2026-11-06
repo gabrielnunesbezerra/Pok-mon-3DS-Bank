@@ -12,6 +12,7 @@ import { formasKits4 } from './formasKits4.js';
 import { formasKits7 } from './formasKits7.js';
 import { formasKits8 } from './formasKits8.js';
 import { formasKits9 } from './formasKits9.js';
+import { formasKits10 } from './formasKits10.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -48,7 +49,7 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7, ...formasKits8, ...formasKits9,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4, ...formasKits7, ...formasKits8, ...formasKits9, ...formasKits10,
           };
   }
 
@@ -788,6 +789,8 @@ export class Habilidades {
     const luta = this.luta;
     let mias = luta.entidades.filter(e => e.tipo === 'torreta' && e.dueno === l && e.vivo);
     // sem torreta no campo a ultimate não faz nada
+    // sem torreta no campo: põe uma na hora e dispara
+    if (!mias.length && l.kit.q?.forma === 'torreta') { this.formas.torreta.call(this, l, l.kit.q, extra); mias = luta.entidades.filter(e => e.tipo === 'torreta' && e.dueno === l && e.vivo); }
     if (!mias.length) { if (l.humano) l.texto('NO TURRETS', '#9aa0b4'); return false; }
     l.animar(h.anim ?? 'Charge', (h.tira ?? 0.35) + 0.3);
     l.accion = { hasta: luta.t + (h.tira ?? 0.35) + 0.1, bloquea: true, lento: 0 };

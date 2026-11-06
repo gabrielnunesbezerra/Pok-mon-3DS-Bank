@@ -140,17 +140,20 @@ export const formasKits8 = {
       l.texto('AMNESIA', '#f9a8d4'); luta.emit({ t: 'amnesia', l }); return;
     }
     const dur = h.dur ?? 2;
-    l.ponerEstado('invul', dur); l.ponerEstado('imuneCC', dur, {}); l.ponerEstado('concha', dur, { acum: 0 });
-    l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0 }; l.animar('Withdraw', dur);
+    l.ponerEstado('invul', dur); l.ponerEstado('imuneCC', dur, {}); l.ponerEstado('concha', dur, { acum: 0, hits: 0 });
+    // dentro da concha ele ainda pode dar dash (as outras skills esperam)
+    l.accion = { hasta: luta.t + dur, lento: 0.35 }; l.animar('Withdraw', dur);
     luta.emit({ t: 'conchaFecha', l, dur });
     let t = 0, prox = 0.25;
     luta.add({ tipo: 'conchaShellder', dueno: l, vivo: true, t: 0, dur, update(dt) {
       t += dt; this.t = t; if (l.ko) return false;
       if (t >= prox) { prox += 0.25; l.cura(l.hpMax * (h.regen ?? 0.012)); }
       if (t < dur) return true;
-      const acum = l.est.concha?.acum ?? 0; delete l.est.concha;
-      areaCirculo(luta, l, l.x, l.y, h.radio ?? 80, pacote(h, extra, 0, { dano: h.dano + acum * (h.devolve ?? 0.4), dirX: undefined, dirY: undefined, empuje: 160 }));
-      luta.emit({ t: 'explosaoPsi', x: l.x, y: l.y, r: h.radio ?? 80 }); luta.emit({ t: 'temblor', f: 0.012 });
+      // cada golpe que bateu na concha deixa a explosão maior e mais forte
+      const acum = l.est.concha?.acum ?? 0, hits = l.est.concha?.hits ?? 0, R = Math.min(170, (h.radio ?? 80) + hits * (h.raioPorHit ?? 12)); delete l.est.concha;
+      areaCirculo(luta, l, l.x, l.y, R, pacote(h, extra, 0, { dano: h.dano + acum * (h.devolve ?? 0.4) + hits * (h.danoPorHit ?? 2.5), dirX: undefined, dirY: undefined, empuje: 160 + hits * 10 }));
+      if (hits) l.texto(`x${hits} BURST!`, '#f9a8d4');
+      luta.emit({ t: 'explosaoPsi', x: l.x, y: l.y, r: R }); luta.emit({ t: 'temblor', f: 0.012 });
       return false;
     } });
   },
@@ -168,7 +171,7 @@ export const formasKits8 = {
     let t = 0, prox = 0.3;
     luta.add({ tipo: 'piaoShellder', dueno: l, vivo: true, t: 0, dur, radio: R, update(dt) {
       t += dt; this.t = t; if (l.ko) return false;
-      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) puxar(b, l.x, l.y, 700, dt);
+      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) puxar(b, l.x, l.y, h.puxa ?? 700, dt);
       if (t >= prox) { prox += 0.3; for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, 46)) b.recibir(l, { dano: h.danoTick ?? 3, tipo: 'PSYCHIC', tick: true, empuje: 30, dirX: Math.sign(b.x - l.x) || 1, dirY: 0 }); }
       return t < dur;
     } });
@@ -200,6 +203,7 @@ export const formasKits8 = {
     const e = { tipo: 'nevoaDraco', dueno: l, vivo: true, x, y, radio: R, t: 0, dur, mega: !!h.mega, prox: 0, update: dt => {
       e.t += dt;
       if (e.t >= e.prox) { e.prox += 0.5; for (const a of aliados(luta, l)) if (dentro(a, x, y, R)) a.cura(a.hpMax * (h.cura ?? 0.02)); }
+      for (const a of aliados(luta, l)) if (dentro(a, x, y, R)) a.ponerEstado('invisivel', 0.3, {});
       for (const b of inimigos(luta, l)) if (dentro(b, x, y, R)) { b.ponerEstado('cego', 0.3, {}); if (h.mega) { b.ponerEstado('silencio', 0.3, {}); b.ponerEstado('lento', 0.3, { f: Math.max(0.3, b.est.lento?.f ?? 0) }); } }
       if (h.mega) bloquearTiros(luta, l, x, y, R);
       return e.t < dur;

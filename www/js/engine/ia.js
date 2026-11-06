@@ -83,6 +83,11 @@ export function rangoDe(h) {
     case 'bolaNeve': P.alcance = (h.alcance ?? 240) * 0.9; P.ancho = h.radio ?? 40; P.retardo = d / (h.vel ?? 200); break;
     case 'escudoGlacial': P.tipo = 'defensa'; P.alcance = 140; break;
     case 'blizzard': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.85; P.retardo = h.carga ?? 1.6; break;
+    case 'torresCristal': P.tipo = 'buff'; break;
+    case 'empurrao': P.tipo = 'mele'; P.alcance = (h.alcance ?? 70) + 10; P.retardo = 0.1; break;
+    case 'hyperVoice': P.tipo = 'mele'; P.alcance = (h.alcance ?? 130) * 0.85; P.retardo = 0.1; P.golpes = 4; break;
+    case 'calmaMente': P.tipo = 'buff'; break;
+    case 'nuvemNegra': P.alcance = 400; P.ancho = h.radio ?? 90; P.retardo = 0.8; P.sigue = 1; P.golpes = 4; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;
@@ -280,7 +285,7 @@ export class IA {
       if (o.tipo === 'proj' && o.dueno === yo && o.h.revienta && o.recorrido > 12 && Math.hypot(o.x - r.x, o.y - r.y) < (o.h.revienta.radio ?? 30) * 0.7) it[o.extra.slot] = true;
     }
     if (yo.est.vuelo && luta.entidades.some(o => o.tipo === 'vuelo' && o.dueno === yo)) { this.volar(it, r); return { ...it }; }
-    if (!r.oculto) this.vistoEn = { x: r.x, y: r.y };
+    if (!r.oculto && !r.est?.invisivel) this.vistoEn = { x: r.x, y: r.y };
     if (this.espera > 0) return { ...it };
     this.espera = this.cfg.reaccion * (0.7 + this.azar() * 0.6);
     const s = this.percibir(r);
@@ -715,7 +720,7 @@ export class IA {
     const yo = this.l, it = this.it;
     // cortando um disparo: mira no projétil, não no rival
     if (hacia && hacia.clase === 'disparo' && hacia.de !== s.r) { it.ax = yo.x + hacia.dirx * 120; it.ay = yo.y + hacia.diry * 120; return; }
-    if (s.r.oculto && this.vistoEn) { it.ax = this.vistoEn.x + (this.azar() * 2 - 1) * 20; it.ay = this.vistoEn.y + (this.azar() * 2 - 1) * 14; return; }
+    if ((s.r.oculto || s.r.est?.invisivel) && this.vistoEn) { it.ax = this.vistoEn.x + (this.azar() * 2 - 1) * 20; it.ay = this.vistoEn.y + (this.azar() * 2 - 1) * 14; return; }
     const q = this.prever(P, s), err = (this.l.est.cegado ? 3 : 1) * this.cfg.error * (0.6 + Math.min(1, s.d / 250)) * (P.tipo === 'mele' ? 0.3 : 1);
     it.ax = q.x + (this.azar() * 2 - 1) * err;
     it.ay = q.y + (this.azar() * 2 - 1) * err;

@@ -13,7 +13,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Mega Foul Play', cadena: 2, dano: 9.5 },
     esp: { nombre: 'Mega Flame Wheel', rastroFuego: true, dano: 2, vel: 2.0 },
     q: { nombre: 'Mega Fire Fang', siempreQuema: true, explosion: 48, danoParede: 12, fuegoSuelo: true, lanza: 210 },
-    e: { nombre: 'Mega Inferno', forma: 'infierno', tipo: 'FIRE', dano: 7, radio: 26, pilares: 3, paso: 9, carga: 0.25, quema: { dps: 2, dur: 3, max: 3 } },
+    e: { nombre: 'Mega Inferno', forma: 'infierno', tipo: 'FIRE', dano: 7, radio: 26, pilares: 8, paso: 9, carga: 0.25, quema: { dps: 2, dur: 3, max: 3 } },
   },
   larvitar: {
     lmb: { nombre: 'Mega Crunch', dano: 6.6, alcance: 60 },
@@ -31,7 +31,7 @@ export const MEGA_KITS = {
     rmb: { nombre: 'Mega Inferno', tipo: 'DRAGON', dano: 19.2, alcance: 150, angulo: 66, dur: 1.5, quema: { dps: 2, dur: 3, max: 3 } },
     esp: { nombre: 'Mega Dragon Rush', dano: 4.8, dist: 150, empuje: 60 },
     q: { nombre: 'Mega Magma Storm', tipo: 'DRAGON', dano: 11.2, radio: 74, empuje: 100, quema: { dps: 2, dur: 3, max: 3 } },
-    e: { nombre: 'Mega Sky Drop', forma: 'agarre', tipo: 'DRAGON', dano: 27.2, dist: 190, radio: 62, aturde: 0.6 },
+    e: { nombre: 'Mega Sky Drop', forma: 'agarre', tipo: 'DRAGON', dano: 34, dist: 190, radio: 62, aturde: 0.6 },
   },
   onix: {
     lmb: { nombre: 'Mega Iron Tail', dano: 6.4, alcance: 84, combo: 4, remate: { dano: 4.0, empuje: 190, aturde: 0.4 } },
@@ -63,14 +63,14 @@ export const MEGA_KITS = {
   },
   swablu: {
     lmb: { nombre: 'Mega Fairy Wind', tipo: 'FAIRY', rafaga: 2, cadaRafaga: 0.08, dano: 3.4, escala: 1.5 },
-    rmb: { nombre: 'Mega Disarming Voice', confunde: 2.4, dano: 6.4, alcance: 170, angulo: 72 },
+    rmb: { nombre: 'Mega Disarming Voice', confunde: 2.4, dano: 9, alcance: 170, angulo: 72 },
     esp: { nombre: 'Mega Dual Wingbeat', dano: 5.6, dist: 160, empuje: 60 },
     q: { nombre: 'Mega Cotton Spore', absorbe: 30, dur: 4 },
     e: { nombre: 'Mega Perish Song', tipo: 'FAIRY', dano: 13.6, ondas: [40, 80, 120, 160], aturde: 0.4, repite: 1.1 },
   },
   mewtwo: {
     lmb: { nombre: 'Mega Confusion', dano: 4.5, alcance: 240, radio: 4.5 },
-    rmb: { nombre: 'Mega Psystrike', forma: 'estallido', tipo: 'PSYCHIC', estilo: 'psico', n: 14, dano: 4.8, vel: 400, alcance: 170, radio: 5, escala: 1.4, empuje: 90, aturde: 0.15, anula: 40, bloqueo: 0.35, coste: 30, cd: 7, anim: 'Charge', lanzar: 0.18 },
+    rmb: { nombre: 'Mega Psystrike', forma: 'estallido', tipo: 'PSYCHIC', estilo: 'psico', n: 14, dano: 7, vel: 400, alcance: 170, radio: 5, escala: 1.4, empuje: 90, aturde: 0.15, anula: 40, bloqueo: 0.35, coste: 30, cd: 7, anim: 'Charge', lanzar: 0.18 },
     esp: { nombre: 'Mega Barrier', dur: 2.2, radio: 26, acelera: { vel: 1.6, dur: 3 } },
     q: { nombre: 'Mega Psywave', rafaga: 7, abanicos: [0, 0.3, -0.26, 0.5, -0.46, 0.7, -0.66], anilla: { dur: 3.5, frena: [0.3, 0.6], aturde: 1.1 } },
     e: { nombre: 'Mega Psycho Boost', forma: 'bolaGigante', tipo: 'PSYCHIC', dano: 30, vel: 240, alcance: 340, radio: 26, carga: 1, teledirigido: 1.4, aturde: 0.5, explosion: { radio: 84 } },
@@ -146,33 +146,28 @@ export const MEGA_KITS = {
     q: { nombre: 'Disaster Vision', mega: true, dur: 0.8 },
     e: { nombre: 'Mega Doom Storm', mega: true, dano: 48, radio: 110 },
   },
-  roggenrola: {
-    lmb: { nombre: 'Mega Rock Blast', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
-    rmb: { nombre: 'Crystal Discharge', forma: 'raioCristal', tipo: 'FIRE', mega: true, dano: 13, dur: 1.5, largo: 300, ancho: 22, carga: 0.35 },
-    esp: { nombre: 'Mega Rock Roll', dist: 130, cd: 4 },
-    q: { nombre: 'Crystal Thorns', mega: true, escudo: 24, reflete: 0.2, dur: 4 },
-    e: { nombre: 'Geode Cataclysm', forma: 'campoGeoda', mega: true, radio: 130, dur: 4, danoTick: 4.5, danoExplosao: 12 },
-  },
+
   slowpoke: {
     lmb: { nombre: 'Mega Psyshock Pulse', dano: 5.8, rafaga: 2, cadaRafaga: 0.1 },
     rmb: { nombre: 'Torpor Bubble', mega: true, dano: 8, radio: 64, duerme: 1.8 },
     esp: { nombre: 'Mega Slack Off Slide', dist: 130, cd: 5 },
-    q: { nombre: 'Inviolable Shell', mega: true, dur: 2, regen: 0.012, devolve: 0.4, dano: 6, radio: 80, cd: 13 },
-    e: { nombre: 'Relentless Psy Vortex', mega: true, dur: 3, radio: 150, danoTick: 3 },
+    q: { nombre: 'Inviolable Shell', mega: true, dur: 2.4, regen: 0.012, devolve: 0.4, dano: 6, radio: 80, raioPorHit: 12, danoPorHit: 2.5, cd: 13 },
+    e: { nombre: 'Relentless Psy Vortex', mega: true, dur: 3, radio: 190, danoTick: 3.4, puxa: 1900 },
   },
   drampa: {
     lmb: { nombre: 'Mega Dragon Breath', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
-    rmb: { nombre: 'Elder Howl', mega: true, dano: 10, alcance: 190, angulo: 80 },
-    esp: { nombre: 'Mega Glide', dist: 170, cd: 4 },
+    rmb: { nombre: 'Mega Hyper Voice', mega: true, dano: 18, alcance: 190, angulo: 80, dur: 3 },
+    esp: { nombre: 'Mega Fly', dano: 12, radio: 46, dur: 1.3, aturde: 0.4, cd: 8 },
     q: { nombre: 'Winged Barrier', mega: true, radio: 100, dur: 4 },
-    e: { nombre: 'Draconic Elemental Storm', mega: true, dano: 34, radio: 130, porVida: 0.015 },
+    e: { nombre: 'Black Thundercloud', forma: 'nuvemNegra', tipo: 'ELECTRIC', mega: true, dano: 7, radio: 95, dur: 6, vel: 100, cada: 0.5 },
   },
+
   tatsugiri: {
     lmb: { nombre: 'Mega Water Shuriken', dano: 5.6, rafaga: 2, cadaRafaga: 0.08 },
     rmb: { nombre: 'Mega Flip Turn', mega: true, dano: 10, alcance: 180, radio: 40, danoBolha: 3.5 },
     esp: { nombre: 'Mega Slippery Slide', mega: true, dist: 170, cd: 4 },
     q: { nombre: 'Mega Dragon Scale', mega: true, dano: 13, n: 5, abre: 0.7, fura: true, silencia3: true, alcance: 260 },
-    e: { nombre: 'Mega Twin Turret', mega: true, dano: 14, danoTiro: 2.4, dur: 5, escudo: 30 },
+    e: { nombre: 'Mega Twin Turret', mega: true, dano: 18, danoTiro: 3.1, dur: 5, escudo: 30 },
   },
   bulbasaur: {
     lmb: { nombre: 'Mega Petal Blizzard', dano: 3.4, escala: 1.9 },

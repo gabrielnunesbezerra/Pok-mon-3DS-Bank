@@ -112,7 +112,8 @@ export class Lutador {
   get pies() { return Math.round((this.medidas().feet ?? 5) * this.escala); }
 
   reiniciar(x, y) {
-    this.mega = false;
+    // a Mega Slowbro fica Mega nos rounds seguintes, ganhando ou perdendo
+    this.mega = !!(this.def.megaFija && this.mega && this.forma?.mega);
     this.evoVis = null;
     this.kit = this.kitActual();
     this.x = x; this.y = y; this.vx = 0; this.vy = 0; this.empX = 0; this.empY = 0;
@@ -270,7 +271,7 @@ export class Lutador {
     }
     if ((this.invulnerable && !g.puro && !(g.atraviesa && !this.est.invul)) || (this.est.vuelo && !g.puro && !g.alcanzaVuelo)) {
       const bloquea = !!this.est.bloqueo;
-      if (this.est.concha && g.dano > 0) this.est.concha.acum += g.dano;
+      if (this.est.concha && g.dano > 0) { this.est.concha.acum += g.dano; if (!g.tick) this.est.concha.hits++; }
       if (g.tick) return 'miss';
       // Preságio Sombrio da Mega Absol: desviou de um golpe
       if (this.est.presagio && fuente && fuente !== this) this.est.presagio.fn(fuente, true);

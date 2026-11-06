@@ -415,6 +415,14 @@ export class Combate {
 
   // sombra, aro da equipe e sprite
   dibujarLutador(g, l) {
+    // invisível na névoa do Drampa: o time dele vê transparente, o inimigo não vê
+    if (l.est.invisivel && !l._invDes && !l.ko) {
+      const meuTime = (this.humanos ?? [this.lado ?? 0]).some(k => this.luta.luchadores[k]?.equipo === l.equipo);
+      if (!meuTime) return;
+      l._invDes = true; g.save(); g.globalAlpha = 0.38;
+      try { this.dibujarLutador(g, l); } finally { l._invDes = false; g.restore(); }
+      return;
+    }
     const luta = this.luta, bank = this.app.bank, t = luta.t;
     // antes do GO! todo mundo fica na Pokébola (balançando de vez em quando); no GO! ela abre e o Pokémon sai
     if (luta.fase === 'intro' && !l.ko && !luta.rapido) {
