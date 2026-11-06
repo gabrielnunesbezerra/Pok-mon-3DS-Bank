@@ -243,6 +243,8 @@ export class Combate {
       const amostra = s => (s === this.lado ? this.ctrls[this.lado].intento(dt) : this.iasCpu[s]?.intento(dt) ?? {});
       // na frente dos outros: segura 1 de cada 4 quadros para eles alcançarem (fica liso em vez de parar e voltar)
       if (this.sesion.adiantado?.() && (this.segura = (this.segura ?? 0) + 1) % 4 === 0) return;
+      // a folga de comandos do outro está acabando: segura 1 de cada 3 quadros (câmera lenta leve em vez de parar)
+      if (this.sesion.folgaBaixa?.() && (this.seguraF = (this.seguraF ?? 0) + 1) % 3 === 0) return;
       let r = this.sesion.paso(luta, amostra);
       if (r) luta.paso(TICK, r);
       // ficou para trás (o celular travou um pouco ou a rede segurou os pacotes): alcança rodando passos extras

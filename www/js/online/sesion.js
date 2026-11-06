@@ -76,7 +76,7 @@ export class Sesion {
     else if (m.t === 'i') this.ent[m.s]?.set(m.k, m.v);
     else if (m.t === 'h') { const mapa = this.hRemoto.get(m.k) ?? new Map(); mapa.set(m.s, m.v); this.hRemoto.set(m.k, mapa); this.comparar(m.k); }
     else if (m.t === 'ping') this.rapido({ t: 'pong', s: m.s, a: m.de });
-    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; if (this.rtt != null) this.jitter = this.jitter * 0.85 + Math.abs(r - this.rtt) * 0.15; this.rtt = this.rtt == null ? r : this.rtt * 0.8 + r * 0.2; this.pico = Math.max(r, this.pico * 0.9); }
+    else if (m.t === 'pong') { if (m.a !== undefined && m.a !== this.lado) return; const r = performance.now() - m.s; if (this.rtt != null) { const d = Math.abs(r - this.rtt); this.jitter = d > this.jitter ? this.jitter * 0.6 + d * 0.4 : this.jitter * 0.97 + d * 0.03; } this.rtt = this.rtt == null ? r : this.rtt * 0.8 + r * 0.2; this.pico = Math.max(r, this.pico * 0.985); }
     else this.alOtro?.(m);
   }
   comparar(k) {
@@ -109,6 +109,13 @@ export class Sesion {
     // o passo dele chegou com meio ping de atraso: soma o que ele andou nesse tempo
     return min !== Infinity && this.paso_ - (min + (this.rtt ?? 0) / 2 / 16.7) > 2;
   }
+  // a folga está acabando? (quase sem comandos do outro à frente): desacelera de leve antes de ter de parar
+  folgaBaixa() {
+    if (!this.lista) return false;
+    let min = Infinity;
+    for (let o = 0; o < this.nj; o++) if (!this.propios.includes(o) && !this.cpus.includes(o)) min = Math.min(min, this.ack[o]);
+    return min !== Infinity && min - this.paso_ < 2;
+  }
   // está atrás dos outros? (tem comandos deles bem além do próprio passo) então roda passos extras
   atrasado() {
     if (!this.lista) return false;
@@ -126,10 +133,11 @@ export class Sesion {
     if (!this.perdida && mudo > MUDO_FIM) { this.perdida = true; this.alCerrar?.(); }
     // atraso de entrada: metade do ping + folga para a variação (jitter). Sobe na hora quando trava e desce devagar,
     // para não ficar mudando (cada mudança dá um tranco)
-    const agora = performance.now(), alvo = Math.ceil(((this.rtt ?? 0) / 2 + this.jitter * 2 + 6) / 16.7) + 1;
-    if (this.esperando > 2 && agora - this.ultimaEspera > 400) { this.ultimaEspera = agora; this.Dmin = Math.min(this.Dmin + 1, 12); }
-    else if (agora - this.ultimaEspera > 6000 && this.Dmin > D0) { this.ultimaEspera = agora - 3000; this.Dmin--; }
-    this.D = Math.max(D0, this.Dmin, Math.min(this.tr.lento ? 30 : 15, alvo));
+    // a folga cobre o pior ping dos últimos segundos (os picos de Wi-Fi e 4G), não só a média
+    const agora = performance.now(), pior = Math.max(this.rtt ?? 0, this.pico * 0.85), alvo = Math.ceil((pior / 2 + this.jitter * 2.5 + 8) / 16.7) + 1;
+    if (this.esperando > 1 && agora - this.ultimaEspera > 300) { this.ultimaEspera = agora; this.Dmin = Math.min(this.Dmin + 2, 20); }
+    else if (agora - this.ultimaEspera > 9000 && this.Dmin > D0) { this.ultimaEspera = agora - 5000; this.Dmin--; }
+    this.D = Math.max(D0, this.Dmin, Math.min(this.tr.lento ? 36 : 22, alvo));
     while (this.prod < this.paso_ + this.D) {
       for (const s of this.propios) this.ent[s].set(this.prod, cuantizar(amostra(s)));
       this.prod++;
