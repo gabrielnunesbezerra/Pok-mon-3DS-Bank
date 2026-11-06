@@ -3,6 +3,9 @@ import { RADIO } from '../config.js';
 import { fijarCampo } from './fisica.js';
 import { areaCirculo, pacote, atingir } from './entidades.js';
 import { aleatorio } from './util.js';
+import { congelar } from './formasKits9.js';
+// Gardevoir dentro do próprio Santuário: a primeira skill vira o raio que carrega e dispara (como o Solar Beam da Mega Venusaur)
+function noSantuario(luta, l) { return luta.entidades.some(e => e.tipo === 'santuario' && e.dueno === l && e.t < e.dur && Math.hypot(l.x - e.x, (l.y - e.y) / 0.62) < e.radio); }
 
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
 const dAng = (a, b) => ((a - b + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
@@ -63,12 +66,17 @@ export const formasKits7 = {
     let t = 0;
     luta.add({ tipo: 'sucaoAbismo', dueno: l, vivo: true, update: dt => {
       t += dt; if (l.ko) return false;
-      for (const b of inimigos(luta, l)) { const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy); if (d < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2 + 0.15) puxar(b, bx, by, 1500, dt); }
+      for (const b of inimigos(luta, l)) { const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy); if (d < R + RADIO && Math.abs(dAng(Math.atan2(dy, dx), a)) < abre / 2 + 0.15) puxar(b, bx, by, h.puxa ?? 1500, dt); }
       return t < suga;
     } });
     luta.programar(suga, () => {
       if (l.ko) return;
       areaCirculo(luta, l, bx, by, h.radio ?? 64, pacote(h, extra, a, { dirX: undefined, dirY: undefined, empuje: 140, aturde: h.aturde ?? 1.5, pesado: true }));
+      // quem foi mordido vira um totem de gelo, com o chão congelado em volta enquanto durar
+      if (h.totem) for (const b of inimigos(luta, l)) if (dentro(b, bx, by, h.radio ?? 64)) {
+        congelar(luta, b, h.totem); b.ponerEstado('totem', h.totem, {});
+        luta.add({ tipo: 'chaoGelo', dueno: l, vivo: true, x: b.x, y: b.y, radio: 54, t: 0, dur: h.totem, prox: 0.5, update(dt) { this.t += dt; this.x = b.x; this.y = b.y; if (this.t >= this.prox) { this.prox += 0.5; for (const o of inimigos(luta, l)) if (o !== b && dentro(o, this.x, this.y, this.radio)) { o.recibir(l, { dano: 1.5, tipo: 'ICE', tick: true }); o.ponerEstado('lento', 0.6, { f: Math.max(0.45, o.est.lento?.f ?? 0) }); } } return this.t < this.dur && !b.ko && !!b.est.congelado; } });
+      }
       luta.emit({ t: 'estilhaco', x: bx, y: by, r: h.radio ?? 64 }); luta.emit({ t: 'temblor', f: 0.018 }); luta.hitstop(120);
       const e = { tipo: 'chaoGelo', dueno: l, vivo: true, x: bx, y: by, radio: (h.radio ?? 64) + 16, t: 0, dur: 4, prox: 0.5, update: dt => {
         e.t += dt; if (e.t >= e.prox) { e.prox += 0.5; for (const b of inimigos(luta, l)) if (dentro(b, e.x, e.y, e.radio)) { b.recibir(l, { dano: h.danoChao ?? 2, tipo: 'ICE', tick: true }); b.ponerEstado('lento', 0.6, { f: Math.max(0.4, b.est.lento?.f ?? 0) }); } }
@@ -92,6 +100,7 @@ export const formasKits7 = {
   },
   // Distorção Psíquica: distorce o espaço na mira; quem estiver lá apanha e fica preso
   distorcao(l, h, extra) {
+    if (h.raio && noSantuario(this.luta, l)) return this.formas.raioSolar.call(this, l, { ...h, ...h.raio }, extra);
     const luta = this.luta, p = pontoMira(l, h.alcance ?? 220), R = h.radio ?? 40, c = h.carga ?? 0.35;
     l.animar('Charge', c + 0.1); l.accion = { hasta: luta.t + 0.2, lento: 0.3, angulo: Math.atan2(p.y - l.y, p.x - l.x) };
     luta.emit({ t: 'distorcao', x: p.x, y: p.y, r: R, dur: c });
@@ -132,6 +141,7 @@ export const formasKits7 = {
   },
   // Supernova Pixie (Mega): 3 estrelas em cone que silenciam
   estrelasPixie(l, h, extra) {
+    if (h.raio && noSantuario(this.luta, l)) return this.formas.raioSolar.call(this, l, { ...h, ...h.raio }, extra);
     const luta = this.luta, a = mirar(l, 240);
     l.animar('Shoot', 0.3); l.accion = { hasta: luta.t + 0.2, lento: 0.3, angulo: a };
     for (let i = -1; i <= 1; i++) tiro(luta, l, { tipo: 'estrelaPixie', ang: a + i * 0.3, vel: 340, alc: h.alcance ?? 240, raio: 7, acerta: (b, p) => { atingir(l, b, pacote(h, extra, p.ang, { empuje: 40 })); b.ponerEstado('silencio', h.silencio ?? 1.2, {}); b.texto('SILENCED!', '#f9a8d4'); }, fim: p => luta.emit({ t: 'estrelaFim', x: p.x, y: p.y }) });

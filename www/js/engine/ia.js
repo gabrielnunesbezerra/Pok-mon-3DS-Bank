@@ -78,6 +78,11 @@ export function rangoDe(h) {
     case 'bolhaSono': P.alcance = (h.alcance ?? 220) * 0.9; P.ancho = h.mega ? 40 : 10; P.retardo = d / (h.vel ?? 150); break;
     case 'rugido': P.tipo = 'mele'; P.alcance = (h.alcance ?? 120) * 0.9; P.retardo = 0.1; break;
     case 'furiaAnciao': P.alcance = h.mega ? 400 : (h.alcance ?? 320) * 0.9; P.ancho = h.mega ? 90 : 22; P.retardo = h.mega ? 0.9 : d / 420; break;
+    case 'puloNegro': case 'gyroBall': P.tipo = 'mele'; P.alcance = (h.dist ?? 140) + 10; P.retardo = 0.2; break;
+    case 'slashTriplo': P.alcance = (h.alcance ?? 200) * 0.8; P.ancho = 16; P.retardo = 0.15; break;
+    case 'bolaNeve': P.alcance = (h.alcance ?? 240) * 0.9; P.ancho = h.radio ?? 40; P.retardo = d / (h.vel ?? 200); break;
+    case 'escudoGlacial': P.tipo = 'defensa'; P.alcance = 140; break;
+    case 'blizzard': P.tipo = 'area'; P.alcance = (h.radio ?? 110) * 0.85; P.retardo = h.carga ?? 1.6; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;

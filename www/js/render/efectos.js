@@ -16,6 +16,7 @@ import './efectosMega.js';
 import './efectosKits4.js';
 import './efectosKits7.js';
 import './efectosKits8.js';
+import './efectosKits9.js';
 
 const ale = () => Math.random();
 const R = Math.round;

@@ -287,6 +287,8 @@ export class Lutador {
     if (this.est.refleteBasico && g.slot === 'lmb' && fuente && fuente !== this && !g.reflejado && !fuente.ko) fuente.recibir(this, { dano: (g.dano ?? 0) * this.est.refleteBasico.f, tipo: g.tipo, tick: true, reflejado: true });
     // Fúria Berserk (Drampa): abaixo de 50% de vida bate 30% mais e o controle dura +0,5s
     if (fuente?.def?.berserk && fuente.hp < fuente.hpMax * 0.5 && !g.reflejado) { g = { ...g, dano: (g.dano ?? 0) * 1.3 }; if (g.aturde) g.aturde += 0.5; if (g.ralentiza) g.ralentiza = { ...g.ralentiza, dur: g.ralentiza.dur + 0.5 }; if (g.duerme) g.duerme += 0.5; }
+    // Escudo Glacial (Glalie): quem acerta várias vezes congela
+    if (this.est.glacial && fuente && fuente !== this && !g.tick && !g.reflejado && !fuente.ko) this.est.glacial.fn(fuente);
     // Preságio Sombrio (Absol): na postura, quem bate fica lento e leva o contra-ataque
     if (this.est.presagio && fuente && fuente !== this && !g.tick && !g.contragolpe && !fuente.ko) this.est.presagio.fn(fuente, false);
     // Counter (Kangaskhan): na guarda, o golpe não entra e volta como soco (de longe só bloqueia)
