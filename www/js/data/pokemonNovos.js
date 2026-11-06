@@ -161,32 +161,39 @@ export const ROSTER_NOVOS = [
       { dex: '0780', nombre: 'DRAMPA', hp: 102, vel: 125, atk: 1.18, def: 1.03, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 10.4 }, q: { cura: 0.025 }, e: { dano: 28, sinUlti: false } },
         mega: { dex: '0780-0001', nombre: 'MEGA DRAMPA', atk: 0.14, def: 0.05, vel: 6 } },
     ] },
-  // ------------------------------------------------------------ Dedenne > 3 Power Ups (sem Mega)
+  // ------------------------------------------------------------ Dedenne > 3 Power Ups (sem Mega): dentro do Campo Elétrico tudo fica mais forte
   { id: 'dedenne', dex: '0702', nombre: 'DEDENNE', tipos: ['ELECTRIC', 'FAIRY'], rol: 'CONTROL', lema: 'THE ANTENNA THIEF', hp: 62, vel: 142, atk: 1.0, def: 0.86, regen: 5, expEvolucion: [45, 80, 115], ia: { rango: 150 },
     kit: {
-      lmb: tiro('Thunder Shock', 'ELECTRIC', 'rayito', 4.2, { alcance: 190 }),
-      rmb: skill('Parabolic Charge', 'cargaParabolica', 'ELECTRIC', { dano: 9, radio: 75, drena: 0.5, coste: 25, cd: 6 }),
-      esp: dash('Quick Attack', 'NORMAL', { dano: 3, dist: 140, estilo: 'rapido' }),
+      lmb: tiro('Thunder Shock', 'ELECTRIC', 'rayito', 4.2, { alcance: 190, campo: { rafaga: 3, cadaRafaga: 0.07, multDano: 1.1, nombre: 'Charged Shock' } }),
+      rmb: skill('Parabolic Charge', 'cargaParabolica', 'ELECTRIC', { dano: 9, radio: 75, drena: 0.5, empuje: 60, coste: 25, cd: 6, campo: { radio: 120, empuje: 230, multDano: 1.5, nombre: 'Overcharge' } }),
+      esp: dash('Quick Attack', 'NORMAL', { dano: 3, dist: 140, estilo: 'rapido', campo: { dist: 200, multDano: 1.5 } }),
       q: skill('Electric Terrain', 'campoEletrico', 'ELECTRIC', { radio: 85, dur: 4, danoTick: 2, vel: 1.25, coste: 25, cd: 11 }),
-      e: semUlt('Antenna Storm', 'tempestadeAntenas', 'ELECTRIC', { dano: 30, dur: 2.2, alcance: 210, pulo: 130, saltos: 4 }),
+      e: semUlt('Antenna Storm', 'tempestadeAntenas', 'ELECTRIC', { dano: 30, dur: 2.2, alcance: 210, pulo: 130, saltos: 4, campo: { forma: 'puloEnergizado', nombre: 'Supercharged Leap', multDano: 1.2, alcancePulo: 280, radioExplosao: 95 } }),
     },
     evoluciones: [
       { dex: '0702', nombre: 'DEDENNE', hp: 70, vel: 144, atk: 1.06, def: 0.88, kit: { lmb: { dano: 4.6 }, rmb: { dano: 10 }, e: { dano: 32, sinUlti: false } } },
       { dex: '0702', nombre: 'DEDENNE', hp: 78, vel: 146, atk: 1.12, def: 0.9, kit: { lmb: { dano: 5 }, rmb: { dano: 11 }, q: { danoTick: 2.4 }, e: { dano: 35, sinUlti: false } } },
-      { dex: '0702', nombre: 'DEDENNE', hp: 86, vel: 148, atk: 1.18, def: 0.93, escala: 1.08, kit: { lmb: { dano: 5.4 }, rmb: { dano: 12, radio: 85 }, q: { danoTick: 2.8, radio: 95 }, e: { dano: 38, saltos: 5, sinUlti: false } } },
+      { dex: '0702', nombre: 'DEDENNE', hp: 86, vel: 148, atk: 1.18, def: 0.93, escala: 1.08, kit: { lmb: { dano: 5.4 }, rmb: { dano: 12, radio: 85 }, q: { danoTick: 2.8, radio: 100, dur: 4.5 }, e: { dano: 38, saltos: 5, sinUlti: false } } },
     ] },
-  // ------------------------------------------------------------ Morpeko > 3 Power Ups (sem Mega): troca de forma com a Aura Wheel
-  { id: 'morpeko', dex: '0877', dexFome: '0877-0001', nombre: 'MORPEKO', tipos: ['ELECTRIC', 'DARK'], rol: 'FISICO', lema: 'HUNGER SWITCH', hp: 64, vel: 150, atk: 1.04, def: 0.84, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 70 },
+  // ------------------------------------------------------------ Morpeko > 3 Power Ups (sem Mega): Barriga Cheia atira de longe, Faminto bate de perto;
+  // só a ult troca a forma (e zera as skills); a ult carrega rápido
+  { id: 'morpeko', dex: '0877', dexFome: '0877-0001', nombre: 'MORPEKO', tipos: ['ELECTRIC', 'DARK'], rol: 'MIXTO', lema: 'HUNGER SWITCH', ultiMult: 1.8, hp: 64, vel: 150, atk: 1.04, def: 0.84, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 120 },
     kit: {
-      lmb: corte('Spark Bite', 'ELECTRIC', 4.4, { alcance: 46 }),
-      rmb: skill('Aura Wheel', 'auraWheel', 'ELECTRIC', { dano: 9, dist: 160, dur: 0.36, acelera: 1.3, coste: 25, cd: 5, anim: 'Rotate' }),
+      lmb: tiro('Thunder Shock', 'ELECTRIC', 'rayito', 4.2, { alcance: 200, paralizaCada: 3, paralisaDur: 0.8 }),
+      rmb: skill('Aura Wheel', 'auraWheel', 'ELECTRIC', { dano: 9, dist: 160, dur: 0.36, acelera: 1.3, bonusParalisia: 1.7, coste: 25, cd: 5, anim: 'Rotate' }),
       esp: dash('Quick Attack', 'NORMAL', { dano: 3, dist: 150, estilo: 'rapido' }),
-      q: skill('Seed Snack', 'lanche', 'GRASS', { cura: 0.12, energia: 20, coste: 0, cd: 12 }),
-      e: semUlt('Frenzy Wheel', 'rodaFrenesi', 'ELECTRIC', { dano: 8, dur: 3, vel: 1.9 }),
+      q: skill('Spark Volley', 'leque', 'ELECTRIC', { dano: 9, multi: 1.1, n: 3, abre: 0.4, vel: 360, alcance: 230, paralisa: 0.7, visual: 'faiscaMorpeko', coste: 25, cd: 7, anim: 'Shoot' }),
+      e: ult('Hunger Switch', 'trocaForma', 'ELECTRIC', 8, { radio: 75, janela: 6, durVel: 4, vel: 1.35 }),
+    },
+    // modo Faminto: perto e sombrio
+    kitFome: {
+      lmb: { nombre: 'Crunch', forma: 'tajo', tipo: 'DARK', combo: 3, alcance: 48, angulo: 130, cd: 0.5, calor: 8, anim: 'Attack', lanzar: 0.1, avance: 12, paralizaCada: 0 },
+      rmb: { nombre: 'Hangry Wheel', tipo: 'DARK', radioGiro: 80, empujeGiro: 300 },
+      q: { nombre: 'Fury Bite', forma: 'golpe', tipo: 'DARK', alcance: 52, angulo: 140, embestida: 60, debilita: { f: 0.8, dur: 3 }, anim: 'Attack', paralisa: 0 },
     },
     evoluciones: [
-      { dex: '0877', nombre: 'MORPEKO', hp: 72, vel: 152, atk: 1.1, def: 0.86, kit: { lmb: { dano: 4.8 }, rmb: { dano: 10 }, e: { dano: 9, sinUlti: false } } },
-      { dex: '0877', nombre: 'MORPEKO', hp: 80, vel: 154, atk: 1.16, def: 0.88, kit: { lmb: { dano: 5.2 }, rmb: { dano: 11, dist: 175 }, e: { dano: 10, sinUlti: false } } },
-      { dex: '0877', nombre: 'MORPEKO', hp: 88, vel: 156, atk: 1.22, def: 0.9, escala: 1.08, kit: { lmb: { dano: 5.6 }, rmb: { dano: 12, dist: 190 }, q: { cura: 0.15 }, e: { dano: 11.5, dur: 3.5, sinUlti: false } } },
+      { dex: '0877', nombre: 'MORPEKO', hp: 72, vel: 152, atk: 1.1, def: 0.86, kit: { lmb: { dano: 4.6 }, rmb: { dano: 10 }, q: { dano: 10 }, e: { dano: 9 } } },
+      { dex: '0877', nombre: 'MORPEKO', hp: 80, vel: 154, atk: 1.16, def: 0.88, kit: { lmb: { dano: 5 }, rmb: { dano: 11, dist: 175 }, q: { dano: 11 }, e: { dano: 10 } } },
+      { dex: '0877', nombre: 'MORPEKO', hp: 88, vel: 156, atk: 1.22, def: 0.9, escala: 1.08, kit: { lmb: { dano: 5.4 }, rmb: { dano: 12, dist: 190 }, q: { dano: 12 }, e: { dano: 11, radio: 85 } } },
     ] },
 ];

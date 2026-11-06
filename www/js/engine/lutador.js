@@ -103,7 +103,8 @@ export class Lutador {
 
   // kit = kit base da linha + kit do estágio atual + kit da Mega (cada um sobrepõe só o que muda)
   kitActual() {
-    const capas = [this.forma.kit, this.mega ? this.forma.mega.kit : null].filter(Boolean);
+    // Morpeko: no modo Faminto entra o kit de perto (def.kitFome) por cima do kit do estágio
+    const capas = [this.forma.kit, this.fome ? this.def.kitFome : null, this.mega ? this.forma.mega.kit : null].filter(Boolean);
     return Object.fromEntries(Object.entries(this.def.kit).map(([k, v]) => [k, Object.assign({}, v, ...capas.map(c => c[k] ?? {}))]));
   }
 
@@ -188,6 +189,7 @@ export class Lutador {
   }
   ganarUlti(n) {
     if (this.ko || n <= 0 || this.est.congelado) return;
+    n *= this.def.ultiMult ?? 1;
     const antes = this.ulti;
     this.ulti = Math.min(REGLAS.ultiMax, this.ulti + n);
     if (antes < REGLAS.ultiMax && this.ulti >= REGLAS.ultiMax) {
@@ -288,6 +290,8 @@ export class Lutador {
     }
     // espinhos de cristal da Mega Gigalith: devolvem parte do dano dos básicos
     if (this.est.refleteBasico && g.slot === 'lmb' && fuente && fuente !== this && !g.reflejado && !fuente.ko) fuente.recibir(this, { dano: (g.dano ?? 0) * this.est.refleteBasico.f, tipo: g.tipo, tick: true, reflejado: true });
+    // paralisia: tiros marcados (a cada 3 do Morpeko) e o primeiro golpe depois da troca de forma pela ult
+    if (fuente && fuente !== this && !g.tick && !g.reflejado && (g.paralisa || (fuente.est?.proxParalisa && !g.naoConsome))) { if (fuente.est?.proxParalisa && !g.paralisa) delete fuente.est.proxParalisa; this.ponerEstado('paralizado', g.paralisa || 1.2, {}); this.texto('PARALYZED!', '#fde047'); luta.emit({ t: 'paralisaMorpeko', l: this }); }
     // Fúria Berserk (Drampa): abaixo de 50% de vida bate 30% mais e o controle dura +0,5s
     if (fuente?.def?.berserk && fuente.hp < fuente.hpMax * 0.5 && !g.reflejado) { g = { ...g, dano: (g.dano ?? 0) * 1.3 }; if (g.aturde) g.aturde += 0.5; if (g.ralentiza) g.ralentiza = { ...g.ralentiza, dur: g.ralentiza.dur + 0.5 }; if (g.duerme) g.duerme += 0.5; }
     // Escudo Glacial (Glalie): quem acerta várias vezes congela

@@ -59,6 +59,10 @@ export class Habilidades {
     let h = l.kit[slot];
     // concha da Mega Slowbro: o dash vira um pulo que joga para o alto quem estiver onde ele cai
     if (slot === 'esp' && h && l.est.concha) h = { ...h, forma: 'puloConcha' };
+    // Dedenne dentro do próprio Campo Elétrico: cada skill fica mais forte (h.campo)
+    if (h?.campo && l.est.campoEletrico) h = { ...h, ...h.campo, dano: h.dano != null ? h.dano * (h.campo.multDano ?? 1) : h.dano };
+    // Morpeko (Barriga Cheia): a cada 3 tiros o tiro paralisa
+    if (h?.paralizaCada && !(l.cd[slot] > 0) && !l.accion && !l.est.aturdido) { l.contaTiro = (l.contaTiro ?? 0) + 1; if (l.contaTiro % h.paralizaCada === 0) h = { ...h, paralisa: h.paralisaDur ?? 0.8, escala: (h.escala ?? 1) * 1.4 }; }
     const luta = this.luta;
     // rolando, o botão do Rollout sempre deixa parar (a recarga já está correndo); o mesmo toque que
     // começou a rolar fica apertado por alguns quadros, por isso só para depois de um instante

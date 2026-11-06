@@ -38,3 +38,33 @@ Object.assign(ENTIDADES_NOVAS, {
     rachas.length; void choque;
   },
 });
+
+// ---------------------------------------------------------------- Dedenne carregado, pulo energizado e Morpeko novo
+Object.assign(EVENTOS_NOVOS, {
+  paralisaMorpeko(fx, e) { faiscas(fx, e.l.x, e.l.y - e.l.alto * 0.5, ELE, 10, 180); heroi(fx, 'paralisiaK11', 0.6, { l: e.l }); },
+  giroFome(fx, e) { faiscas(fx, e.x, e.y - 10, SOMB, 26, 300); choque(fx, e.x, e.y, e.r, '#7c3aed'); choque(fx, e.x, e.y, e.r * 1.25, '#c084fc'); rachas(fx, e.x, e.y, e.r * 0.7, '#1f1b2e'); },
+  trocaForma(fx, e) { const c = e.fome ? SOMB : ELE; faiscas(fx, e.l.x, e.l.y - 12, c, 34, 320); choque(fx, e.l.x, e.l.y, e.r, c[0]); choque(fx, e.l.x, e.l.y, e.r * 1.3, c[1]); heroi(fx, 'trocaK11', 0.7, { l: e.l, fome: e.fome }); },
+  puloEnergizado(fx, e) { heroi(fx, 'puloK11', e.dur + 0.1, { ...e }); faiscas(fx, e.x0, e.y0 - 6, ELE, 14, 200); },
+  explosaoEletrica(fx, e) { faiscas(fx, e.x, e.y - 10, ELE, 50, 380); faiscas(fx, e.x, e.y - 10, ['#f9a8d4', '#ffffff'], 16, 260); choque(fx, e.x, e.y, e.r, '#fde047'); choque(fx, e.x, e.y, e.r * 1.3, '#ffffff'); choque(fx, e.x, e.y, e.r * 0.5, '#f9a8d4'); rachas(fx, e.x, e.y, e.r * 0.9, '#854d0e'); heroi(fx, 'antenaPulso', 0.6, { x: e.x, y: e.y, r: e.r * 1.1 }); fx.debris?.(e.x, e.y, 'ROCK', 10); },
+});
+Object.assign(HEROES_NOVOS, {
+  paralisiaK11(g, h, k, t) { const l = h.l; if (l.ko) return; g.globalAlpha = 1 - k; for (let i = 0; i < 3; i++) { const a = t * 9 + i * 2.1; raioZig(g, l.x + Math.cos(a) * 10, l.y - l.alto, l.x + Math.cos(a + 1) * 12, l.y - 4, '#fde047', 1, Math.floor(t * 14) + i); } g.globalAlpha = 1; },
+  trocaK11(g, h, k, t) { const l = h.l; if (l.ko) return; const c = h.fome ? SOMB : ELE; g.globalAlpha = 1 - k; for (let i = 0; i < 2; i++) { g.strokeStyle = c[i]; g.lineWidth = 3 - i; g.beginPath(); g.ellipse(px(l.x), px(l.y - 12 - k * 20), 16 + k * 20, (16 + k * 20) * 0.5, 0, t * 9 + i * 3, t * 9 + i * 3 + 4.6); g.stroke(); } g.globalAlpha = 1; },
+  puloK11(g, h, k, t) {
+    const f = Math.min(1, k * (h.dur + 0.1) / h.dur), x = h.x0 + (h.x1 - h.x0) * f, y = h.y0 + (h.y1 - h.y0) * f - Math.sin(f * Math.PI) * 70 - 12;
+    g.globalAlpha = 0.3 + f * 0.4; g.fillStyle = '#0b0a14'; g.beginPath(); g.ellipse(px(h.x1), px(h.y1), h.r * f, h.r * 0.62 * f, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+    PX.anilloPix(g, px(h.x1), px(h.y1), px(h.r), px(h.r * 0.62), '#fde047', 2, 16, t * 6);
+    for (let i = 0; i < 6; i++) { const a = t * 20 + i * 1.05; raioZig(g, x, y, x + Math.cos(a) * 18, y + Math.sin(a) * 12, i % 2 ? '#fde047' : '#ffffff', 1, i + Math.floor(t * 20)); }
+  },
+});
+Object.assign(ENTIDADES_NOVAS, {
+  faiscaMorpeko(g, e, t, fx) { const x = e.x, y = e.y - 12; for (let i = 1; i <= 3; i++) PX.disco(g, px(x - Math.cos(e.ang) * i * 6), px(y - Math.sin(e.ang) * i * 5), 2.6 - i * 0.6, ELE[i % 4]); raioZig(g, x - Math.cos(e.ang) * 8, y - Math.sin(e.ang) * 6, x + Math.cos(e.ang) * 6, y + Math.sin(e.ang) * 4, '#fde047', 2, Math.floor(t * 20)); PX.disco(g, px(x), px(y), 3, '#ffffff'); if (fx && ale() < 0.4) fx.add({ x, y, vx: entre(-30, 30), vy: entre(-30, 10), g: 0, size: 1.4, life: 0.25, color: ELE[Math.floor(ale() * 4)], forma: 'chispa' }); },
+});
+// Dedenne carregado dentro do campo: faíscas e raiozinhos em volta dele
+const desenhoCampo = ENTIDADES_NOVAS.campoEletrico;
+ENTIDADES_NOVAS.campoEletrico = (g, e, t, fx) => {
+  desenhoCampo(g, e, t, fx);
+  const l = e.dueno; if (!l || l.ko || !l.est.campoEletrico) return;
+  for (let i = 0; i < 3; i++) { const a = t * 7 + i * 2.1; raioZig(g, l.x + Math.cos(a) * 12, l.y - l.alto * 0.5 + Math.sin(a) * 8, l.x + Math.cos(a + 0.8) * 18, l.y - l.alto * 0.5 + Math.sin(a + 0.8) * 12, '#fde047', 1, Math.floor(t * 16) + i); }
+  if (fx && ale() < 0.5) fx.add({ x: l.x + entre(-12, 12), y: l.y - entre(4, l.alto), vx: entre(-40, 40), vy: -entre(30, 70), g: 0, size: 1.6, life: 0.35, color: ELE[Math.floor(ale() * 4)], forma: 'chispa' });
+};

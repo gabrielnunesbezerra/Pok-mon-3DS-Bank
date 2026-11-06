@@ -12,7 +12,7 @@ const aliados = (luta, l) => [l, ...luta.aliados(l)];
 function maisPerto(luta, l, alc, de = l, fora = null) { let m = null, dm = alc; for (const b of inimigos(luta, l)) { if (fora?.has(b)) continue; const d = Math.hypot(b.x - de.x, b.y - de.y); if (d < dm && !b.esClon) { dm = d; m = b; } } return m; }
 function mirar(l, alc) { const r = l.rival, a = angApunte(l); if (!r || r.ko || r.oculto) return a; const ar = Math.atan2(r.y - l.y, r.x - l.x); return Math.hypot(r.x - l.x, r.y - l.y) < alc && Math.abs(dAng(ar, a)) < 0.8 ? ar : a; }
 // Morpeko: troca Barriga Cheia <-> Faminto
-export function trocaFome(luta, l, para) { l.fome = para ?? !l.fome; l.texto(l.fome ? 'HANGRY MODE!' : 'FULL BELLY', l.fome ? '#c084fc' : '#fde047'); luta.emit({ t: 'trocaFome', l, fome: l.fome }); }
+export function trocaFome(luta, l, para) { l.fome = para ?? !l.fome; l.kit = l.kitActual(); l.texto(l.fome ? 'HANGRY MODE!' : 'FULL BELLY', l.fome ? '#c084fc' : '#fde047'); luta.emit({ t: 'trocaFome', l, fome: l.fome }); }
 
 export const formasKits11 = {
   // ================================================================ DEDENNE
@@ -22,7 +22,7 @@ export const formasKits11 = {
     l.animar('Charge', 0.35); l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0 };
     luta.programar(0.15, () => {
       if (l.ko) return; let soma = 0;
-      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { const hp0 = b.hp; atingir(l, b, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: 60 })); soma += Math.max(0, hp0 - b.hp); luta.emit({ t: 'raioDedenne', x0: l.x, y0: l.y - 10, x1: b.x, y1: b.y - b.alto * 0.5 }); }
+      for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { const hp0 = b.hp; atingir(l, b, pacote(h, extra, 0, { dirX: undefined, dirY: undefined, empuje: h.empuje ?? 60 })); soma += Math.max(0, hp0 - b.hp); luta.emit({ t: 'raioDedenne', x0: l.x, y0: l.y - 10, x1: b.x, y1: b.y - b.alto * 0.5 }); }
       if (soma > 0) l.cura(soma * (h.drena ?? 0.5));
       luta.emit({ t: 'cargaParabolica', x: l.x, y: l.y, r: R });
     });
@@ -35,6 +35,8 @@ export const formasKits11 = {
     const e = { tipo: 'campoEletrico', dueno: l, vivo: true, x, y, radio: R, t: 0, dur, prox: 0.4, update: dt => {
       e.t += dt;
       for (const a of aliados(luta, l)) if (dentro(a, x, y, R)) a.ponerEstado('rapido', 0.3, { vel: h.vel ?? 1.25 });
+      // o Dedenne dentro do próprio campo fica carregado: todas as skills mais fortes
+      if (dentro(l, x, y, R)) l.ponerEstado('campoEletrico', 0.3, {});
       if (e.t >= e.prox) { e.prox += 0.6; n++; for (const b of inimigos(luta, l)) if (dentro(b, x, y, R)) { b.recibir(l, { dano: h.danoTick ?? 2, tipo: 'ELECTRIC', tick: true }); if (n % 3 === 0) { b.ponerEstado('paralizado', 0.5, {}); b.texto('PARALYZED!', '#fde047'); } luta.emit({ t: 'raioDedenne', x0: x, y0: y - 6, x1: b.x, y1: b.y - b.alto * 0.5, fino: true }); } }
       return e.t < dur && !l.ko;
     } };
@@ -65,23 +67,56 @@ export const formasKits11 = {
   },
 
   // ================================================================ MORPEKO
-  // Aura Wheel: rola numa roda de aura acertando quem pegar e fica mais rápido. Barriga Cheia = elétrico, pode
-  // paralisar; Faminto = sombrio, bate mais e quebra armadura. Depois troca de forma
+  // Aura Wheel: Barriga Cheia: rola numa roda elétrica (muito mais dano em quem já está paralisado) e fica mais rápido.
+  // Faminto: gira no lugar numa roda sombria jogando todo mundo em volta para longe
   auraWheel(l, h, extra) {
-    const luta = this.luta, mx = l.intento?.mx ?? 0, my = l.intento?.my ?? 0, a = Math.hypot(mx, my) > 0.2 ? Math.atan2(my, mx) : mirar(l, 200);
-    const dist = h.dist ?? 160, dur = h.dur ?? 0.36, x0 = l.x, y0 = l.y, p = fijarCampo(l.x + Math.cos(a) * dist, l.y + Math.sin(a) * dist), fome = !!l.fome, ja = new Set();
+    const luta = this.luta;
+    if (l.fome) {
+      const R = h.radioGiro ?? 80;
+      l.cortarAccion(); l.animar('Rotate', 0.45); l.ponerEstado('girando', 0.4); l.ponerEstado('blindaje', 0.4, { reduce: 0.3 }); l.accion = { hasta: luta.t + 0.4, bloquea: true, lento: 0 };
+      luta.emit({ t: 'auraWheel', l, dur: 0.4, fome: true, giro: true });
+      luta.programar(0.12, () => { if (l.ko) return; for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1; atingir(l, b, pacote({ ...h, tipo: 'DARK' }, extra, 0, { dano: h.dano * 1.2, dirX: dx / d, dirY: dy / d, empuje: h.empujeGiro ?? 300, pesado: true })); b.ponerEstado('defBaja', 3, {}); luta.emit({ t: 'acertoRoda', x: b.x, y: b.y - b.alto * 0.5, fome: true }); } luta.emit({ t: 'giroFome', x: l.x, y: l.y, r: R }); luta.emit({ t: 'temblor', f: 0.01 }); });
+      return;
+    }
+    const mx = l.intento?.mx ?? 0, my = l.intento?.my ?? 0, a = Math.hypot(mx, my) > 0.2 ? Math.atan2(my, mx) : mirar(l, 200);
+    const dist = h.dist ?? 160, dur = h.dur ?? 0.36, x0 = l.x, y0 = l.y, p = fijarCampo(l.x + Math.cos(a) * dist, l.y + Math.sin(a) * dist), ja = new Set();
     l.cortarAccion(); l.ponerEstado('invul', dur * 0.7); l.ponerEstado('girando', dur); l.animar('Rotate', dur);
-    luta.emit({ t: 'auraWheel', l, dur, fome });
+    luta.emit({ t: 'auraWheel', l, dur, fome: false });
     let t = 0;
     l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0, angulo: a, update: dt => {
       t += dt; const k = Math.min(1, t / dur); l.x = x0 + (p.x - x0) * k; l.y = y0 + (p.y - y0) * k;
       for (const b of inimigos(luta, l)) {
         if (ja.has(b) || Math.hypot(b.x - l.x, b.y - l.y) > RADIO * 2 + 12) continue; ja.add(b);
-        atingir(l, b, pacote({ ...h, tipo: fome ? 'DARK' : 'ELECTRIC' }, extra, a, { dano: h.dano * (fome ? 1.4 : 1), empuje: 120, pesado: fome }));
-        if (fome) b.ponerEstado('defBaja', 3, {}); else { b.ponerEstado('paralizado', 0.4, {}); }
-        luta.emit({ t: 'acertoRoda', x: b.x, y: b.y - b.alto * 0.5, fome });
+        const para = !!b.est.paralizado;
+        atingir(l, b, pacote({ ...h, tipo: 'ELECTRIC' }, extra, a, { dano: h.dano * (para ? (h.bonusParalisia ?? 1.7) : 1), empuje: 120, pesado: para }));
+        if (para) { b.texto('OVERLOAD!', '#fde047'); luta.hitstop(70); }
+        luta.emit({ t: 'acertoRoda', x: b.x, y: b.y - b.alto * 0.5, fome: false, forte: para });
       }
-    }, fin: () => { if (l.ko) return; l.ponerEstado('rapido', 2, { vel: h.acelera ?? 1.3 }); trocaFome(luta, l); } };
+    }, fin: () => { if (!l.ko) l.ponerEstado('rapido', 2, { vel: h.acelera ?? 1.3 }); } };
+  },
+  // Troca de Fome (ult): troca de forma, zera a recarga das skills, solta uma onda em volta e o próximo golpe paralisa;
+  // ganha velocidade por um tempo
+  trocaForma(l, h, extra) {
+    const luta = this.luta, R = h.radio ?? 75;
+    l.cortarAccion(); l.animar('Double', 0.4); l.accion = { hasta: luta.t + 0.3, bloquea: true, lento: 0 };
+    trocaFome(luta, l);
+    for (const s2 of ['lmb', 'rmb', 'q', 'esp']) l.cd[s2] = 0;
+    l.ponerEstado('proxParalisa', h.janela ?? 6, {}); l.ponerEstado('rapido', h.durVel ?? 4, { vel: h.vel ?? 1.35 });
+    for (const b of inimigos(luta, l)) if (dentro(b, l.x, l.y, R)) { const dx = b.x - l.x, dy = b.y - l.y, d = Math.hypot(dx, dy) || 1; atingir(l, b, pacote({ ...h, tipo: l.fome ? 'DARK' : 'ELECTRIC' }, extra, 0, { dirX: dx / d, dirY: dy / d, empuje: 160, naoConsome: true })); }
+    luta.emit({ t: 'trocaForma', l, r: R, fome: l.fome }); luta.emit({ t: 'temblor', f: 0.012 });
+  },
+  // Pulo Super Energizado (ult do Dedenne dentro do Campo Elétrico): pula carregado e cai em cima do inimigo explodindo
+  puloEnergizado(l, h, extra) {
+    const luta = this.luta, b = maisPerto(luta, l, h.alcancePulo ?? 280), alvo = b ? { x: b.x, y: b.y } : fijarCampo(l.ax, l.ay), x0 = l.x, y0 = l.y, dur = 0.55, R = h.radioExplosao ?? 95;
+    l.cortarAccion(); l.ponerEstado('invul', dur + 0.1); l.animar('Hop', dur);
+    luta.emit({ t: 'puloEnergizado', x0, y0, x1: alvo.x, y1: alvo.y, dur, r: R });
+    let t = 0;
+    l.accion = { hasta: luta.t + dur, bloquea: true, lento: 0, update: dt => { t += dt; const k = Math.min(1, t / dur); l.x = x0 + (alvo.x - x0) * k; l.y = y0 + (alvo.y - y0) * k; l.salto = Math.round(Math.sin(k * Math.PI) * 70); },
+      fin: () => {
+        l.salto = 0; if (l.ko) return;
+        for (const o of inimigos(luta, l)) if (dentro(o, l.x, l.y, R)) { const dx = o.x - l.x, dy = o.y - l.y, d = Math.hypot(dx, dy) || 1; atingir(l, o, pacote(h, extra, 0, { dirX: dx / d, dirY: dy / d, empuje: 180, aturde: 0.6, pesado: true })); o.ponerEstado('paralizado', 1.5, {}); }
+        luta.emit({ t: 'explosaoEletrica', x: l.x, y: l.y, r: R }); luta.emit({ t: 'temblor', f: 0.02 }); luta.hitstop(120);
+      } };
   },
   // Lanche: come uma semente, recupera vida e energia e troca de forma na hora
   lanche(l, h) {

@@ -93,6 +93,8 @@ export function rangoDe(h) {
     case 'tempestadeAntenas': P.tipo = 'area'; P.alcance = (h.alcance ?? 210) * 0.85; P.retardo = 0.2; P.golpes = 5; break;
     case 'auraWheel': P.tipo = 'mele'; P.alcance = (h.dist ?? 160) + 10; P.retardo = 0.2; break;
     case 'rodaFrenesi': P.tipo = 'movil'; break;
+    case 'trocaForma': P.tipo = 'buff'; break;
+    case 'puloEnergizado': P.tipo = 'mele'; P.alcance = (h.alcancePulo ?? 280) * 0.85; P.retardo = 0.55; P.invul = true; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;
