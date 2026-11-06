@@ -8,6 +8,7 @@ import { Proyectil, Chorro, Cono, Marcas, Humo, Charco, Clon, areaCirculo, pacot
 import { etapaDe, umbralesExp, tipoLinea } from './lutador.js';
 import { formasNovas, ecoFilhote } from './formasNovas.js';
 import { formasMega } from './formasMega.js';
+import { formasKits4 } from './formasKits4.js';
 
 const rad = g => (g * Math.PI) / 180;
 const angApunte = l => Math.atan2(l.ay - l.y, l.ax - l.x);
@@ -44,7 +45,7 @@ export class Habilidades {
       meteoro: this.meteoro, rafaga: this.rafaga, clones: this.clones, humo: this.humo, embestidas: this.embestidas,
       bombaLodo: this.bombaLodo, plantaFeroz: this.plantaFeroz, arraigo: this.arraigo, cortesSuelo: this.cortesSuelo, jabLuna: this.jabLuna, overheat: this.overheat, infierno: this.infierno, lineaVeneno: this.lineaVeneno, flipTurn: this.flipTurn, bombaAcida: this.bombaAcida,
       aeronave: this.aeronave, lluviaMeteoros: this.lluviaMeteoros, mordidaLanza: this.mordidaLanza, corrida: this.corrida, tormentaArena: this.tormentaArena, tumbaArena: this.tumbaArena,
-      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega,
+      stoneEdge: this.stoneEdge, vorticeArena: this.vorticeArena, ...formasNovas, ...formasMega, ...formasKits4,
           };
   }
 
@@ -59,6 +60,8 @@ export class Habilidades {
     if (l.accion?.bloquea) return false;
     // voando (Fly) ou debaixo da terra (Dig) só dá para sair da esquiva: nenhuma skill sai
     if (l.est.vuelo) return false;
+    // silenciado (Cuspe da Mega Tatsugiri): só o básico e o dash
+    if (l.est.silencio && slot !== 'lmb' && slot !== 'esp') { if (l.humano) l.avisar('silencio', () => l.texto('SILENCED', '#7dd3fc')); return false; }
     const t = luta.t;
     if (slot === 'lmb' && t < l.sobrecargaHasta) return false;
     if (slot === 'esp' && l.est.sinDash) { if (l.humano) l.avisar('sinDash', () => l.texto('NO DASH', '#fde68a')); return false; }

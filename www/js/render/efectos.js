@@ -13,6 +13,7 @@ import { jatoAgua, bolasFogo, coluna, PALETA_COLUNA } from './raiosPB.js';
 import { ondaSom, fogoAnel } from './areaPB.js';
 import { ESTILOS_NOVOS, EVENTOS_NOVOS, HEROES_NOVOS, ENTIDADES_NOVAS, saidaAtaque, crescente } from './efectosNovos.js';
 import './efectosMega.js';
+import './efectosKits4.js';
 
 const ale = () => Math.random();
 const R = Math.round;
