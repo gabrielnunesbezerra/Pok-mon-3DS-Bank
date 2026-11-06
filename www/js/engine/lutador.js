@@ -267,6 +267,8 @@ export class Lutador {
     if ((this.invulnerable && !g.puro && !(g.atraviesa && !this.est.invul)) || (this.est.vuelo && !g.puro && !g.alcanzaVuelo)) {
       const bloquea = !!this.est.bloqueo;
       if (g.tick) return 'miss';
+      // Preságio Sombrio da Mega Absol: desviou de um golpe
+      if (this.est.presagio && fuente && fuente !== this) this.est.presagio.fn(fuente, true);
       this.avisar('miss', () => { this.texto(bloquea ? 'BLOCK' : 'MISS', bloquea ? '#ffb347' : '#c8c8d0'); luta.emit({ t: 'sonido', n: bloquea ? 'clash' : 'miss' }); }, 0.4);
       return 'miss';
     }
@@ -276,6 +278,8 @@ export class Lutador {
       this.texto('DISGUISE BROKE!', '#fde68a'); luta.emit({ t: 'disfarceQuebra', l: this }); luta.hitstop(80);
       return 'bloqueo';
     }
+    // Preságio Sombrio (Absol): na postura, quem bate fica lento e leva o contra-ataque
+    if (this.est.presagio && fuente && fuente !== this && !g.tick && !g.contragolpe && !fuente.ko) this.est.presagio.fn(fuente, false);
     // Counter (Kangaskhan): na guarda, o golpe não entra e volta como soco (de longe só bloqueia)
     const ct = this.est.contra;
     if (ct && fuente && fuente !== this && !g.tick && !fuente.ko && !g.contragolpe) {

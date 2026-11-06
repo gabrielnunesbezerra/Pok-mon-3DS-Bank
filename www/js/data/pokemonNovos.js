@@ -71,4 +71,48 @@ export const ROSTER_NOVOS = [
       { dex: '0978', nombre: 'TATSUGIRI', hp: 78, vel: 143, atk: 1.18, def: 0.9, escala: 1.06, kit: { lmb: { dano: 5.2 }, q: { dano: 10.6 }, e: { danoTiro: 2.6, sinUlti: false }, rmb: { cd: 5 } },
         mega: { dex: '0978-0003', nombre: 'MEGA TATSUGIRI', atk: 0.12, def: 0.06, vel: 4 } },
     ] },
+  // ------------------------------------------------------------ Snorunt > Glalie > Glalie (Power Up) > Mega Glalie
+  { id: 'snorunt', dex: '0361', nombre: 'SNORUNT', tipos: ['ICE'], rol: 'TANQUE', lema: 'THE FACE OF THE BLIZZARD', hp: 70, vel: 124, atk: 0.94, def: 0.96, regen: 4, expEvolucion: [55, 100], ia: { rango: 120 },
+    kit: {
+      lmb: tiro('Powder Snow', 'ICE', 'bola', 4.2, { alcance: 180, escala: 1.4 }),
+      rmb: tiro('Ice Spear', 'ICE', 'tri', 8, { vel: 400, alcance: 220, radio: 5, escala: 1.8, ralentiza: 0.2, ralentizaDur: 2, coste: 25, cd: 5, calor: 0 }),
+      esp: dash('Ice Slide', 'ICE', { dano: 4, dist: 130, estilo: 'agua' }),
+      q: skill('Cold Mist', 'pulso', 'ICE', { dano: 3, radio: 72, empuje: 10, debilita: { f: 0.85, dur: 3 }, cd: 9 }),
+      e: semUlt('Cryo Nova', 'explosion', 'ICE', { dano: 22, radio: 92, carga: 0.5, empuje: 90, ralentiza: 0.7, ralentizaDur: 2 }),
+    },
+    evoluciones: [
+      { dex: '0362', nombre: 'GLALIE', hp: 92, vel: 126, atk: 1.06, def: 1.04, kit: { lmb: { dano: 4.8 }, rmb: { nombre: 'Rolling Avalanche', estilo: 'bola', tipo: 'ICE', dano: 10, vel: 220, radio: 10, escala: 2.6, ralentiza: 0.3, ralentizaDur: 2 }, q: { nombre: 'Frost Breath', forma: 'viento', estilo: 'sonido', dano: 9, alcance: 130, angulo: 70, empuje: 30, debilita: { f: 0.8, dur: 3 }, cd: 8 }, e: { dano: 24, sinUlti: false } } },
+      { dex: '0362', nombre: 'GLALIE', hp: 106, vel: 128, atk: 1.14, def: 1.08, escala: 1.1, kit: { lmb: { dano: 5.2 }, rmb: { nombre: 'Rolling Avalanche', estilo: 'bola', tipo: 'ICE', dano: 11.5, vel: 220, radio: 10, escala: 2.6, ralentiza: 0.3, ralentizaDur: 2 }, q: { nombre: 'Frost Breath', forma: 'viento', estilo: 'sonido', dano: 10, alcance: 140, angulo: 70, empuje: 30, debilita: { f: 0.8, dur: 3 }, cd: 8 }, e: { dano: 27, sinUlti: false } },
+        mega: { dex: '0362-0001', nombre: 'MEGA GLALIE', atk: 0.14, def: 0.05, vel: 6 } },
+    ] },
+  // ------------------------------------------------------------ Ralts > Kirlia > Gardevoir > Mega Gardevoir
+  { id: 'ralts', dex: '0280', nombre: 'RALTS', tipos: ['PSYCHIC', 'FAIRY'], rol: 'CONTROL', lema: 'MISTRESS OF SPACE', hp: 56, vel: 136, atk: 1.0, def: 0.8, regen: 5, expEvolucion: [55, 100], ia: { rango: 160 },
+    kit: {
+      lmb: tiro('Disarming Voice', 'FAIRY', 'brisaHada', 4.4, { alcance: 190 }),
+      rmb: tiro('Telepathic Pulse', 'PSYCHIC', 'psiOnda', 8, { vel: 420, alcance: 230, radio: 5, escala: 1.8, ralentiza: 0.2, ralentizaDur: 2, coste: 25, cd: 5, calor: 0 }),
+      esp: dash('Teleport', 'PSYCHIC', { dano: 0, teleport: true, dist: 115, dur: 0.12, cd: 8, anim: 'Idle', estilo: 'teleport' }),
+      q: skill('Ephemeral Leap', 'auraVeloz', 'FAIRY', { dur: 3, vel: 1.3, radio: 110, coste: 20, cd: 10 }),
+      e: semUlt('Dazzling Gleam', 'pulso', 'FAIRY', { dano: 16, radio: 70, empuje: 60 }),
+    },
+    evoluciones: [
+      { dex: '0281', nombre: 'KIRLIA', hp: 68, vel: 140, atk: 1.1, def: 0.84, kit: { lmb: { dano: 4.8 }, rmb: { nombre: 'Bewitched Orb', estilo: 'brisaHada', tipo: 'FAIRY', dano: 10, vel: 260, radio: 7, escala: 2, ralentiza: 0, explosion: { radio: 38 } }, q: { nombre: 'Dimensional Waltz', forma: 'valsaEscudo', absorbe: 16, dur: 3, radio: 110, cd: 10 } } },
+      { dex: '0282', nombre: 'GARDEVOIR', hp: 82, vel: 142, atk: 1.24, def: 0.88, escala: 1.06,
+        kit: { lmb: { nombre: 'Moonblast Shard', dano: 5.2 }, rmb: { nombre: 'Psychic Distortion', forma: 'distorcao', tipo: 'PSYCHIC', dano: 11, alcance: 220, radio: 40, carga: 0.35, prendeDur: 1, cd: 6 }, q: { nombre: 'Astral Sanctuary', forma: 'santuario', radio: 70, dur: 4, cura: 0.02, reduce: 0.25, cd: 13 }, e: ult('Dark Singularity', 'singularidade', 'PSYCHIC', 26, { alcance: 240, radio: 70, dur: 1.4 }) },
+        mega: { dex: '0282-0001', nombre: 'MEGA GARDEVOIR', atk: 0.14, def: 0.04, vel: 6 } },
+    ] },
+  // ------------------------------------------------------------ Absol > 3 Power Ups > Mega Absol
+  { id: 'absol', dex: '0359', nombre: 'ABSOL', tipos: ['DARK'], rol: 'FISICO', lema: 'HERALD OF DISASTER', hp: 68, vel: 146, atk: 1.04, def: 0.86, regen: 4, expEvolucion: [45, 80, 115], ia: { rango: 66 },
+    kit: {
+      lmb: corte('Night Slash', 'DARK', 4.4, { alcance: 52, angulo: 140 }),
+      rmb: skill('Calamity Claw', 'garraCalamidade', 'DARK', { dano: 9, alcance: 200, crit: 0.2, coste: 25, cd: 5, anim: 'Attack' }),
+      esp: dash('Sucker Punch', 'DARK', { dano: 4, dist: 140, estilo: 'golpe' }),
+      q: skill('Dark Omen', 'presagio', 'DARK', { dano: 4, dur: 1, coste: 20, cd: 9 }),
+      e: semUlt('Doom Storm', 'tempestadePerdicao', 'DARK', { dano: 22, alcance: 180, anim: 'Attack' }),
+    },
+    evoluciones: [
+      { dex: '0359', nombre: 'ABSOL', hp: 76, vel: 148, atk: 1.1, def: 0.88, kit: { lmb: { dano: 4.8 }, rmb: { dano: 9.8 }, e: { dano: 24, sinUlti: false } } },
+      { dex: '0359', nombre: 'ABSOL', hp: 84, vel: 150, atk: 1.16, def: 0.9, kit: { lmb: { dano: 5.2 }, rmb: { dano: 10.4 }, q: { dano: 5 }, e: { dano: 26, sinUlti: false } } },
+      { dex: '0359', nombre: 'ABSOL', hp: 92, vel: 152, atk: 1.22, def: 0.93, escala: 1.06, kit: { lmb: { dano: 5.6 }, rmb: { dano: 11 }, q: { dano: 6 }, e: { dano: 28, sinUlti: false } },
+        mega: { dex: '0359-0001', nombre: 'MEGA ABSOL', atk: 0.14, def: 0.03, vel: 10 } },
+    ] },
 ];

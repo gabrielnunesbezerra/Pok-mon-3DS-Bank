@@ -124,6 +124,27 @@ export const MEGA_KITS = {
     q: { nombre: 'Mega Abyss Hunter', mega: true, dano: 12, dur: 2, escudo: 14 },
     e: { nombre: 'Mega Feeding Frenzy', mega: true, dano: 30, alcance: 110, sangra: 2 },
   },
+  snorunt: {
+    lmb: { nombre: 'Mega Powder Snow', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
+    rmb: { nombre: 'Cryo Comet', forma: 'cometaGelo', mega: true, dano: 14, alcance: 240, radio: 60, aturde: 1, vuelo: 0.5 },
+    esp: { nombre: 'Mega Ice Slide', dist: 160, cd: 4 },
+    q: { nombre: '360 Blizzard', forma: 'tempestadeGelo', mega: true, dano: 12, n: 12, alcance: 170, escudo: 22, cd: 9 },
+    e: { nombre: 'Abyssal Jaws', forma: 'abismoMandibula', tipo: 'ICE', mega: true, dano: 34, alcance: 170, angulo: 80, radio: 64, aturde: 1.5 },
+  },
+  ralts: {
+    lmb: { nombre: 'Mega Moonblast Shard', dano: 5.8, rafaga: 2, cadaRafaga: 0.08 },
+    rmb: { nombre: 'Pixie Supernova', forma: 'estrelasPixie', tipo: 'FAIRY', mega: true, dano: 10, alcance: 240, silencio: 1.2 },
+    esp: { nombre: 'Mega Teleport', dist: 140, cd: 6 },
+    q: { nombre: 'Astral Dominance', mega: true, radio: 95, dur: 5, cura: 0.025 },
+    e: { nombre: 'Gravitational Cataclysm', mega: true, dano: 22, radio: 110, dur: 2.2, porVida: 0.12 },
+  },
+  absol: {
+    lmb: { nombre: 'Mega Night Slash', dano: 6.2, alcance: 58 },
+    rmb: { nombre: 'Ruin Scythe', mega: true, dano: 11, alcance: 640 },
+    esp: { nombre: 'Mega Sucker Punch', dano: 6, dist: 170, cd: 4 },
+    q: { nombre: 'Disaster Vision', mega: true, dur: 0.8 },
+    e: { nombre: 'Mega Doom Storm', mega: true, dano: 40, radio: 110 },
+  },
   tatsugiri: {
     lmb: { nombre: 'Mega Water Shuriken', dano: 5.6, rafaga: 2, cadaRafaga: 0.08 },
     rmb: { nombre: 'Mega Flip Turn', mega: true, dano: 10, alcance: 180, radio: 40, danoBolha: 3.5 },

@@ -171,3 +171,4 @@ Object.assign(ENTIDADES_NOVAS, {
     if (fx && ale() < 0.5) fx.add({ x: e.x - ca * 8, y: y - sa * 8, vx: -ca * 40 + entre(-20, 20), vy: entre(-30, 10), g: 300, size: entre(1.2, 2), life: 0.35, forma: 'gota', rampa: PX.RAMPA_AGUA });
   },
 });
+export { heroi, poli, faiscas, rachas, choque, gotas, cacos, mandibulaDesenho, entre, ale, px };

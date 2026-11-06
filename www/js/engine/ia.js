@@ -63,6 +63,14 @@ export function rangoDe(h) {
     case 'plumagem': P.tipo = 'buff'; break;
     case 'cacadorSubmerso': P.tipo = 'mele'; P.alcance = 140; P.retardo = 0.5; P.invul = true; break;
     case 'mergulhoAco': P.alcance = h.alcance ?? 260; P.ancho = h.radio ?? 70; P.retardo = 0.6; P.sigue = 0.8; P.invul = true; break;
+    case 'cometaGelo': case 'distorcao': P.alcance = h.alcance ?? 230; P.ancho = h.radio ?? 50; P.retardo = (h.vuelo ?? h.carga ?? 0.4); P.sigue = 0.6; break;
+    case 'singularidade': P.alcance = h.alcance ?? 240; P.ancho = h.radio ?? 70; P.retardo = 0.6; P.sigue = 0.8; P.golpes = 2; break;
+    case 'tempestadeGelo': P.tipo = 'area'; P.alcance = (h.alcance ?? 170) * 0.7; P.retardo = 0.2; break;
+    case 'abismoMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 170) * 0.9; P.retardo = 0.8; break;
+    case 'auraVeloz': case 'valsaEscudo': case 'santuario': P.tipo = 'buff'; break;
+    case 'presagio': P.tipo = 'defensa'; P.alcance = 110; break;
+    case 'estrelasPixie': case 'garraCalamidade': P.alcance = (h.alcance ?? 220) * 0.8; P.ancho = 14; P.retardo = d / 380; break;
+    case 'tempestadePerdicao': P.tipo = 'mele'; P.alcance = (h.alcance ?? 180) * 0.9; P.retardo = 0.15; P.invul = true; break;
     case 'boteMandibula': P.tipo = 'mele'; P.alcance = (h.alcance ?? 56) + 10; P.retardo = 0.12; break;
     case 'playRough': P.tipo = 'mele'; P.alcance = (h.alcance ?? 95) * 0.9; P.retardo = 0.24; break;
     case 'flipTatsu': P.alcance = h.alcance + 20; P.ancho = h.radio ?? 30; P.retardo = 0.3; P.sigue = 0.8; break;
